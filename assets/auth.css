@@ -56,11 +56,10 @@ body {
     text-transform: uppercase;
     letter-spacing: 1px;
     border-radius: 8px !important;
-    background-color: var(--clr-secondary);
-    color: #ffffff;
+    background-color: var(--clr--secondary);
+    color: #fffff;
 }
-
-.admin-login-link {
+ .admin-login-link {
      position: fixed;
      bottom: 20px;
      right: 20px;

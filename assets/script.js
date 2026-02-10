@@ -663,3 +663,132 @@ function submitInspection(e) {
         spinner.classList.add('d-none');
     });
 }
+
+// ========== MOBILE-OPTIMIZED VIEW MORE FUNCTIONALITY ==========
+
+/**
+ * Enhanced toggle function for View More button
+ * Shows first 4 products on load, then toggles all products
+ */
+function toggleViewMore() {
+    const productsGrid = document.getElementById('productsGrid');
+    const viewMoreBtn = document.getElementById('viewMoreBtn');
+    const btnIcon = viewMoreBtn.querySelector('i');
+    const btnText = viewMoreBtn.childNodes[viewMoreBtn.childNodes.length - 1];
+    
+    // Toggle the show-all class
+    productsGrid.classList.toggle('show-all');
+    
+    // Update button appearance and text
+    if (productsGrid.classList.contains('show-all')) {
+        viewMoreBtn.classList.add('expanded');
+        btnText.textContent = ' View Less';
+        
+        // Scroll smoothly to show newly revealed products
+        setTimeout(() => {
+            const firstHiddenProduct = document.querySelector('.hidden-product');
+            if (firstHiddenProduct) {
+                firstHiddenProduct.scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'nearest' 
+                });
+            }
+        }, 100);
+    } else {
+        viewMoreBtn.classList.remove('expanded');
+        btnText.textContent = ' View More';
+        
+        // Scroll back to the beginning of the grid
+        const catalogSection = document.querySelector('.catalogs-section');
+        if (catalogSection) {
+            catalogSection.scrollIntoView({ 
+                behavior: 'smooth', 
+                block: 'start' 
+            });
+        }
+    }
+}
+
+/**
+ * Initialize the view more functionality on page load
+ */
+document.addEventListener('DOMContentLoaded', function() {
+    const productsGrid = document.getElementById('productsGrid');
+    const viewMoreContainer = document.getElementById('viewMoreContainer');
+    const allProducts = document.querySelectorAll('.product-card');
+    
+    // Count visible vs hidden products
+    const hiddenProducts = document.querySelectorAll('.hidden-product');
+    
+    // Hide the "View More" button if there are 4 or fewer products total
+    if (allProducts.length <= 4) {
+        if (viewMoreContainer) {
+            viewMoreContainer.style.display = 'none';
+        }
+    } else {
+        if (viewMoreContainer) {
+            viewMoreContainer.style.display = 'block';
+        }
+    }
+    
+    // Log for debugging
+    console.log(`Total products: ${allProducts.length}`);
+    console.log(`Hidden products: ${hiddenProducts.length}`);
+});
+
+/**
+ * Optional: Add filter functionality that respects the view more state
+ */
+function filterProducts(category) {
+    const productsGrid = document.getElementById('productsGrid');
+    const products = document.querySelectorAll('.product-card');
+    const viewMoreBtn = document.getElementById('viewMoreBtn');
+    const viewMoreContainer = document.getElementById('viewMoreContainer');
+    
+    let visibleCount = 0;
+    
+    products.forEach((product, index) => {
+        const productCategory = product.getAttribute('data-category');
+        
+        if (category === 'All' || productCategory === category) {
+            product.style.display = 'flex';
+            visibleCount++;
+            
+            // Apply hidden-product class to items after the 4th
+            if (visibleCount > 4) {
+                product.classList.add('hidden-product');
+            } else {
+                product.classList.remove('hidden-product');
+            }
+        } else {
+            product.style.display = 'none';
+            product.classList.remove('hidden-product');
+        }
+    });
+    
+    // Reset the grid to collapsed state
+    productsGrid.classList.remove('show-all');
+    if (viewMoreBtn) {
+        viewMoreBtn.classList.remove('expanded');
+        const btnText = viewMoreBtn.childNodes[viewMoreBtn.childNodes.length - 1];
+        btnText.textContent = ' View More';
+    }
+    
+    // Show/hide view more button based on filtered results
+    if (viewMoreContainer) {
+        viewMoreContainer.style.display = visibleCount > 4 ? 'block' : 'none';
+    }
+}
+
+/**
+ * Optional: Smooth fade-in animation for products when they appear
+ */
+function animateProductReveal() {
+    const hiddenProducts = document.querySelectorAll('.products-grid.show-all .hidden-product');
+    
+    hiddenProducts.forEach((product, index) => {
+        setTimeout(() => {
+            product.style.animationDelay = `${index * 0.1}s`;
+        }, index * 50);
+    });
+}
