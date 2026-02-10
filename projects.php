@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="assets/img/icon.png">
+    <title>Our Projects | SolarPower Energy Corporation</title>
+    
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    <link rel="stylesheet" href="assets/style.css">
+
+    <style>
+        :root {
+            --clr-primary: #ffc107; 
+            --clr-secondary: #0a5c3d; 
+            --clr-bg: #f4f7f6;
+            --shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+
+        .hero-projects {
+            background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('assets/img/projects.png') no-repeat center/cover;
+            height: 50vh; display: flex; align-items: center; color: white; text-align: center;
+        }
+
+        .project-card {
+            border: none; border-radius: 15px; overflow: hidden; background: white;
+            box-shadow: var(--shadow); transition: 0.3s ease;
+        }
+
+        .project-card:hover { transform: translateY(-10px); }
+
+        .project-img-box { height: 250px; overflow: hidden; position: relative; }
+        
+        .location-tag {
+            position: absolute; bottom: 15px; left: 15px;
+            background: rgba(10, 92, 61, 0.9); color: white;
+            padding: 5px 15px; border-radius: 20px; font-size: 0.8rem;
+        }
+
+        /* Feature Section (Based on User Requirements) */
+        .feature-box {
+            padding: 40px; border-radius: 15px; background: white;
+            box-shadow: var(--shadow); height: 100%; border-top: 5px solid var(--clr-primary);
+        }
+
+        .feature-icon { font-size: 2.5rem; color: var(--clr-primary); margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+
+    <?php include "includes/header.php" ?>
+
+    <section class="hero-projects">
+        <div class="container" data-aos="fade-up">
+            <p class="text-warning fw-bold text-uppercase">Our Portfolio</p>
+            <h1 class="display-3 fw-bold">Turning Vision Into Power</h1>
+        </div>
+    </section>
+
+    <section class="py-5 bg-light">
+        <div class="container py-5">
+            <div class="text-center mb-5" data-aos="fade-up">
+                <h2 class="fw-bold">Why Choose SolarPower?</h2>
+                <p class="text-muted">The expertise you need for a lifetime of savings.</p>
+            </div>
+            <div class="row g-4">
+                <div class="col-md-4" data-aos="fade-up" data-aos-delay="100">
+                    <div class="feature-box text-center">
+                        <i class="fas fa-tools feature-icon"></i>
+                        <h4>Expert Engineering</h4>
+                        <p class="text-muted">Systems designed by certified professionals to maximize efficiency based on your specific roof.</p>
+                    </div>
+                </div>
+                <div class="col-md-4" data-aos="fade-up" data-aos-delay="200">
+                    <div class="feature-box text-center">
+                        <i class="fas fa-hand-holding-usd feature-icon"></i>
+                        <h4>Zero-Down Options</h4>
+                        <p class="text-muted">Flexible financing and models making solar affordable from day one.</p>
+                    </div>
+                </div>
+                <div class="col-md-4" data-aos="fade-up" data-aos-delay="300">
+                    <div class="feature-box text-center">
+                        <i class="fas fa-shield-alt feature-icon"></i>
+                        <h4>Long-term Warranty</h4>
+                        <p class="text-muted">25-year performance warranty on panels with a dedicated local support team.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="py-5">
+        <div class="container">
+            <div class="row mb-5 align-items-end">
+                <div class="col-md-8" data-aos="fade-right">
+                    <h2 class="fw-bold">Recent Installations</h2>
+                    <p class="text-muted">Proven reliability across residential and commercial sectors.</p>
+                </div>
+            </div>
+
+            <div class="row g-4">
+                <div class="col-lg-6" data-aos="fade-up">
+                    <div class="project-card">
+                        <div class="project-img-box">
+                            <img src="assets/img/projects1.png" class="w-100 h-100 object-fit-cover" alt="Residential Project">
+                            <span class="location-tag"><i class="fas fa-map-marker-alt me-2"></i>BF Homes, Paranaque</span>
+                        </div>
+                        <div class="p-4">
+                            <h4 class="fw-bold">12kW Hybrid System</h4>
+                            <p class="text-muted">Full residential installation providing 24/7 power backup and zero electricity bills.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-6" data-aos="fade-up" data-aos-delay="200">
+                    <div class="project-card">
+                        <div class="project-img-box">
+                            <img src="assets/img/projects2.jpg" class="w-100 h-100 object-fit-cover" alt="Commercial Project">
+                            <span class="location-tag"><i class="fas fa-map-marker-alt me-2"></i>Lucero, Pangasinan</span>
+                        </div>
+                        <div class="p-4">
+                            <h4 class="fw-bold">20kW Commercial Rooftop</h4>
+                            <p class="text-muted">Engineered for business efficiency, reducing operational costs by up to 60%.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <?php include "includes/footer.php" ?>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script>AOS.init({ duration: 1000, once: true });</script>
+</body>
+</html>
