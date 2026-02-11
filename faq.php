@@ -91,6 +91,24 @@
             text-align: center;
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
             transition: transform 0.3s ease, box-shadow 0.3s ease;
+            opacity: 0;
+            transform: translateY(30px);
+        }
+
+        .benefit-card.animate {
+            animation: fadeInUp 0.8s ease-out forwards;
+        }
+
+        .benefit-card:nth-child(1).animate {
+            animation-delay: 0.1s;
+        }
+
+        .benefit-card:nth-child(2).animate {
+            animation-delay: 0.3s;
+        }
+
+        .benefit-card:nth-child(3).animate {
+            animation-delay: 0.5s;
         }
 
         .benefit-card:hover {
@@ -126,7 +144,12 @@
         .section-title {
             text-align: center;
             margin-bottom: 40px;
-            animation: fadeInUp 0.8s ease-out 0.2s both;
+            opacity: 0;
+            transform: translateY(30px);
+        }
+
+        .section-title.animate {
+            animation: fadeInUp 0.8s ease-out forwards;
         }
 
         .section-title h2 {
@@ -146,27 +169,32 @@
             border-radius: 8px;
             overflow: hidden;
             transition: all 0.3s ease;
-            animation: fadeInUp 0.8s ease-out both;
+            opacity: 0;
+            transform: translateY(30px);
         }
 
-        .faq-item:nth-child(2) {
+        .faq-item.animate {
+            animation: fadeInUp 0.8s ease-out forwards;
+        }
+
+        .faq-item:nth-child(2).animate {
+            animation-delay: 0.1s;
+        }
+
+        .faq-item:nth-child(3).animate {
+            animation-delay: 0.2s;
+        }
+
+        .faq-item:nth-child(4).animate {
+            animation-delay: 0.3s;
+        }
+
+        .faq-item:nth-child(5).animate {
             animation-delay: 0.4s;
         }
 
-        .faq-item:nth-child(3) {
+        .faq-item:nth-child(6).animate {
             animation-delay: 0.5s;
-        }
-
-        .faq-item:nth-child(4) {
-            animation-delay: 0.6s;
-        }
-
-        .faq-item:nth-child(5) {
-            animation-delay: 0.7s;
-        }
-
-        .faq-item:nth-child(6) {
-            animation-delay: 0.8s;
         }
 
         .faq-item:hover {
@@ -516,6 +544,30 @@
 
 
         <script>
+            // Scroll-based animation for benefit cards
+            const observerOptions = {
+                threshold: 0.1,
+                rootMargin: '0px 0px -50px 0px'
+            };
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('animate');
+                    }
+                });
+            }, observerOptions);
+
+            // Observe all benefit cards
+            document.querySelectorAll('.benefit-card').forEach(card => {
+                observer.observe(card);
+            });
+
+            // Observe FAQ section elements
+            document.querySelectorAll('.section-title, .faq-item').forEach(element => {
+                observer.observe(element);
+            });
+
             // FAQ Accordion functionality
             const faqItems = document.querySelectorAll('.faq-item');
 
