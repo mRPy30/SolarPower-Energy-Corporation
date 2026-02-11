@@ -14,6 +14,19 @@ function isActive($page) {
 ?>
 
 <style>
+
+html, body {
+    max-width: 100%;
+    overflow-x: hidden;
+}
+
+.container {
+    width: 100%;
+    max-width: 1200px; 
+    margin: 0 auto;
+    padding: 0 15px;
+    box-sizing: 
+}
 /* Header Top - Green Bar */
 .header-top {
     background: #2d5016;
@@ -283,7 +296,7 @@ nav a.active::after {
     nav {
         position: fixed;
         top: 54px;
-        right: -100%;
+        right: -100%; 
         width: 280px;
         height: calc(100vh - 54px);
         background: var(--clr-light);
@@ -291,10 +304,13 @@ nav a.active::after {
         transition: right 0.3s ease;
         overflow-y: auto;
         padding: 20px 0;
+        z-index: 1001; 
+        visibility: hidden; 
     }
-    
+
     nav.active {
         right: 0;
+        visibility: visible; /* Ipakita lang kapag active */
     }
     
     nav ul {
@@ -379,7 +395,7 @@ nav a.active::after {
             <svg class="phone-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white">
                 <path d="M20.01 15.38c-1.23 0-2.42-.2-3.53-.56-.35-.12-.74-.03-1.01.24l-1.57 1.97c-2.83-1.35-5.48-3.9-6.89-6.83l1.95-1.66c.27-.28.35-.67.24-1.02-.37-1.11-.56-2.3-.56-3.53 0-.54-.45-.99-.99-.99H4.19C3.65 3 3 3.24 3 3.99 3 13.28 10.73 21 20.01 21c.71 0 .99-.63.99-1.18v-3.45c0-.54-.45-.99-.99-.99z"/>
             </svg>
-            <span>Order Hotline: 0995-394-7379</span>
+            <span>Order Hotline: +63 995 394 7379</span>
         </div>
     </div>
 </div>

@@ -167,31 +167,29 @@
         color: #888;
     }
 
-    @keyframes fadeInUp {
-        from {
-            opacity: 0;
-            transform: translateY(30px);
-        }
-
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
     }
-</style>
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
 
-<footer class="footer"><!--I make the social media icon TARGET (KENT JOCEL LUSDOC) -->
+</style>    
+    
+<footer class="footer">
     <div class="container">
         <div class="row">
             <div class="col-lg-3 col-md-6 mb-4">
                 <div class="footer-logo-social"> 
                     <img src="assets/img/logo_no_background.png" alt="Logo">
                     <div class="social-links">
-                        <a href="https://www.facebook.com/p/SolarPower-Energy-Corporation-61578373983187/" target="_blank" rel="noopener noreferrer">
-                            <i class="fab fa-facebook-f"></i>
-                        </a>
-                        <a href="https://www.instagram.com/solarpowerenergycorporation?igsh=MWh4YTEyYWpzbDNlNQ%3D%3D" target="_blank"><i class="fab fa-instagram"></i></a>
-                        <a href="https://www.tiktok.com/@solarpower.energy?_r=1&_t=ZS-92HlpTBUuzF" target="_blank"><i class="fab fa-tiktok"></i></a>
+                        <a href="#"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                        <a href="#"><i class="fab fa-tiktok"></i></a>
                     </div>
                 </div>
             </div>
@@ -219,18 +217,18 @@
                     </div>
                     <div class="contact-detail">
                         <i class="fas fa-phone"></i>
-                        <span class="contact-link" id="phone-copy" onclick="copyToClipboard('0952-384-7379', this)">0952-384-7379</span>
+                        <span class="contact-link" id="phone-copy" onclick="copyToClipboard('0995-394-7379', this)">+63 995 394 7379</span>
                     </div>
                     <div class="contact-detail">
                         <i class="fas fa-map-marker-alt"></i>
-                        <span>4/F PBB Corporate Center, 1906 Finance Drive, <br>Madrigal Business Park 1, Muntinlupa City</span>
+                        <span>4/F PBB Corporate Center, 1906 Finance Drive, Madrigal Business Park 1, Ayala Alabang, Muntinlupa City, 1780, Philippines</span>
                     </div>
                 </div>
             </div>
 
             <div class="col-lg-3 col-md-6 mb-4 text-lg-end">
                 <div class="footer-shoppee-side">
-                    <h4>Shop on Shopee</h4>
+                    <h4>Explore our Shopee</h4>
                     <img src="assets/img/shopee-qr.png" alt="QR Code">
                     <p style="color: #ee4d2d;">Scan to shop online</p>
                 </div>
