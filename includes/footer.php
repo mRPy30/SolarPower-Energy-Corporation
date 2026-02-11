@@ -176,6 +176,352 @@
     }
 }
 
+/* ========== FOOTER RESPONSIVE FIXES ========== */
+
+/* Tablet Footer (768px - 991px) */
+@media (max-width: 991px) {
+  .footer {
+    padding: 50px 0 20px;
+  }
+  
+  .footer h4 {
+    font-size: 17px;
+    margin-bottom: 15px;
+  }
+  
+  .footer-logo-social {
+    text-align: center;
+    margin-bottom: 30px;
+  }
+  
+  .footer-logo-social img {
+    width: 130px;
+    margin-bottom: 15px;
+  }
+  
+  .social-links {
+    justify-content: center;
+    margin-top: 15px;
+  }
+  
+  .footer-links,
+  .footer-contact {
+    margin-bottom: 30px;
+  }
+  
+  .footer-shoppee-side {
+    text-align: center;
+  }
+  
+  .payment-icons {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  
+  .payment-icons img {
+    height: 40px;
+  }
+}
+
+/* Mobile Footer (max-width: 768px) */
+@media (max-width: 768px) {
+  .footer {
+    padding: 40px 0 15px;
+  }
+  
+  .footer .container {
+    padding: 0 20px;
+  }
+  
+  /* Logo & Social Section */
+  .footer-logo-social {
+    text-align: center;
+    margin-bottom: 25px;
+  }
+  
+  .footer-logo-social img {
+    width: 120px;
+    margin-bottom: 12px;
+  }
+  
+  .social-links {
+    justify-content: center;
+    gap: 10px;
+    margin-top: 12px;
+  }
+  
+  .social-links a {
+    width: 38px;
+    height: 38px;
+    font-size: 16px;
+  }
+  
+  /* Section Headings */
+  .footer h4 {
+    font-size: 16px;
+    margin-bottom: 12px;
+    text-align: center;
+  }
+  
+  /* Quick Links */
+  .footer-links {
+    text-align: center;
+    margin-bottom: 25px;
+  }
+  
+  .footer-links ul {
+    padding: 0;
+  }
+  
+  .footer-links li {
+    margin-bottom: 10px;
+  }
+  
+  .footer-links a {
+    font-size: 14px;
+    display: inline-block;
+    padding: 5px 0;
+  }
+  
+  /* Contact Info */
+  .footer-contact {
+    margin-bottom: 25px;
+  }
+  
+  .footer-contact .contact-detail {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    margin-bottom: 15px;
+    gap: 5px;
+  }
+  
+  .footer-contact .contact-detail i {
+    font-size: 18px;
+    margin-right: 0;
+    margin-bottom: 5px;
+  }
+  
+  .footer-contact .contact-detail span,
+  .footer-contact .contact-detail a {
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  
+  /* Shopee Section */
+  .footer-shoppee-side {
+    text-align: center;
+    margin-bottom: 25px;
+  }
+  
+  .footer-shoppee-side img {
+    width: 110px;
+    padding: 10px;
+  }
+  
+  .footer-shoppee-side p {
+    font-size: 13px;
+    margin-top: 6px;
+  }
+  
+  .footer-shoppee-side h4 {
+    margin-bottom: 10px;
+  }
+  
+  /* Payment Methods */
+  .footer-payments {
+    margin-top: 25px;
+  }
+  
+  .footer-payments h4 {
+    font-size: 16px;
+    margin-bottom: 12px;
+  }
+  
+  .payment-icons {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    padding: 0 10px;
+  }
+  
+  .payment-icons img {
+    height: 35px;
+    padding: 5px 8px;
+  }
+  
+  /* Copyright */
+  .copyright {
+    padding-top: 20px;
+    margin-top: 25px;
+    font-size: 12px;
+  }
+  
+  .copyright p {
+    margin: 0;
+    line-height: 1.6;
+  }
+  
+  /* Tooltip Adjustment */
+  .copy-tooltip::after {
+    font-size: 11px;
+    padding: 3px 10px;
+  }
+}
+
+/* Small Mobile Footer (max-width: 480px) */
+@media (max-width: 480px) {
+  .footer {
+    padding: 30px 0 10px;
+  }
+  
+  .footer-logo-social img {
+    width: 100px;
+    margin-bottom: 10px;
+  }
+  
+  .social-links a {
+    width: 35px;
+    height: 35px;
+    font-size: 14px;
+  }
+  
+  .footer h4 {
+    font-size: 15px;
+    margin-bottom: 10px;
+  }
+  
+  .footer-links a {
+    font-size: 13px;
+  }
+  
+  .footer-contact .contact-detail {
+    margin-bottom: 12px;
+  }
+  
+  .footer-contact .contact-detail i {
+    font-size: 16px;
+  }
+  
+  .footer-contact .contact-detail span,
+  .footer-contact .contact-detail a {
+    font-size: 12px;
+  }
+  
+  .footer-shoppee-side img {
+    width: 90px;
+    padding: 8px;
+  }
+  
+  .footer-shoppee-side p {
+    font-size: 12px;
+  }
+  
+  .payment-icons {
+    gap: 8px;
+  }
+  
+  .payment-icons img {
+    height: 30px;
+    padding: 4px 6px;
+  }
+  
+  .copyright {
+    padding-top: 15px;
+    margin-top: 20px;
+    font-size: 11px;
+  }
+}
+
+/* Landscape Orientation Fixes */
+@media (max-width: 896px) and (orientation: landscape) {
+  .header-top {
+    padding: 6px 0;
+  }
+  
+  .accreditation-info h5 {
+    font-size: 10px;
+  }
+  
+  header {
+    padding: 8px 0;
+  }
+  
+  .logo img {
+    width: 90px;
+    height: 55px;
+  }
+  
+  nav {
+    height: calc(100vh - 100px);
+    max-width: 280px;
+  }
+  
+  nav a {
+    padding: 12px 20px;
+  }
+  
+  .footer {
+    padding: 30px 0 10px;
+  }
+}
+
+/* Print Styles */
+@media print {
+  .header-top,
+  .mobile-menu-btn,
+  .mobile-overlay,
+  .hero,
+  .messenger-float,
+  .cart-notification,
+  #notification-container,
+  .whatsapp-btn,
+  .btn-subscribe,
+  .social-links {
+    display: none !important;
+  }
+  
+  header {
+    position: static;
+    box-shadow: none;
+  }
+  
+  .footer {
+    page-break-after: avoid;
+  }
+  
+  .checkout-shell {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* High DPI Screens */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .product-image img,
+  .brand-item img,
+  .package-image,
+  .footer-logo-social img,
+  .payment-icons img {
+    image-rendering: -webkit-optimize-contrast;
+  }
+}
+
+/* Accessibility Improvements */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  
+  .phone-icon {
+    animation: none !important;
+  }
+}
+
 </style>    
     
 <footer class="footer">
@@ -185,9 +531,9 @@
                 <div class="footer-logo-social">
                     <img src="assets/img/logo_no_background.png" alt="Logo">
                     <div class="social-links">
-                        <a href="#"><i class="fab fa-facebook-f"></i></a>
-                        <a href="#"><i class="fab fa-instagram"></i></a>
-                        <a href="#"><i class="fab fa-tiktok"></i></a>
+                        <a href="https://www.facebook.com/p/SolarPower-Energy-Corporation-61578373983187/"><i class="fab fa-facebook-f"></i></a>
+                        <a href="https://www.instagram.com/solarpowerenergycorporation?igsh=MWh4YTEyYWpzbDNlNQ=="><i class="fab fa-instagram"></i></a>
+                        <a href="https://www.tiktok.com/@solarpower.energy?_r=1&_t=ZS-92HlpTBUuzF"><i class="fab fa-tiktok"></i></a>
                     </div>
                 </div>
             </div>
@@ -215,18 +561,18 @@
                     </div>
                     <div class="contact-detail">
                         <i class="fas fa-phone"></i>
-                        <span class="contact-link" id="phone-copy" onclick="copyToClipboard('0952-384-7379', this)">0952-384-7379</span>
+                        <span class="contact-link" id="phone-copy" onclick="copyToClipboard('0995-394-7379', this)">+63 995 394 7379</span>
                     </div>
                     <div class="contact-detail">
                         <i class="fas fa-map-marker-alt"></i>
-                        <span>4/F PBB Corporate Center, 1906 Finance Drive, <br>Madrigal Business Park 1, Muntinlupa City</span>
+                        <span>4/F PBB Corporate Center, 1906 Finance Drive, Madrigal Business Park 1, Ayala Alabang, Muntinlupa City, 1780, Philippines</span>
                     </div>
                 </div>
             </div>
 
             <div class="col-lg-3 col-md-6 mb-4 text-lg-end">
                 <div class="footer-shoppee-side">
-                    <h4>Shop on Shopee</h4>
+                    <h4>Explore our Shopee</h4>
                     <img src="assets/img/shopee-qr.png" alt="QR Code">
                     <p style="color: #ee4d2d;">Scan to shop online</p>
                 </div>
