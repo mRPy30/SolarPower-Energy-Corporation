@@ -200,6 +200,13 @@
             <div class="row g-4">
                 <div class="col-md-4" data-aos="fade-up" data-aos-delay="100">
                     <div class="feature-box">
+                        <div class="d-flex align-items-center mb-3">
+                            <img src="assets/img/testimonial_image.jpg" alt="Maria Santos" class="rounded-circle me-3" style="width: 60px; height: 60px; object-fit: cover;">
+                            <div>
+                                <strong>Maria Santos</strong>
+                                <p class="text-muted small mb-0">BF Homes, Parañaque</p>
+                            </div>
+                        </div>
                         <div class="mb-3">
                             <i class="fas fa-star text-warning"></i>
                             <i class="fas fa-star text-warning"></i>
@@ -208,14 +215,17 @@
                             <i class="fas fa-star text-warning"></i>
                         </div>
                         <p class="text-muted fst-italic">"Our electric bill dropped dramatically after installation. The team was professional and the system has been running flawlessly for over a year now."</p>
-                        <div class="mt-3">
-                            <strong>Maria Santos</strong>
-                            <p class="text-muted small mb-0">BF Homes, Parañaque</p>
-                        </div>
                     </div>
                 </div>
                 <div class="col-md-4" data-aos="fade-up" data-aos-delay="200">
                     <div class="feature-box">
+                        <div class="d-flex align-items-center mb-3">
+                            <img src="assets/img/testimonial_image2.avif" alt="Roberto Cruz" class="rounded-circle me-3" style="width: 60px; height: 60px; object-fit: cover;">
+                            <div>
+                                <strong>Roberto Cruz</strong>
+                                <p class="text-muted small mb-0">Lucero, Pangasinan</p>
+                            </div>
+                        </div>
                         <div class="mb-3">
                             <i class="fas fa-star text-warning"></i>
                             <i class="fas fa-star text-warning"></i>
@@ -224,14 +234,17 @@
                             <i class="fas fa-star text-warning"></i>
                         </div>
                         <p class="text-muted fst-italic">"The financing options made it easy to get started without upfront costs. We're now saving thousands every month and our carbon footprint is much lower."</p>
-                        <div class="mt-3">
-                            <strong>Roberto Cruz</strong>
-                            <p class="text-muted small mb-0">Lucero, Pangasinan</p>
-                        </div>
                     </div>
                 </div>
                 <div class="col-md-4" data-aos="fade-up" data-aos-delay="300">
                     <div class="feature-box">
+                        <div class="d-flex align-items-center mb-3">
+                            <img src="assets/img/testimonial_image3.jpg" alt="Jennifer Reyes" class="rounded-circle me-3" style="width: 60px; height: 60px; object-fit: cover;">
+                            <div>
+                                <strong>Jennifer Reyes</strong>
+                                <p class="text-muted small mb-0">BC Homes, Laguna</p>
+                            </div>
+                        </div>
                         <div class="mb-3">
                             <i class="fas fa-star text-warning"></i>
                             <i class="fas fa-star text-warning"></i>
@@ -240,10 +253,6 @@
                             <i class="fas fa-star text-warning"></i>
                         </div>
                         <p class="text-muted fst-italic">"Excellent customer service from consultation to installation. The 25-year warranty gives us peace of mind knowing we're covered for the long term."</p>
-                        <div class="mt-3">
-                            <strong>Jennifer Reyes</strong>
-                            <p class="text-muted small mb-0">BC Homes, Laguna</p>
-                        </div>
                     </div>
                 </div>
             </div>
