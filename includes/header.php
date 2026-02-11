@@ -412,6 +412,7 @@ nav a.active::after {
                     <li><a href="services.php" class="<?php echo isActive('services.php'); ?>">SERVICES</a></li>
                     <li><a href="product.php" class="<?php echo isActive('product.php'); ?>">PRODUCTS</a></li>
                     <li><a href="projects.php" class="<?php echo isActive('projects.php'); ?>">PROJECTS</a></li>
+                    <li><a href="faq.php" class="<?php echo isActive('faq.php'); ?>">FAQ</a></li>
                     <li><a href="contact.php" class="<?php echo isActive('contact.php'); ?>">CONTACT</a></li>
                 </ul>
             </nav>

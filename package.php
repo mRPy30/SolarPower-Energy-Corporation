@@ -803,604 +803,519 @@ $conn->close();
             showNoProductsMessage(visibleCount);
         }
         
-// ========================================
-// PACKAGE PAGE - CART & CHECKOUT SYSTEM
-// ========================================
-
-let cart = [];
-
-document.addEventListener('DOMContentLoaded', function() {
-    loadCartFromStorage();
-    updateCartBadge();
-    initializePackageFilters();
-    initializePackageSort();
-});
-
-// ========================================
-// STORAGE FUNCTIONS
-// ========================================
-function saveCartToStorage() {
-    try {
-        localStorage.setItem('solarCart', JSON.stringify(cart));
-    } catch (error) {
-        console.error('Error saving cart:', error);
-    }
-}
-
-function loadCartFromStorage() {
-    try {
-        const stored = localStorage.getItem('solarCart');
-        if (stored) {
-            cart = JSON.parse(stored);
-        }
-    } catch (error) {
-        console.error('Error loading cart:', error);
-        cart = [];
-    }
-}
-
-function updateCartBadge() {
-    const badge = document.querySelector('.cart-badge');
-    if (!badge) return;
-    
-    const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
-    
-    if (totalItems > 0) {
-        badge.textContent = totalItems;
-        badge.style.display = 'flex';
-    } else {
-        badge.style.display = 'none';
-    }
-}
-
-function clearCart() {
-    cart = [];
-    saveCartToStorage();
-    updateCartBadge();
-}
-
-// ========================================
-// PACKAGE FILTERS
-// ========================================
-function initializePackageFilters() {
-    const filterButtons = document.querySelectorAll('#packageFilters .filter-btn');
-    
-    filterButtons.forEach(btn => {
-        btn.addEventListener('click', function() {
-            filterButtons.forEach(b => b.classList.remove('active'));
-            this.classList.add('active');
+        function showNoProductsMessage(visibleCount) {
+            const grid = document.getElementById('packagesGrid');
+            let noProductsMsg = document.querySelector('.no-products-filter');
             
-            const type = this.getAttribute('data-type');
-            filterPackages(type);
-        });
-    });
-}
-
-function filterPackages(type) {
-    const cards = document.querySelectorAll('.product-card');
-    let visibleCount = 0;
-    
-    cards.forEach(card => {
-        const cardType = card.getAttribute('data-type');
-        
-        if (type === 'all' || cardType === type) {
-            card.style.display = 'block';
-            visibleCount++;
-        } else {
-            card.style.display = 'none';
+            if (visibleCount === 0) {
+                if (!noProductsMsg) {
+                    noProductsMsg = document.createElement('div');
+                    noProductsMsg.className = 'no-products no-products-filter';
+                    noProductsMsg.innerHTML = `
+                        <i class="fas fa-box-open"></i>
+                        <p>No packages found in this category</p>
+                    `;
+                    grid.appendChild(noProductsMsg);
+                }
+                noProductsMsg.style.display = 'block';
+            } else {
+                if (noProductsMsg) {
+                    noProductsMsg.style.display = 'none';
+                }
+            }
         }
-    });
-    
-    showNoProductsMessage(visibleCount);
-}
-
-function showNoProductsMessage(visibleCount) {
-    const grid = document.getElementById('packagesGrid');
-    let noProductsMsg = document.querySelector('.no-products-filter');
-    
-    if (visibleCount === 0) {
-        if (!noProductsMsg) {
-            noProductsMsg = document.createElement('div');
-            noProductsMsg.className = 'no-products no-products-filter';
-            noProductsMsg.innerHTML = `
-                <i class="fas fa-box-open"></i>
-                <p>No packages found in this category</p>
+        
+        // ========================================
+        // PACKAGE SORT
+        // ========================================
+        function initializePackageSort() {
+            const sortSelect = document.getElementById('sortSelect');
+            
+            if (sortSelect) {
+                sortSelect.addEventListener('change', function() {
+                    sortPackages(this.value);
+                });
+            }
+        }
+        
+        function sortPackages(sortType) {
+            const grid = document.getElementById('packagesGrid');
+            const cards = Array.from(document.querySelectorAll('.product-card'));
+            
+            cards.sort((a, b) => {
+                switch(sortType) {
+                    case 'price-low':
+                        return parseFloat(a.getAttribute('data-price')) - parseFloat(b.getAttribute('data-price'));
+                    
+                    case 'price-high':
+                        return parseFloat(b.getAttribute('data-price')) - parseFloat(a.getAttribute('data-price'));
+                    
+                    case 'kw-low':
+                        return parseFloat(a.getAttribute('data-kw') || 0) - parseFloat(b.getAttribute('data-kw') || 0);
+                    
+                    case 'kw-high':
+                        return parseFloat(b.getAttribute('data-kw') || 0) - parseFloat(a.getAttribute('data-kw') || 0);
+                    
+                    default:
+                        return 0;
+                }
+            });
+            
+            cards.forEach(card => {
+                grid.appendChild(card);
+            });
+        }
+        
+        function clearCart() {
+            cart = [];
+            saveCartToStorage();
+            updateCartBadge();
+        }
+        
+        // ========================================
+        // CART MODAL
+        // ========================================
+        function createCartModal() {
+            let modal = document.getElementById('cartModal');
+            if (modal) return modal;
+            
+            const modalHTML = `
+                <div class="modal fade" id="cartModal" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">
+                                    <i class="fas fa-shopping-cart me-2"></i>
+                                    Shopping Cart
+                                </h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body" id="cartModalBody"></div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                    Continue Shopping
+                                </button>
+                                <button type="button" class="btn btn-primary" onclick="proceedToCheckout()" id="proceedCheckoutBtn">
+                                    <i class="fas fa-arrow-right me-2"></i>
+                                    Proceed to Checkout
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             `;
-            grid.appendChild(noProductsMsg);
+            
+            document.body.insertAdjacentHTML('beforeend', modalHTML);
+            return document.getElementById('cartModal');
         }
-        noProductsMsg.style.display = 'block';
-    } else {
-        if (noProductsMsg) {
-            noProductsMsg.style.display = 'none';
+        
+        function showCartPopup() {
+            const modal = createCartModal();
+            renderCartPopup();
+            const bsModal = new bootstrap.Modal(modal);
+            bsModal.show();
         }
-    }
-}
-
-// ========================================
-// PACKAGE SORT
-// ========================================
-function initializePackageSort() {
-    const sortSelect = document.getElementById('sortSelect');
-    
-    if (sortSelect) {
-        sortSelect.addEventListener('change', function() {
-            sortPackages(this.value);
-        });
-    }
-}
-
-function sortPackages(sortType) {
-    const grid = document.getElementById('packagesGrid');
-    const cards = Array.from(document.querySelectorAll('.product-card'));
-    
-    cards.sort((a, b) => {
-        switch(sortType) {
-            case 'price-low':
-                return parseFloat(a.getAttribute('data-price')) - parseFloat(b.getAttribute('data-price'));
+        
+        function renderCartPopup() {
+            const modalBody = document.getElementById('cartModalBody');
+            const proceedBtn = document.getElementById('proceedCheckoutBtn');
             
-            case 'price-high':
-                return parseFloat(b.getAttribute('data-price')) - parseFloat(a.getAttribute('data-price'));
+            if (!modalBody) return;
             
-            case 'kw-low':
-                return parseFloat(a.getAttribute('data-kw') || 0) - parseFloat(b.getAttribute('data-kw') || 0);
-            
-            case 'kw-high':
-                return parseFloat(b.getAttribute('data-kw') || 0) - parseFloat(a.getAttribute('data-kw') || 0);
-            
-            default:
-                return 0;
-        }
-    });
-    
-    cards.forEach(card => {
-        grid.appendChild(card);
-    });
-}
-
-// ========================================
-// CART MODAL
-// ========================================
-function createCartModal() {
-    let modal = document.getElementById('cartModal');
-    if (modal) return modal;
-    
-    const modalHTML = `
-        <div class="modal fade" id="cartModal" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">
-                            <i class="fas fa-shopping-cart me-2"></i>
-                            Shopping Cart
-                        </h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body" id="cartModalBody"></div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                            Continue Shopping
-                        </button>
-                        <button type="button" class="btn btn-primary" onclick="proceedToCheckout()" id="proceedCheckoutBtn">
-                            <i class="fas fa-arrow-right me-2"></i>
-                            Proceed to Checkout
+            if (cart.length === 0) {
+                modalBody.innerHTML = `
+                    <div class="text-center py-5">
+                        <i class="fas fa-shopping-cart text-muted" style="font-size: 64px;"></i>
+                        <p class="mt-3 text-muted">Your cart is empty</p>
+                        <button class="btn btn-primary" data-bs-dismiss="modal">
+                            Start Shopping
                         </button>
                     </div>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    document.body.insertAdjacentHTML('beforeend', modalHTML);
-    return document.getElementById('cartModal');
-}
-
-function showCartPopup() {
-    const modal = createCartModal();
-    renderCartPopup();
-    const bsModal = new bootstrap.Modal(modal);
-    bsModal.show();
-}
-
-function renderCartPopup() {
-    const modalBody = document.getElementById('cartModalBody');
-    const proceedBtn = document.getElementById('proceedCheckoutBtn');
-    
-    if (!modalBody) return;
-    
-    if (cart.length === 0) {
-        modalBody.innerHTML = `
-            <div class="text-center py-5">
-                <i class="fas fa-shopping-cart text-muted" style="font-size: 64px;"></i>
-                <p class="mt-3 text-muted">Your cart is empty</p>
-                <button class="btn btn-primary" data-bs-dismiss="modal">
-                    Start Shopping
-                </button>
-            </div>
-        `;
-        if (proceedBtn) proceedBtn.disabled = true;
-        return;
-    }
-    
-    if (proceedBtn) proceedBtn.disabled = false;
-    
-    let subtotal = 0;
-    let html = '<div class="cart-items-list">';
-    
-    cart.forEach(item => {
-        const itemTotal = item.price * item.quantity;
-        subtotal += itemTotal;
-        const minusDisabled = item.quantity === 1 ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : '';
-        
-        html += `
-            <div class="cart-item-row d-flex align-items-center gap-3 mb-3 pb-3 border-bottom">
-                <img src="${item.image_path}" 
-                     style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px;"
-                     onerror="this.src='assets/img/placeholder.png'">
-                <div class="flex-grow-1">
-                    <h6 class="mb-1 fw-bold">${item.displayName}</h6>
-                    <p class="text-muted mb-1" style="font-size: 0.9rem;">
-                        ₱${item.price.toLocaleString()} × ${item.quantity}
-                    </p>
-                    <p class="mb-0 fw-bold text-primary">
-                        ₱${itemTotal.toLocaleString(undefined, {minimumFractionDigits: 2})}
-                    </p>
-                </div>
-                <div class="d-flex flex-column gap-2">
-                    <div class="quantity-controls d-flex align-items-center gap-2">
-                        <button class="btn btn-sm btn-outline-secondary" 
-                                onclick="updateCartQuantity(${item.id}, -1)" 
-                                ${minusDisabled}>
-                            <i class="fas fa-minus"></i>
-                        </button>
-                        <span class="fw-bold px-2">${item.quantity}</span>
-                        <button class="btn btn-sm btn-outline-secondary" 
-                                onclick="updateCartQuantity(${item.id}, 1)">
-                            <i class="fas fa-plus"></i>
-                        </button>
-                    </div>
-                    <button class="btn btn-sm btn-danger" 
-                            onclick="removeFromCartPopup(${item.id})">
-                        <i class="fas fa-trash-alt"></i>
-                    </button>
-                </div>
-            </div>
-        `;
-    });
-    
-    html += '</div>';
-    html += `
-        <div class="cart-summary bg-light p-3 rounded mt-3">
-            <div class="d-flex justify-content-between mb-2">
-                <span>Subtotal:</span>
-                <span class="fw-bold">₱${subtotal.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
-            </div>
-            <div class="d-flex justify-content-between mb-2">
-                <span>Installation Fee:</span>
-                <span class="text-success fw-bold">FREE</span>
-            </div>
-            <hr>
-            <div class="d-flex justify-content-between" style="font-size: 1.2rem;">
-                <span class="fw-bold">Total:</span>
-                <span class="fw-bold text-primary">₱${subtotal.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
-            </div>
-        </div>
-    `;
-    
-    modalBody.innerHTML = html;
-    window.currentTotalAmount = subtotal;
-}
-
-// ========================================
-// CART FUNCTIONS
-// ========================================
-function addToCartFromButton(btn) {
-    const product = JSON.parse(btn.getAttribute('data-product'));
-    addToCartLogic(product);
-    showCartPopup();
-    showNotificationModal('success', 'Package added to cart!');
-}
-
-function addToCartLogic(product) {
-    const existingItem = cart.find(item => item.id === product.id);
-    
-    if (existingItem) {
-        existingItem.quantity += 1;
-    } else {
-        cart.push({
-            id: product.id,
-            displayName: product.displayName,
-            price: parseFloat(product.price),
-            image_path: product.image_path,
-            quantity: 1
-        });
-    }
-    
-    saveCartToStorage();
-    updateCartBadge();
-    renderCartPopup();
-}
-
-function updateCartQuantity(productId, change) {
-    const item = cart.find(i => i.id === productId);
-    if (item) {
-        item.quantity += change;
-        
-        if (item.quantity < 1) {
-            item.quantity = 1;
-            return;
-        }
-        
-        saveCartToStorage();
-        updateCartBadge();
-        renderCartPopup();
-    }
-}
-
-function removeFromCartPopup(productId) {
-    if (confirm('Remove this item from cart?')) {
-        cart = cart.filter(i => i.id !== productId);
-        saveCartToStorage();
-        updateCartBadge();
-        renderCartPopup();
-        showNotificationModal('success', 'Item removed from cart');
-    }
-}
-
-function buyNowFromButton(btn) {
-    const product = JSON.parse(btn.getAttribute('data-product'));
-    cart = [];
-    addToCartLogic(product);
-    proceedToCheckout();
-}
-
-// ========================================
-// CHECKOUT FUNCTIONS
-// ========================================
-function proceedToCheckout() {
-    if (cart.length === 0) {
-        showNotificationModal('error', 'Your cart is empty');
-        return;
-    }
-    
-    const cartModal = bootstrap.Modal.getInstance(document.getElementById('cartModal'));
-    if (cartModal) {
-        cartModal.hide();
-    }
-    
-    showCheckout();
-    renderCheckoutSummary();
-}
-
-function showCheckout() {
-    document.querySelector('.package-hero').style.display = 'none';
-    document.querySelector('.packages-section').style.display = 'none';
-    document.querySelector('footer').style.display = 'none';
-    
-    document.getElementById('checkoutSection').style.display = 'block';
-    window.scrollTo(0, 0);
-    goToStep(1);
-}
-
-function backToPackages() {
-    document.getElementById('checkoutSection').style.display = 'none';
-    
-    document.querySelector('.package-hero').style.display = 'flex';
-    document.querySelector('.packages-section').style.display = 'block';
-    document.querySelector('footer').style.display = 'block';
-    
-    window.scrollTo(0, document.getElementById('packagesSection').offsetTop - 100);
-}
-
-function renderCheckoutSummary() {
-    const summaryDiv = document.getElementById('checkoutOrderSummary');
-    const subtotalDisplay = document.getElementById('checkoutSubtotal');
-    const totalDisplay = document.getElementById('checkoutTotal');
-    
-    if (cart.length === 0) {
-        summaryDiv.innerHTML = '<p class="text-center text-muted">Your cart is empty.</p>';
-        if (subtotalDisplay) subtotalDisplay.innerText = "₱0.00";
-        if (totalDisplay) totalDisplay.innerText = "₱0.00";
-        return;
-    }
-
-    let grandTotal = 0;
-    let html = '';
-
-    cart.forEach(item => {
-        const itemTotal = item.price * item.quantity;
-        grandTotal += itemTotal;
-        const minusDisabled = item.quantity === 1 ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : '';
-        
-        html += `
-            <div class="d-flex align-items-center gap-3 mb-3 border-bottom pb-3">
-                <img src="${item.image_path}" 
-                     style="width:60px; height:60px; object-fit:cover; border-radius:8px;"
-                     onerror="this.src='assets/img/placeholder.png'">
-                <div class="flex-grow-1">
-                    <p class="mb-1 fw-bold" style="font-size: 0.95rem;">${item.displayName}</p>
-                    <small class="text-muted">₱${item.price.toLocaleString()} x ${item.quantity}</small>
-                    <p class="mb-0 fw-bold text-primary" style="font-size: 0.9rem;">
-                        ₱${itemTotal.toLocaleString(undefined, {minimumFractionDigits: 2})}
-                    </p>
-                </div>
-                <div class="d-flex flex-column align-items-end gap-2">
-                    <div class="quantity-controls d-flex align-items-center gap-2">
-                        <button class="btn btn-sm btn-outline-secondary" 
-                                onclick="updateCheckoutQuantity(${item.id}, -1)" 
-                                ${minusDisabled}>
-                            <i class="fas fa-minus"></i>
-                        </button>
-                        <span class="fw-bold px-2">${item.quantity}</span>
-                        <button class="btn btn-sm btn-outline-secondary" 
-                                onclick="updateCheckoutQuantity(${item.id}, 1)">
-                            <i class="fas fa-plus"></i>
-                        </button>
-                    </div>
-                    <button class="btn btn-sm btn-danger" 
-                            onclick="removeFromCheckout(${item.id})">
-                        <i class="fas fa-trash-alt"></i>
-                    </button>
-                </div>
-            </div>
-        `;
-    });
-
-    summaryDiv.innerHTML = html;
-    
-    const formattedTotal = "₱" + grandTotal.toLocaleString(undefined, {minimumFractionDigits: 2});
-    if (subtotalDisplay) subtotalDisplay.innerText = formattedTotal;
-    if (totalDisplay) totalDisplay.innerText = formattedTotal;
-    
-    window.currentTotalAmount = grandTotal;
-}
-
-function updateCheckoutQuantity(productId, change) {
-    updateCartQuantity(productId, change);
-    renderCheckoutSummary();
-}
-
-function removeFromCheckout(productId) {
-    if (confirm('Remove this item?')) {
-        cart = cart.filter(i => i.id !== productId);
-        saveCartToStorage();
-        updateCartBadge();
-        renderCheckoutSummary();
-        
-        if (cart.length === 0) {
-            showNotificationModal('error', 'Cart is empty. Returning to packages.');
-            setTimeout(() => backToPackages(), 1500);
-        }
-    }
-}
-
-function goToStep(step) {
-    document.getElementById('checkoutStep1').style.display = 'none';
-    document.getElementById('checkoutStep2').style.display = 'none';
-    document.getElementById('checkoutStep3').style.display = 'none';
-
-    document.getElementById('ind-step1').classList.remove('active', 'completed');
-    document.getElementById('ind-step2').classList.remove('active', 'completed');
-    document.getElementById('ind-step3').classList.remove('active', 'completed');
-
-    document.getElementById(`checkoutStep${step}`).style.display = 'block';
-    document.getElementById(`ind-step${step}`).classList.add('active');
-    
-    for (let i = 1; i < step; i++) {
-        document.getElementById(`ind-step${i}`).classList.add('completed');
-    }
-    
-    document.getElementById('checkoutSection').scrollIntoView({ behavior: 'smooth' });
-}
-
-function validateStep1() {
-    const name = document.getElementById('cust_name').value.trim();
-    const email = document.getElementById('cust_email').value.trim();
-    const phone = document.getElementById('cust_phone').value.trim();
-    const address = document.getElementById('cust_address').value.trim();
-    
-    if (!name || !email || !phone || !address) {
-        showNotificationModal('error', 'Please fill in all required fields');
-        return;
-    }
-    
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-        showNotificationModal('error', 'Please enter a valid email address');
-        return;
-    }
-    
-    goToStep(2);
-    renderCheckoutSummary();
-    updatePaymentDisplay();
-}
-
-function updatePaymentDisplay() {
-    const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked')?.value || 'full';
-    const totalAmount = window.currentTotalAmount || 0;
-    
-    const amountToPayDisplay = document.getElementById('amountToPay');
-    const paymentNote = document.getElementById('paymentNote');
-    const confirmBtn = document.getElementById('confirmPaymentBtn');
-    
-    if (paymentMethod === 'full') {
-        amountToPayDisplay.textContent = '₱' + totalAmount.toLocaleString(undefined, {minimumFractionDigits: 2});
-        paymentNote.innerHTML = '<i class="fas fa-info-circle"></i> Paying <strong>Full Amount</strong> via Maya.';
-        confirmBtn.textContent = 'Pay with Maya';
-        confirmBtn.onclick = () => payWithMaya('full');
-    } else if (paymentMethod === 'downpayment') {
-        const downpayment = totalAmount * 0.5;
-        amountToPayDisplay.textContent = '₱' + downpayment.toLocaleString(undefined, {minimumFractionDigits: 2});
-        paymentNote.innerHTML = '<i class="fas fa-info-circle"></i> Paying <strong>50% Down Payment</strong> via Maya.';
-        confirmBtn.textContent = 'Pay 50% Down';
-        confirmBtn.onclick = () => payWithMaya('downpayment');
-    } else {
-        amountToPayDisplay.textContent = '₱' + totalAmount.toLocaleString(undefined, {minimumFractionDigits: 2});
-        paymentNote.innerHTML = '<i class="fas fa-exclamation-triangle"></i> <strong>Cash on Delivery</strong>';
-        confirmBtn.textContent = 'Confirm COD Order';
-        confirmBtn.onclick = () => confirmCODOrder();
-    }
-}
-
-function payWithMaya(paymentType) {
-    showNotificationModal('success', 'Redirecting to Maya payment...');
-    setTimeout(() => {
-        displayOrderConfirmation('ORD-' + Date.now());
-    }, 2000);
-}
-
-function confirmCODOrder() {
-    displayOrderConfirmation('COD-' + Date.now());
-}
-
-function displayOrderConfirmation(orderId) {
-    document.getElementById('orderRef').textContent = orderId;
-    goToStep(3);
-    clearCart();
-}
-
-function showNotificationModal(type, message) {
-    let modal = document.getElementById('notificationModal');
-    if (!modal) {
-        const modalHTML = `
-            <div class="modal fade" id="notificationModal" tabindex="-1">
-                <div class="modal-dialog modal-dialog-centered">
-                    <div class="modal-content">
-                        <div class="modal-header border-0">
-                            <h5 class="modal-title" id="notifTitle"></h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                `;
+                if (proceedBtn) proceedBtn.disabled = true;
+                return;
+            }
+            
+            if (proceedBtn) proceedBtn.disabled = false;
+            
+            let subtotal = 0;
+            let html = '<div class="cart-items-list">';
+            
+            cart.forEach(item => {
+                const itemTotal = item.price * item.quantity;
+                subtotal += itemTotal;
+                const minusDisabled = item.quantity === 1 ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : '';
+                
+                html += `
+                    <div class="cart-item-row d-flex align-items-center gap-3 mb-3 pb-3 border-bottom">
+                        <img src="${item.image_path}" 
+                             style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px;"
+                             onerror="this.src='assets/img/placeholder.png'">
+                        <div class="flex-grow-1">
+                            <h6 class="mb-1 fw-bold">${item.displayName}</h6>
+                            <p class="text-muted mb-1" style="font-size: 0.9rem;">
+                                ₱${item.price.toLocaleString()} × ${item.quantity}
+                            </p>
+                            <p class="mb-0 fw-bold text-primary">
+                                ₱${itemTotal.toLocaleString(undefined, {minimumFractionDigits: 2})}
+                            </p>
                         </div>
-                        <div class="modal-body text-center">
-                            <i id="notifIcon" style="font-size: 48px;"></i>
-                            <p id="notifMessage" class="mt-3"></p>
-                        </div>
-                        <div class="modal-footer border-0 justify-content-center">
-                            <button type="button" class="btn btn-primary" data-bs-dismiss="modal">OK</button>
+                        <div class="d-flex flex-column gap-2">
+                            <div class="quantity-controls d-flex align-items-center gap-2">
+                                <button class="btn btn-sm btn-outline-secondary" 
+                                        onclick="updateCartQuantity(${item.id}, -1)" 
+                                        ${minusDisabled}>
+                                    <i class="fas fa-minus"></i>
+                                </button>
+                                <span class="fw-bold px-2">${item.quantity}</span>
+                                <button class="btn btn-sm btn-outline-secondary" 
+                                        onclick="updateCartQuantity(${item.id}, 1)">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                            </div>
+                            <button class="btn btn-sm btn-danger" 
+                                    onclick="removeFromCartPopup(${item.id})">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
                         </div>
                     </div>
+                `;
+            });
+            
+            html += '</div>';
+            html += `
+                <div class="cart-summary bg-light p-3 rounded mt-3">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Subtotal:</span>
+                        <span class="fw-bold">₱${subtotal.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Installation Fee:</span>
+                        <span class="text-success fw-bold">FREE</span>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between" style="font-size: 1.2rem;">
+                        <span class="fw-bold">Total:</span>
+                        <span class="fw-bold text-primary">₱${subtotal.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
+                    </div>
                 </div>
-            </div>
-        `;
-        document.body.insertAdjacentHTML('beforeend', modalHTML);
-        modal = document.getElementById('notificationModal');
-    }
-    
-    const icon = document.getElementById('notifIcon');
-    const title = document.getElementById('notifTitle');
-    const msg = document.getElementById('notifMessage');
-    
-    if (type === 'success') {
-        icon.className = 'fas fa-check-circle text-success';
-        title.innerHTML = '<i class="fas fa-check-circle text-success me-2"></i>Success';
-    } else {
-        icon.className = 'fas fa-times-circle text-danger';
-        title.innerHTML = '<i class="fas fa-exclamation-circle text-danger me-2"></i>Error';
-    }
-    
-    msg.textContent = message;
-    
-    new bootstrap.Modal(modal).show();
-}
-
+            `;
+            
+            modalBody.innerHTML = html;
+            window.currentTotalAmount = subtotal;
+        }
+        
+        // ========================================
+        // CART FUNCTIONS
+        // ========================================
+        function addToCartFromButton(btn) {
+            const product = JSON.parse(btn.getAttribute('data-product'));
+            addToCartLogic(product);
+            showCartPopup();
+            showNotificationModal('success', 'Package added to cart!');
+        }
+        
+        function addToCartLogic(product) {
+            const existingItem = cart.find(item => item.id === product.id);
+            
+            if (existingItem) {
+                existingItem.quantity += 1;
+            } else {
+                cart.push({
+                    id: product.id,
+                    displayName: product.displayName,
+                    price: parseFloat(product.price),
+                    image_path: product.image_path,
+                    quantity: 1
+                });
+            }
+            
+            saveCartToStorage();
+            updateCartBadge();
+            renderCartPopup();
+        }
+        
+        function updateCartQuantity(productId, change) {
+            const item = cart.find(i => i.id === productId);
+            if (item) {
+                item.quantity += change;
+                
+                if (item.quantity < 1) {
+                    item.quantity = 1;
+                    return;
+                }
+                
+                saveCartToStorage();
+                updateCartBadge();
+                renderCartPopup();
+            }
+        }
+        
+        function removeFromCartPopup(productId) {
+            if (confirm('Remove this item from cart?')) {
+                cart = cart.filter(i => i.id !== productId);
+                saveCartToStorage();
+                updateCartBadge();
+                renderCartPopup();
+                showNotificationModal('success', 'Item removed from cart');
+            }
+        }
+        
+        function buyNowFromButton(btn) {
+            const product = JSON.parse(btn.getAttribute('data-product'));
+            cart = [];
+            addToCartLogic(product);
+            proceedToCheckout();
+        }
+        
+        // ========================================
+        // CHECKOUT FUNCTIONS
+        // ========================================
+        function proceedToCheckout() {
+            if (cart.length === 0) {
+                showNotificationModal('error', 'Your cart is empty');
+                return;
+            }
+            
+            const cartModal = bootstrap.Modal.getInstance(document.getElementById('cartModal'));
+            if (cartModal) {
+                cartModal.hide();
+            }
+            
+            showCheckout();
+            renderCheckoutSummary();
+        }
+        
+        function showCheckout() {
+            document.querySelector('.package-hero').style.display = 'none';
+            document.querySelector('.packages-section').style.display = 'none';
+            document.querySelector('footer').style.display = 'none';
+            
+            document.getElementById('checkoutSection').style.display = 'block';
+            window.scrollTo(0, 0);
+            goToStep(1);
+        }
+        
+        function backToPackages() {
+            document.getElementById('checkoutSection').style.display = 'none';
+            
+            document.querySelector('.package-hero').style.display = 'flex';
+            document.querySelector('.packages-section').style.display = 'block';
+            document.querySelector('footer').style.display = 'block';
+            
+            window.scrollTo(0, document.getElementById('packagesSection').offsetTop - 100);
+        }
+        
+        function renderCheckoutSummary() {
+            const summaryDiv = document.getElementById('checkoutOrderSummary');
+            const subtotalDisplay = document.getElementById('checkoutSubtotal');
+            const totalDisplay = document.getElementById('checkoutTotal');
+            
+            if (cart.length === 0) {
+                summaryDiv.innerHTML = '<p class="text-center text-muted">Your cart is empty.</p>';
+                if (subtotalDisplay) subtotalDisplay.innerText = "₱0.00";
+                if (totalDisplay) totalDisplay.innerText = "₱0.00";
+                return;
+            }
+        
+            let grandTotal = 0;
+            let html = '';
+        
+            cart.forEach(item => {
+                const itemTotal = item.price * item.quantity;
+                grandTotal += itemTotal;
+                const minusDisabled = item.quantity === 1 ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : '';
+                
+                html += `
+                    <div class="d-flex align-items-center gap-3 mb-3 border-bottom pb-3">
+                        <img src="${item.image_path}" 
+                             style="width:60px; height:60px; object-fit:cover; border-radius:8px;"
+                             onerror="this.src='assets/img/placeholder.png'">
+                        <div class="flex-grow-1">
+                            <p class="mb-1 fw-bold" style="font-size: 0.95rem;">${item.displayName}</p>
+                            <small class="text-muted">₱${item.price.toLocaleString()} x ${item.quantity}</small>
+                            <p class="mb-0 fw-bold text-primary" style="font-size: 0.9rem;">
+                                ₱${itemTotal.toLocaleString(undefined, {minimumFractionDigits: 2})}
+                            </p>
+                        </div>
+                        <div class="d-flex flex-column align-items-end gap-2">
+                            <div class="quantity-controls d-flex align-items-center gap-2">
+                                <button class="btn btn-sm btn-outline-secondary" 
+                                        onclick="updateCheckoutQuantity(${item.id}, -1)" 
+                                        ${minusDisabled}>
+                                    <i class="fas fa-minus"></i>
+                                </button>
+                                <span class="fw-bold px-2">${item.quantity}</span>
+                                <button class="btn btn-sm btn-outline-secondary" 
+                                        onclick="updateCheckoutQuantity(${item.id}, 1)">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                            </div>
+                            <button class="btn btn-sm btn-danger" 
+                                    onclick="removeFromCheckout(${item.id})">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+        
+            summaryDiv.innerHTML = html;
+            
+            const formattedTotal = "₱" + grandTotal.toLocaleString(undefined, {minimumFractionDigits: 2});
+            if (subtotalDisplay) subtotalDisplay.innerText = formattedTotal;
+            if (totalDisplay) totalDisplay.innerText = formattedTotal;
+            
+            window.currentTotalAmount = grandTotal;
+        }
+        
+        function updateCheckoutQuantity(productId, change) {
+            updateCartQuantity(productId, change);
+            renderCheckoutSummary();
+        }
+        
+        function removeFromCheckout(productId) {
+            if (confirm('Remove this item?')) {
+                cart = cart.filter(i => i.id !== productId);
+                saveCartToStorage();
+                updateCartBadge();
+                renderCheckoutSummary();
+                
+                if (cart.length === 0) {
+                    showNotificationModal('error', 'Cart is empty. Returning to packages.');
+                    setTimeout(() => backToPackages(), 1500);
+                }
+            }
+        }
+        
+        function goToStep(step) {
+            document.getElementById('checkoutStep1').style.display = 'none';
+            document.getElementById('checkoutStep2').style.display = 'none';
+            document.getElementById('checkoutStep3').style.display = 'none';
+        
+            document.getElementById('ind-step1').classList.remove('active', 'completed');
+            document.getElementById('ind-step2').classList.remove('active', 'completed');
+            document.getElementById('ind-step3').classList.remove('active', 'completed');
+        
+            document.getElementById(`checkoutStep${step}`).style.display = 'block';
+            document.getElementById(`ind-step${step}`).classList.add('active');
+            
+            for (let i = 1; i < step; i++) {
+                document.getElementById(`ind-step${i}`).classList.add('completed');
+            }
+            
+            document.getElementById('checkoutSection').scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        function validateStep1() {
+            const name = document.getElementById('cust_name').value.trim();
+            const email = document.getElementById('cust_email').value.trim();
+            const phone = document.getElementById('cust_phone').value.trim();
+            const address = document.getElementById('cust_address').value.trim();
+            
+            if (!name || !email || !phone || !address) {
+                showNotificationModal('error', 'Please fill in all required fields');
+                return;
+            }
+            
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                showNotificationModal('error', 'Please enter a valid email address');
+                return;
+            }
+            
+            goToStep(2);
+            renderCheckoutSummary();
+            updatePaymentDisplay();
+        }
+        
+        function updatePaymentDisplay() {
+            const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked')?.value || 'full';
+            const totalAmount = window.currentTotalAmount || 0;
+            
+            const amountToPayDisplay = document.getElementById('amountToPay');
+            const paymentNote = document.getElementById('paymentNote');
+            const confirmBtn = document.getElementById('confirmPaymentBtn');
+            
+            if (paymentMethod === 'full') {
+                amountToPayDisplay.textContent = '₱' + totalAmount.toLocaleString(undefined, {minimumFractionDigits: 2});
+                paymentNote.innerHTML = '<i class="fas fa-info-circle"></i> Paying <strong>Full Amount</strong> via Maya.';
+                confirmBtn.textContent = 'Pay with Maya';
+                confirmBtn.onclick = () => payWithMaya('full');
+            } else if (paymentMethod === 'downpayment') {
+                const downpayment = totalAmount * 0.5;
+                amountToPayDisplay.textContent = '₱' + downpayment.toLocaleString(undefined, {minimumFractionDigits: 2});
+                paymentNote.innerHTML = '<i class="fas fa-info-circle"></i> Paying <strong>50% Down Payment</strong> via Maya.';
+                confirmBtn.textContent = 'Pay 50% Down';
+                confirmBtn.onclick = () => payWithMaya('downpayment');
+            } else {
+                amountToPayDisplay.textContent = '₱' + totalAmount.toLocaleString(undefined, {minimumFractionDigits: 2});
+                paymentNote.innerHTML = '<i class="fas fa-exclamation-triangle"></i> <strong>Cash on Delivery</strong>';
+                confirmBtn.textContent = 'Confirm COD Order';
+                confirmBtn.onclick = () => confirmCODOrder();
+            }
+        }
+        
+        function payWithMaya(paymentType) {
+            showNotificationModal('success', 'Redirecting to Maya payment...');
+            setTimeout(() => {
+                displayOrderConfirmation('ORD-' + Date.now());
+            }, 2000);
+        }
+        
+        function confirmCODOrder() {
+            displayOrderConfirmation('COD-' + Date.now());
+        }
+        
+        function displayOrderConfirmation(orderId) {
+            document.getElementById('orderRef').textContent = orderId;
+            goToStep(3);
+            clearCart();
+        }
+        
+        function showNotificationModal(type, message) {
+            let modal = document.getElementById('notificationModal');
+            if (!modal) {
+                const modalHTML = `
+                    <div class="modal fade" id="notificationModal" tabindex="-1">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content">
+                                <div class="modal-header border-0">
+                                    <h5 class="modal-title" id="notifTitle"></h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body text-center">
+                                    <i id="notifIcon" style="font-size: 48px;"></i>
+                                    <p id="notifMessage" class="mt-3"></p>
+                                </div>
+                                <div class="modal-footer border-0 justify-content-center">
+                                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">OK</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                document.body.insertAdjacentHTML('beforeend', modalHTML);
+                modal = document.getElementById('notificationModal');
+            }
+            
+            const icon = document.getElementById('notifIcon');
+            const title = document.getElementById('notifTitle');
+            const msg = document.getElementById('notifMessage');
+            
+            if (type === 'success') {
+                icon.className = 'fas fa-check-circle text-success';
+                title.innerHTML = '<i class="fas fa-check-circle text-success me-2"></i>Success';
+            } else {
+                icon.className = 'fas fa-times-circle text-danger';
+                title.innerHTML = '<i class="fas fa-exclamation-circle text-danger me-2"></i>Error';
+            }
+            
+            msg.textContent = message;
+            
+            new bootstrap.Modal(modal).show();
+        }
+        
 </script>
 
 </body>

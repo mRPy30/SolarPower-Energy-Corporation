@@ -1,11 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/png" href="assets/img/icon.png">
     <title>Our Projects | SolarPower Energy Corporation</title>
-    
+
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
@@ -13,41 +14,69 @@
 
     <style>
         :root {
-            --clr-primary: #ffc107; 
-            --clr-secondary: #0a5c3d; 
+            --clr-primary: #ffc107;
+            --clr-secondary: #0a5c3d;
             --clr-bg: #f4f7f6;
-            --shadow: 0 8px 25px rgba(0,0,0,0.1);
+            --shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
         }
 
         .hero-projects {
-            background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('assets/img/projects.png') no-repeat center/cover;
-            height: 50vh; display: flex; align-items: center; color: white; text-align: center;
+            background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url('assets/img/projects.png') no-repeat center/cover;
+            height: 50vh;
+            display: flex;
+            align-items: center;
+            color: white;
+            text-align: center;
         }
 
         .project-card {
-            border: none; border-radius: 15px; overflow: hidden; background: white;
-            box-shadow: var(--shadow); transition: 0.3s ease;
+            border: none;
+            border-radius: 15px;
+            overflow: hidden;
+            background: white;
+            box-shadow: var(--shadow);
+            transition: 0.3s ease;
         }
 
-        .project-card:hover { transform: translateY(-10px); }
+        .project-card:hover {
+            transform: translateY(-10px);
+        }
 
-        .project-img-box { height: 250px; overflow: hidden; position: relative; }
-        
+        .project-img-box {
+            height: 250px;
+            overflow: hidden;
+            position: relative;
+        }
+
         .location-tag {
-            position: absolute; bottom: 15px; left: 15px;
-            background: rgba(10, 92, 61, 0.9); color: white;
-            padding: 5px 15px; border-radius: 20px; font-size: 0.8rem;
+            position: absolute;
+            bottom: 15px;
+            left: 15px;
+            background: rgba(10, 92, 61, 0.9);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.8rem;
         }
 
         /* Feature Section (Based on User Requirements) */
         .feature-box {
-            padding: 40px; border-radius: 15px; background: white;
-            box-shadow: var(--shadow); height: 100%; border-top: 5px solid var(--clr-primary);
+            padding: 40px;
+            border-radius: 15px;
+            background: white;
+            box-shadow: var(--shadow);
+            height: 100%;
+            border-top: 5px solid var(--clr-primary);
         }
 
-        .feature-icon { font-size: 2.5rem; color: var(--clr-primary); margin-bottom: 20px; }
+        .feature-icon {
+            font-size: 2.5rem;
+            color: var(--clr-primary);
+            margin-bottom: 20px;
+        }
     </style>
 </head>
+
 <body>
 
     <?php include "includes/header.php" ?>
@@ -108,8 +137,19 @@
                             <span class="location-tag"><i class="fas fa-map-marker-alt me-2"></i>BF Homes, Paranaque</span>
                         </div>
                         <div class="p-4">
-                            <h4 class="fw-bold">12kW Hybrid System</h4>
-                            <p class="text-muted">Full residential installation providing 24/7 power backup and zero electricity bills.</p>
+                            <h4 class="fw-bold">BF Homes Parañaque</h4>
+                            <ul>
+                                <li><strong>System:</strong> 12kW Hybrid</li>
+                                <li><strong>Monthly bill before:</strong> 18,000</li>
+                                <li><strong>Monthly bill after:</strong> 1,500</li>
+                                <li><strong>Results:</strong> 92% savings</li>
+                            </ul>
+                            <div>
+                                <h4>Testimonial</h4>
+                                <ul>
+                                    <li style="margin-top: 0">Our electric bill dropped classicaly after installation</li>
+                                </ul>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -121,8 +161,88 @@
                             <span class="location-tag"><i class="fas fa-map-marker-alt me-2"></i>Lucero, Pangasinan</span>
                         </div>
                         <div class="p-4">
-                            <h4 class="fw-bold">20kW Commercial Rooftop</h4>
-                            <p class="text-muted">Engineered for business efficiency, reducing operational costs by up to 60%.</p>
+                             <h4 class="fw-bold">BC Homes Laguna</h4>
+                            <ul>
+                                <li><strong>System:</strong> 20kW Hybrid</li>
+                                <li><strong>Monthly bill before:</strong> 23,000</li>
+                                <li><strong>Monthly bill after:</strong> 4,500</li>
+                                <li><strong>Results:</strong> 62% savings</li>
+                            </ul>
+                            <div>
+                                <h4>Testimonial</h4>
+                                <ul>
+                                    <li style="margin-top: 0">Our electric bill dropped classicaly after installation</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+
+
+
+
+
+
+
+    </section>
+
+    <!-- Testimonials Section -->
+    <section class="py-5 bg-light">
+        <div class="container py-5">
+            <div class="text-center mb-5" data-aos="fade-up">
+                <h2 class="fw-bold">What Our Clients Say</h2>
+                <p class="text-muted">Real experiences from homeowners and businesses who made the switch.</p>
+            </div>
+            <div class="row g-4">
+                <div class="col-md-4" data-aos="fade-up" data-aos-delay="100">
+                    <div class="feature-box">
+                        <div class="mb-3">
+                            <i class="fas fa-star text-warning"></i>
+                            <i class="fas fa-star text-warning"></i>
+                            <i class="fas fa-star text-warning"></i>
+                            <i class="fas fa-star text-warning"></i>
+                            <i class="fas fa-star text-warning"></i>
+                        </div>
+                        <p class="text-muted fst-italic">"Our electric bill dropped dramatically after installation. The team was professional and the system has been running flawlessly for over a year now."</p>
+                        <div class="mt-3">
+                            <strong>Maria Santos</strong>
+                            <p class="text-muted small mb-0">BF Homes, Parañaque</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4" data-aos="fade-up" data-aos-delay="200">
+                    <div class="feature-box">
+                        <div class="mb-3">
+                            <i class="fas fa-star text-warning"></i>
+                            <i class="fas fa-star text-warning"></i>
+                            <i class="fas fa-star text-warning"></i>
+                            <i class="fas fa-star text-warning"></i>
+                            <i class="fas fa-star text-warning"></i>
+                        </div>
+                        <p class="text-muted fst-italic">"The financing options made it easy to get started without upfront costs. We're now saving thousands every month and our carbon footprint is much lower."</p>
+                        <div class="mt-3">
+                            <strong>Roberto Cruz</strong>
+                            <p class="text-muted small mb-0">Lucero, Pangasinan</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4" data-aos="fade-up" data-aos-delay="300">
+                    <div class="feature-box">
+                        <div class="mb-3">
+                            <i class="fas fa-star text-warning"></i>
+                            <i class="fas fa-star text-warning"></i>
+                            <i class="fas fa-star text-warning"></i>
+                            <i class="fas fa-star text-warning"></i>
+                            <i class="fas fa-star text-warning"></i>
+                        </div>
+                        <p class="text-muted fst-italic">"Excellent customer service from consultation to installation. The 25-year warranty gives us peace of mind knowing we're covered for the long term."</p>
+                        <div class="mt-3">
+                            <strong>Jennifer Reyes</strong>
+                            <p class="text-muted small mb-0">BC Homes, Laguna</p>
                         </div>
                     </div>
                 </div>
@@ -134,6 +254,12 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
     <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
-    <script>AOS.init({ duration: 1000, once: true });</script>
+    <script>
+        AOS.init({
+            duration: 1000,
+            once: true
+        });
+    </script>
 </body>
+
 </html>
