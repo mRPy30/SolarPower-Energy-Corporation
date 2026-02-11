@@ -120,6 +120,7 @@
         </div>
     </section>
 
+    <!--Recent Installation Section-->
     <section class="py-5">
         <div class="container">
             <div class="row mb-5 align-items-end">
@@ -129,7 +130,7 @@
                 </div>
             </div>
 
-            <div class="row g-4">
+            <div class="row g-4" id="projectsContainer">
                 <div class="col-lg-6" data-aos="fade-up">
                     <div class="project-card">
                         <div class="project-img-box">
@@ -140,14 +141,14 @@
                             <h4 class="fw-bold">BF Homes Parañaque</h4>
                             <ul>
                                 <li><strong>System:</strong> 12kW Hybrid</li>
-                                <li><strong>Monthly bill before:</strong> 18,000</li>
-                                <li><strong>Monthly bill after:</strong> 1,500</li>
+                                <li><strong>Monthly bill before:</strong> ₱18,000</li>
+                                <li><strong>Monthly bill after:</strong> ₱1,500</li>
                                 <li><strong>Results:</strong> 92% savings</li>
                             </ul>
                             <div>
                                 <h4>Testimonial</h4>
                                 <ul>
-                                    <li style="margin-top: 0">Our electric bill dropped classicaly after installation</li>
+                                    <li style="margin-top: 0">"Our electric bill dropped dramatically after installation"</li>
                                 </ul>
                             </div>
                         </div>
@@ -164,30 +165,124 @@
                              <h4 class="fw-bold">BC Homes Laguna</h4>
                             <ul>
                                 <li><strong>System:</strong> 20kW Hybrid</li>
-                                <li><strong>Monthly bill before:</strong> 23,000</li>
-                                <li><strong>Monthly bill after:</strong> 4,500</li>
-                                <li><strong>Results:</strong> 62% savings</li>
+                                <li><strong>Monthly bill before:</strong> ₱23,000</li>
+                                <li><strong>Monthly bill after:</strong> ₱4,500</li>
+                                <li><strong>Results:</strong> 80% savings</li>
                             </ul>
                             <div>
                                 <h4>Testimonial</h4>
                                 <ul>
-                                    <li style="margin-top: 0">Our electric bill dropped classicaly after installation</li>
+                                    <li style="margin-top: 0">"The financing options made it easy to get started"</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Hidden Projects -->
+                <div class="col-lg-6 more-projects" style="display: none;" data-aos="fade-up">
+                    <div class="project-card">
+                        <div class="project-img-box">
+                            <img src="assets/img/demo-solar1.webp" class="w-100 h-100 object-fit-cover" alt="Residential Project">
+                            <span class="location-tag"><i class="fas fa-map-marker-alt me-2"></i>Makati City</span>
+                        </div>
+                        <div class="p-4">
+                            <h4 class="fw-bold">Makati Residential Complex</h4>
+                            <ul>
+                                <li><strong>System:</strong> 15kW Grid-Tied</li>
+                                <li><strong>Monthly bill before:</strong> ₱25,000</li>
+                                <li><strong>Monthly bill after:</strong> ₱3,200</li>
+                                <li><strong>Results:</strong> 87% savings</li>
+                            </ul>
+                            <div>
+                                <h4>Testimonial</h4>
+                                <ul>
+                                    <li style="margin-top: 0">"Professional installation and excellent ROI"</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-6 more-projects" style="display: none;" data-aos="fade-up" data-aos-delay="200">
+                    <div class="project-card">
+                        <div class="project-img-box">
+                            <img src="assets/img/demo-solar2.jpg" class="w-100 h-100 object-fit-cover" alt="Commercial Project">
+                            <span class="location-tag"><i class="fas fa-map-marker-alt me-2"></i>Quezon City</span>
+                        </div>
+                        <div class="p-4">
+                             <h4 class="fw-bold">QC Commercial Building</h4>
+                            <ul>
+                                <li><strong>System:</strong> 30kW Hybrid</li>
+                                <li><strong>Monthly bill before:</strong> ₱45,000</li>
+                                <li><strong>Monthly bill after:</strong> ₱8,500</li>
+                                <li><strong>Results:</strong> 81% savings</li>
+                            </ul>
+                            <div>
+                                <h4>Testimonial</h4>
+                                <ul>
+                                    <li style="margin-top: 0">"Best investment for our business operations"</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-6 more-projects" style="display: none;" data-aos="fade-up">
+                    <div class="project-card">
+                        <div class="project-img-box">
+                            <img src="assets/img/demo-solar3.png" class="w-100 h-100 object-fit-cover" alt="Residential Project">
+                            <span class="location-tag"><i class="fas fa-map-marker-alt me-2"></i>Cavite</span>
+                        </div>
+                        <div class="p-4">
+                            <h4 class="fw-bold">Cavite Subdivision</h4>
+                            <ul>
+                                <li><strong>System:</strong> 10kW Grid-Tied</li>
+                                <li><strong>Monthly bill before:</strong> ₱15,000</li>
+                                <li><strong>Monthly bill after:</strong> ₱2,100</li>
+                                <li><strong>Results:</strong> 86% savings</li>
+                            </ul>
+                            <div>
+                                <h4>Testimonial</h4>
+                                <ul>
+                                    <li style="margin-top: 0">"Seamless installation and great support team"</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-6 more-projects" style="display: none;" data-aos="fade-up" data-aos-delay="200">
+                    <div class="project-card">
+                        <div class="project-img-box">
+                            <img src="assets/img/demo-solar4.jpg" class="w-100 h-100 object-fit-cover" alt="Commercial Project">
+                            <span class="location-tag"><i class="fas fa-map-marker-alt me-2"></i>Bulacan</span>
+                        </div>
+                        <div class="p-4">
+                             <h4 class="fw-bold">Bulacan Farm Resort</h4>
+                            <ul>
+                                <li><strong>System:</strong> 18kW Hybrid</li>
+                                <li><strong>Monthly bill before:</strong> ₱28,000</li>
+                                <li><strong>Monthly bill after:</strong> ₱4,200</li>
+                                <li><strong>Results:</strong> 85% savings</li>
+                            </ul>
+                            <div>
+                                <h4>Testimonial</h4>
+                                <ul>
+                                    <li style="margin-top: 0">"Eco-friendly solution with amazing cost savings"</li>
                                 </ul>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
+
+            <div class="text-center mt-5">
+                <button id="viewMoreBtn" class="btn btn-warning btn-lg px-5 py-3" onclick="toggleProjects()">
+                    <i class="fas fa-plus-circle me-2"></i>View More Projects
+                </button>
+            </div>
         </div>
-
-
-
-
-
-
-
-
-
     </section>
 
     <!-- Testimonials Section -->
@@ -268,6 +363,23 @@
             duration: 1000,
             once: true
         });
+
+        function toggleProjects() {
+            const moreProjects = document.querySelectorAll('.more-projects');
+            const viewMoreBtn = document.getElementById('viewMoreBtn');
+            
+            moreProjects.forEach(project => {
+                if (project.style.display === 'none') {
+                    project.style.display = 'block';
+                    viewMoreBtn.innerHTML = '<i class="fas fa-minus-circle me-2"></i>View Less';
+                } else {
+                    project.style.display = 'none';
+                    viewMoreBtn.innerHTML = '<i class="fas fa-plus-circle me-2"></i>View More Projects';
+                    // Scroll to Recent Installations section
+                    document.querySelector('.py-5').scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        }
     </script>
 </body>
 
