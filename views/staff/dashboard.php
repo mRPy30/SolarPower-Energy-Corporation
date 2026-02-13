@@ -699,6 +699,7 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
                 <span>Dashboard</span>
             </div>
 
+
             <div class="menu-label">CUSTOMER OPERATIONS</div>
             <div class="menu-item" onclick="showPage('inquiries', 'Inquiries')" data-tooltip="Inquiries">
                 <i class="fas fa-envelope-open-text"></i>
@@ -743,8 +744,6 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
                 <i class="fas fa-archive"></i>
                 <span>Archive</span>
             </div>
-
-            <div class="menu-label">ACCOUNT</div>
 
             <div class="menu-label">ACCOUNT</div>
             <!-- Add this in your sidebar menu, after the settings item -->
@@ -1982,8 +1981,9 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
                 </div>
             </div>
 
-            <!-- ARCHIVED -->
-            <div id="archived">
+            <!-- ARCHIVE -->
+            <div id="archive" class="page-content" style="display: none;">
+            
                 <!-- Product Details Section -->
                 <div style="background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08); padding: 30px; margin-top: 30px;">
                     <div style="display: flex; align-items: center; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 2px solid #e9ecef;">
@@ -5828,6 +5828,21 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
 `;
         document.head.appendChild(style);
     </script>
+<script>
+function showPage(pageId, pageTitle) {
+    // Hide all page content sections
+    document.querySelectorAll('.page-content').forEach(page => {
+        page.style.display = 'none';
+    });
+    // Show the selected page
+    document.getElementById(pageId).style.display = 'block';
+    // Optional: Update page title if you have a title element
+    const titleElement = document.getElementById('page-title');
+    if (titleElement) {
+        titleElement.textContent = pageTitle;
+    }
+}
+</script>
 </body>
 
 </html>
