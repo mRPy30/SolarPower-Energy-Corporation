@@ -177,10 +177,14 @@ $conn->close();
 <!-- ---------- CATALOG SECTION ---------- -->
  <section class="catalogs-section" id="catalogSection">
         <div class="container">
+             
             <div class="catalog-header">
                 <h2>Our Products</h2>
                 <p class="catalog-subtitle">Premium solar solutions for your energy needs</p>
             </div>
+
+            <!--promotional product-->
+            <?php include "includes/promotional.php" ?>
 
             <!-- Filter Bar -->
             <div class="filter-bar">
