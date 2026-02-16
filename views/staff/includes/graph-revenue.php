@@ -1,15 +1,4 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Monthly Sales 2016</title>
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body style="background-color: #f5f5f5; padding: 40px 0;">
-             
-                <!-- Demo Graph Section -->
+<!-- Demo Graph Section -->
                 <div class="card shadow-sm mt-4" style="border: none; border-radius: 8px;">
                     <div class="card-body" style="padding: 40px;">
                         <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px; border-radius: 8px; text-align: center; margin-bottom: 20px;">
@@ -17,7 +6,7 @@
                         </div>
                         
                         <!-- Chart Title -->
-                        <h2 style="text-align: center; color: #9b9b9b; font-weight: 300; margin-bottom: 40px; font-size: 2rem;">Monthly Trends 2016</h2>
+                        <h2 style="text-align: center; color: #9b9b9b; font-weight: 300; margin-bottom: 40px; font-size: 2rem;">Monthly Trends 2026</h2>
                         
                         <!-- Chart Container -->
                         <div style="position: relative; height: 400px; border-left: 2px solid #e0e0e0; border-bottom: 2px solid #e0e0e0; padding: 20px 20px 40px 60px;">
@@ -188,11 +177,3 @@
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
