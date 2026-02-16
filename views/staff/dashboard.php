@@ -1822,7 +1822,7 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
                             <button class="btn-primary" style="background-color: #217346;" onclick="exportQuotationsExcel()">
                                 <i class="fas fa-file-excel"></i> Export to Excel
                             </button>
-                            <button class="btn-primary" onclick="openQuotationModal()">
+                            <button style="background-color:#3b82f6;" class="btn-primary" onclick="openQuotationModal()">
                                 <i class="fas fa-plus"></i> New Quotation
                             </button>
                         </div>
