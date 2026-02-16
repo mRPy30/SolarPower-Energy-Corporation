@@ -919,9 +919,14 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
                         <h3><i class="fas fa-map-marker-alt"></i> Sales by Location (Live)</h3>
                         <div id="freeMap" style="width: 100%; height: 450px; border-radius: 12px; margin-top: 15px; border: 1px solid #ddd;"></div>
                     </div>
+                </div>
 
+                <div class="dashboard-graph-sales">
+                    <?php include "includes/graph-revenue.php"; ?>
                 </div>
             </div>
+
+
             <div id="inquiries" class="page-content">
                 <div class="tracking-page-container">
                     <div class="tracking-stats-grid">
