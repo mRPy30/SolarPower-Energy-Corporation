@@ -1858,6 +1858,9 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
                             <button class="btn-primary" onclick="exportOrdersPDF()">
                                 <i class="fas fa-file-pdf"></i> Export to PDF
                             </button>
+                            <button class="btn-primary" style="background-color: #217346;" onclick="exportOrdersExcel()">
+                                <i class="fas fa-file-excel"></i> Export to Excel
+                            </button>
                             <button class="btn-refresh" onclick="OrdersModule.loadOrders()">
                                 <i class="fas fa-sync-alt"></i> Refresh
                             </button>
@@ -1966,7 +1969,10 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
                             <button class="btn-primary" onclick="exportSuppliersPDF()">
                                 <i class="fas fa-file-pdf"></i> Export to PDF
                             </button>
-                            <button class="btn-primary" onclick="openSupplierModal()">
+                            <button class="btn-primary" style="background-color: #217346;" onclick="exportSuppliersExcel()">
+                                <i class="fas fa-file-excel"></i> Export to Excel
+                            </button>
+                            <button class="btn-primary" style="background-color: #3498db;" onclick="openSupplierModal()">
                                 <i class="fas fa-plus"></i> Add Supplier
                             </button>
                         </div>
@@ -2355,9 +2361,14 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
                             <h3><i class="fas fa-users"></i> Clients</h3>
                             <p>View registered clients and their order history</p>
                         </div>
-                        <button class="btn-primary" onclick="exportClientsPDF()">
-                            <i class="fas fa-file-pdf"></i> Export to PDF
-                        </button>
+                        <div style="display: flex; gap: 10px;">
+                            <button class="btn-primary" onclick="exportClientsPDF()">
+                                <i class="fas fa-file-pdf"></i> Export to PDF
+                            </button>
+                            <button class="btn-primary" style="background-color: #217346;" onclick="exportClientsExcel()">
+                                <i class="fas fa-file-excel"></i> Export to Excel
+                            </button>
+                        </div>
                     </div>
 
                     <!-- FILTERS -->
@@ -5863,8 +5874,11 @@ function showPage(pageId, pageTitle) {
 </script>
 
 <?php include "includes/export-clients-pdf.php"; ?>
+<?php include "includes/export-clients-excel.php"; ?>
 <?php include "includes/export-orders-pdf.php"; ?>
+<?php include "includes/export-orders-excel.php"; ?>
 <?php include "includes/export-suppliers-pdf.php"; ?>
+<?php include "includes/export-suppliers-excel.php"; ?>
 
 </body>
 
