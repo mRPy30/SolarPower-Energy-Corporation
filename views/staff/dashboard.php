@@ -334,8 +334,7 @@ $all_products = get_all_products($conn);
 $all_suppliers = get_all_suppliers($conn);
 $product_count = count($all_products);
 
-// Close connection before HTML output starts
-$conn->close();
+// Keep $conn open — needed by included files (graph-revenue.php, archive-products.php)
 
 $user_id = $_SESSION['user_id'];
 $firstName = $_SESSION['firstName'] ?? 'User';
@@ -5890,6 +5889,7 @@ function showPage(pageId, pageTitle) {
 <?php include "includes/export-quotations-excel.php"; ?>
 <?php include "includes/export-quotations-pdf.php"; ?>
 
+<?php if (isset($conn) && $conn) { $conn->close(); } ?>
 </body>
 
 </html>
