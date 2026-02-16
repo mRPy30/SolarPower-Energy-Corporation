@@ -1962,9 +1962,14 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
 
                     <!-- HEADER ACTION -->
                     <div class="suppliers-header">
-                        <button class="btn-primary" onclick="openSupplierModal()">
-                            <i class="fas fa-plus"></i> Add Supplier
-                        </button>
+                        <div style="display: flex; gap: 10px;">
+                            <button class="btn-primary" onclick="exportSuppliersPDF()">
+                                <i class="fas fa-file-pdf"></i> Export to PDF
+                            </button>
+                            <button class="btn-primary" onclick="openSupplierModal()">
+                                <i class="fas fa-plus"></i> Add Supplier
+                            </button>
+                        </div>
                     </div>
 
                     <!-- TABLE -->
@@ -5859,6 +5864,7 @@ function showPage(pageId, pageTitle) {
 
 <?php include "includes/export-clients-pdf.php"; ?>
 <?php include "includes/export-orders-pdf.php"; ?>
+<?php include "includes/export-suppliers-pdf.php"; ?>
 
 </body>
 
