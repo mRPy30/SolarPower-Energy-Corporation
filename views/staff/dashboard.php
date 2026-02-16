@@ -1815,9 +1815,17 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
                     </div>
 
                     <div class="quotation-header">
-                        <button class="btn-primary" onclick="openQuotationModal()">
-                            <i class="fas fa-plus"></i> New Quotation
-                        </button>
+                        <div style="display: flex; gap: 10px;">
+                            <button class="btn-primary" onclick="exportQuotationsPDF()">
+                                <i class="fas fa-file-pdf"></i> Export to PDF
+                            </button>
+                            <button class="btn-primary" style="background-color: #217346;" onclick="exportQuotationsExcel()">
+                                <i class="fas fa-file-excel"></i> Export to Excel
+                            </button>
+                            <button class="btn-primary" onclick="openQuotationModal()">
+                                <i class="fas fa-plus"></i> New Quotation
+                            </button>
+                        </div>
                     </div>
 
                     <div class="quotation-table-wrapper">
@@ -5879,6 +5887,8 @@ function showPage(pageId, pageTitle) {
 <?php include "includes/export-orders-excel.php"; ?>
 <?php include "includes/export-suppliers-pdf.php"; ?>
 <?php include "includes/export-suppliers-excel.php"; ?>
+<?php include "includes/export-quotations-excel.php"; ?>
+<?php include "includes/export-quotations-pdf.php"; ?>
 
 </body>
 
