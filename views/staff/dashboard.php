@@ -2274,60 +2274,67 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
             </div>
 
             <!-- Add/Edit Supplier Modal -->
-            <div id="supplierModal" class="modal">
-                <div class="modal-content">
-                    <h2 id="supplierModalTitle">
-                        <span><i class="fas fa-truck"></i> Add New Supplier</span>
+            <div id="supplierModal" class="staffModal">
+                <div class="staffModal-content">
+                    <div class="staffModal-header">
+                        <h3 id="supplierModalTitle">
+                            <i class="fas fa-truck"></i>
+                            <span>Add New Supplier</span>
+                        </h3>
                         <span class="close" onclick="closeSupplierModal()">&times;</span>
-                    </h2>
+                    </div>
 
                     <form id="supplierForm" onsubmit="handleSubmit(event)">
-                        <div class="modal-body">
+                        <div class="staffModal-body">
                             <input type="hidden" id="supplierId">
 
-                            <div class="form-grid">
-                                <div class="form-group">
+                            <div class="staffModal-row">
+                                <div class="staffModal-group">
                                     <label><i class="fas fa-building"></i> Supplier Name *</label>
                                     <input type="text" id="supplierName" required>
                                 </div>
 
-                                <div class="form-group">
+                                <div class="staffModal-group">
                                     <label><i class="fas fa-user"></i> Contact Person</label>
                                     <input type="text" id="contactPerson">
                                 </div>
+                            </div>
 
-                                <div class="form-group">
+                            <div class="staffModal-row">
+                                <div class="staffModal-group">
                                     <label><i class="fas fa-envelope"></i> Email</label>
                                     <input type="email" id="email">
                                 </div>
 
-                                <div class="form-group">
+                                <div class="staffModal-group">
                                     <label><i class="fas fa-phone"></i> Phone</label>
                                     <input type="text" id="phone">
                                 </div>
+                            </div>
 
-                                <div class="form-group full-width">
-                                    <label><i class="fas fa-map-marker-alt"></i> Address</label>
-                                    <textarea id="address" rows="2"></textarea>
-                                </div>
+                            <div class="staffModal-group">
+                                <label><i class="fas fa-map-marker-alt"></i> Address</label>
+                                <textarea id="address" rows="2"></textarea>
+                            </div>
 
-                                <div class="form-group">
+                            <div class="staffModal-row">
+                                <div class="staffModal-group">
                                     <label><i class="fas fa-city"></i> City</label>
                                     <input type="text" id="city">
                                 </div>
 
-                                <div class="form-group">
+                                <div class="staffModal-group">
                                     <label><i class="fas fa-flag"></i> Country</label>
                                     <input type="text" id="country">
                                 </div>
                             </div>
                         </div>
 
-                        <div class="modal-actions">
-                            <button type="button" onclick="closeSupplierModal()" class="btn-cancel">
+                        <div class="staffModal-footer">
+                            <button type="button" onclick="closeSupplierModal()" class="staffModal-btn-secondary">
                                 <i class="fas fa-times"></i> Cancel
                             </button>
-                            <button type="submit" class="btn-save">
+                            <button type="submit" class="staffModal-btn-primary">
                                 <i class="fas fa-save"></i> Save Supplier
                             </button>
                         </div>
@@ -3222,7 +3229,7 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
                 const supplier = this.suppliers.find(s => s.id === id);
                 if (!supplier) return;
 
-                document.getElementById('supplierModalTitle').innerHTML = '<span><i class="fas fa-edit"></i> Edit Supplier</span><span class="close" onclick="closeSupplierModal()">&times;</span>';
+                document.getElementById('supplierModalTitle').innerHTML = '<i class="fas fa-edit"></i> <span>Edit Supplier</span>';
                 document.getElementById('supplierId').value = supplier.id;
                 document.getElementById('supplierName').value = supplier.supplierName || '';
                 document.getElementById('contactPerson').value = supplier.contactPerson || '';
@@ -3232,7 +3239,7 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
                 document.getElementById('city').value = supplier.city || '';
                 document.getElementById('country').value = supplier.country || '';
 
-                document.getElementById('supplierModal').style.display = 'block';
+                document.getElementById('supplierModal').classList.add('show');
             },
 
             showDeleteModal(id) {
@@ -3285,14 +3292,14 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
 
         // Global functions
         function openSupplierModal() {
-            document.getElementById('supplierModalTitle').innerHTML = '<span><i class="fas fa-truck"></i> Add New Supplier</span><span class="close" onclick="closeSupplierModal()">&times;</span>';
+            document.getElementById('supplierModalTitle').innerHTML = '<i class="fas fa-truck"></i> <span>Add New Supplier</span>';
             document.getElementById('supplierForm').reset();
             document.getElementById('supplierId').value = '';
-            document.getElementById('supplierModal').style.display = 'block';
+            document.getElementById('supplierModal').classList.add('show');
         }
 
         function closeSupplierModal() {
-            document.getElementById('supplierModal').style.display = 'none';
+            document.getElementById('supplierModal').classList.remove('show');
         }
 
         function closeDeleteSupplierModal() {
