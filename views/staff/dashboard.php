@@ -334,6 +334,15 @@ $all_products = get_all_products($conn);
 $all_suppliers = get_all_suppliers($conn);
 $product_count = count($all_products);
 
+// Fetch archived products
+include_once __DIR__ . "/../../controllers/includes/fetch_archived_products.php";
+
+// Fetch archived quotations
+include_once __DIR__ . "/../../controllers/includes/fetch_archived_quotations.php";
+
+// Fetch archived suppliers
+include_once __DIR__ . "/../../controllers/includes/fetch_archived_suppliers.php";
+
 // Keep $conn open — needed by included files (graph-revenue.php, archive-products.php)
 
 $user_id = $_SESSION['user_id'];
@@ -541,11 +550,11 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
 
                 $id = intval($data['id']);
 
-                $checkStmt = $conn->prepare("SELECT supplierName FROM supplier WHERE id = ?");
+                // Fetch full supplier row for archiving
+                $checkStmt = $conn->prepare("SELECT * FROM supplier WHERE id = ?");
                 $checkStmt->bind_param("i", $id);
                 $checkStmt->execute();
                 $checkResult = $checkStmt->get_result();
-
 
                 if ($checkResult->num_rows === 0) {
                     echo json_encode(['success' => false, 'message' => 'Supplier not found']);
@@ -553,25 +562,56 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
                     break;
                 }
 
-
-
                 $supplier = $checkResult->fetch_assoc();
                 $checkStmt->close();
 
+                // Create archived_suppliers table if it doesn't exist
+                $conn->query("CREATE TABLE IF NOT EXISTS `archived_suppliers` (
+                    `archive_id` int(11) NOT NULL AUTO_INCREMENT,
+                    `original_id` int(11) NOT NULL,
+                    `supplierName` varchar(255) NOT NULL,
+                    `contactPerson` varchar(255) DEFAULT NULL,
+                    `email` varchar(100) DEFAULT NULL,
+                    `phone` varchar(20) DEFAULT NULL,
+                    `address` text DEFAULT NULL,
+                    `city` varchar(100) DEFAULT NULL,
+                    `country` varchar(100) DEFAULT NULL,
+                    `registrationDate` timestamp NULL DEFAULT NULL,
+                    `deleted_by` int(11) DEFAULT NULL,
+                    `deleted_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY (`archive_id`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;");
+
+                // Copy supplier to archived_suppliers
+                $archStmt = $conn->prepare("INSERT INTO archived_suppliers (original_id, supplierName, contactPerson, email, phone, address, city, country, registrationDate, deleted_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                $deleted_by = $_SESSION['user_id'] ?? null;
+                $archStmt->bind_param(
+                    "issssssssi",
+                    $supplier['id'],
+                    $supplier['supplierName'],
+                    $supplier['contactPerson'],
+                    $supplier['email'],
+                    $supplier['phone'],
+                    $supplier['address'],
+                    $supplier['city'],
+                    $supplier['country'],
+                    $supplier['registrationDate'],
+                    $deleted_by
+                );
+                $archStmt->execute();
+                $archStmt->close();
+
+                // Now delete from supplier table
                 $stmt = $conn->prepare("DELETE FROM supplier WHERE id = ?");
                 $stmt->bind_param("i", $id);
 
-
                 if ($stmt->execute()) {
-
                     echo json_encode([
                         'success' => true,
-                        'message' => 'Supplier deleted successfully',
+                        'message' => 'Supplier archived and deleted successfully',
                         'deletedName' => $supplier['supplierName']
-
                     ]);
                 } else {
-
                     echo json_encode(['success' => false, 'message' => 'Failed to delete supplier']);
                 }
                 $stmt->close();
@@ -2011,170 +2051,160 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
 
             <!-- ARCHIVE -->
             <div id="archive" class="page-content" style="display: none;">
-            
-                <!-- Product Details Section -->
-                <div style="background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08); padding: 30px; margin-top: 30px;">
-                    <div style="display: flex; align-items: center; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 2px solid #e9ecef;">
-                        <i class="bi bi-box-seam" style="color: #f39c12; font-size: 24px; margin-right: 12px;"></i>
-                        <h4 style="margin: 0; color: #2c3e50; font-weight: 600; font-size: 20px;">Product Details</h4>
+
+                <!-- Archive Product Details Section -->
+                <div style="background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08); padding: 30px; margin-top: 10px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 2px solid #e9ecef;">
+                        <div style="display: flex; align-items: center;">
+                            <i class="bi bi-archive" style="color: #e74c3c; font-size: 24px; margin-right: 12px;"></i>
+                            <h4 style="margin: 0; color: #2c3e50; font-weight: 600; font-size: 20px;">Archive Product Details</h4>
+                        </div>
+                        <span style="background-color: #ffeaea; color: #e74c3c; padding: 4px 14px; border-radius: 20px; font-size: 13px; font-weight: 600;">
+                            <?php echo $archived_product_count; ?> archived product<?php echo $archived_product_count != 1 ? 's' : ''; ?>
+                        </span>
                     </div>
 
-                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-bottom: 1rem;">
-                        <div>
-                            <label style="display: block; font-weight: 600; color: #6c757d; margin-bottom: 0.5rem; font-size: 14px;">Display Name</label>
-                            <input type="text" style="width: 100%; padding: 10px 14px; border: 1px solid #dee2e6; border-radius: 8px; font-size: 14px;" placeholder="Enter display name">
-                        </div>
-                        <div>
-                            <label style="display: block; font-weight: 600; color: #6c757d; margin-bottom: 0.5rem; font-size: 14px;">Brand Name</label>
-                            <input type="text" style="width: 100%; padding: 10px 14px; border: 1px solid #dee2e6; border-radius: 8px; font-size: 14px;" placeholder="Enter brand name">
-                        </div>
-                    </div>
-
-                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-bottom: 1rem;">
-                        <div>
-                            <label style="display: block; font-weight: 600; color: #6c757d; margin-bottom: 0.5rem; font-size: 14px;">Price</label>
-                            <div style="display: flex;">
-                                <span style="padding: 10px 14px; background-color: #f8f9fa; border: 1px solid #dee2e6; border-right: none; border-radius: 8px 0 0 8px; color: #6c757d; font-size: 14px;">₱</span>
-                                <input type="number" style="flex: 1; padding: 10px 14px; border: 1px solid #dee2e6; border-radius: 0 8px 8px 0; font-size: 14px;" placeholder="0.00">
-                            </div>
-                        </div>
-                        <div>
-                            <label style="display: block; font-weight: 600; color: #6c757d; margin-bottom: 0.5rem; font-size: 14px;">Category</label>
-                            <select style="width: 100%; padding: 10px 14px; border: 1px solid #dee2e6; border-radius: 8px; font-size: 14px; background-color: white;">
-                                <option selected>Select category</option>
-                                <option value="panels">Panels</option>
-                                <option value="inverters">Inverters</option>
-                                <option value="batteries">Batteries</option>
-                                <option value="accessories">Accessories</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-bottom: 1rem;">
-                        <div>
-                            <label style="display: block; font-weight: 600; color: #6c757d; margin-bottom: 0.5rem; font-size: 14px;">Stock Quantity</label>
-                            <div style="display: flex;">
-                                <input type="number" style="flex: 1; padding: 10px 14px; border: 1px solid #dee2e6; border-radius: 8px 0 0 8px; font-size: 14px;" placeholder="0">
-                                <span style="padding: 10px 14px; background-color: #f8f9fa; border: 1px solid #dee2e6; border-left: none; border-radius: 0 8px 8px 0; color: #6c757d; font-size: 14px;">units</span>
-                            </div>
-                        </div>
-                        <div>
-                            <label style="display: block; font-weight: 600; color: #6c757d; margin-bottom: 0.5rem; font-size: 14px;">Warranty</label>
-                            <div style="display: flex;">
-                                <input type="number" style="flex: 1; padding: 10px 14px; border: 1px solid #dee2e6; border-radius: 8px 0 0 8px; font-size: 14px;" placeholder="0">
-                                <span style="padding: 10px 14px; background-color: #f8f9fa; border: 1px solid #dee2e6; border-left: none; border-radius: 0 8px 8px 0; color: #6c757d; font-size: 14px;">Years</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div style="margin-bottom: 1rem;">
-                        <label style="display: block; font-weight: 600; color: #6c757d; margin-bottom: 0.5rem; font-size: 14px;">Description</label>
-                        <textarea style="width: 100%; padding: 10px 14px; border: 1px solid #dee2e6; border-radius: 8px; font-size: 14px; resize: vertical; min-height: 100px;" rows="4" placeholder="Enter product description"></textarea>
-                    </div>
-
-                    <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 25px;">
-                        <button type="button" style="padding: 10px 24px; background-color: transparent; color: #6c757d; border: 2px solid #6c757d; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer;">Cancel</button>
-                        <button type="button" style="padding: 10px 24px; background-color: #27ae60; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer;">Save Product</button>
+                    <div style="overflow-x: auto;">
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr style="background-color: #f8f9fa;">
+                                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #6c757d; font-size: 14px; border-bottom: 2px solid #dee2e6;">#</th>
+                                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #6c757d; font-size: 14px; border-bottom: 2px solid #dee2e6;">Product Name</th>
+                                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #6c757d; font-size: 14px; border-bottom: 2px solid #dee2e6;">Brand</th>
+                                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #6c757d; font-size: 14px; border-bottom: 2px solid #dee2e6;">Price</th>
+                                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #6c757d; font-size: 14px; border-bottom: 2px solid #dee2e6;">Category</th>
+                                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #6c757d; font-size: 14px; border-bottom: 2px solid #dee2e6;">Qty</th>
+                                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #6c757d; font-size: 14px; border-bottom: 2px solid #dee2e6;">Warranty</th>
+                                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #6c757d; font-size: 14px; border-bottom: 2px solid #dee2e6;">Date Deleted</th>
+                                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #6c757d; font-size: 14px; border-bottom: 2px solid #dee2e6;">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php if (!empty($archived_products)): ?>
+                                    <?php foreach ($archived_products as $index => $ap): ?>
+                                        <tr style="border-bottom: 1px solid #dee2e6;" id="archive-row-<?php echo $ap['archive_id']; ?>">
+                                            <td style="padding: 12px; font-size: 14px; color: #2c3e50;"><?php echo $index + 1; ?></td>
+                                            <td style="padding: 12px; font-size: 14px; color: #2c3e50; font-weight: 500;"><?php echo htmlspecialchars($ap['displayName']); ?></td>
+                                            <td style="padding: 12px; font-size: 14px; color: #2c3e50;"><?php echo htmlspecialchars($ap['brandName']); ?></td>
+                                            <td style="padding: 12px; font-size: 14px; color: #2c3e50;">&#8369;<?php echo number_format($ap['price'], 2); ?></td>
+                                            <td style="padding: 12px; font-size: 14px;"><span style="background-color: #eaf4fe; color: #3498db; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 500;"><?php echo htmlspecialchars($ap['category']); ?></span></td>
+                                            <td style="padding: 12px; font-size: 14px; color: #2c3e50;"><?php echo $ap['stockQuantity']; ?></td>
+                                            <td style="padding: 12px; font-size: 14px; color: #2c3e50;"><?php echo htmlspecialchars($ap['warranty'] ?? 'N/A'); ?></td>
+                                            <td style="padding: 12px; font-size: 14px; color: #2c3e50;"><?php echo date('M d, Y h:i A', strtotime($ap['deleted_at'])); ?></td>
+                                            <td style="padding: 12px;">
+                                                <div style="display: flex; gap: 4px;">
+                                                    <button onclick="restoreArchivedProduct(<?php echo $ap['archive_id']; ?>)" style="padding: 6px 12px; background-color: transparent; color: #28a745; border: 1px solid #28a745; border-radius: 6px; font-size: 14px; cursor: pointer;" title="Restore Product">
+                                                        <i class="bi bi-arrow-counterclockwise"></i>
+                                                    </button>
+                                                    <button onclick="permanentDeleteProduct(<?php echo $ap['archive_id']; ?>)" style="padding: 6px 12px; background-color: transparent; color: #dc3545; border: 1px solid #dc3545; border-radius: 6px; font-size: 14px; cursor: pointer;" title="Delete Permanently">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                <?php else: ?>
+                                    <tr>
+                                        <td colspan="9" style="padding: 30px; text-align: center; color: #6c757d; font-size: 14px;">
+                                            <i class="bi bi-inbox" style="font-size: 36px; display: block; margin-bottom: 10px; color: #dee2e6;"></i>
+                                            No archived products found.
+                                        </td>
+                                    </tr>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
 
 
-                <!--Archived quotation  -->
-                <!-- Quotation Details Section -->
+                <!-- Archive Quotation Details Section -->
                 <div style="background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08); padding: 30px; margin-top: 30px;">
-                    <div style="display: flex; align-items: center; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 2px solid #e9ecef;">
-                        <i class="bi bi-file-text" style="color: #f39c12; font-size: 24px; margin-right: 12px;"></i>
-                        <h4 style="margin: 0; color: #2c3e50; font-weight: 600; font-size: 20px;">Quotation Details</h4>
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 2px solid #e9ecef;">
+                        <div style="display: flex; align-items: center;">
+                            <i class="bi bi-file-text" style="color: #f39c12; font-size: 24px; margin-right: 12px;"></i>
+                            <h4 style="margin: 0; color: #2c3e50; font-weight: 600; font-size: 20px;">Archived Quotation Details</h4>
+                        </div>
+                        <span style="background-color: #fff3e0; color: #f39c12; padding: 4px 14px; border-radius: 20px; font-size: 13px; font-weight: 600;">
+                            <?php echo $archived_quotation_count; ?> archived quotation<?php echo $archived_quotation_count != 1 ? 's' : ''; ?>
+                        </span>
                     </div>
 
-                    <form>
-                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-bottom: 1rem;">
-                            <div>
-                                <label style="display: block; font-weight: 600; color: #6c757d; margin-bottom: 0.5rem; font-size: 14px;">Client Name</label>
-                                <input type="text" style="width: 100%; padding: 10px 14px; border: 1px solid #dee2e6; border-radius: 8px; font-size: 14px;" placeholder="Enter client name">
-                            </div>
-                            <div>
-                                <label style="display: block; font-weight: 600; color: #6c757d; margin-bottom: 0.5rem; font-size: 14px;">Email</label>
-                                <input type="email" style="width: 100%; padding: 10px 14px; border: 1px solid #dee2e6; border-radius: 8px; font-size: 14px;" placeholder="Enter email address">
-                            </div>
-                        </div>
-
-                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-bottom: 1rem;">
-                            <div>
-                                <label style="display: block; font-weight: 600; color: #6c757d; margin-bottom: 0.5rem; font-size: 14px;">Contact</label>
-                                <input type="text" style="width: 100%; padding: 10px 14px; border: 1px solid #dee2e6; border-radius: 8px; font-size: 14px;" placeholder="Enter contact number">
-                            </div>
-                            <div>
-                                <label style="display: block; font-weight: 600; color: #6c757d; margin-bottom: 0.5rem; font-size: 14px;">Location</label>
-                                <input type="text" style="width: 100%; padding: 10px 14px; border: 1px solid #dee2e6; border-radius: 8px; font-size: 14px;" placeholder="Enter location">
-                            </div>
-                        </div>
-
-                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-bottom: 1rem;">
-                            <div>
-                                <label style="display: block; font-weight: 600; color: #6c757d; margin-bottom: 0.5rem; font-size: 14px;">System</label>
-                                <select style="width: 100%; padding: 10px 14px; border: 1px solid #dee2e6; border-radius: 8px; font-size: 14px; background-color: white;">
-                                    <option selected>Select system</option>
-                                    <option value="on-grid">On-Grid</option>
-                                    <option value="off-grid">Off-Grid</option>
-                                    <option value="hybrid">Hybrid</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label style="display: block; font-weight: 600; color: #6c757d; margin-bottom: 0.5rem; font-size: 14px;">KW</label>
-                                <div style="display: flex;">
-                                    <input type="number" style="flex: 1; padding: 10px 14px; border: 1px solid #dee2e6; border-radius: 8px 0 0 8px; font-size: 14px;" placeholder="0.00" step="0.01">
-                                    <span style="padding: 10px 14px; background-color: #f8f9fa; border: 1px solid #dee2e6; border-left: none; border-radius: 0 8px 8px 0; color: #6c757d; font-size: 14px;">kW</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-bottom: 1rem;">
-                            <div>
-                                <label style="display: block; font-weight: 600; color: #6c757d; margin-bottom: 0.5rem; font-size: 14px;">Officer</label>
-                                <input type="text" style="width: 100%; padding: 10px 14px; border: 1px solid #dee2e6; border-radius: 8px; font-size: 14px;" placeholder="Enter officer name">
-                            </div>
-                            <div>
-                                <label style="display: block; font-weight: 600; color: #6c757d; margin-bottom: 0.5rem; font-size: 14px;">Status</label>
-                                <select style="width: 100%; padding: 10px 14px; border: 1px solid #dee2e6; border-radius: 8px; font-size: 14px; background-color: white;">
-                                    <option selected>Select status</option>
-                                    <option value="pending">Pending</option>
-                                    <option value="approved">Approved</option>
-                                    <option value="rejected">Rejected</option>
-                                    <option value="in-progress">In Progress</option>
-                                    <option value="completed">Completed</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div style="margin-bottom: 1rem;">
-                            <label style="display: block; font-weight: 600; color: #6c757d; margin-bottom: 0.5rem; font-size: 14px;">Remarks</label>
-                            <textarea style="width: 100%; padding: 10px 14px; border: 1px solid #dee2e6; border-radius: 8px; font-size: 14px; resize: vertical; min-height: 100px;" rows="4" placeholder="Enter remarks"></textarea>
-                        </div>
-
-                        <div style="margin-bottom: 1rem;">
-                            <label style="display: block; font-weight: 600; color: #6c757d; margin-bottom: 0.5rem; font-size: 14px;">Actions</label>
-                            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                                <button type="button" style="padding: 8px 16px; background-color: #3498db; color: white; border: none; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
-                                    <i class="bi bi-eye"></i> View
-                                </button>
-                                <button type="button" style="padding: 8px 16px; background-color: #2ecc71; color: white; border: none; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
-                                    <i class="bi bi-pencil"></i> Edit
-                                </button>
-                                <button type="button" style="padding: 8px 16px; background-color: #f39c12; color: white; border: none; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
-                                    <i class="bi bi-check-circle"></i> Approve
-                                </button>
-                                <button type="button" style="padding: 8px 16px; background-color: #e74c3c; color: white; border: none; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
-                                    <i class="bi bi-trash"></i> Delete
-                                </button>
-                            </div>
-                        </div>
-
-                        <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 25px;">
-                            <button type="button" style="padding: 10px 24px; background-color: transparent; color: #6c757d; border: 2px solid #6c757d; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer;">Cancel</button>
-                            <button type="button" style="padding: 10px 24px; background-color: #27ae60; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer;">Save Quotation</button>
-                        </div>
-                    </form>
+                    <div style="overflow-x: auto;">
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr style="background-color: #f8f9fa;">
+                                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #6c757d; font-size: 14px; border-bottom: 2px solid #dee2e6;">#</th>
+                                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #6c757d; font-size: 14px; border-bottom: 2px solid #dee2e6;">Quotation No.</th>
+                                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #6c757d; font-size: 14px; border-bottom: 2px solid #dee2e6;">Client Name</th>
+                                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #6c757d; font-size: 14px; border-bottom: 2px solid #dee2e6;">Email</th>
+                                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #6c757d; font-size: 14px; border-bottom: 2px solid #dee2e6;">Contact</th>
+                                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #6c757d; font-size: 14px; border-bottom: 2px solid #dee2e6;">Location</th>
+                                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #6c757d; font-size: 14px; border-bottom: 2px solid #dee2e6;">System</th>
+                                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #6c757d; font-size: 14px; border-bottom: 2px solid #dee2e6;">kW</th>
+                                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #6c757d; font-size: 14px; border-bottom: 2px solid #dee2e6;">Officer</th>
+                                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #6c757d; font-size: 14px; border-bottom: 2px solid #dee2e6;">Status</th>
+                                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #6c757d; font-size: 14px; border-bottom: 2px solid #dee2e6;">Date Deleted</th>
+                                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #6c757d; font-size: 14px; border-bottom: 2px solid #dee2e6;">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php if (!empty($archived_quotations)): ?>
+                                    <?php foreach ($archived_quotations as $qi => $aq): ?>
+                                        <tr style="border-bottom: 1px solid #dee2e6;" id="archive-quotation-row-<?php echo $aq['archive_id']; ?>">
+                                            <td style="padding: 12px; font-size: 14px; color: #2c3e50;"><?php echo $qi + 1; ?></td>
+                                            <td style="padding: 12px; font-size: 14px; color: #2c3e50; font-weight: 500;"><?php echo htmlspecialchars($aq['quotation_number'] ?? 'N/A'); ?></td>
+                                            <td style="padding: 12px; font-size: 14px; color: #2c3e50;"><?php echo htmlspecialchars($aq['client_name']); ?></td>
+                                            <td style="padding: 12px; font-size: 14px; color: #2c3e50;"><?php echo htmlspecialchars($aq['email']); ?></td>
+                                            <td style="padding: 12px; font-size: 14px; color: #2c3e50;"><?php echo htmlspecialchars($aq['contact'] ?? 'N/A'); ?></td>
+                                            <td style="padding: 12px; font-size: 14px; color: #2c3e50;"><?php echo htmlspecialchars($aq['location'] ?? 'N/A'); ?></td>
+                                            <td style="padding: 12px; font-size: 14px;">
+                                                <span style="background-color: #e8f5e9; color: #2e7d32; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 500;">
+                                                    <?php echo htmlspecialchars($aq['system_type'] ?? 'N/A'); ?>
+                                                </span>
+                                            </td>
+                                            <td style="padding: 12px; font-size: 14px; color: #2c3e50;"><?php echo $aq['kw'] !== null ? number_format($aq['kw'], 2) : 'N/A'; ?></td>
+                                            <td style="padding: 12px; font-size: 14px; color: #2c3e50;"><?php echo htmlspecialchars($aq['officer'] ?? 'N/A'); ?></td>
+                                            <td style="padding: 12px; font-size: 14px;">
+                                                <?php
+                                                    $statusColors = [
+                                                        'SENT' => ['bg' => '#e3f2fd', 'text' => '#1565c0'],
+                                                        'ONGOING' => ['bg' => '#fff3e0', 'text' => '#e65100'],
+                                                        'APPROVED' => ['bg' => '#e8f5e9', 'text' => '#2e7d32'],
+                                                        'CLOSED' => ['bg' => '#f3e5f5', 'text' => '#7b1fa2'],
+                                                        'LOSS' => ['bg' => '#ffeaea', 'text' => '#c62828'],
+                                                    ];
+                                                    $st = strtoupper($aq['status'] ?? '');
+                                                    $bg = $statusColors[$st]['bg'] ?? '#f5f5f5';
+                                                    $tc = $statusColors[$st]['text'] ?? '#616161';
+                                                ?>
+                                                <span style="background-color: <?php echo $bg; ?>; color: <?php echo $tc; ?>; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 500;">
+                                                    <?php echo htmlspecialchars($aq['status'] ?? 'N/A'); ?>
+                                                </span>
+                                            </td>
+                                            <td style="padding: 12px; font-size: 14px; color: #2c3e50;"><?php echo date('M d, Y h:i A', strtotime($aq['deleted_at'])); ?></td>
+                                            <td style="padding: 12px;">
+                                                <div style="display: flex; gap: 4px;">
+                                                    <button onclick="restoreArchivedQuotation(<?php echo $aq['archive_id']; ?>)" style="padding: 6px 12px; background-color: transparent; color: #28a745; border: 1px solid #28a745; border-radius: 6px; font-size: 14px; cursor: pointer;" title="Restore Quotation">
+                                                        <i class="bi bi-arrow-counterclockwise"></i>
+                                                    </button>
+                                                    <button onclick="permanentDeleteQuotation(<?php echo $aq['archive_id']; ?>)" style="padding: 6px 12px; background-color: transparent; color: #dc3545; border: 1px solid #dc3545; border-radius: 6px; font-size: 14px; cursor: pointer;" title="Delete Permanently">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                <?php else: ?>
+                                    <tr>
+                                        <td colspan="12" style="padding: 30px; text-align: center; color: #6c757d; font-size: 14px;">
+                                            <i class="bi bi-inbox" style="font-size: 36px; display: block; margin-bottom: 10px; color: #dee2e6;"></i>
+                                            No archived quotations found.
+                                        </td>
+                                    </tr>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
 
 
@@ -2189,83 +2219,46 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
                         <table style="width: 100%; border-collapse: collapse;">
                             <thead>
                                 <tr style="background-color: #f8f9fa;">
-                                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #6c757d; font-size: 14px; border-bottom: 2px solid #dee2e6;">ID</th>
+                                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #6c757d; font-size: 14px; border-bottom: 2px solid #dee2e6;">#</th>
                                     <th style="padding: 12px; text-align: left; font-weight: 600; color: #6c757d; font-size: 14px; border-bottom: 2px solid #dee2e6;">Supplier Name</th>
                                     <th style="padding: 12px; text-align: left; font-weight: 600; color: #6c757d; font-size: 14px; border-bottom: 2px solid #dee2e6;">Contact Person</th>
                                     <th style="padding: 12px; text-align: left; font-weight: 600; color: #6c757d; font-size: 14px; border-bottom: 2px solid #dee2e6;">Email</th>
                                     <th style="padding: 12px; text-align: left; font-weight: 600; color: #6c757d; font-size: 14px; border-bottom: 2px solid #dee2e6;">Phone</th>
                                     <th style="padding: 12px; text-align: left; font-weight: 600; color: #6c757d; font-size: 14px; border-bottom: 2px solid #dee2e6;">Location</th>
                                     <th style="padding: 12px; text-align: left; font-weight: 600; color: #6c757d; font-size: 14px; border-bottom: 2px solid #dee2e6;">Registered</th>
+                                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #6c757d; font-size: 14px; border-bottom: 2px solid #dee2e6;">Date Deleted</th>
                                     <th style="padding: 12px; text-align: left; font-weight: 600; color: #6c757d; font-size: 14px; border-bottom: 2px solid #dee2e6;">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr style="border-bottom: 1px solid #dee2e6;">
-                                    <td style="padding: 12px; font-size: 14px; color: #2c3e50;">001</td>
-                                    <td style="padding: 12px; font-size: 14px; color: #2c3e50;">Solar Tech Solutions</td>
-                                    <td style="padding: 12px; font-size: 14px; color: #2c3e50;">John Doe</td>
-                                    <td style="padding: 12px; font-size: 14px; color: #2c3e50;">john@solartech.com</td>
-                                    <td style="padding: 12px; font-size: 14px; color: #2c3e50;">+63 912 345 6789</td>
-                                    <td style="padding: 12px; font-size: 14px; color: #2c3e50;">Manila, Philippines</td>
-                                    <td style="padding: 12px; font-size: 14px; color: #2c3e50;">Jan 15, 2024</td>
-                                    <td style="padding: 12px;">
-                                        <div style="display: flex; gap: 4px;">
-                                            <button style="padding: 6px 12px; background-color: transparent; color: #007bff; border: 1px solid #007bff; border-radius: 6px; font-size: 14px; cursor: pointer;" title="View">
-                                                <i class="bi bi-eye"></i>
-                                            </button>
-                                            <button style="padding: 6px 12px; background-color: transparent; color: #28a745; border: 1px solid #28a745; border-radius: 6px; font-size: 14px; cursor: pointer;" title="Restore">
-                                                <i class="bi bi-arrow-counterclockwise"></i>
-                                            </button>
-                                            <button style="padding: 6px 12px; background-color: transparent; color: #dc3545; border: 1px solid #dc3545; border-radius: 6px; font-size: 14px; cursor: pointer;" title="Delete Permanently">
-                                                <i class="bi bi-trash"></i>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                                <tr style="border-bottom: 1px solid #dee2e6;">
-                                    <td style="padding: 12px; font-size: 14px; color: #2c3e50;">002</td>
-                                    <td style="padding: 12px; font-size: 14px; color: #2c3e50;">Green Energy Corp</td>
-                                    <td style="padding: 12px; font-size: 14px; color: #2c3e50;">Jane Smith</td>
-                                    <td style="padding: 12px; font-size: 14px; color: #2c3e50;">jane@greenenergy.com</td>
-                                    <td style="padding: 12px; font-size: 14px; color: #2c3e50;">+63 923 456 7890</td>
-                                    <td style="padding: 12px; font-size: 14px; color: #2c3e50;">Quezon City, Philippines</td>
-                                    <td style="padding: 12px; font-size: 14px; color: #2c3e50;">Feb 20, 2024</td>
-                                    <td style="padding: 12px;">
-                                        <div style="display: flex; gap: 4px;">
-                                            <button style="padding: 6px 12px; background-color: transparent; color: #007bff; border: 1px solid #007bff; border-radius: 6px; font-size: 14px; cursor: pointer;" title="View">
-                                                <i class="bi bi-eye"></i>
-                                            </button>
-                                            <button style="padding: 6px 12px; background-color: transparent; color: #28a745; border: 1px solid #28a745; border-radius: 6px; font-size: 14px; cursor: pointer;" title="Restore">
-                                                <i class="bi bi-arrow-counterclockwise"></i>
-                                            </button>
-                                            <button style="padding: 6px 12px; background-color: transparent; color: #dc3545; border: 1px solid #dc3545; border-radius: 6px; font-size: 14px; cursor: pointer;" title="Delete Permanently">
-                                                <i class="bi bi-trash"></i>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                                <tr style="border-bottom: 1px solid #dee2e6;">
-                                    <td style="padding: 12px; font-size: 14px; color: #2c3e50;">003</td>
-                                    <td style="padding: 12px; font-size: 14px; color: #2c3e50;">Power Systems Inc</td>
-                                    <td style="padding: 12px; font-size: 14px; color: #2c3e50;">Mike Johnson</td>
-                                    <td style="padding: 12px; font-size: 14px; color: #2c3e50;">mike@powersystems.com</td>
-                                    <td style="padding: 12px; font-size: 14px; color: #2c3e50;">+63 934 567 8901</td>
-                                    <td style="padding: 12px; font-size: 14px; color: #2c3e50;">Makati, Philippines</td>
-                                    <td style="padding: 12px; font-size: 14px; color: #2c3e50;">Mar 10, 2024</td>
-                                    <td style="padding: 12px;">
-                                        <div style="display: flex; gap: 4px;">
-                                            <button style="padding: 6px 12px; background-color: transparent; color: #007bff; border: 1px solid #007bff; border-radius: 6px; font-size: 14px; cursor: pointer;" title="View">
-                                                <i class="bi bi-eye"></i>
-                                            </button>
-                                            <button style="padding: 6px 12px; background-color: transparent; color: #28a745; border: 1px solid #28a745; border-radius: 6px; font-size: 14px; cursor: pointer;" title="Restore">
-                                                <i class="bi bi-arrow-counterclockwise"></i>
-                                            </button>
-                                            <button style="padding: 6px 12px; background-color: transparent; color: #dc3545; border: 1px solid #dc3545; border-radius: 6px; font-size: 14px; cursor: pointer;" title="Delete Permanently">
-                                                <i class="bi bi-trash"></i>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
+                                <?php if (!empty($archived_suppliers)): ?>
+                                    <?php $sup_counter = 1; foreach ($archived_suppliers as $asup): ?>
+                                    <tr id="archive-supplier-row-<?= $asup['archive_id'] ?>" style="border-bottom: 1px solid #dee2e6;">
+                                        <td style="padding: 12px; font-size: 14px; color: #2c3e50;"><?= $sup_counter++ ?></td>
+                                        <td style="padding: 12px; font-size: 14px; color: #2c3e50;"><?= htmlspecialchars($asup['supplierName']) ?></td>
+                                        <td style="padding: 12px; font-size: 14px; color: #2c3e50;"><?= htmlspecialchars($asup['contactPerson'] ?? '—') ?></td>
+                                        <td style="padding: 12px; font-size: 14px; color: #2c3e50;"><?= htmlspecialchars($asup['email'] ?? '—') ?></td>
+                                        <td style="padding: 12px; font-size: 14px; color: #2c3e50;"><?= htmlspecialchars($asup['phone'] ?? '—') ?></td>
+                                        <td style="padding: 12px; font-size: 14px; color: #2c3e50;"><?= htmlspecialchars(($asup['city'] ?? '') . ', ' . ($asup['country'] ?? '')) ?></td>
+                                        <td style="padding: 12px; font-size: 14px; color: #2c3e50;"><?= $asup['registrationDate'] ? date('M d, Y', strtotime($asup['registrationDate'])) : '—' ?></td>
+                                        <td style="padding: 12px; font-size: 14px; color: #2c3e50;"><?= date('M d, Y h:i A', strtotime($asup['deleted_at'])) ?></td>
+                                        <td style="padding: 12px;">
+                                            <div style="display: flex; gap: 4px;">
+                                                <button onclick="restoreArchivedSupplier(<?= $asup['archive_id'] ?>)" style="padding: 6px 12px; background-color: transparent; color: #28a745; border: 1px solid #28a745; border-radius: 6px; font-size: 14px; cursor: pointer;" title="Restore">
+                                                    <i class="bi bi-arrow-counterclockwise"></i>
+                                                </button>
+                                                <button onclick="permanentDeleteSupplier(<?= $asup['archive_id'] ?>)" style="padding: 6px 12px; background-color: transparent; color: #dc3545; border: 1px solid #dc3545; border-radius: 6px; font-size: 14px; cursor: pointer;" title="Delete Permanently">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <?php endforeach; ?>
+                                <?php else: ?>
+                                    <tr>
+                                        <td colspan="9" style="padding: 30px; text-align: center; color: #6c757d; font-size: 14px;">No archived suppliers found.</td>
+                                    </tr>
+                                <?php endif; ?>
                             </tbody>
                         </table>
                     </div>
@@ -5888,6 +5881,116 @@ function showPage(pageId, pageTitle) {
 <?php include "includes/export-suppliers-excel.php"; ?>
 <?php include "includes/export-quotations-excel.php"; ?>
 <?php include "includes/export-quotations-pdf.php"; ?>
+
+<!-- Archive Product JS Functions -->
+<script>
+function restoreArchivedProduct(archiveId) {
+    if (!confirm('Are you sure you want to restore this product back to the Product list?')) return;
+
+    fetch('../../controllers/archive_product.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'action=restore&archive_id=' + encodeURIComponent(archiveId)
+    })
+    .then(res => res.json())
+    .then(data => {
+        alert(data.message);
+        if (data.success) location.reload();
+    })
+    .catch(() => alert('Failed to restore product.'));
+}
+
+function permanentDeleteProduct(archiveId) {
+    if (!confirm('Are you sure you want to PERMANENTLY delete this product? This action cannot be undone.')) return;
+
+    fetch('../../controllers/archive_product.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'action=permanent_delete&archive_id=' + encodeURIComponent(archiveId)
+    })
+    .then(res => res.json())
+    .then(data => {
+        alert(data.message);
+        if (data.success) {
+            const row = document.getElementById('archive-row-' + archiveId);
+            if (row) row.remove();
+        }
+    })
+    .catch(() => alert('Failed to delete product.'));
+}
+
+// ── Archive Quotation Functions ──
+function restoreArchivedQuotation(archiveId) {
+    if (!confirm('Are you sure you want to restore this quotation back to the Quotation list?')) return;
+
+    fetch('../../controllers/archive_quotation.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'action=restore&archive_id=' + encodeURIComponent(archiveId)
+    })
+    .then(res => res.json())
+    .then(data => {
+        alert(data.message);
+        if (data.success) location.reload();
+    })
+    .catch(() => alert('Failed to restore quotation.'));
+}
+
+function permanentDeleteQuotation(archiveId) {
+    if (!confirm('Are you sure you want to PERMANENTLY delete this quotation? This action cannot be undone.')) return;
+
+    fetch('../../controllers/archive_quotation.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'action=permanent_delete&archive_id=' + encodeURIComponent(archiveId)
+    })
+    .then(res => res.json())
+    .then(data => {
+        alert(data.message);
+        if (data.success) {
+            const row = document.getElementById('archive-quotation-row-' + archiveId);
+            if (row) row.remove();
+        }
+    })
+    .catch(() => alert('Failed to delete quotation.'));
+}
+
+// ── Archive Supplier Functions ──
+function restoreArchivedSupplier(archiveId) {
+    if (!confirm('Restore this supplier back to the active suppliers list?')) return;
+
+    fetch('../../controllers/archive_supplier.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'action=restore&archive_id=' + encodeURIComponent(archiveId)
+    })
+    .then(res => res.json())
+    .then(data => {
+        alert(data.message);
+        if (data.success) location.reload();
+    })
+    .catch(() => alert('Failed to restore supplier.'));
+}
+
+function permanentDeleteSupplier(archiveId) {
+    if (!confirm('Are you sure you want to PERMANENTLY delete this supplier? This action cannot be undone.')) return;
+
+    fetch('../../controllers/archive_supplier.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'action=permanent_delete&archive_id=' + encodeURIComponent(archiveId)
+    })
+    .then(res => res.json())
+    .then(data => {
+        alert(data.message);
+        if (data.success) {
+            const row = document.getElementById('archive-supplier-row-' + archiveId);
+            if (row) row.remove();
+        }
+    })
+    .catch(() => alert('Failed to delete supplier.'));
+}
+</script>
 
 <?php if (isset($conn) && $conn) { $conn->close(); } ?>
 </body>

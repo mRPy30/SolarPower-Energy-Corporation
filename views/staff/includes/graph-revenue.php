@@ -43,15 +43,11 @@ if ($lastYearTotal > 0) {
     $growthRate = $totalSales > 0 ? 100 : 0;
 }
 
-// Best quarter
-$quarters = [
-    $monthlySales[1] + $monthlySales[2] + $monthlySales[3],
-    $monthlySales[4] + $monthlySales[5] + $monthlySales[6],
-    $monthlySales[7] + $monthlySales[8] + $monthlySales[9],
-    $monthlySales[10] + $monthlySales[11] + $monthlySales[12],
-];
-$bestQuarter = max($quarters);
-$bestQuarterIndex = array_search($bestQuarter, $quarters) + 1;
+// Best month
+$fullMonthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+$bestMonthTotal = max($monthlySales);
+$bestMonthIndex = array_search($bestMonthTotal, $monthlySales); // 1-based key
+$bestMonthName = $fullMonthNames[$bestMonthIndex - 1];
 
 // Find max value for Y-axis scaling
 $maxVal = max($monthlySales);
@@ -168,23 +164,47 @@ for ($i = 0; $i < 12; $i++) {
                 <?php endforeach; ?>
             </div>
         </div>
-        <!-- Enhanced Stats Cards (Themed) -->
-        <div class="dashboard-stats-flex" style="display: flex; flex-wrap: wrap; gap: 2rem; justify-content: center; align-items: stretch; margin-top: 2.5rem;">
-            <div class="dashboard-stat-card" style="flex: 1 1 220px; min-width: 220px; max-width: 320px; background: #ffe600; border-radius: 14px; box-shadow: 0 4px 18px #ffe60033; display: flex; flex-direction: column; align-items: center; padding: 32px 18px 24px 18px; margin-bottom: 0.5rem; transition: box-shadow 0.2s;">
-                <div style="font-size: 2.2rem; font-weight: 800; color: #222; display: flex; align-items: center; gap: 0.5rem;"><span style="font-size:1.5rem;"></span>₱<?php echo formatCurrency($totalSales); ?></div>
-                <div style="font-size: 1rem; font-weight: 700; color: #222; margin-top: 10px; letter-spacing: 0.2px;">Total Sales</div>
+        <!-- Minimal Stats Cards -->
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.25rem; margin-top: 2.5rem;">
+            <!-- Total Sales -->
+            <div style="background: #fff; border-radius: 12px; border: 1px solid #e5e7eb; border-left: 4px solid #3b82f6; padding: 20px 22px; display: flex; align-items: center; gap: 16px;">
+                <div style="width: 48px; height: 48px; border-radius: 12px; background: #dbeafe; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                    <i class="fas fa-coins" style="font-size: 20px; color: #3b82f6;"></i>
+                </div>
+                <div>
+                    <div style="font-size: 13px; color: #6b7280; font-weight: 500; margin-bottom: 4px;">Total Sales</div>
+                    <div style="font-size: 1.5rem; font-weight: 700; color: #111827;">₱<?php echo formatCurrency($totalSales); ?></div>
+                </div>
             </div>
-            <div class="dashboard-stat-card" style="flex: 1 1 220px; min-width: 220px; max-width: 320px; background: #1976d2; border-radius: 14px; box-shadow: 0 4px 18px #1976d233; display: flex; flex-direction: column; align-items: center; padding: 32px 18px 24px 18px; margin-bottom: 0.5rem; transition: box-shadow 0.2s;">
-                <div style="font-size: 2.2rem; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 0.5rem;"><span style="font-size:1.5rem;">📈</span><?php echo ($growthRate >= 0 ? '+' : '') . $growthRate; ?>%</div>
-                <div style="font-size: 1rem; font-weight: 700; color: #fff; margin-top: 10px; letter-spacing: 0.2px;">Growth Rate vs <?php echo $lastYear; ?></div>
+            <!-- Growth Rate -->
+            <div style="background: #fff; border-radius: 12px; border: 1px solid #e5e7eb; border-left: 4px solid #8b5cf6; padding: 20px 22px; display: flex; align-items: center; gap: 16px;">
+                <div style="width: 48px; height: 48px; border-radius: 12px; background: #ede9fe; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                    <i class="fas fa-chart-line" style="font-size: 20px; color: #8b5cf6;"></i>
+                </div>
+                <div>
+                    <div style="font-size: 13px; color: #6b7280; font-weight: 500; margin-bottom: 4px;">Growth Rate vs <?php echo $lastYear; ?></div>
+                    <div style="font-size: 1.5rem; font-weight: 700; color: #111827;"><?php echo ($growthRate >= 0 ? '+' : '') . $growthRate; ?>%</div>
+                </div>
             </div>
-            <div class="dashboard-stat-card" style="flex: 1 1 220px; min-width: 220px; max-width: 320px; background: #fffde7; border-radius: 14px; box-shadow: 0 4px 18px #ffe60033; display: flex; flex-direction: column; align-items: center; padding: 32px 18px 24px 18px; margin-bottom: 0.5rem; transition: box-shadow 0.2s;">
-                <div style="font-size: 2.2rem; font-weight: 800; color: #222; display: flex; align-items: center; gap: 0.5rem;"><span style="font-size:1.5rem;">🏆</span>₱<?php echo formatCurrency($bestQuarter); ?></div>
-                <div style="font-size: 1rem; font-weight: 700; color: #222; margin-top: 10px; letter-spacing: 0.2px;">Best Quarter (Q<?php echo $bestQuarterIndex; ?>)</div>
+            <!-- Best Month -->
+            <div style="background: #fff; border-radius: 12px; border: 1px solid #e5e7eb; border-left: 4px solid #f59e0b; padding: 20px 22px; display: flex; align-items: center; gap: 16px;">
+                <div style="width: 48px; height: 48px; border-radius: 12px; background: #fef3c7; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                    <i class="fas fa-trophy" style="font-size: 20px; color: #f59e0b;"></i>
+                </div>
+                <div>
+                    <div style="font-size: 13px; color: #6b7280; font-weight: 500; margin-bottom: 4px;">Best Month (<?php echo $bestMonthName; ?>)</div>
+                    <div style="font-size: 1.5rem; font-weight: 700; color: #111827;">₱<?php echo formatCurrency($bestMonthTotal); ?></div>
+                </div>
             </div>
-            <div class="dashboard-stat-card" style="flex: 1 1 220px; min-width: 220px; max-width: 320px; background: #f3f4f6; border-radius: 14px; box-shadow: 0 4px 18px #1976d233; display: flex; flex-direction: column; align-items: center; padding: 32px 18px 24px 18px; margin-bottom: 0.5rem; transition: box-shadow 0.2s;">
-                <div style="font-size: 2.2rem; font-weight: 800; color: #1976d2; display: flex; align-items: center; gap: 0.5rem;"><span style="font-size:1.5rem;">📅</span>₱<?php echo formatCurrency($avgPerMonth); ?></div>
-                <div style="font-size: 1rem; font-weight: 700; color: #1976d2; margin-top: 10px; letter-spacing: 0.2px;">Avg/Month</div>
+            <!-- Avg/Month -->
+            <div style="background: #fff; border-radius: 12px; border: 1px solid #e5e7eb; border-left: 4px solid #10b981; padding: 20px 22px; display: flex; align-items: center; gap: 16px;">
+                <div style="width: 48px; height: 48px; border-radius: 12px; background: #d1fae5; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                    <i class="fas fa-calendar-alt" style="font-size: 20px; color: #10b981;"></i>
+                </div>
+                <div>
+                    <div style="font-size: 13px; color: #6b7280; font-weight: 500; margin-bottom: 4px;">Avg/Month</div>
+                    <div style="font-size: 1.5rem; font-weight: 700; color: #111827;">₱<?php echo formatCurrency($avgPerMonth); ?></div>
+                </div>
             </div>
         </div>
     </div>
