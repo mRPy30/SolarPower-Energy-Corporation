@@ -1,7 +1,6 @@
-<!-- Orders PDF Export -->
+<!-- Orders PDF Export (Print Preview) -->
 <script>
 function exportOrdersPDF() {
-    // Fetch fresh order data from MySQL via existing endpoint
     fetch('dashboard.php?ajax=1&action=fetch_orders')
         .then(response => response.json())
         .then(res => {
@@ -9,7 +8,7 @@ function exportOrdersPDF() {
                 alert('No order data available to export.');
                 return;
             }
-            generateOrdersPDF(res.data);
+            generateOrdersPrintPreview(res.data);
         })
         .catch(err => {
             console.error('Export error:', err);
@@ -17,175 +16,109 @@ function exportOrdersPDF() {
         });
 }
 
-function generateOrdersPDF(orders) {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF('landscape', 'mm', 'a4');
-
-    const pageWidth = doc.internal.pageSize.getWidth();
+function generateOrdersPrintPreview(orders) {
     const now = new Date();
-    const dateStr = now.toLocaleDateString('en-PH', {
-        year: 'numeric', month: 'long', day: 'numeric'
-    });
-    const timeStr = now.toLocaleTimeString('en-PH', {
-        hour: '2-digit', minute: '2-digit'
-    });
+    const dateStr = now.toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' });
+    const timeStr = now.toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' });
 
-    // Calculate summary
     const totalRevenue = orders.reduce((sum, o) => sum + parseFloat(o.total_amount), 0);
     const paidOrders = orders.filter(o => o.order_status.toUpperCase() === 'PAID').length;
     const pendingOrders = orders.filter(o => o.order_status.toUpperCase() === 'PENDING').length;
     const cancelledOrders = orders.filter(o => o.order_status.toUpperCase() === 'CANCELLED').length;
 
-    // ===== HEADER =====
-    doc.setFillColor(255, 193, 7);
-    doc.rect(0, 0, pageWidth, 4, 'F');
-
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(20);
-    doc.setTextColor(44, 62, 80);
-    doc.text('SolarPower Energy Corporation', 14, 18);
-
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(12);
-    doc.setTextColor(100, 100, 100);
-    doc.text('Orders Report', 14, 26);
-
-    doc.setFontSize(10);
-    doc.text(`Generated: ${dateStr} at ${timeStr}`, pageWidth - 14, 18, { align: 'right' });
-    doc.text(`Total Orders: ${orders.length}`, pageWidth - 14, 24, { align: 'right' });
-
-    // Divider
-    doc.setDrawColor(255, 193, 7);
-    doc.setLineWidth(0.5);
-    doc.line(14, 30, pageWidth - 14, 30);
-
-    // ===== SUMMARY BOXES =====
-    const boxY = 34;
-    const boxH = 16;
-    const boxW = (pageWidth - 28 - 15) / 4; // 4 boxes with gaps
-
-    // Total Revenue
-    doc.setFillColor(44, 62, 80);
-    doc.roundedRect(14, boxY, boxW, boxH, 2, 2, 'F');
-    doc.setFontSize(8);
-    doc.setTextColor(200, 200, 200);
-    doc.text('TOTAL REVENUE', 14 + boxW / 2, boxY + 5, { align: 'center' });
-    doc.setFontSize(12);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(255, 255, 255);
-    doc.text('PHP ' + totalRevenue.toLocaleString('en-PH', { minimumFractionDigits: 2 }), 14 + boxW / 2, boxY + 13, { align: 'center' });
-
-    // Paid
-    doc.setFillColor(39, 174, 96);
-    doc.roundedRect(14 + boxW + 5, boxY, boxW, boxH, 2, 2, 'F');
-    doc.setFontSize(8);
-    doc.setTextColor(200, 255, 200);
-    doc.text('PAID', 14 + boxW + 5 + boxW / 2, boxY + 5, { align: 'center' });
-    doc.setFontSize(12);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(255, 255, 255);
-    doc.text(String(paidOrders), 14 + boxW + 5 + boxW / 2, boxY + 13, { align: 'center' });
-
-    // Pending
-    doc.setFillColor(243, 156, 18);
-    doc.roundedRect(14 + (boxW + 5) * 2, boxY, boxW, boxH, 2, 2, 'F');
-    doc.setFontSize(8);
-    doc.setTextColor(255, 240, 200);
-    doc.text('PENDING', 14 + (boxW + 5) * 2 + boxW / 2, boxY + 5, { align: 'center' });
-    doc.setFontSize(12);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(255, 255, 255);
-    doc.text(String(pendingOrders), 14 + (boxW + 5) * 2 + boxW / 2, boxY + 13, { align: 'center' });
-
-    // Cancelled
-    doc.setFillColor(231, 76, 60);
-    doc.roundedRect(14 + (boxW + 5) * 3, boxY, boxW, boxH, 2, 2, 'F');
-    doc.setFontSize(8);
-    doc.setTextColor(255, 200, 200);
-    doc.text('CANCELLED', 14 + (boxW + 5) * 3 + boxW / 2, boxY + 5, { align: 'center' });
-    doc.setFontSize(12);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(255, 255, 255);
-    doc.text(String(cancelledOrders), 14 + (boxW + 5) * 3 + boxW / 2, boxY + 13, { align: 'center' });
-
-    // ===== TABLE =====
-    const tableData = orders.map((order, index) => [
-        index + 1,
-        order.order_reference,
-        order.customer_name,
-        'PHP ' + parseFloat(order.total_amount).toLocaleString('en-PH', { minimumFractionDigits: 2 }),
-        new Date(order.created_at).toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' }),
-        order.payment_method,
-        order.order_status.toUpperCase()
-    ]);
-
-
-    doc.autoTable({
-        startY: boxY + boxH + 6,
-        head: [['#', 'Order Ref', 'Customer', 'Amount', 'Date', 'Payment', 'Status']],
-        body: tableData,
-        theme: 'grid',
-        headStyles: {
-            fillColor: [44, 62, 80],
-            textColor: [255, 255, 255],
-            fontSize: 10,
-            fontStyle: 'bold',
-            halign: 'center',
-            cellPadding: 4
-        },
-        bodyStyles: {
-            fontSize: 9,
-            cellPadding: 3,
-            textColor: [50, 50, 50]
-        },
-        alternateRowStyles: {
-            fillColor: [248, 249, 250]
-        },
-        columnStyles: {
-            0: { halign: 'center', cellWidth: 12 },
-            1: { halign: 'center', cellWidth: 35 },
-            2: { fontStyle: 'bold', cellWidth: 50 },
-            3: { halign: 'right', cellWidth: 35 },
-            4: { halign: 'center', cellWidth: 35 },
-            5: { halign: 'center', cellWidth: 30 },
-            6: { halign: 'center', cellWidth: 28 }
-        },
-        margin: { left: 14, right: 14 },
-        didParseCell: function(data) {
-            // Color-code the Status column
-            if (data.section === 'body' && data.column.index === 6) {
-                const status = data.cell.raw;
-                if (status === 'PAID') {
-                    data.cell.styles.textColor = [39, 174, 96];
-                    data.cell.styles.fontStyle = 'bold';
-                } else if (status === 'PENDING') {
-                    data.cell.styles.textColor = [243, 156, 18];
-                    data.cell.styles.fontStyle = 'bold';
-                } else if (status === 'CANCELLED') {
-                    data.cell.styles.textColor = [231, 76, 60];
-                    data.cell.styles.fontStyle = 'bold';
-                }
-            }
-        },
-        didDrawPage: function(data) {
-            const pageHeight = doc.internal.pageSize.getHeight();
-            const pageNum = doc.internal.getNumberOfPages();
-            const currentPage = doc.internal.getCurrentPageInfo().pageNumber;
-
-            doc.setDrawColor(200, 200, 200);
-            doc.setLineWidth(0.3);
-            doc.line(14, pageHeight - 15, pageWidth - 14, pageHeight - 15);
-
-            doc.setFontSize(8);
-            doc.setFont('helvetica', 'normal');
-            doc.setTextColor(150, 150, 150);
-            doc.text('SolarPower Energy Corporation — Confidential', 14, pageHeight - 10);
-            doc.text(`Page ${currentPage} of ${pageNum}`, pageWidth - 14, pageHeight - 10, { align: 'right' });
+    function statusColor(status) {
+        switch (status.toUpperCase()) {
+            case 'PAID': return '#27ae60';
+            case 'PENDING': return '#f39c12';
+            case 'CANCELLED': return '#e74c3c';
+            default: return '#333';
         }
-    });
+    }
 
-    // Save
-    const filename = `SolarPower_Orders_${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}.pdf`;
-    doc.save(filename);
+    let tableRows = orders.map((order, i) => {
+        const status = order.order_status.toUpperCase();
+        const date = new Date(order.created_at).toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' });
+        const amount = 'PHP ' + parseFloat(order.total_amount).toLocaleString('en-PH', { minimumFractionDigits: 2 });
+        return `<tr style="${i % 2 === 1 ? 'background:#f8f9fa;' : ''}">
+            <td style="text-align:center;">${i + 1}</td>
+            <td style="text-align:center;">${order.order_reference}</td>
+            <td style="font-weight:600;">${order.customer_name}</td>
+            <td style="text-align:right;">${amount}</td>
+            <td style="text-align:center;">${date}</td>
+            <td style="text-align:center;">${order.payment_method}</td>
+            <td style="text-align:center;font-weight:700;color:${statusColor(status)}">${status}</td>
+        </tr>`;
+    }).join('');
+
+    const html = `<!DOCTYPE html>
+<html><head><title>SolarPower Orders Report</title>
+<style>
+    @page { size: landscape; margin: 10mm 14mm; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; color: #333; font-size: 10px; }
+    .accent-bar { height: 6px; background: #ffc107; }
+    .header { display: flex; justify-content: space-between; align-items: flex-start; padding: 14px 0 10px; }
+    .header-left h1 { font-size: 20px; color: #2c3e50; margin-bottom: 2px; }
+    .header-left p { font-size: 12px; color: #888; }
+    .header-right { text-align: right; font-size: 10px; color: #888; }
+    .divider { border: none; border-top: 2px solid #ffc107; margin: 8px 0 14px; }
+    .summary { display: flex; gap: 10px; margin-bottom: 16px; }
+    .summary-box { flex: 1; border-radius: 6px; padding: 10px 8px; text-align: center; color: #fff; }
+    .summary-box .label { font-size: 8px; letter-spacing: 0.5px; opacity: 0.85; text-transform: uppercase; }
+    .summary-box .value { font-size: 16px; font-weight: 700; margin-top: 2px; }
+    table { width: 100%; border-collapse: collapse; font-size: 9px; }
+    thead th { background: #2c3e50; color: #fff; font-size: 10px; font-weight: 600; padding: 8px 6px; text-align: center; }
+    tbody td { padding: 6px; border-bottom: 1px solid #e0e0e0; }
+    .footer { margin-top: 20px; border-top: 1px solid #ccc; padding-top: 6px; display: flex; justify-content: space-between; font-size: 8px; color: #999; }
+    @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+</style></head><body>
+<div class="accent-bar"></div>
+<div class="header">
+    <div class="header-left">
+        <h1>SolarPower Energy Corporation</h1>
+        <p>Orders Report</p>
+    </div>
+    <div class="header-right">
+        Generated: ${dateStr} at ${timeStr}<br>
+        Total Orders: ${orders.length}
+    </div>
+</div>
+<hr class="divider">
+<div class="summary">
+    <div class="summary-box" style="background:#2c3e50;">
+        <div class="label">Total Revenue</div>
+        <div class="value">PHP ${totalRevenue.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</div>
+    </div>
+    <div class="summary-box" style="background:#27ae60;">
+        <div class="label">Paid</div>
+        <div class="value">${paidOrders}</div>
+    </div>
+    <div class="summary-box" style="background:#f39c12;">
+        <div class="label">Pending</div>
+        <div class="value">${pendingOrders}</div>
+    </div>
+    <div class="summary-box" style="background:#e74c3c;">
+        <div class="label">Cancelled</div>
+        <div class="value">${cancelledOrders}</div>
+    </div>
+</div>
+<table>
+    <thead><tr>
+        <th>#</th><th>Order Ref</th><th>Customer</th><th>Amount</th><th>Date</th><th>Payment</th><th>Status</th>
+    </tr></thead>
+    <tbody>${tableRows}</tbody>
+</table>
+<div class="footer">
+    <span>SolarPower Energy Corporation — Confidential</span>
+</div>
+</body></html>`;
+
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(html);
+    printWindow.document.close();
+    printWindow.onload = function() {
+        printWindow.focus();
+        printWindow.print();
+    };
 }
 </script>

@@ -1,10 +1,6 @@
-<!-- jsPDF Libraries for Client PDF Export -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
-
+<!-- Clients PDF Export (Print Preview) -->
 <script>
 function exportClientsPDF() {
-    // Fetch fresh client data from MySQL via existing endpoint
     fetch('dashboard.php?ajax=1&action=fetch_clients')
         .then(response => response.json())
         .then(res => {
@@ -12,7 +8,7 @@ function exportClientsPDF() {
                 alert('No client data available to export.');
                 return;
             }
-            generateClientsPDF(res.data);
+            generateClientsPrintPreview(res.data);
         })
         .catch(err => {
             console.error('Export error:', err);
@@ -20,107 +16,69 @@ function exportClientsPDF() {
         });
 }
 
-function generateClientsPDF(clients) {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF('landscape', 'mm', 'a4');
-
-    const pageWidth = doc.internal.pageSize.getWidth();
+function generateClientsPrintPreview(clients) {
     const now = new Date();
-    const dateStr = now.toLocaleDateString('en-PH', {
-        year: 'numeric', month: 'long', day: 'numeric'
-    });
-    const timeStr = now.toLocaleTimeString('en-PH', {
-        hour: '2-digit', minute: '2-digit'
-    });
+    const dateStr = now.toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' });
+    const timeStr = now.toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' });
 
-    // ===== HEADER =====
-    // Yellow accent bar
-    doc.setFillColor(255, 193, 7);
-    doc.rect(0, 0, pageWidth, 4, 'F');
+    let tableRows = clients.map((client, i) => {
+        return `<tr style="${i % 2 === 1 ? 'background:#f8f9fa;' : ''}">
+            <td style="text-align:center;">${i + 1}</td>
+            <td style="font-weight:600;">${client.customer_name}</td>
+            <td>${client.customer_email}</td>
+            <td style="text-align:center;">${client.customer_phone}</td>
+            <td>${client.customer_address}</td>
+            <td style="text-align:center;">${client.total_orders}</td>
+        </tr>`;
+    }).join('');
 
-    // Company name
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(20);
-    doc.setTextColor(44, 62, 80);
-    doc.text('SolarPower Energy Corporation', 14, 18);
+    const html = `<!DOCTYPE html>
+<html><head><title>SolarPower Client Directory Report</title>
+<style>
+    @page { size: landscape; margin: 10mm 14mm; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; color: #333; font-size: 10px; }
+    .accent-bar { height: 6px; background: #ffc107; }
+    .header { display: flex; justify-content: space-between; align-items: flex-start; padding: 14px 0 10px; }
+    .header-left h1 { font-size: 20px; color: #2c3e50; margin-bottom: 2px; }
+    .header-left p { font-size: 12px; color: #888; }
+    .header-right { text-align: right; font-size: 10px; color: #888; }
+    .divider { border: none; border-top: 2px solid #ffc107; margin: 8px 0 14px; }
+    table { width: 100%; border-collapse: collapse; font-size: 9px; }
+    thead th { background: #2c3e50; color: #fff; font-size: 10px; font-weight: 600; padding: 8px 6px; text-align: center; }
+    tbody td { padding: 6px; border-bottom: 1px solid #e0e0e0; }
+    .footer { margin-top: 20px; border-top: 1px solid #ccc; padding-top: 6px; display: flex; justify-content: space-between; font-size: 8px; color: #999; }
+    @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+</style></head><body>
+<div class="accent-bar"></div>
+<div class="header">
+    <div class="header-left">
+        <h1>SolarPower Energy Corporation</h1>
+        <p>Client Directory Report</p>
+    </div>
+    <div class="header-right">
+        Generated: ${dateStr} at ${timeStr}<br>
+        Total Clients: ${clients.length}
+    </div>
+</div>
+<hr class="divider">
+<table>
+    <thead><tr>
+        <th>#</th><th>Full Name</th><th>Email Address</th><th>Contact Number</th><th>Delivery Address</th><th>Total Orders</th>
+    </tr></thead>
+    <tbody>${tableRows}</tbody>
+</table>
+<div class="footer">
+    <span>SolarPower Energy Corporation — Confidential</span>
+</div>
+</body></html>`;
 
-    // Report title
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(12);
-    doc.setTextColor(100, 100, 100);
-    doc.text('Client Directory Report', 14, 26);
-
-    // Date & time (right-aligned)
-    doc.setFontSize(10);
-    doc.text(`Generated: ${dateStr} at ${timeStr}`, pageWidth - 14, 18, { align: 'right' });
-    doc.text(`Total Clients: ${clients.length}`, pageWidth - 14, 24, { align: 'right' });
-
-    // Divider line
-    doc.setDrawColor(255, 193, 7);
-    doc.setLineWidth(0.5);
-    doc.line(14, 30, pageWidth - 14, 30);
-
-    // ===== TABLE =====
-    const tableData = clients.map((client, index) => [
-        index + 1,
-        client.customer_name,
-        client.customer_email,
-        client.customer_phone,
-        client.customer_address,
-        client.total_orders
-    ]);
-
-    doc.autoTable({
-        startY: 35,
-        head: [['#', 'Full Name', 'Email Address', 'Contact Number', 'Delivery Address', 'Total Orders']],
-        body: tableData,
-        theme: 'grid',
-        headStyles: {
-            fillColor: [44, 62, 80],
-            textColor: [255, 255, 255],
-            fontSize: 10,
-            fontStyle: 'bold',
-            halign: 'center',
-            cellPadding: 4
-        },
-        bodyStyles: {
-            fontSize: 9,
-            cellPadding: 3,
-            textColor: [50, 50, 50]
-        },
-        alternateRowStyles: {
-            fillColor: [248, 249, 250]
-        },
-        columnStyles: {
-            0: { halign: 'center', cellWidth: 12 },
-            1: { fontStyle: 'bold', cellWidth: 45 },
-            2: { cellWidth: 55 },
-            3: { halign: 'center', cellWidth: 35 },
-            4: { cellWidth: 'auto' },
-            5: { halign: 'center', cellWidth: 25 }
-        },
-        margin: { left: 14, right: 14 },
-        didDrawPage: function(data) {
-            // Footer on each page
-            const pageHeight = doc.internal.pageSize.getHeight();
-            const pageNum = doc.internal.getNumberOfPages();
-            const currentPage = doc.internal.getCurrentPageInfo().pageNumber;
-
-            // Footer line
-            doc.setDrawColor(200, 200, 200);
-            doc.setLineWidth(0.3);
-            doc.line(14, pageHeight - 15, pageWidth - 14, pageHeight - 15);
-
-            // Footer text
-            doc.setFontSize(8);
-            doc.setTextColor(150, 150, 150);
-            doc.text('SolarPower Energy Corporation — Confidential', 14, pageHeight - 10);
-            doc.text(`Page ${currentPage} of ${pageNum}`, pageWidth - 14, pageHeight - 10, { align: 'right' });
-        }
-    });
-
-    // Save the PDF
-    const filename = `SolarPower_Clients_${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}.pdf`;
-    doc.save(filename);
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(html);
+    printWindow.document.close();
+    printWindow.onload = function() {
+        printWindow.focus();
+        printWindow.print();
+    };
 }
 </script>
