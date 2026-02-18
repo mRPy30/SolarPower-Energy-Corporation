@@ -141,16 +141,10 @@
                             <h4 class="fw-bold">BF Homes Parañaque</h4>
                             <ul>
                                 <li><strong>System:</strong> 12kW Hybrid</li>
-                                <li><strong>Monthly bill before:</strong> ₱18,000</li>
-                                <li><strong>Monthly bill after:</strong> ₱1,500</li>
-                                <li><strong>Results:</strong> 92% savings</li>
+                                <li><strong>Monthly bill before:</strong> ₱22,000</li>
+                                <li><strong>Monthly bill after:</strong> ₱11,000</li>
+                                <li><strong>Results:</strong> 50% savings</li>
                             </ul>
-                            <div>
-                                <h4>Testimonial</h4>
-                                <ul>
-                                    <li style="margin-top: 0">"Our electric bill dropped dramatically after installation"</li>
-                                </ul>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -169,12 +163,6 @@
                                 <li><strong>Monthly bill after:</strong> ₱4,500</li>
                                 <li><strong>Results:</strong> 80% savings</li>
                             </ul>
-                            <div>
-                                <h4>Testimonial</h4>
-                                <ul>
-                                    <li style="margin-top: 0">"The financing options made it easy to get started"</li>
-                                </ul>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -194,12 +182,6 @@
                                 <li><strong>Monthly bill after:</strong> ₱3,200</li>
                                 <li><strong>Results:</strong> 87% savings</li>
                             </ul>
-                            <div>
-                                <h4>Testimonial</h4>
-                                <ul>
-                                    <li style="margin-top: 0">"Professional installation and excellent ROI"</li>
-                                </ul>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -218,12 +200,6 @@
                                 <li><strong>Monthly bill after:</strong> ₱8,500</li>
                                 <li><strong>Results:</strong> 81% savings</li>
                             </ul>
-                            <div>
-                                <h4>Testimonial</h4>
-                                <ul>
-                                    <li style="margin-top: 0">"Best investment for our business operations"</li>
-                                </ul>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -242,12 +218,6 @@
                                 <li><strong>Monthly bill after:</strong> ₱2,100</li>
                                 <li><strong>Results:</strong> 86% savings</li>
                             </ul>
-                            <div>
-                                <h4>Testimonial</h4>
-                                <ul>
-                                    <li style="margin-top: 0">"Seamless installation and great support team"</li>
-                                </ul>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -266,12 +236,6 @@
                                 <li><strong>Monthly bill after:</strong> ₱4,200</li>
                                 <li><strong>Results:</strong> 85% savings</li>
                             </ul>
-                            <div>
-                                <h4>Testimonial</h4>
-                                <ul>
-                                    <li style="margin-top: 0">"Eco-friendly solution with amazing cost savings"</li>
-                                </ul>
-                            </div>
                         </div>
                     </div>
                 </div>
