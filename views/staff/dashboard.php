@@ -1855,13 +1855,13 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
 
                     <div class="quotation-header">
                         <div style="display: flex; gap: 10px;">
-                            <button class="btn-primary" onclick="exportQuotationsPDF()">
+                            <button class="btn-primary" style="background-color: #3498db;" onclick="exportQuotationsPDF()">
                                 <i class="fas fa-file-pdf"></i> Export to PDF
                             </button>
                             <button class="btn-primary" style="background-color: #217346;" onclick="exportQuotationsExcel()">
                                 <i class="fas fa-file-excel"></i> Export to Excel
                             </button>
-                            <button style="background-color:#3b82f6;" class="btn-primary" onclick="openQuotationModal()">
+                            <button class="btn-primary" onclick="openQuotationModal()">
                                 <i class="fas fa-plus"></i> New Quotation
                             </button>
                         </div>
@@ -1902,14 +1902,11 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
                         </div>
 
                         <div style="display: flex; gap: 10px;">
-                            <button class="btn-primary" onclick="exportOrdersPDF()">
+                            <button class="btn-primary" style="background-color: #3498db;" onclick="exportOrdersPDF()">
                                 <i class="fas fa-file-pdf"></i> Export to PDF
                             </button>
                             <button class="btn-primary" style="background-color: #217346;" onclick="exportOrdersExcel()">
                                 <i class="fas fa-file-excel"></i> Export to Excel
-                            </button>
-                            <button class="btn-refresh" onclick="OrdersModule.loadOrders()">
-                                <i class="fas fa-sync-alt"></i> Refresh
                             </button>
                         </div>
                     </div>
@@ -2013,13 +2010,13 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
                     <!-- HEADER ACTION -->
                     <div class="suppliers-header">
                         <div style="display: flex; gap: 10px;">
-                            <button class="btn-primary" onclick="exportSuppliersPDF()">
+                            <button class="btn-primary" style="background-color: #3498db;" onclick="exportSuppliersPDF()">
                                 <i class="fas fa-file-pdf"></i> Export to PDF
                             </button>
                             <button class="btn-primary" style="background-color: #217346;" onclick="exportSuppliersExcel()">
                                 <i class="fas fa-file-excel"></i> Export to Excel
                             </button>
-                            <button class="btn-primary" style="background-color: #3498db;" onclick="openSupplierModal()">
+                            <button class="btn-primary" onclick="openSupplierModal()">
                                 <i class="fas fa-plus"></i> Add Supplier
                             </button>
                         </div>
@@ -2362,7 +2359,7 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
                             <p>View registered clients and their order history</p>
                         </div>
                         <div style="display: flex; gap: 10px;">
-                            <button class="btn-primary" onclick="exportClientsPDF()">
+                            <button class="btn-primary" style="background-color: #3498db;" onclick="exportClientsPDF()">
                                 <i class="fas fa-file-pdf"></i> Export to PDF
                             </button>
                             <button class="btn-primary" style="background-color: #217346;" onclick="exportClientsExcel()">
@@ -4313,8 +4310,7 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
             }
         };
 
-        // Initial load when page is ready
-        document.addEventListener('DOMContentLoaded', () => OrdersModule.loadOrders());
+        
 
         // Initialize tracking when page is shown
         const originalShowPageFunc = window.showPage;
