@@ -1221,8 +1221,8 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
             <div id="deleteProductModal" class="modal">
                 <div class="modal-content">
                     <span class="close" onclick="closeDeleteModal()">&times;</span>
-                    <h2>Confirm Deletion</h2>
-                    <p>Are you sure you want to delete this product?</p>
+                    <h2>Confirm Archive</h2>
+                    <p>Are you sure you want to archive this product?</p>
                     <p class="warning-text">This action cannot be undone.</p>
                     <form id="deleteProductForm" method="POST" action="delete_product.php">
                         <input type="hidden" name="product_id" id="deleteProductId">
@@ -1239,13 +1239,13 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
                 <div class="modal-content">
                     <span class="close" onclick="closeBulkDeleteModal()">&times;</span>
                     <h2>Confirm Bulk Deletion</h2>
-                    <p>Are you sure you want to delete <strong id="bulkDeleteCount">0</strong> selected product(s)?</p>
+                    <p>Are you sure you want to archive <strong id="bulkDeleteCount">0</strong> selected product(s)?</p>
                     <p class="warning-text">This action cannot be undone.</p>
                     <form id="bulkDeleteForm" method="POST" action="bulk_delete_products.php">
                         <input type="hidden" name="product_ids" id="bulkDeleteProductIds">
                         <div class="modal-actions">
                             <button type="button" onclick="closeBulkDeleteModal()" class="btn-cancel">Cancel</button>
-                            <button type="submit" class="btn-confirm-delete">Yes, Delete All</button>
+                            <button type="submit" class="btn-confirm-delete">Yes, Archive All</button>
                         </div>
                     </form>
                 </div>
@@ -3177,11 +3177,11 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
                         <td>${this.formatDate(supplier.registrationDate)}</td>
                         <td>
                             <div class="supplier-actions">
-                                <button class="btn-table-action btn-edit" onclick="SuppliersModule.editSupplier(${supplier.id})">
+                                <button class="btn-small-action btn-edit-quotation" onclick="SuppliersModule.editSupplier(${supplier.id})">
                                     <i class="fas fa-edit"></i> Edit
                                 </button>
-                                <button class="btn-table-action btn-delete" onclick="SuppliersModule.showDeleteModal(${supplier.id})">
-                                    <i class="fas fa-trash"></i> Delete
+                                <button class="btn-small-action btn-delete-quotation" onclick="SuppliersModule.showDeleteModal(${supplier.id})">
+                                    <i class="fas fa-trash"></i> Archive
                                 </button>
                             </div>
                         </td>
@@ -5049,7 +5049,7 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
                         <i class="fas fa-edit"></i> Edit
                     </button>
                     <button class="btn-small-action btn-delete-quotation" onclick="QuotationModule.showDeleteModal  (${q.id})">
-                        <i class="fas fa-trash"></i> Delete
+                        <i class="fas fa-trash"></i> Archive
                     </button>
                 </td>
             `;
