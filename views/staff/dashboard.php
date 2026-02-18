@@ -1252,85 +1252,92 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
             </div>
 
             <!-- Quotation Modal -->
-            <div id="quotationModal" class="modal">
-                <div class="modal-quotation modal-medium">
-                    <span class="close" onclick="closeQuotationModal()">&times;</span>
-                    <h2 id="quotationModalTitle"><i class="fas fa-file-invoice"></i> New Quotation</h2>
+            <div id="quotationModal" class="staffModal">
+                <div class="staffModal-content">
+                    <div class="staffModal-header">
+                        <h3>
+                            <i class="fas fa-file-invoice"></i>
+                            <span id="quotationModalTitle">New Quotation</span>
+                        </h3>
+                        <span class="close" onclick="closeQuotationModal()">&times;</span>
+                    </div>
 
-                    <form id="quotationForm">
+                    <form id="quotationForm" onsubmit="QuotationModule.saveQuotation(); return false;">
                         <input type="hidden" id="quotationId">
 
-                        <div class="form-group">
-                            <label><i class="fas fa-user"></i> Client Name *</label>
-                            <input type="text" id="clientName" required>
-                        </div>
-
-                        <div class="form-group">
-                            <label><i class="fa-solid fa-envelope"></i> Email *</label>
-                            <input type="text" id="email" required>
-                        </div>
-
-                        <div class="form-group">
-                            <label><i class="fas fa-address-book"></i> Contact Number *</label>
-                            <input type="text" id="contact" required>
-                        </div>
-
-                        <div class="form-group">
-                            <label><i class="fas fa-map-marker-alt"></i> Location</label>
-                            <input type="text" id="location" placeholder="City, Province">
-                        </div>
-
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label><i class="fas fa-solar-panel"></i> System Type *</label>
-                                <select id="systemType" required>
-                                    <option value="">Select System</option>
-                                    <option value="HYBRID">Hybrid</option>
-                                    <option value="SUPPLY-ONLY">Supply Only</option>
-                                    <option value="GRID-TIE-HYBRID">Grid Tie Hybrid</option>
-                                </select>
+                        <div class="staffModal-body">
+                            <div class="staffModal-group">
+                                <label><i class="fas fa-user"></i> Client Name *</label>
+                                <input type="text" id="clientName" required>
                             </div>
 
-                            <div class="form-group">
-                                <label><i class="fas fa-bolt"></i> kW</label>
-                                <input type="number" id="kw" min="0" step="0.01" placeholder="0">
+                            <div class="staffModal-group">
+                                <label><i class="fa-solid fa-envelope"></i> Email *</label>
+                                <input type="text" id="email" required>
+                            </div>
+
+                            <div class="staffModal-group">
+                                <label><i class="fas fa-address-book"></i> Contact Number *</label>
+                                <input type="text" id="contact" required>
+                            </div>
+
+                            <div class="staffModal-group">
+                                <label><i class="fas fa-map-marker-alt"></i> Location</label>
+                                <input type="text" id="location" placeholder="City, Province">
+                            </div>
+
+                            <div class="staffModal-row">
+                                <div class="staffModal-group">
+                                    <label><i class="fas fa-solar-panel"></i> System Type *</label>
+                                    <select id="systemType" required>
+                                        <option value="">Select System</option>
+                                        <option value="HYBRID">Hybrid</option>
+                                        <option value="SUPPLY-ONLY">Supply Only</option>
+                                        <option value="GRID-TIE-HYBRID">Grid Tie Hybrid</option>
+                                    </select>
+                                </div>
+
+                                <div class="staffModal-group">
+                                    <label><i class="fas fa-bolt"></i> kW</label>
+                                    <input type="number" id="kw" min="0" step="0.01" placeholder="0">
+                                </div>
+                            </div>
+
+                            <div class="staffModal-row">
+                                <div class="staffModal-group">
+                                    <label><i class="fas fa-user-tie"></i> Officer *</label>
+                                    <select id="officer" required>
+                                        <option value="">Select Officer</option>
+                                        <option value="PRINCESS">Princess</option>
+                                        <option value="ANNE">Anne</option>
+                                        <option value="GAB">Gab</option>
+                                        <option value="JOY">Joy</option>
+                                    </select>
+                                </div>
+
+                                <div class="staffModal-group">
+                                    <label><i class="fas fa-flag"></i> Status *</label>
+                                    <select id="status" required>
+                                        <option value="SENT">Sent</option>
+                                        <option value="ONGOING">On Going</option>
+                                        <option value="APPROVED">Approved</option>
+                                        <option value="CLOSED">Closed</option>
+                                        <option value="LOSS">Loss</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="staffModal-group">
+                                <label><i class="fas fa-comment"></i> Remarks</label>
+                                <textarea id="remarks" rows="3" placeholder="Additional notes..."></textarea>
                             </div>
                         </div>
 
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label><i class="fas fa-user-tie"></i> Officer *</label>
-                                <select id="officer" required>
-                                    <option value="">Select Officer</option>
-                                    <option value="PRINCESS">Princess</option>
-                                    <option value="ANNE">Anne</option>
-                                    <option value="GAB">Gab</option>
-                                    <option value="JOY">Joy</option>
-                                </select>
-                            </div>
-
-                            <div class="form-group">
-                                <label><i class="fas fa-flag"></i> Status *</label>
-                                <select id="status" required>
-                                    <option value="SENT">Sent</option>
-                                    <option value="ONGOING">On Going</option>
-                                    <option value="APPROVED">Approved</option>
-                                    <option value="CLOSED">Closed</option>
-                                    <option value="LOSS">Loss</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            <label><i class="fas fa-comment"></i> Remarks</label>
-                            <textarea id="remarks" rows="3" placeholder="Additional notes..."></textarea>
-                        </div>
-
-                        <div class="modal-actions">
-                            <button type="button" onclick="closeQuotationModal()" class="btn-cancel">
+                        <div class="staffModal-footer">
+                            <button type="button" onclick="closeQuotationModal()" class="staffModal-btn-secondary">
                                 <i class="fas fa-times"></i> Cancel
                             </button>
-                            <button type="submit" class="btn-save">
+                            <button type="submit" class="staffModal-btn-primary">
                                 <i class="fas fa-save"></i> Save Quotation
                             </button>
                         </div>
@@ -5084,7 +5091,7 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
                 // Update modal title
                 const modalTitle = document.getElementById('quotationModalTitle');
                 if (modalTitle) {
-                    modalTitle.innerHTML = '<i class="fas fa-edit"></i> Edit Quotation';
+                    modalTitle.textContent = 'Edit Quotation';
                 }
 
                 // Set form values with null checks
@@ -5110,12 +5117,10 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
                 if (statusInput) statusInput.value = quotation.status || '';
                 if (remarksInput) remarksInput.value = quotation.remarks || '';
 
-                // Show the modal with explicit display
+                // Show the modal
                 const modal = document.getElementById('quotationModal');
                 if (modal) {
-                    modal.style.display = 'block';
                     modal.classList.add('show');
-                    console.log('Modal should be visible now'); // Debug log
                 } else {
                     console.error('Modal element not found!');
                 }
@@ -5124,7 +5129,6 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
             closeQuotationModal() {
                 const modal = document.getElementById('quotationModal');
                 if (modal) {
-                    modal.style.display = 'none';
                     modal.classList.remove('show');
                 }
 
@@ -5136,7 +5140,7 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
 
                 const modalTitle = document.getElementById('quotationModalTitle');
                 if (modalTitle) {
-                    modalTitle.innerHTML = '<i class="fas fa-file-invoice"></i> New Quotation';
+                    modalTitle.textContent = 'New Quotation';
                 }
             },
 
@@ -5259,7 +5263,7 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
             },
 
             closeQuotationModal() {
-                document.getElementById('quotationModal').style.display = 'none';
+                document.getElementById('quotationModal').classList.remove('show');
                 document.getElementById('quotationForm').reset();
                 document.getElementById('quotationId').value = '';
             },
@@ -5286,10 +5290,10 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
 
         // Global functions
         function openQuotationModal() {
-            document.getElementById('quotationModalTitle').innerHTML = '<i class="fas fa-file-invoice"></i> New Quotation';
+            document.getElementById('quotationModalTitle').textContent = 'New Quotation';
             document.getElementById('quotationForm').reset();
             document.getElementById('quotationId').value = '';
-            document.getElementById('quotationModal').style.display = 'block';
+            document.getElementById('quotationModal').classList.add('show');
         }
 
         function closeQuotationModal() {
