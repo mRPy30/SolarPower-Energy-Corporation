@@ -16,6 +16,8 @@ function exportOrdersPDF() {
         });
 }
 
+
+
 function generateOrdersPrintPreview(orders) {
     const now = new Date();
     const dateStr = now.toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' });
