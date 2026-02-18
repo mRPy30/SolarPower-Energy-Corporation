@@ -2097,11 +2097,11 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
                                             <td style="padding: 12px; font-size: 14px; color: #2c3e50;"><?php echo date('M d, Y h:i A', strtotime($ap['deleted_at'])); ?></td>
                                             <td style="padding: 12px;">
                                                 <div style="display: flex; gap: 4px;">
-                                                    <button onclick="restoreArchivedProduct(<?php echo $ap['archive_id']; ?>)" style="padding: 6px 12px; background-color: transparent; color: #28a745; border: 1px solid #28a745; border-radius: 6px; font-size: 14px; cursor: pointer;" title="Restore Product">
-                                                        <i class="bi bi-arrow-counterclockwise"></i>
+                                                    <button onclick="restoreArchivedProduct(<?php echo $ap['archive_id']; ?>)" class="green-action-btn" title="Restore Product">
+                                                        <i class="fas fa-undo"></i>
                                                     </button>
-                                                    <button onclick="permanentDeleteProduct(<?php echo $ap['archive_id']; ?>)" style="padding: 6px 12px; background-color: transparent; color: #dc3545; border: 1px solid #dc3545; border-radius: 6px; font-size: 14px; cursor: pointer;" title="Delete Permanently">
-                                                        <i class="bi bi-trash"></i>
+                                                    <button onclick="permanentDeleteProduct(<?php echo $ap['archive_id']; ?>)" class="red-action-btn" title="Delete Permanently">
+                                                        <i class="fas fa-trash"></i>
                                                     </button>
                                                 </div>
                                             </td>
@@ -2188,11 +2188,11 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
                                             <td style="padding: 12px; font-size: 14px; color: #2c3e50;"><?php echo date('M d, Y h:i A', strtotime($aq['deleted_at'])); ?></td>
                                             <td style="padding: 12px;">
                                                 <div style="display: flex; gap: 4px;">
-                                                    <button onclick="restoreArchivedQuotation(<?php echo $aq['archive_id']; ?>)" style="padding: 6px 12px; background-color: transparent; color: #28a745; border: 1px solid #28a745; border-radius: 6px; font-size: 14px; cursor: pointer;" title="Restore Quotation">
-                                                        <i class="bi bi-arrow-counterclockwise"></i>
+                                                    <button onclick="restoreArchivedQuotation(<?php echo $aq['archive_id']; ?>)" class="green-action-btn" title="Restore Quotation">
+                                                        <i class="fas fa-undo"></i>
                                                     </button>
-                                                    <button onclick="permanentDeleteQuotation(<?php echo $aq['archive_id']; ?>)" style="padding: 6px 12px; background-color: transparent; color: #dc3545; border: 1px solid #dc3545; border-radius: 6px; font-size: 14px; cursor: pointer;" title="Delete Permanently">
-                                                        <i class="bi bi-trash"></i>
+                                                    <button onclick="permanentDeleteQuotation(<?php echo $aq['archive_id']; ?>)" class="red-action-btn" title="Delete Permanently">
+                                                        <i class="fas fa-trash"></i>
                                                     </button>
                                                 </div>
                                             </td>
@@ -2248,11 +2248,11 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
                                         <td style="padding: 12px; font-size: 14px; color: #2c3e50;"><?= date('M d, Y h:i A', strtotime($asup['deleted_at'])) ?></td>
                                         <td style="padding: 12px;">
                                             <div style="display: flex; gap: 4px;">
-                                                <button onclick="restoreArchivedSupplier(<?= $asup['archive_id'] ?>)" style="padding: 6px 12px; background-color: transparent; color: #28a745; border: 1px solid #28a745; border-radius: 6px; font-size: 14px; cursor: pointer;" title="Restore">
-                                                    <i class="bi bi-arrow-counterclockwise"></i>
+                                                <button onclick="restoreArchivedSupplier(<?= $asup['archive_id'] ?>)" class="green-action-btn" title="Restore">
+                                                    <i class="fas fa-undo"></i>
                                                 </button>
-                                                <button onclick="permanentDeleteSupplier(<?= $asup['archive_id'] ?>)" style="padding: 6px 12px; background-color: transparent; color: #dc3545; border: 1px solid #dc3545; border-radius: 6px; font-size: 14px; cursor: pointer;" title="Delete Permanently">
-                                                    <i class="bi bi-trash"></i>
+                                                <button onclick="permanentDeleteSupplier(<?= $asup['archive_id'] ?>)" class="red-action-btn" title="Delete Permanently">
+                                                    <i class="fas fa-trash"></i>
                                                 </button>
                                             </div>
                                         </td>

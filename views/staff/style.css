@@ -1179,6 +1179,10 @@ tbody tr:last-child td {
     display: block;
 }
 
+
+
+
+
 @keyframes fadeIn {
     from { 
         opacity: 0; 
@@ -4408,4 +4412,35 @@ tbody tr:last-child td {
         align-items: flex-start;
         gap: 10px;
     }
+}
+
+/* Archive Action Buttons */
+.green-action-btn {
+    padding: 6px 12px;
+    background-color: #28a745;
+    color: white;
+    border: 1px solid #28a745;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: 0.3s ease;
+}
+
+.green-action-btn:hover {
+    background-color: #218838;
+}
+
+.red-action-btn {
+    padding: 6px 12px;
+    background-color: #dc3545;
+    color: white;
+    border: 1px solid #dc3545;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: 0.3s ease;
+}
+
+.red-action-btn:hover {
+    background-color: #c82333;
 }
