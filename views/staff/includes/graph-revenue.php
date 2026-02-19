@@ -96,30 +96,130 @@ for ($i = 0; $i < 12; $i++) {
 }
 ?>
 
+<!-- Responsive Styles -->
+<style>
+    .revenue-card-body {
+        padding: 32px 32px 24px 32px;
+    }
+    .revenue-title {
+        text-align: center; color: #222; font-weight: 700;
+        margin-bottom: 32px; font-size: 2rem; letter-spacing: 0.5px;
+    }
+    .revenue-chart-container {
+        position: relative; height: 340px;
+        border-left: 2px solid #e5e7eb; border-bottom: 2px solid #e5e7eb;
+        padding: 16px 16px 32px 56px; background: #fff; border-radius: 12px;
+    }
+    .revenue-yaxis {
+        position: absolute; left: 0; top: 16px; bottom: 32px; width: 56px;
+        display: flex; flex-direction: column; justify-content: space-between;
+        align-items: flex-end; padding-right: 8px;
+    }
+    .revenue-yaxis span {
+        color: #bdbdbd; font-size: 13px; font-weight: 600;
+        font-family: 'Segoe UI', Arial, sans-serif; letter-spacing: 0.2px;
+    }
+    .revenue-gridlines {
+        position: absolute; left: 56px; right: 16px; top: 16px; bottom: 32px;
+    }
+    .revenue-svg {
+        position: absolute; left: 56px; right: 16px; top: 16px; bottom: 32px;
+        width: calc(100% - 72px); height: calc(100% - 48px);
+    }
+    .revenue-xaxis {
+        position: absolute; left: 56px; right: 16px; bottom: 0; height: 36px;
+        display: flex; justify-content: space-between; gap: 8px;
+    }
+    .revenue-xaxis div {
+        flex: 1; text-align: center; color: #1976d2; font-size: 14px;
+        font-weight: 600; font-family: 'Segoe UI', Arial, sans-serif;
+        padding-top: 8px; letter-spacing: 0.2px;
+    }
+    .revenue-stats-grid {
+        display: grid; grid-template-columns: repeat(4, 1fr);
+        gap: 1.25rem; margin-top: 2.5rem;
+    }
+    .revenue-stat-card {
+        background: #fff; border-radius: 12px; border: 1px solid #e5e7eb;
+        padding: 20px 22px; display: flex; align-items: center; gap: 16px;
+    }
+    .revenue-stat-icon {
+        width: 48px; height: 48px; border-radius: 12px;
+        display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .revenue-stat-label {
+        font-size: 13px; color: #6b7280; font-weight: 500; margin-bottom: 4px;
+    }
+    .revenue-stat-value {
+        font-size: 1.5rem; font-weight: 700; color: #111827;
+    }
+
+    /* ===== Tablet (≤992px) ===== */
+    @media (max-width: 992px) {
+        .revenue-card-body { padding: 24px 18px 18px 18px; }
+        .revenue-title { font-size: 1.5rem; margin-bottom: 24px; }
+        .revenue-stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+        .revenue-chart-container { height: 280px; }
+    }
+
+    /* ===== Mobile (≤576px) ===== */
+    @media (max-width: 576px) {
+        .revenue-card-body { padding: 14px 8px 10px 8px; }
+        .revenue-title { font-size: 1.15rem; margin-bottom: 16px; }
+        .revenue-chart-container {
+            height: 220px;
+            padding: 12px 8px 28px 40px;
+        }
+        .revenue-yaxis {
+            width: 40px; padding-right: 4px;
+        }
+        .revenue-yaxis span { font-size: 10px; }
+        .revenue-gridlines { left: 40px; right: 8px; }
+        .revenue-svg {
+            left: 40px; right: 8px;
+            width: calc(100% - 48px); height: calc(100% - 40px);
+        }
+        .revenue-xaxis {
+            left: 40px; right: 8px; height: 28px; gap: 2px;
+        }
+        .revenue-xaxis div { font-size: 9px; padding-top: 4px; }
+        .revenue-stats-grid {
+            grid-template-columns: 1fr;
+            gap: 0.75rem;
+            margin-top: 1.5rem;
+        }
+        .revenue-stat-card { padding: 14px 14px; gap: 12px; }
+        .revenue-stat-icon { width: 40px; height: 40px; }
+        .revenue-stat-icon i { font-size: 16px !important; }
+        .revenue-stat-value { font-size: 1.25rem; }
+    }
+</style>
+
 <!-- Revenue Graph Section (Themed) -->
 <div class="card shadow-sm mt-4" style="border: none; border-radius: 12px; background: #fff;">
-    <div class="card-body" style="padding: 32px 32px 24px 32px;">
+    <div class="card-body revenue-card-body">
         <!-- Chart Title -->
-        <h2 style="text-align: center; color: #222; font-weight: 700; margin-bottom: 32px; font-size: 2rem; letter-spacing: 0.5px;">Monthly Revenue <?php echo $currentYear; ?></h2>
+        <h2 class="revenue-title">Monthly Revenue <?php echo $currentYear; ?></h2>
 
         <!-- Chart Container -->
-        <div style="position: relative; height: 340px; border-left: 2px solid #e5e7eb; border-bottom: 2px solid #e5e7eb; padding: 16px 16px 32px 56px; background: #fff; border-radius: 12px;">
+        <div class="revenue-chart-container">
             <!-- Y-axis labels -->
-            <div style="position: absolute; left: 0; top: 16px; bottom: 32px; width: 56px; display: flex; flex-direction: column; justify-content: space-between; align-items: flex-end; padding-right: 8px;">
+            <div class="revenue-yaxis">
                 <?php for ($i = $ySteps; $i >= 0; $i--): ?>
-                    <span style="color: #bdbdbd; font-size: 13px; font-weight: 600; font-family: 'Segoe UI', Arial, sans-serif; letter-spacing: 0.2px;">
-                        <?php echo formatCurrency($i * $yStepVal); ?>
-                    </span>
+                    <span><?php echo formatCurrency($i * $yStepVal); ?></span>
                 <?php endfor; ?>
             </div>
             <!-- Grid lines -->
-            <div style="position: absolute; left: 56px; right: 16px; top: 16px; bottom: 32px;">
+            <div class="revenue-gridlines">
                 <?php for ($i = 0; $i <= $ySteps; $i++): ?>
                     <div style="position: absolute; width: 100%; height: 1px; background-color: #f3f4f6; top: <?php echo ($i / $ySteps) * 100; ?>%;"></div>
                 <?php endfor; ?>
             </div>
             <!-- SVG Line Graph -->
-            <svg style="position: absolute; left: 56px; right: 16px; top: 16px; bottom: 32px; width: calc(100% - 72px); height: calc(100% - 48px);" viewBox="0 0 <?php echo $svgWidth; ?> <?php echo $svgHeight; ?>">
+            <svg class="revenue-svg" viewBox="0 0 <?php echo $svgWidth; ?> <?php echo $svgHeight; ?>">
                 <defs>
                     <!-- Blue area fill -->
                     <linearGradient id="areaFill" x1="0%" y1="0%" x2="0%" y2="100%">
@@ -156,54 +256,52 @@ for ($i = 0; $i < 12; $i++) {
                 <?php endforeach; ?>
             </svg>
             <!-- X-axis labels -->
-            <div style="position: absolute; left: 56px; right: 16px; bottom: 0; height: 36px; display: flex; justify-content: space-between; gap: 8px;">
+            <div class="revenue-xaxis">
                 <?php foreach ($monthNames as $mn): ?>
-                <div style="flex: 1; text-align: center; color: #1976d2; font-size: 14px; font-weight: 600; font-family: 'Segoe UI', Arial, sans-serif; padding-top: 8px; letter-spacing: 0.2px;">
-                    <?php echo $mn; ?>
-                </div>
+                <div><?php echo $mn; ?></div>
                 <?php endforeach; ?>
             </div>
         </div>
         <!-- Minimal Stats Cards -->
-        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.25rem; margin-top: 2.5rem;">
+        <div class="revenue-stats-grid">
             <!-- Total Sales -->
-            <div style="background: #fff; border-radius: 12px; border: 1px solid #e5e7eb; border-left: 4px solid #3b82f6; padding: 20px 22px; display: flex; align-items: center; gap: 16px;">
-                <div style="width: 48px; height: 48px; border-radius: 12px; background: #dbeafe; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <div class="revenue-stat-card" style="border-left: 4px solid #3b82f6;">
+                <div class="revenue-stat-icon" style="background: #dbeafe;">
                     <i class="fas fa-coins" style="font-size: 20px; color: #3b82f6;"></i>
                 </div>
                 <div>
-                    <div style="font-size: 13px; color: #6b7280; font-weight: 500; margin-bottom: 4px;">Total Sales</div>
-                    <div style="font-size: 1.5rem; font-weight: 700; color: #111827;">₱<?php echo formatCurrency($totalSales); ?></div>
+                    <div class="revenue-stat-label">Total Sales</div>
+                    <div class="revenue-stat-value">₱<?php echo formatCurrency($totalSales); ?></div>
                 </div>
             </div>
             <!-- Growth Rate -->
-            <div style="background: #fff; border-radius: 12px; border: 1px solid #e5e7eb; border-left: 4px solid #8b5cf6; padding: 20px 22px; display: flex; align-items: center; gap: 16px;">
-                <div style="width: 48px; height: 48px; border-radius: 12px; background: #ede9fe; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <div class="revenue-stat-card" style="border-left: 4px solid #8b5cf6;">
+                <div class="revenue-stat-icon" style="background: #ede9fe;">
                     <i class="fas fa-chart-line" style="font-size: 20px; color: #8b5cf6;"></i>
                 </div>
                 <div>
-                    <div style="font-size: 13px; color: #6b7280; font-weight: 500; margin-bottom: 4px;">Growth Rate vs <?php echo $lastYear; ?></div>
-                    <div style="font-size: 1.5rem; font-weight: 700; color: #111827;"><?php echo ($growthRate >= 0 ? '+' : '') . $growthRate; ?>%</div>
+                    <div class="revenue-stat-label">Growth Rate vs <?php echo $lastYear; ?></div>
+                    <div class="revenue-stat-value"><?php echo ($growthRate >= 0 ? '+' : '') . $growthRate; ?>%</div>
                 </div>
             </div>
             <!-- Best Month -->
-            <div style="background: #fff; border-radius: 12px; border: 1px solid #e5e7eb; border-left: 4px solid #f59e0b; padding: 20px 22px; display: flex; align-items: center; gap: 16px;">
-                <div style="width: 48px; height: 48px; border-radius: 12px; background: #fef3c7; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <div class="revenue-stat-card" style="border-left: 4px solid #f59e0b;">
+                <div class="revenue-stat-icon" style="background: #fef3c7;">
                     <i class="fas fa-trophy" style="font-size: 20px; color: #f59e0b;"></i>
                 </div>
                 <div>
-                    <div style="font-size: 13px; color: #6b7280; font-weight: 500; margin-bottom: 4px;">Best Month (<?php echo $bestMonthName; ?>)</div>
-                    <div style="font-size: 1.5rem; font-weight: 700; color: #111827;">₱<?php echo formatCurrency($bestMonthTotal); ?></div>
+                    <div class="revenue-stat-label">Best Month (<?php echo $bestMonthName; ?>)</div>
+                    <div class="revenue-stat-value">₱<?php echo formatCurrency($bestMonthTotal); ?></div>
                 </div>
             </div>
             <!-- Avg/Month -->
-            <div style="background: #fff; border-radius: 12px; border: 1px solid #e5e7eb; border-left: 4px solid #10b981; padding: 20px 22px; display: flex; align-items: center; gap: 16px;">
-                <div style="width: 48px; height: 48px; border-radius: 12px; background: #d1fae5; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <div class="revenue-stat-card" style="border-left: 4px solid #10b981;">
+                <div class="revenue-stat-icon" style="background: #d1fae5;">
                     <i class="fas fa-calendar-alt" style="font-size: 20px; color: #10b981;"></i>
                 </div>
                 <div>
-                    <div style="font-size: 13px; color: #6b7280; font-weight: 500; margin-bottom: 4px;">Avg/Month</div>
-                    <div style="font-size: 1.5rem; font-weight: 700; color: #111827;">₱<?php echo formatCurrency($avgPerMonth); ?></div>
+                    <div class="revenue-stat-label">Avg/Month</div>
+                    <div class="revenue-stat-value">₱<?php echo formatCurrency($avgPerMonth); ?></div>
                 </div>
             </div>
         </div>

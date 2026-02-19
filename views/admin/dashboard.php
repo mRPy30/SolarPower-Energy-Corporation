@@ -211,11 +211,20 @@ function get_recent_orders($conn) {
 
 // FIXED: Get the best seller by joining orders and order_items
 function get_best_seller($conn) {
-    $query = "SELECT oi.product_name, SUM(oi.quantity) as total_qty, COUNT(oi.id) as order_frequency
+    $query = "SELECT oi.product_name,
+              COALESCE(
+                  NULLIF(oi.product_id, 0),
+                  (SELECT p.id FROM product p WHERE p.displayName = oi.product_name LIMIT 1)
+              ) AS product_id,
+              SUM(oi.quantity) as total_qty, COUNT(oi.id) as order_frequency,
+              COALESCE(
+                  (SELECT pi.image_path FROM product_images pi WHERE pi.product_id = oi.product_id AND oi.product_id > 0 ORDER BY pi.id ASC LIMIT 1),
+                  (SELECT pi.image_path FROM product_images pi JOIN product p ON pi.product_id = p.id WHERE p.displayName = oi.product_name ORDER BY pi.id ASC LIMIT 1)
+              ) as image_path
               FROM order_items oi
               JOIN orders o ON oi.order_id = o.id
               WHERE o.order_status != 'archived'
-              GROUP BY oi.product_name
+              GROUP BY oi.product_name, oi.product_id
               ORDER BY total_qty DESC
               LIMIT 1";
               
@@ -641,29 +650,7 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
             </table>
         </div>
     
-        <div class="details-card" style="flex: 1; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); text-align: center; min-width: 300px;">
-            <h3 style="margin-bottom: 20px; color: #333;">Top Selling Product</h3>
-            <?php if ($best_seller): ?>
-                <div style="padding: 20px; border: 2px dashed #f1f1f1; border-radius: 10px;">
-                    <div style="background: #fff9db; width: 60px; height: 60px; line-height: 60px; border-radius: 50%; margin: 0 auto 15px;">
-                        <i class="fas fa-medal" style="font-size: 28px; color: #f1c40f;"></i>
-                    </div>
-                    <h2 style="font-size: 22px; margin-bottom: 10px; color: #2c3e50;"><?php echo htmlspecialchars($best_seller['product_name']); ?></h2>
-                    <div style="display: flex; justify-content: space-around; margin-top: 20px;">
-                        <div>
-                            <p style="font-size: 20px; font-weight: bold; color: #27ae60;"><?php echo $best_seller['total_qty']; ?></p>
-                            <p style="font-size: 12px; color: #999; text-transform: uppercase;">Sold</p>
-                        </div>
-                        <div>
-                            <p style="font-size: 20px; font-weight: bold; color: #3498db;"><?php echo $best_seller['order_frequency']; ?></p>
-                            <p style="font-size: 12px; color: #999; text-transform: uppercase;">Orders</p>
-                        </div>
-                    </div>
-                </div>
-            <?php else: ?>
-                <p style="color: #999; margin-top: 30px;">No sales data available.</p>
-            <?php endif; ?>
-        </div>
+        <?php include '../../includes/top_seller_widget.php'; ?>
         
         <div class="details-card" style="flex:1; min-width:300px;">
             <h3><i class="fas fa-solar-panel"></i> Solar Metrics</h3>
