@@ -3,7 +3,7 @@
 
 <script>
 function exportOrdersExcel() {
-    fetch('dashboard.php?ajax=1&action=fetch_orders')
+    fetch('../../controllers/get_orders.php')
         .then(response => response.json())
         .then(res => {
             if (!res.success || !res.data || res.data.length === 0) {

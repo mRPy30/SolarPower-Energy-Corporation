@@ -3555,6 +3555,21 @@ tbody tr:last-child td {
     color: #721c24;
 }
 
+.status-paid {
+    background: #d4edda;
+    color: #155724;
+}
+
+.status-processing {
+    background: #d1ecf1;
+    color: #0c5460;
+}
+
+.status-shipped {
+    background: #e2d5f1;
+    color: #5b2c8e;
+}
+
 .tracking-card-body {
     display: grid;
     grid-template-columns: 2fr 1fr;

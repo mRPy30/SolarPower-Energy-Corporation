@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 session_start();
 
 if (!isset($_SESSION['user_id']) || empty($_SESSION['user_id'])) {
@@ -432,24 +432,47 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
                 break;
 
             case 'fetch_orders':
-                // Use the $conn established in the AJAX handler
-                $query = "SELECT id, order_reference, customer_name, total_amount, created_at, payment_method, order_status 
-                          FROM orders 
-                          ORDER BY created_at DESC";
-                $result = $conn->query($query);
-                $orders = [];
+                $search  = isset($_GET['search'])  ? trim($_GET['search'])  : '';
+                $status  = isset($_GET['status'])  ? trim($_GET['status'])  : '';
+                $payment = isset($_GET['payment']) ? trim($_GET['payment']) : '';
 
-                if ($result) {
-                    while ($row = $result->fetch_assoc()) {
-                        $orders[] = $row;
-                    }
-                    $result->close();
+                $orderQuery = "SELECT id, order_reference, customer_name, customer_email,
+                               total_amount, created_at, payment_method, payment_status, order_status
+                               FROM orders WHERE order_status != 'archived'";
+                $params = [];
+                $types  = '';
+
+                if ($search !== '') {
+                    $orderQuery .= " AND (customer_name LIKE ? OR order_reference LIKE ? OR customer_email LIKE ?)";
+                    $sp = '%' . $search . '%';
+                    $params[] = $sp; $params[] = $sp; $params[] = $sp;
+                    $types .= 'sss';
                 }
+                if ($status !== '') {
+                    $orderQuery .= " AND order_status = ?";
+                    $params[] = $status;
+                    $types .= 's';
+                }
+                if ($payment !== '') {
+                    $orderQuery .= " AND payment_method = ?";
+                    $params[] = $payment;
+                    $types .= 's';
+                }
+                $orderQuery .= " ORDER BY created_at DESC";
 
-                echo json_encode([
-                    'success' => true,
-                    'data' => $orders
-                ]);
+                $stmt = $conn->prepare($orderQuery);
+                if (!empty($params)) {
+                    $stmt->bind_param($types, ...$params);
+                }
+                $stmt->execute();
+                $result = $stmt->get_result();
+                $orders = [];
+                while ($row = $result->fetch_assoc()) {
+                    $orders[] = $row;
+                }
+                $stmt->close();
+
+                echo json_encode(['success' => true, 'data' => $orders]);
                 break;
 
             case 'update':
@@ -1899,74 +1922,7 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
                 </div>
             </div>
 
-            <div id="orders" class="page-content">
-                <div class="orders-container">
-
-                    <!-- HEADER -->
-                    <div class="orders-header">
-                        <div class="orders-title">
-                            <h3><i class="fas fa-shopping-cart"></i> Order Check</h3>
-                        </div>
-
-                        <div style="display: flex; gap: 10px;">
-                            <button class="btn-primary" style="background-color: #3498db;" onclick="exportOrdersPDF()">
-                                <i class="fas fa-file-pdf"></i> Export to PDF
-                            </button>
-                            <button class="btn-primary" style="background-color: #217346;" onclick="exportOrdersExcel()">
-                                <i class="fas fa-file-excel"></i> Export to Excel
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- FILTERS (OPTIONAL BUT CONSISTENT) -->
-                    <div class="orders-filters">
-                        <div class="orders-filter-group">
-                            <label>Search</label>
-                            <input type="text" id="orderSearch" placeholder="Search by customer or order ID">
-                        </div>
-
-                        <div class="orders-filter-group">
-                            <label>Status</label>
-                            <select id="orderStatusFilter">
-                                <option value="">All Status</option>
-                                <option value="PAID">Paid</option>
-                                <option value="PENDING">Pending</option>
-                                <option value="CANCELLED">Cancelled</option>
-                            </select>
-                        </div>
-
-                        <div class="orders-filter-group">
-                            <label>Payment</label>
-                            <select id="paymentFilter">
-                                <option value="">All Payments</option>
-                                <option value="GCASH">GCash</option>
-                                <option value="PAYMAYA">PayMaya</option>
-                                <option value="CASH">Cash</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <!-- TABLE -->
-                    <div class="orders-table-wrapper">
-                        <table class="orders-table">
-                            <thead>
-                                <tr>
-                                    <th>Order ID</th>
-                                    <th>Customer</th>
-                                    <th>Total Amount</th>
-                                    <th>Date</th>
-                                    <th>Payment</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <!-- display only -->
-                            </tbody>
-                        </table>
-                    </div>
-
-                </div>
-            </div>
+            <?php include 'includes/orders_page.php'; ?>
 
             <!-- Suppliers -->
             <div id="suppliers" class="page-content">
@@ -4285,58 +4241,106 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
         document.addEventListener('DOMContentLoaded', () => ClientsModule.init());
 
         const OrdersModule = {
-            loadOrders: function() {
-                const tbody = document.querySelector('.orders-table tbody');
-                tbody.innerHTML = '<tr><td colspan="7">Loading orders...</td></tr>';
+            initialized: false,
 
-                fetch('dashboard.php?ajax=1&action=fetch_orders')
-                    .then(response => response.json())
+            init() {
+                if (this.initialized) return;
+                this.initialized = true;
+
+                const searchInput  = document.getElementById('orderSearch');
+                const statusFilter = document.getElementById('orderStatusFilter');
+                const paymentFilter = document.getElementById('paymentFilter');
+
+                if (searchInput) {
+                    let debounce;
+                    searchInput.addEventListener('input', () => {
+                        clearTimeout(debounce);
+                        debounce = setTimeout(() => this.loadOrders(), 350);
+                    });
+                }
+                if (statusFilter)  statusFilter.addEventListener('change',  () => this.loadOrders());
+                if (paymentFilter) paymentFilter.addEventListener('change', () => this.loadOrders());
+
+                this.loadOrders();
+            },
+
+            loadOrders() {
+                const tbody = document.getElementById('ordersTableBody');
+                if (!tbody) return;
+
+                const search  = (document.getElementById('orderSearch')?.value || '').trim();
+                const status  = document.getElementById('orderStatusFilter')?.value  || '';
+                const payment = document.getElementById('paymentFilter')?.value || '';
+
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:30px;color:#888;"><i class="fas fa-spinner fa-spin"></i> Loading orders...</td></tr>';
+
+                const params = new URLSearchParams();
+                if (search)  params.set('search',  search);
+                if (status)  params.set('status',  status);
+                if (payment) params.set('payment', payment);
+
+                // Use dedicated controller — clean separation of concerns
+                fetch('../../controllers/get_orders.php?' + params.toString())
+                    .then(r => r.json())
                     .then(res => {
                         if (res.success) {
                             this.renderOrders(res.data);
                         } else {
-                            tbody.innerHTML = '<tr><td colspan="7">Error loading data.</td></tr>';
+                            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:30px;color:#e74c3c;">Failed to load orders.</td></tr>';
                         }
                     })
                     .catch(err => {
-                        console.error('Fetch error:', err);
-                        tbody.innerHTML = '<tr><td colspan="7">Server connection failed.</td></tr>';
+                        console.error('Orders fetch error:', err);
+                        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:30px;color:#e74c3c;">Error loading orders. Please try again.</td></tr>';
                     });
             },
 
-            renderOrders: function(orders) {
-                const tbody = document.querySelector('.orders-table tbody');
-                if (orders.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="7">No orders found.</td></tr>';
+            renderOrders(orders) {
+                const tbody = document.getElementById('ordersTableBody');
+                if (!tbody) return;
+
+                if (!orders || orders.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:30px;color:#888;">No orders found.</td></tr>';
                     return;
                 }
 
-                tbody.innerHTML = orders.map(order => `
-            <tr>
-                <td>#${order.order_reference}</td>
-                <td>${order.customer_name}</td>
-                <td>₱${parseFloat(order.total_amount).toLocaleString()}</td>
-                <td>${new Date(order.created_at).toLocaleDateString()}</td>
-                <td><span class="badge payment">${order.payment_method}</span></td>
-                <td><span class="status-tag ${order.order_status.toLowerCase()}">${order.order_status}</span></td>
-            </tr>
-        `).join('');
-            }
-        };
+                const paymentLabels = {
+                    'cod': 'Cash on Delivery',
+                    'maya_full': 'Maya (Full)',
+                    'maya_dp': 'Maya (Down Payment)',
+                    'unionbank': 'UnionBank'
+                };
 
-        
+                tbody.innerHTML = orders.map(order => {
+                    const date = new Date(order.created_at).toLocaleDateString('en-US', {
+                        year: 'numeric', month: 'short', day: 'numeric'
+                    });
+                    const amount = parseFloat(order.total_amount).toLocaleString('en-PH', {
+                        style: 'currency', currency: 'PHP'
+                    });
+                    const payLabel = paymentLabels[order.payment_method] || order.payment_method;
+                    const os = (order.order_status || '').toLowerCase();
+                    const ps = (order.payment_status || '').toLowerCase();
+                    const cap = s => s ? s.charAt(0).toUpperCase() + s.slice(1) : '';
 
-        // Initialize tracking when page is shown
-        const originalShowPageFunc = window.showPage;
-        window.showPage = function(pageId, pageTitle) {
-            if (typeof originalShowPageFunc === 'function') {
-                originalShowPageFunc(pageId, pageTitle);
-            } else {
-                PageNavigation.showPage(pageId, pageTitle);
-            }
+                    return `<tr>
+                        <td><strong>#${this.esc(order.order_reference)}</strong></td>
+                        <td>${this.esc(order.customer_name)}</td>
+                        <td>${this.esc(order.customer_email)}</td>
+                        <td>${amount}</td>
+                        <td>${date}</td>
+                        <td>${payLabel}</td>
+                        <td><span class="status-badge status-${ps}">${cap(ps)}</span></td>
+                        <td><span class="status-badge status-${os}">${cap(os)}</span></td>
+                    </tr>`;
+                }).join('');
+            },
 
-            if (pageId === 'tracking') {
-                setTimeout(() => TrackingModule.init(), 100);
+            esc(text) {
+                if (!text) return '';
+                const d = document.createElement('div');
+                d.textContent = text;
+                return d.innerHTML;
             }
         };
 
@@ -5876,6 +5880,17 @@ function showPage(pageId, pageTitle) {
     const titleElement = document.getElementById('page-title');
     if (titleElement) {
         titleElement.textContent = pageTitle;
+    }
+
+    // Initialize modules when their pages are shown
+    if (pageId === 'orders') {
+        setTimeout(() => OrdersModule.init(), 100);
+    } else if (pageId === 'tracking') {
+        setTimeout(() => TrackingModule.init(), 100);
+    } else if (pageId === 'dashboard') {
+        setTimeout(() => {
+            if (typeof DashboardRefresh !== 'undefined') DashboardRefresh.refreshDashboard();
+        }, 100);
     }
 }
 </script>
