@@ -1464,6 +1464,362 @@ $conn->close();
     <?php include "includes/footer.php" ?>
 
 
+    <!-- ==========================================
+         Floating Chatbot Widget
+         ========================================== -->
+    <style>
+    /* Toggle FAB */
+    .chat-fab {
+        position: fixed;
+        bottom: 90px;
+        right: 24px;
+        z-index: 9999;
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #2d5016, #3d6b1f);
+        color: #fff;
+        border: none;
+        font-size: 26px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 6px 24px rgba(45,80,22,.45);
+        transition: transform .3s, box-shadow .3s;
+    }
+    .chat-fab:hover {
+        transform: scale(1.1);
+        box-shadow: 0 8px 32px rgba(45,80,22,.55);
+    }
+    .chat-fab .fab-close { display: none; }
+    .chat-fab.open .fab-open  { display: none; }
+    .chat-fab.open .fab-close { display: inline; }
+
+    /* Widget Panel */
+    .chatbot-widget {
+        position: fixed;
+        bottom: 164px;
+        right: 24px;
+        z-index: 9998;
+        width: 400px;
+        max-width: calc(100vw - 24px);
+        height: 580px;
+        max-height: calc(100vh - 180px);
+        display: flex;
+        flex-direction: column;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 12px 48px rgba(0,0,0,.18);
+        background: #fff;
+        opacity: 0;
+        transform: translateY(20px) scale(.95);
+        pointer-events: none;
+        transition: opacity .3s ease, transform .3s ease;
+    }
+    .chatbot-widget.open {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        pointer-events: auto;
+    }
+
+    /* Chat Header */
+    .chat-header {
+        background: linear-gradient(135deg, #2d5016, #3d6b1f);
+        color: #fff;
+        padding: 16px 18px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-shrink: 0;
+    }
+    .chat-header-avatar {
+        width: 42px; height: 42px;
+        border-radius: 50%;
+        background: rgba(255,255,255,.18);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 20px; flex-shrink: 0;
+    }
+    .chat-header-info h3 {
+        margin: 0; font-size: .97rem; font-weight: 700; color: #fff;
+    }
+    .chat-header-info span {
+        font-size: .76rem; opacity: .85;
+        display: flex; align-items: center; gap: 5px;
+    }
+    .chat-header-info span::before {
+        content: ''; width: 8px; height: 8px;
+        background: #4ade80; border-radius: 50%; display: inline-block;
+    }
+    .chat-header-actions {
+        margin-left: auto; display: flex; gap: 6px;
+    }
+    .chat-header-actions button {
+        background: rgba(255,255,255,.15); border: none; color: #fff;
+        width: 30px; height: 30px; border-radius: 50%;
+        cursor: pointer; font-size: 13px; transition: background .2s;
+        display: flex; align-items: center; justify-content: center;
+    }
+    .chat-header-actions button:hover { background: rgba(255,255,255,.3); }
+
+    /* Chat Body */
+    .chat-body {
+        flex: 1 1 0;
+        overflow-y: auto;
+        padding: 18px 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        background: #f7f8fa;
+        scroll-behavior: smooth;
+        min-height: 0;
+    }
+    .chat-body::-webkit-scrollbar { width: 5px; }
+    .chat-body::-webkit-scrollbar-track { background: transparent; }
+    .chat-body::-webkit-scrollbar-thumb { background: #ccc; border-radius: 3px; }
+
+    /* Message Bubbles */
+    .msg-row {
+        display: flex; gap: 8px; max-width: 90%;
+        animation: msgSlideIn .35s ease-out;
+    }
+    @keyframes msgSlideIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+    .msg-row.bot  { align-self: flex-start; }
+    .msg-row.user { align-self: flex-end; flex-direction: row-reverse; }
+    .msg-avatar {
+        width: 30px; height: 30px; border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 13px; flex-shrink: 0; margin-top: 2px;
+    }
+    .msg-row.bot .msg-avatar  { background: #e8f5e9; color: #2d5016; }
+    .msg-row.user .msg-avatar { background: #e3f2fd; color: #1565c0; }
+    .msg-bubble {
+        padding: 12px 15px; border-radius: 16px;
+        font-size: .86rem; line-height: 1.6; word-break: break-word;
+    }
+    .msg-row.bot .msg-bubble {
+        background: #fff; color: #333; border: 1px solid #e9ecef;
+        border-top-left-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,.04);
+    }
+    .msg-row.user .msg-bubble {
+        background: linear-gradient(135deg, #2d5016, #3d6b1f);
+        color: #fff; border-top-right-radius: 4px;
+    }
+    .msg-bubble .msg-time { display: block; font-size: .68rem; margin-top: 6px; opacity: .5; }
+    .msg-row.user .msg-bubble .msg-time { text-align: right; }
+    .msg-bubble strong { color: #2d5016; }
+    .msg-row.user .msg-bubble strong { color: #ffc107; }
+    .msg-bubble ul { margin: 6px 0 6px 16px; padding: 0; }
+    .msg-bubble ul li { margin-bottom: 4px; line-height: 1.55; }
+    .msg-bubble .highlight {
+        background: #fff3cd; padding: 1px 5px; border-radius: 4px;
+        font-weight: 600; color: #2d5016;
+    }
+
+    /* Typing Indicator */
+    .typing-indicator { display: flex; gap: 8px; align-self: flex-start; max-width: 90%; }
+    .typing-dots {
+        background: #fff; border: 1px solid #e9ecef;
+        border-radius: 16px; border-top-left-radius: 4px;
+        padding: 12px 18px; display: flex; align-items: center; gap: 4px;
+    }
+    .typing-dots span {
+        width: 7px; height: 7px; background: #aaa; border-radius: 50%;
+        animation: typingBounce 1.4s ease-in-out infinite;
+    }
+    .typing-dots span:nth-child(2) { animation-delay: .2s; }
+    .typing-dots span:nth-child(3) { animation-delay: .4s; }
+    @keyframes typingBounce {
+        0%, 60%, 100% { transform: translateY(0); opacity: .4; }
+        30% { transform: translateY(-5px); opacity: 1; }
+    }
+
+    /* Inline Topic Buttons */
+    .inline-topics { display: flex; flex-direction: column; gap: 6px; margin-top: 4px; width: 100%; }
+    .inline-topic-btn {
+        display: flex; align-items: center; gap: 10px;
+        background: #fff; border: 1.5px solid #e5e7eb; border-radius: 12px;
+        padding: 10px 13px; cursor: pointer; font-size: .82rem;
+        font-weight: 500; color: #333; transition: all .2s;
+        text-align: left; width: 100%;
+    }
+    .inline-topic-btn:hover {
+        border-color: #2d5016; background: #f0fdf4; transform: translateX(3px);
+    }
+    .inline-topic-btn .qa-icon {
+        width: 30px; height: 30px; border-radius: 8px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 13px; flex-shrink: 0;
+    }
+    .msg-row.bot.topics-row { max-width: 95%; }
+    .msg-row.bot.topics-row .msg-bubble { padding: 14px 14px 10px; }
+
+    /* CTA Footer */
+    .chat-cta { padding: 12px 14px; background: #fff; border-top: 1px solid #eee; flex-shrink: 0; }
+    .chat-talk-btn {
+        display: flex; align-items: center; justify-content: center; gap: 8px;
+        width: 100%; padding: 12px;
+        background: linear-gradient(135deg, #2d5016, #3d6b1f);
+        color: #fff; border: none; border-radius: 50px;
+        font-size: .92rem; font-weight: 700; cursor: pointer;
+        transition: all .2s; text-decoration: none;
+    }
+    .chat-talk-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(220,38,38,.35); color: #fff;
+    }
+    .chat-powered { text-align: center; font-size: .7rem; color: #aaa; margin-top: 8px; }
+
+    /* Chatbot Responsive */
+    @media (max-width: 768px) {
+        .chat-fab { bottom: 80px; right: 18px; width: 54px; height: 54px; font-size: 22px; }
+        .chatbot-widget {
+            bottom: 144px; right: 12px; left: 12px;
+            width: auto; max-width: none;
+            max-height: calc(100vh - 160px); height: 520px;
+        }
+    }
+    @media (max-width: 480px) {
+        .chatbot-widget {
+            bottom: 140px; right: 8px; left: 8px;
+            border-radius: 14px; height: 480px;
+        }
+        .chat-body { padding: 14px 12px; }
+        .msg-bubble { padding: 10px 12px; font-size: .82rem; }
+        .inline-topic-btn { padding: 9px 11px; font-size: .8rem; }
+    }
+    </style>
+
+    <!-- Toggle Button -->
+    <button class="chat-fab" id="chatFab" onclick="toggleChat()">
+        <i class="fas fa-comment-dots fab-open"></i>
+        <i class="fas fa-times fab-close"></i>
+    </button>
+
+    <!-- Chat Widget Panel -->
+    <div class="chatbot-widget" id="chatWidget">
+        <div class="chat-header">
+            <div class="chat-header-avatar"><i class="fas fa-solar-panel"></i></div>
+            <div class="chat-header-info">
+                <h3>SolarPower Energy Support</h3>
+                <span>Online &bull; Replies instantly</span>
+            </div>
+            <div class="chat-header-actions">
+                <button onclick="resetChat()" title="Reset Chat"><i class="fas fa-redo-alt"></i></button>
+                <button onclick="toggleChat()" title="Close"><i class="fas fa-times"></i></button>
+            </div>
+        </div>
+        <div class="chat-body" id="chatBody"></div>
+        <div class="chat-cta">
+            <a href="contact.php" class="chat-talk-btn">
+                <i class="fas fa-phone-alt"></i> Talk to an Agent
+            </a>
+            <div class="chat-powered">Powered by SolarPower Energy Corporation</div>
+        </div>
+    </div>
+
+    <script>
+    // Chatbot Data & Logic
+    const faqData = [
+        { id:'cost', question:'How much does solar cost?', icon:'fa-coins', iconBg:'#fef3c7', iconColor:'#f59e0b',
+          answer:`Solar installation costs vary based on your system size and energy needs. Here's a typical breakdown for the Philippines:<br><br><ul><li><strong>Small Residential (3-5kW):</strong> ₱150,000 – ₱250,000</li><li><strong>Medium Residential (8-12kW):</strong> ₱400,000 – ₱600,000</li><li><strong>Large Residential/Commercial (20kW+):</strong> Custom pricing based on requirements</li></ul>💳 We offer <span class="highlight">flexible payment plans</span> and can help you access government incentives and financing options to reduce upfront costs. Many of our customers finance their systems and see immediate savings on their monthly bills!` },
+        { id:'roi', question:'How long is the ROI (Return on Investment)?', icon:'fa-chart-line', iconBg:'#dbeafe', iconColor:'#3b82f6',
+          answer:`Most of our Filipino customers achieve <span class="highlight">full ROI within 4-6 years</span>, depending on several factors:<br><br><ul><li><strong>Current electricity bill:</strong> Higher bills = faster payback</li><li><strong>System size and efficiency:</strong> Quality components maximize production</li><li><strong>Location and sunlight:</strong> Philippines has excellent solar potential!</li><li><strong>Net metering:</strong> Selling excess power speeds up ROI</li><li><strong>Electricity rate increases:</strong> MERALCO rates typically rise 3-5% annually</li></ul>⚡ After payback, you'll enjoy <strong>FREE electricity for 20+ years</strong> since solar panels last 25-30 years with proper maintenance. That's decades of zero or minimal electric bills!` },
+        { id:'brownout', question:'What happens during brownouts or power outages?', icon:'fa-bolt', iconBg:'#fce7f3', iconColor:'#ec4899',
+          answer:`This is one of the most common questions in the Philippines! The answer depends on your system type:<br><br><ul><li><strong>Grid-Tied System:</strong> Automatically shuts off during outages for safety (to protect utility workers). When power returns, your system automatically reconnects.</li><li><strong>Hybrid System (with battery backup):</strong> You'll have <span class="highlight">continuous power during brownouts!</span> Your batteries keep essential appliances running — perfect for frequent Philippine outages.</li><li><strong>Off-Grid System:</strong> Complete independence from the grid with 24/7 backup power from your battery bank.</li></ul>🔋 <strong>Our recommendation:</strong> Hybrid systems are ideal for the Philippines due to frequent brownouts. Solar charges batteries during the day, and stored power covers outages and nighttime!` },
+        { id:'netmeter', question:'Do you assist with net-metering applications?', icon:'fa-file-alt', iconBg:'#ede9fe', iconColor:'#8b5cf6',
+          answer:`<strong>Yes, absolutely!</strong> We handle the entire net-metering process from start to finish:<br><br><ul><li>✅ <strong>Document preparation:</strong> We compile all required forms and technical specs</li><li>✅ <strong>Submission to utility:</strong> Coordination with MERALCO or your local distribution utility</li><li>✅ <strong>Bi-directional meter installation:</strong> We arrange the meter replacement</li><li>✅ <strong>Follow-up and approval:</strong> We track your application until approved</li><li>✅ <strong>Final inspection:</strong> We coordinate with ERC and utility inspectors</li></ul>💡 With net-metering, <span class="highlight">excess energy goes back to the grid</span> and you get credits that reduce your bill even further. The process typically takes 2-4 months, and we handle all the paperwork!` },
+        { id:'maintenance', question:'Is there maintenance required for solar panels?', icon:'fa-tools', iconBg:'#d1fae5', iconColor:'#10b981',
+          answer:`Great news — solar panels require <span class="highlight">very minimal maintenance!</span> No moving parts. Here's what's recommended:<br><br><ul><li><strong>Panel cleaning:</strong> 2-4 times per year to remove dust, leaves, and bird droppings</li><li><strong>Visual inspection:</strong> Check for physical damage or debris after typhoons</li><li><strong>Electrical inspection:</strong> Annual checkup of inverter, wiring, and connections</li><li><strong>Performance monitoring:</strong> Track daily production through our mobile app (we'll alert you to any issues)</li></ul>🛠️ <strong>We offer maintenance packages:</strong> quarterly cleaning & inspection, priority response, performance optimization, and warranty extensions. Systems run at peak efficiency for 25-30 years!` }
+    ];
+
+    const chatBody   = document.getElementById('chatBody');
+    const chatFab    = document.getElementById('chatFab');
+    const chatWidget = document.getElementById('chatWidget');
+    let chatInited = false;
+
+    function toggleChat() {
+        const isOpen = chatWidget.classList.toggle('open');
+        chatFab.classList.toggle('open', isOpen);
+        if (isOpen && !chatInited) { chatInited = true; initChat(); }
+    }
+    function getTimeStr() {
+        return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+    function scrollToBottom() {
+        requestAnimationFrame(() => { chatBody.scrollTop = chatBody.scrollHeight; });
+    }
+    function addBotMessage(html, showTime = true) {
+        const row = document.createElement('div');
+        row.className = 'msg-row bot';
+        row.innerHTML = `<div class="msg-avatar"><i class="fas fa-solar-panel"></i></div><div class="msg-bubble">${html}${showTime ? '<span class="msg-time">' + getTimeStr() + '</span>' : ''}</div>`;
+        chatBody.appendChild(row); scrollToBottom();
+    }
+    function addUserMessage(text) {
+        const row = document.createElement('div');
+        row.className = 'msg-row user';
+        row.innerHTML = `<div class="msg-avatar"><i class="fas fa-user"></i></div><div class="msg-bubble">${text}<span class="msg-time">${getTimeStr()}</span></div>`;
+        chatBody.appendChild(row); scrollToBottom();
+    }
+    function showTyping() {
+        const el = document.createElement('div');
+        el.className = 'typing-indicator'; el.id = 'typingIndicator';
+        el.innerHTML = `<div class="msg-avatar" style="background:#e8f5e9;color:#2d5016;"><i class="fas fa-solar-panel"></i></div><div class="typing-dots"><span></span><span></span><span></span></div>`;
+        chatBody.appendChild(el); scrollToBottom();
+    }
+    function hideTyping() {
+        const el = document.getElementById('typingIndicator');
+        if (el) el.remove();
+    }
+    function renderMenu() {
+        const old = chatBody.querySelector('.msg-row.topics-row');
+        if (old) old.remove();
+        const row = document.createElement('div');
+        row.className = 'msg-row bot topics-row';
+        let btnsHtml = '';
+        faqData.forEach(faq => {
+            btnsHtml += `<button class="inline-topic-btn" data-faq="${faq.id}"><div class="qa-icon" style="background:${faq.iconBg};color:${faq.iconColor};"><i class="fas ${faq.icon}"></i></div>${faq.question}</button>`;
+        });
+        row.innerHTML = `<div class="msg-avatar"><i class="fas fa-solar-panel"></i></div><div class="msg-bubble"><div class="inline-topics">${btnsHtml}</div></div>`;
+        chatBody.appendChild(row);
+        row.querySelectorAll('.inline-topic-btn').forEach(btn => {
+            btn.addEventListener('click', () => handleQuestion(btn.dataset.faq));
+        });
+        scrollToBottom();
+    }
+    let isBusy = false;
+    function handleQuestion(id) {
+        if (isBusy) return;
+        const faq = faqData.find(f => f.id === id);
+        if (!faq) return;
+        isBusy = true;
+        const topicsRow = chatBody.querySelector('.msg-row.topics-row');
+        if (topicsRow) topicsRow.remove();
+        addUserMessage(faq.question);
+        showTyping();
+        const delay = Math.min(900 + faq.answer.length * 1, 2200);
+        setTimeout(() => {
+            hideTyping(); addBotMessage(faq.answer);
+            setTimeout(() => {
+                addBotMessage(`Would you like to know about something else? Choose a topic below. 👇`, false);
+                renderMenu(); isBusy = false;
+            }, 500);
+        }, delay);
+    }
+    function resetChat() { chatBody.innerHTML = ''; initChat(); }
+    function initChat() {
+        showTyping();
+        setTimeout(() => {
+            hideTyping();
+            addBotMessage(`Hi! 👋 Welcome to <strong>SolarPower Energy</strong>. I'm here to answer your questions. Choose a topic below!`);
+            setTimeout(() => { renderMenu(); }, 300);
+        }, 1200);
+    }
+    </script>
+
     <!-- Floating Messenger Button -->
         <a href="https://m.me/757917280729034"
            class="messenger-float"
