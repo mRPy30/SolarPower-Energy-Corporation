@@ -52,6 +52,8 @@ $conn->close();
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- AOS Animation -->
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
     <link rel="stylesheet" href="assets/style.css">
@@ -79,7 +81,7 @@ $conn->close();
 
             <div class="hero-content">
                 <!-- LEFT: HERO TEXT -->
-                <div class="hero-text">
+                <div class="hero-text" data-aos="fade-right">
                     <h1>Smart Energy for<br>Smarter Homes</h1>
                     <p class="hero-tagline">One Stop Shop for Solar Power Mega Company</p>
                     <p>Invest in solar today - enjoy decades of energy independence and savings.</p>
@@ -124,7 +126,7 @@ $conn->close();
         <div class="container">
             <div class="row justify-content-center">
                 <div class="col-lg-10">
-                    <div class="calculator-box collapsed" id="calculatorBox">
+                    <div class="calculator-box collapsed" id="calculatorBox" data-aos="fade-up">
                         <div class="savings-icon">
                             <i class="fa-regular fa-lightbulb"></i>
                         </div>
@@ -178,7 +180,7 @@ $conn->close();
  <section class="catalogs-section" id="catalogSection">
         <div class="container">
              
-            <div class="catalog-header">
+            <div class="catalog-header" data-aos="fade-up">
                 <h2>Our Products</h2>
                 <p class="catalog-subtitle">Premium solar solutions for your energy needs</p>
             </div>
@@ -187,7 +189,7 @@ $conn->close();
             <?php include "includes/promotional.php" ?>
 
             <!-- Filter Bar -->
-            <div class="filter-bar">
+            <div class="filter-bar" data-aos="fade-up">
                 <div class="filter-buttons" id="categoryFilters">
                     <button class="filter-btn active" data-category="all">
                         <i class="fas fa-th"></i> All
@@ -289,7 +291,7 @@ $conn->close();
     <section class="bnpl-section" id="bnplSection">
     <div class="container">
         <!-- Header - Centered with aligned description -->
-        <div class="bnpl-header">
+        <div class="bnpl-header" data-aos="fade-up">
             <h2>Install Now, <span class="highlight">Pay Later</span></h2>
             <p class="bnpl-subtitle">Switch to Solar now and enjoy massive savings with 30% down payments.</p>
         </div>
@@ -297,7 +299,7 @@ $conn->close();
         <!-- Steps Grid -->
         <div class="bnpl-steps">
             <!-- Step 1 -->
-            <div class="bnpl-step">
+            <div class="bnpl-step" data-aos="fade-up" data-aos-delay="100">
                 <div class="step-circle" data-step="1">
                     <div class="step-icon">
                         <i class="fas fa-calendar-check"></i>
@@ -308,7 +310,7 @@ $conn->close();
             </div>
             
             <!-- Step 2 -->
-            <div class="bnpl-step">
+            <div class="bnpl-step" data-aos="fade-up" data-aos-delay="200">
                 <div class="step-circle" data-step="2">
                     <div class="step-icon">
                         <i class="fas fa-file-invoice-dollar"></i>
@@ -319,7 +321,7 @@ $conn->close();
             </div>
             
             <!-- Step 3 -->
-            <div class="bnpl-step">
+            <div class="bnpl-step" data-aos="fade-up" data-aos-delay="300">
                 <div class="step-circle" data-step="3">
                     <div class="step-icon">
                         <i class="fas fa-tools"></i>
@@ -330,7 +332,7 @@ $conn->close();
             </div>
             
             <!-- Step 4 -->
-            <div class="bnpl-step">
+            <div class="bnpl-step" data-aos="fade-up" data-aos-delay="400">
                 <div class="step-circle" data-step="4">
                     <div class="step-icon">
                         <i class="fas fa-credit-card"></i>
@@ -355,7 +357,7 @@ $conn->close();
         <div class="container">
             <div class="rto-wrapper">
                 <!-- Left: Form -->
-                <div class="rto-form-container">
+                <div class="rto-form-container" data-aos="fade-right">
                     <div class="rto-header">
                         <h2>Rent to Own Solar System</h2>
                         <p class="rto-subtitle">For Industrial & Commercial Properties Only</p>
@@ -468,7 +470,7 @@ $conn->close();
                 </div>
 
                 <!-- Right: Image/Visual -->
-                <div class="rto-visual">
+                <div class="rto-visual" data-aos="fade-left">
                     <div class="visual-content">
                         <div class="solar-illustration">
                             <i class="fas fa-solar-panel"></i>
@@ -794,7 +796,7 @@ $conn->close();
     </div>
 </section>
 
-<section class="featured-brands" id="featured-brands">
+<section class="featured-brands" id="featured-brands" data-aos="fade-up">
     <div class="container">
         <!-- Top Row - Scrolling LEFT -->
         <div class="carousel-wrapper">
@@ -850,14 +852,14 @@ $conn->close();
     
     <!-- Services Section -->
        <section class="roles-section">
-        <div class="section-header">
+        <div class="section-header" data-aos="fade-up">
             <h2>What We Do</h2>
             <p class="section-subtitle">Your complete solar energy partner - from supply to installation</p>
         </div>
 
         <div class="roles-grid">
             <!-- Supplier Card -->
-            <div class="role-card">
+            <div class="role-card" data-aos="fade-up" data-aos-delay="100">
                 <div class="number-badge">1</div>
                 <div class="image-wrapper">
                     <img src="https://images.unsplash.com/photo-1509391366360-2e959784a276?w=800&h=500&fit=crop" alt="Solar Panel Field">
@@ -872,7 +874,7 @@ $conn->close();
             </div>
 
             <!-- Installer Card -->
-            <div class="role-card">
+            <div class="role-card" data-aos="fade-up" data-aos-delay="200">
                 <div class="number-badge">2</div>
                 <div class="image-wrapper">
                     <img src="https://images.unsplash.com/photo-1581092918056-0c4c3acd3789?w=800&h=500&fit=crop" alt="Solar Installation">
@@ -887,7 +889,7 @@ $conn->close();
             </div>
 
             <!-- Contractor Card -->
-            <div class="role-card">
+            <div class="role-card" data-aos="fade-up" data-aos-delay="300">
                 <div class="number-badge">3</div>
                 <div class="image-wrapper">
                     <img src="https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?w=800&h=500&fit=crop" alt="Industrial Work">
@@ -902,7 +904,7 @@ $conn->close();
             </div>
 
             <!-- Dealer Card -->
-            <div class="role-card">
+            <div class="role-card" data-aos="fade-up" data-aos-delay="400">
                 <div class="number-badge">4</div>
                 <div class="image-wrapper">
                     <img src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800&h=500&fit=crop" alt="Commercial Buildings">
@@ -951,14 +953,14 @@ $conn->close();
       <!-- Solar System Tips Section -->
 <section class="solar-tips-section">
     <div class="container">
-        <div class="section-header mb-5">
+        <div class="section-header mb-5" data-aos="fade-up">
             <h2>Solar System Tips</h2>
             <p class="section-subtitle">Essential insights to maximize your solar investment</p>
         </div>
         
         <!-- Video Grid -->
         <div class="row g-4 mb-5 justify-content-center">
-            <div class="col-lg-6 col-md-10">
+            <div class="col-lg-6 col-md-10" data-aos="fade-right">
                 <div class="video-card">
                     <div class="video-wrapper">
                         <div class="fb-video-responsive">
@@ -971,7 +973,7 @@ $conn->close();
                     </div>
                 </div>
             </div>
-            <div class="col-lg-6 col-md-10">
+            <div class="col-lg-6 col-md-10" data-aos="fade-left">
                 <div class="video-card">
                     <div class="video-wrapper">
                         <div class="fb-video-responsive">
@@ -988,7 +990,7 @@ $conn->close();
         
         <!-- Minimal Info Tips -->
         <div class="tips-grid">
-            <div class="tip-item">
+            <div class="tip-item" data-aos="fade-up" data-aos-delay="100">
                 <div class="tip-content">
                     <span class="tip-number">01</span>
                     <h5>Regular Panel Maintenance</h5>
@@ -996,7 +998,7 @@ $conn->close();
                 </div>
             </div>
             
-            <div class="tip-item">
+            <div class="tip-item" data-aos="fade-up" data-aos-delay="200">
                 <div class="tip-content">
                     <span class="tip-number">02</span>
                     <h5>Optimal Panel Positioning</h5>
@@ -1004,7 +1006,7 @@ $conn->close();
                 </div>
             </div>
             
-            <div class="tip-item">
+            <div class="tip-item" data-aos="fade-up" data-aos-delay="300">
                 <div class="tip-content">
                     <span class="tip-number">03</span>
                     <h5>Time Your Energy Usage</h5>
@@ -1012,7 +1014,7 @@ $conn->close();
                 </div>
             </div>
             
-            <div class="tip-item">
+            <div class="tip-item" data-aos="fade-up" data-aos-delay="100">
                 <div class="tip-content">
                     <span class="tip-number">04</span>
                     <h5>Grid-Tie vs Hybrid Systems</h5>
@@ -1020,7 +1022,7 @@ $conn->close();
                 </div>
             </div>
             
-            <div class="tip-item">
+            <div class="tip-item" data-aos="fade-up" data-aos-delay="200">
                 <div class="tip-content">
                     <span class="tip-number">05</span>
                     <h5>Battery Storage Best Practices</h5>
@@ -1028,7 +1030,7 @@ $conn->close();
                 </div>
             </div>
             
-            <div class="tip-item">
+            <div class="tip-item" data-aos="fade-up" data-aos-delay="300">
                 <div class="tip-content">
                     <span class="tip-number">06</span>
                     <h5>Annual Professional Inspection</h5>
@@ -1044,7 +1046,7 @@ $conn->close();
     <section class="solar-reasons-section">
         <div class="solar-reasons-container">    
             <!-- LEFT SIDE - ILLUSTRATION -->
-            <div class="reasons-illustration">
+            <div class="reasons-illustration" data-aos="fade-right">
                 <h2 class="reasons-title">
                       6 Reasons Why<br>
                       <span class="light-text">Your Home Must Be Powered by</span><br>
@@ -1133,7 +1135,7 @@ $conn->close();
             </div>
 
             <!-- RIGHT SIDE - ACCORDION -->
-            <div class="reasons-accordion">
+            <div class="reasons-accordion" data-aos="fade-left">
                     
                 <!-- Accordion Item 1 -->
                 <div class="accordion-item">
@@ -1285,7 +1287,7 @@ $conn->close();
     <div class="container">
         <div class="row">
             <!-- Left Side - Contact Information -->
-            <div class="col-lg-5 mb-4 mb-lg-0">
+            <div class="col-lg-5 mb-4 mb-lg-0" data-aos="fade-right">
                 <div class="contact-info">
                     <h2>Contact Us</h2>
                     
@@ -1367,7 +1369,7 @@ $conn->close();
             </div>
             
             <!-- Right Side - Contact Form -->
-            <div class="col-lg-7">
+            <div class="col-lg-7" data-aos="fade-left">
                 <div class="contact-form-wrapper">
                     <h3 class="mb-4">Send us a Message</h3>
                     <form class="contact-form" id="contactForm" onsubmit="submitContactForm(event)">
@@ -1407,7 +1409,7 @@ $conn->close();
     <section class="subscription-section">
         <div class="container">
             <div class="row justify-content-center">
-                <div class="col-lg-8">
+                <div class="col-lg-8" data-aos="zoom-in">
                     <div class="subscription-bar">
                         <h3>Subscribe Now!</h3>
                         <p style="color: rgba(255,255,255,0.9); margin-bottom: 20px;">Get weekly solar tips, updates, and exclusive offers delivered to your inbox</p>
@@ -2084,7 +2086,15 @@ $conn->close();
 
     <!-- Bootstrap JS Bundle -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
-
+    <!-- AOS Animation -->
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script>
+        AOS.init({
+            duration: 1000,
+            once: true,
+            offset: 100
+        });
+    </script>
 
 </body>
 <script src="assets/script.js"></script>

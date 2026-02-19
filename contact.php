@@ -9,6 +9,8 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- AOS Animation -->
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
 
     <link rel="stylesheet" href="assets/style.css">
 <body>
@@ -28,33 +30,13 @@
         
         /* Hero Section */
         .hero-about {
-            background: linear-gradient(to right, rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.4)), 
+            background: linear-gradient(to right, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.4)), 
                 url('assets/img/contact.png') no-repeat center center/cover;
-            height: 60vh;
-            min-height: 400px;
-            color: var(--clr-light);
+            height: 50vh;
             display: flex;
             align-items: center;
-            position: relative;
-        }
-
-        .hero-about .hero-content {
+            color: white;
             text-align: center;
-        }
-
-        .hero-about h1 {
-            font-size: 48px;
-            margin-bottom: 15px;
-            font-weight: 700;
-            line-height: 1.2;
-        }
-
-        .hero-about .subtitle {
-            font-size: 22px;
-            color: var(--clr-primary);
-            text-transform: uppercase;
-            font-weight: 700;
-            letter-spacing: 2px;
         }
 
         /* Contact Us Section */
@@ -280,15 +262,9 @@
     <?php include "includes/header.php" ?>
 
     <section class="hero-about">
-        <div class="container">
-            <div class="row">
-                <div class="col-12">
-                    <div class="hero-content">
-                        <p class="subtitle">CONTACT US</p>
-                        <h1>Speak with our solar specialists today.</h1>
-                    </div>
-                </div>
-            </div>
+        <div class="container" data-aos="fade-up">
+            <span class="text-warning fw-bold text-uppercase">Contact Us</span>
+            <h1 class="display-3 fw-bold">Speak with our solar specialists today.</h1>
         </div>
     </section>
 
@@ -551,7 +527,15 @@
 
     <!-- Bootstrap JS Bundle -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
-
+    <!-- AOS Animation -->
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script>
+        AOS.init({
+            duration: 1000,
+            once: true,
+            offset: 100
+        });
+    </script>
 
 </body>
 <script>
