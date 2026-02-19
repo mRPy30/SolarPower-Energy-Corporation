@@ -1025,7 +1025,7 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
                         </button>
 
                         <button class="btn-bulk-delete" id="bulkDeleteBtn">
-                            <i class="fas fa-trash"></i> Delete Selected
+                            <i class="fas fa-trash"></i> Archive Selected
                         </button>
                         <button class="btn-deselect" id="deselectAllBtn">
                             <i class="fas fa-times"></i> Deselect All
