@@ -1474,7 +1474,7 @@ $conn->close();
     .chat-fab {
         position: fixed;
         bottom: 90px;
-        right: 24px;
+        right: 18px;
         z-index: 9999;
         width: 60px;
         height: 60px;
