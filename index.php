@@ -123,57 +123,7 @@ $conn->close();
     </div>
 
     <!-- Savings Calculator -->
-    <!-- Savings Calculator -->
-    <section class="savings-calculator">
-        <div class="container">
-            <div class="row justify-content-center">
-                <div class="col-lg-10">
-                    <div class="calculator-box collapsed" id="calculatorBox" data-aos="fade-up">
-                        <div class="savings-icon">
-                            <i class="fa-regular fa-lightbulb"></i>
-                        </div>
-                        <h2>Let's check how much you can save!</h2>
-                        <p>What's your monthly electric bill?</p>
-                        <div class="row justify-content-center mb-4">
-                            <div class="col-lg-4 col-md-6">
-                                <div class="input-group-custom">
-                                    <input
-                                        type="number"
-                                        id="billAmount"
-                                        placeholder="0"
-                                        min="0"
-                                        step="0.01"
-                                        onfocus="expandCalculator()"
-                                        onblur="shrinkCalculatorIfEmpty()">
-                                    <p>Monthly Electric Bill (₱)</p>
-                                </div>
-                            </div>
-                        </div>
-                        <button class="calculate-btn" onclick="calculateSavings()">Calculate</button>
-                        <div id="errorMessage" class="error-message"></div>
-                        <div id="results" class="results">
-                            <div class="result-card">
-                                <div class="result-value" id="kwpValue">0.0</div>
-                                <div class="result-label">Required System Size (kWp)</div>
-                            </div>
-                            <div class="result-card">
-                                <div class="result-value" id="panelsValue">0</div>
-                                <div class="result-label">Solar Panels</div>
-                            </div>
-                            <div class="result-card">
-                                <div class="result-value" id="monthlySavings">0</div>
-                                <div class="result-label">Monthly Savings (₱)</div>
-                            </div>
-                            <div class="result-card">
-                                <div class="result-value" id="yearlySavings">0</div>
-                                <div class="result-label">Yearly Savings (₱)</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
+    <?php include "includes/savings-calculator.php"; ?>
 
 
 
@@ -3732,5 +3682,4 @@ $conn->close();
         });
     }
 </script>
-
 </html>

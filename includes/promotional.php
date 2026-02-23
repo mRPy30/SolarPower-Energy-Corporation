@@ -177,7 +177,7 @@
                 </div>
                 <div class="col-md-6 promo-right-col">
                     <div class="promo-card promo-card-sm">
-                        <img src="assets/img/grid-tie.png" alt="Grid-Tie Packages">
+                        <img src="assets/img/demo-pubmat.jpg" alt="Grid-Tie Packages">
                         <div class="promo-card-overlay">
                             <span class="badge-promo"><i class="fas fa-solar-panel"></i> GRID-TIE</span>
                             <h3>Grid-Tie Packages</h3>
@@ -185,7 +185,7 @@
                         </div>
                     </div>
                     <div class="promo-card promo-card-sm">
-                        <img src="assets/img/hybrid.png" alt="Hybrid Packages">
+                        <img src="assets/img/demo-pubmat2.png" alt="Hybrid Packages">
                         <div class="promo-card-overlay">
                             <span class="badge-promo"><i class="fas fa-battery-full"></i> HYBRID</span>
                             <h3>Hybrid Packages</h3>

@@ -392,52 +392,8 @@
     </div>
 </section>
 
-    <section class="savings-calculator">
-        <div class="container">
-            <div class="row justify-content-center">
-                <div class="col-lg-10">
-                    <div class="calculator-box">
-                        <div class="savings-icon">
-                            <i class="fa-solid fa-solar-panel"></i>
-                        </div>
-                        <h2>Let's check how much you can save!</h2>
-                        <p>what's your monthly electric bill?</p>
-
-                        <div class="row justify-content-center mb-4">
-                            <div class="col-lg-3 col-md-6 mb-3">
-                                <div class="input-group-custom">
-                                    <input type="number" id="billAmount" placeholder="0" min="0" step="0.01">
-                                    <p>Monthly Electric Bill (₱)</p>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <button class="calculate-btn" onclick="calculateSavings()">Calculate</button>
-                        <div id="errorMessage" class="error-message"></div>
-
-                        <div id="results" class="results">
-                            <div class="result-card">
-                                <div class="result-value" id="kwpValue">0.0</div>
-                                <div class="result-label">kWp</div>
-                            </div>
-                            <div class="result-card">
-                                <div class="result-value" id="panelsValue">0</div>
-                                <div class="result-label"># of panels</div>
-                            </div>
-                            <div class="result-card">
-                                <div class="result-value" id="monthlySavings">0</div>
-                                <div class="result-label">Monthly Savings</div>
-                            </div>
-                            <div class="result-card">
-                                <div class="result-value" id="yearlySavings">0</div>
-                                <div class="result-label">Yearly Savings</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
+<!--------------------INCLUDE SAVINGS CALCULATOR---------------------------------------->
+   <?php include "includes/savings-calculator.php" ?>
 
     <!------ Book For Inspection ------>
     <section class="book-section py-5" id="inspection-section">
