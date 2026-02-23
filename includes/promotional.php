@@ -55,39 +55,7 @@
             display: block;
         }
 
-        .promo-card-overlay {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            padding: 24px;
-            background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
-            color: #fff;
-        }
-
-        .promo-card-overlay .badge-promo {
-            display: inline-block;
-            background: #ffc107;
-            color: #333;
-            font-weight: 600;
-            font-size: 0.75rem;
-            padding: 4px 12px;
-            border-radius: 20px;
-            margin-bottom: 8px;
-            letter-spacing: 0.5px;
-        }
-
-        .promo-card-overlay h3 {
-            font-size: 1.3rem;
-            font-weight: 700;
-            margin-bottom: 4px;
-        }
-
-        .promo-card-overlay p {
-            font-size: 0.85rem;
-            margin: 0;
-            opacity: 0.9;
-        }
+      
 
         .promo-right-col {
             gap: 20px;
@@ -178,19 +146,11 @@
                 <div class="col-md-6 promo-right-col">
                     <div class="promo-card promo-card-sm">
                         <img src="assets/img/demo-pubmat.jpg" alt="Grid-Tie Packages">
-                        <div class="promo-card-overlay">
-                            <span class="badge-promo"><i class="fas fa-solar-panel"></i> GRID-TIE</span>
-                            <h3>Grid-Tie Packages</h3>
-                            <p>Reduce your electricity bills with on-grid systems</p>
-                        </div>
+                       
                     </div>
                     <div class="promo-card promo-card-sm">
                         <img src="assets/img/demo-pubmat2.png" alt="Hybrid Packages">
-                        <div class="promo-card-overlay">
-                            <span class="badge-promo"><i class="fas fa-battery-full"></i> HYBRID</span>
-                            <h3>Hybrid Packages</h3>
-                            <p>Battery backup with grid connectivity for 24/7 power</p>
-                        </div>
+                     
                     </div>
                 </div>
             </div>
