@@ -168,6 +168,9 @@ $conn->close();
                     <button class="filter-btn" data-category="Mounting & Accessories">
                         <i class="fas fa-tools"></i> Mounting & Accessories
                     </button>
+                    <button class="filter-btn" data-category="Package">
+                        <i class="fas fa-tools"></i> Package Setup
+                    </button>
                 </div>
 
                 <div class="sort-container">

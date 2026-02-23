@@ -976,39 +976,280 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
 
 
             <div id="inquiries" class="page-content">
-                <div class="tracking-page-container">
-                    <div class="tracking-stats-grid">
-                        <div class="tracking-stat-card stat-all">
-                            <div class="stat-icon-wrapper"><i class="fas fa-envelope-open-text"></i></div>
-                            <div class="stat-details">
-                                <span class="stat-label">Total Inquiries</span>
-                                <span class="stat-value" id="totalInquiries"><?php echo $total_inquiries; ?></span>
-                            </div>
-                        </div>
-                    </div>
+                <style>
+                /* --- Inquiries Table Modern UI --- */
+                .tracking-stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px;}
+                .tracking-stat-card{background:#fff;border-radius:12px;padding:18px;display:flex;align-items:center;gap:16px;box-shadow:0 2px 8px rgba(0,0,0,.06);border-left:4px solid transparent;}
+                .stat-all{border-left-color:#3498db;}
+                .stat-transit{border-left-color:#f39c12;}
+                .stat-delivered{border-left-color:#27ae60;}
+                .stat-delivery{border-left-color:#3b82f6;}
+                .stat-icon-wrapper{width:52px;height:52px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;}
+                .stat-all .stat-icon-wrapper{background:#e3f2fd;color:#3498db;}
+                .stat-transit .stat-icon-wrapper{background:#fff3e0;color:#f39c12;}
+                .stat-delivered .stat-icon-wrapper{background:#e8f5e9;color:#27ae60;}
+                .stat-delivery .stat-icon-wrapper{background:#eff6ff;color:#3b82f6;}
+                .stat-details{display:flex;flex-direction:column;}
+                .stat-label{font-size:12px;color:#7f8c8d;font-weight:500;margin-bottom:3px;}
+                .stat-value{font-size:28px;font-weight:700;color:#2c3e50;line-height:1;}
+                .inq-search-bar{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;}
+                .inq-search-wrapper{position:relative;flex:1;min-width:220px;}
+                .inq-search-wrapper i{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#aaa;font-size:14px;pointer-events:none;}
+                .inq-search-input{width:100%;padding:10px 14px 10px 38px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:14px;font-family:inherit;transition:border-color .2s;box-sizing:border-box;}
+                .inq-search-input:focus{outline:none;border-color:#2a7a5b;box-shadow:0 0 0 3px rgba(42,122,91,.1);}
+                .inq-filter-select{padding:10px 14px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:13px;font-family:inherit;background:#fff;cursor:pointer;transition:border-color .2s;}
+                .inq-filter-select:focus{outline:none;border-color:#2a7a5b;}
+                .inq-count-badge{display:inline-block;background:#f0faf5;color:#2a7a5b;border:1px solid #b7e4ce;padding:4px 14px;border-radius:20px;font-size:13px;font-weight:600;margin-bottom:12px;}
+                .inq-bulk-bar{display:none;background:#2a7a5b;color:#fff;padding:12px 20px;border-radius:10px;margin-bottom:12px;align-items:center;justify-content:space-between;gap:10px;font-size:14px;font-weight:600;}
+                .inq-bulk-bar.visible{display:flex;}
+                .inq-bulk-btn{padding:7px 16px;border:none;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:6px;}
+                .inq-bulk-btn-mark{background:#fff;color:#2a7a5b;}
+                .inq-bulk-btn-mark:hover{background:#e6f4ef;}
+                .inq-bulk-btn-clear{background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.4);}
+                .inq-bulk-btn-clear:hover{background:rgba(255,255,255,.3);}
+                .inquiries-table-wrapper{overflow-x:auto;background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.07);}
+                .inquiries-table{width:100%;border-collapse:collapse;font-size:13.5px;min-width:750px;}
+                .inquiries-table thead tr{background:#2a7a5b;}
+                .inquiries-table thead th{padding:13px 14px;text-align:left;font-weight:600;color:#fff;font-size:13px;letter-spacing:.3px;border:none;white-space:nowrap;}
+                .inquiries-table thead th:first-child{border-radius:12px 0 0 0;width:46px;text-align:center;}
+                .inquiries-table thead th:last-child{border-radius:0 12px 0 0;}
+                .inquiries-table tbody tr{border-bottom:1px solid #f0f0f0;transition:background .15s;}
+                .inquiries-table tbody tr:last-child{border-bottom:none;}
+                .inquiries-table tbody tr:hover{background:#f7faf9;}
+                .inquiries-table tbody td{padding:12px 14px;color:#3a3a3a;vertical-align:middle;border:none;}
+                .inquiries-table tbody td:first-child{text-align:center;width:46px;}
+                .inq-checkbox{width:16px;height:16px;accent-color:#2a7a5b;cursor:pointer;}
+                .inq-message-preview{max-width:240px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#666;font-style:italic;font-size:12px;}
+                .inq-status{display:inline-block;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;letter-spacing:.3px;text-transform:capitalize;}
+                .inq-status.new{background:#fff3cd;color:#856404;}
+                .inq-status.read{background:#d1fae5;color:#065f46;}
+                .inq-status.replied{background:#dbeafe;color:#1e3a8a;}
+                .inq-actions{display:flex;gap:6px;align-items:center;}
+                .inq-btn{padding:5px 12px;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:4px;white-space:nowrap;}
+                .inq-btn-read{background:#2a7a5b;color:#fff;}
+                .inq-btn-read:hover{background:#1e5c43;transform:translateY(-1px);}
+                .inq-btn-replied{background:#3b82f6;color:#fff;}
+                .inq-btn-replied:hover{background:#2563eb;transform:translateY(-1px);}
+                .inq-btn-view{background:#f3f4f6;color:#374151;border:1px solid #e5e7eb;}
+                .inq-btn-view:hover{background:#e5e7eb;transform:translateY(-1px);}
+                </style>
 
-                    <div class="inquiries-cards-container" id="inquiriesContainer">
-                        <?php foreach ($all_inquiries as $msg): ?>
-                            <div class="inquiry-card" style="border: 1px solid #ddd; padding: 15px; margin-bottom: 10px; border-radius: 8px; background: #fff;">
-                                <div style="display: flex; justify-content: space-between; align-items: start;">
-                                    <div>
-                                        <h3 style="margin: 0;"><?php echo htmlspecialchars($msg['name']); ?></h3>
-                                        <small><?php echo $msg['email']; ?> | <?php echo $msg['phone']; ?></small>
-                                    </div>
-                                    <div style="text-align: right;">
-                                        <span class="status-badge status-<?php echo $msg['status']; ?>" style="display:block; margin-bottom: 5px;">
-                                            <?php echo strtoupper($msg['status']); ?>
-                                        </span>
-                                        <button onclick="updateStatus(<?php echo $msg['id']; ?>, 'read')" class="btn-status" style="padding: 4px 8px; cursor: pointer;">
-                                            Mark as Read
-                                        </button>
-                                    </div>
-                                </div>
-                                <p style="margin-top: 10px; font-style: italic;">"<?php echo htmlspecialchars($msg['message']); ?>"</p>
-                            </div>
-                        <?php endforeach; ?>
+                <h2 style="color:#2d3748;margin-bottom:20px;font-size:26px;">
+                    <i class="fas fa-envelope-open-text" style="color:#2a7a5b;margin-right:10px;"></i>Inquiries
+                </h2>
+
+                <!-- Stats -->
+                <div class="tracking-stats-grid">
+                    <div class="tracking-stat-card stat-all">
+                        <div class="stat-icon-wrapper"><i class="fas fa-envelope-open-text"></i></div>
+                        <div class="stat-details"><span class="stat-label">Total Inquiries</span><span class="stat-value" id="totalCount"></span></div>
+                    </div>
+                    <div class="tracking-stat-card stat-transit">
+                        <div class="stat-icon-wrapper"><i class="fas fa-envelope"></i></div>
+                        <div class="stat-details"><span class="stat-label">New / Unread</span><span class="stat-value" id="newCount"></span></div>
+                    </div>
+                    <div class="tracking-stat-card stat-delivered">
+                        <div class="stat-icon-wrapper"><i class="fas fa-check-circle"></i></div>
+                        <div class="stat-details"><span class="stat-label">Read</span><span class="stat-value" id="readCount"></span></div>
+                    </div>
+                    <div class="tracking-stat-card stat-delivery">
+                        <div class="stat-icon-wrapper"><i class="fas fa-reply"></i></div>
+                        <div class="stat-details"><span class="stat-label">Replied</span><span class="stat-value" id="repliedCount"></span></div>
                     </div>
                 </div>
+
+                <!-- Search + Filter -->
+                <div class="inq-search-bar">
+                    <div class="inq-search-wrapper">
+                        <i class="fas fa-search"></i>
+                        <input type="text" class="inq-search-input" id="inqSearch" placeholder="Search by name, email, or phone…">
+                    </div>
+                    <select class="inq-filter-select" id="inqStatusFilter">
+                        <option value="">All Status</option>
+                        <option value="new">New</option>
+                        <option value="read">Read</option>
+                        <option value="replied">Replied</option>
+                    </select>
+                </div>
+
+                <div class="inq-count-badge" id="inqCountBadge"></div>
+
+                <!-- Bulk Bar -->
+                <div class="inq-bulk-bar" id="inqBulkBar">
+                    <span id="inqBulkCount">0 selected</span>
+                    <div style="display:flex;gap:8px;">
+                        <button class="inq-bulk-btn inq-bulk-btn-mark" onclick="InqModule.bulkMarkRead()">
+                            <i class="fas fa-check-double"></i> Mark as Read
+                        </button>
+                        <button class="inq-bulk-btn inq-bulk-btn-clear" onclick="InqModule.clearSelection()">
+                            <i class="fas fa-times"></i> Deselect All
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Table -->
+                <div class="inquiries-table-wrapper">
+                    <table class="inquiries-table">
+                        <thead>
+                            <tr>
+                                <th><input type="checkbox" class="inq-checkbox" id="inqSelectAll"></th>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Phone</th>
+                                <th>Message</th>
+                                <th>Status</th>
+                                <th>Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="inqTableBody"></tbody>
+                    </table>
+                </div>
+
+                <!-- Message Viewer Modal -->
+                <div id="inqViewModal" class="staffModal">
+                    <div class="staffModal-content">
+                        <div class="staffModal-header">
+                            <h3><i class="fas fa-envelope-open-text"></i> <span id="inqModalSenderName"></span></h3>
+                            <button class="close" onclick="document.getElementById('inqViewModal').classList.remove('show')">&times;</button>
+                        </div>
+                        <div class="staffModal-body">
+                            <div style="background:#f9fafb;border-radius:10px;padding:14px;margin-bottom:14px;">
+                                <p style="font-size:11px;color:#888;margin-bottom:3px;text-transform:uppercase;letter-spacing:.5px;">From</p>
+                                <p style="font-weight:600;color:#2d3748;" id="inqModalSenderEmail"></p>
+                            </div>
+                            <div style="background:#f9fafb;border-radius:10px;padding:16px;line-height:1.75;color:#374151;font-size:14px;" id="inqModalBody"></div>
+                        </div>
+                        <div class="staffModal-footer">
+                            <button class="staffModal-btn-secondary" onclick="document.getElementById('inqViewModal').classList.remove('show')">
+                                <i class="fas fa-times"></i> Close
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="toast-container" id="toastContainer"></div>
+
+                <script>
+                // Convert PHP $all_inquiries to JS array
+                let allInquiries = <?php echo json_encode($all_inquiries); ?>;
+                let filteredData = [...allInquiries];
+
+                function esc(str) { const d=document.createElement('div'); d.textContent=str; return d.innerHTML; }
+                function cap(str) { return str.charAt(0).toUpperCase()+str.slice(1); }
+
+                function renderTable(data) {
+                    const tbody = document.getElementById('inqTableBody');
+                    document.getElementById('inqCountBadge').textContent = `${data.length} inquir${data.length !== 1 ? 'ies' : 'y'}`;
+
+                    // Update stats
+                    document.getElementById('totalCount').textContent   = allInquiries.length;
+                    document.getElementById('newCount').textContent     = allInquiries.filter(r => r.status === 'new').length;
+                    document.getElementById('readCount').textContent    = allInquiries.filter(r => r.status === 'read').length;
+                    document.getElementById('repliedCount').textContent = allInquiries.filter(r => r.status === 'replied').length;
+
+                    if (!data.length) {
+                        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:50px 20px;color:#aaa;">
+                            <i class="fas fa-inbox" style="font-size:36px;display:block;margin-bottom:10px;color:#ddd;"></i>
+                            No inquiries found.</td></tr>`;
+                        return;
+                    }
+
+                    tbody.innerHTML = data.map(row => `
+                        <tr class="inq-row" data-id="${row.id}" data-status="${row.status}"
+                            data-name="${row.name ? row.name.toLowerCase() : ''}"
+                            data-email="${row.email ? row.email.toLowerCase() : ''}"
+                            data-phone="${row.phone ? row.phone : ''}">
+                            <td><input type="checkbox" class="inq-checkbox inq-row-check" data-id="${row.id}" onchange="InqModule.onRowCheck()"></td>
+                            <td style="font-weight:600;color:#2d3748;white-space:nowrap;">${esc(row.name || '')}</td>
+                            <td style="color:#3b82f6;">${esc(row.email || '')}</td>
+                            <td style="white-space:nowrap;">${esc(row.phone || '')}</td>
+                            <td><div class="inq-message-preview" title="${esc(row.message || '')}">${esc(row.message || '')}</div></td>
+                            <td><span class="inq-status ${row.status}">${cap(row.status)}</span></td>
+                            <td style="color:#888;white-space:nowrap;font-size:12px;">${row.created_at || ''}</td>
+                            <td>
+                                <div class="inq-actions">
+                                    ${row.status === 'new' ? `<button class="inq-btn inq-btn-read" onclick="InqModule.markStatus(${row.id},'read',this)"><i class="fas fa-check"></i> Read</button>` : ''}
+                                    ${row.status !== 'replied' ? `<button class="inq-btn inq-btn-replied" onclick="InqModule.markStatus(${row.id},'replied',this)"><i class="fas fa-reply"></i> Replied</button>` : ''}
+                                    <button class="inq-btn inq-btn-view" onclick="InqModule.viewMessage(${row.id},'${esc(row.name || '')}','${(row.message || '').replace(/'/g,"\\'")}','${esc(row.email || '')}')">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    `).join('');
+                }
+
+                const InqModule = {
+                    filter() {
+                        const term   = document.getElementById('inqSearch').value.toLowerCase();
+                        const status = document.getElementById('inqStatusFilter').value;
+                        filteredData = allInquiries.filter(r => {
+                            const matchSearch = !term || (r.name && r.name.toLowerCase().includes(term)) || (r.email && r.email.toLowerCase().includes(term)) || (r.phone && r.phone.includes(term));
+                            const matchStatus = !status || r.status === status;
+                            return matchSearch && matchStatus;
+                        });
+                        renderTable(filteredData);
+                    },
+                    toggleSelectAll() {
+                        const cb = document.getElementById('inqSelectAll');
+                        document.querySelectorAll('.inq-row-check').forEach(c => c.checked = cb.checked);
+                        this.onRowCheck();
+                    },
+                    onRowCheck() {
+                        const checked = document.querySelectorAll('.inq-row-check:checked');
+                        document.getElementById('inqBulkCount').textContent = `${checked.length} selected`;
+                        document.getElementById('inqBulkBar').classList.toggle('visible', checked.length > 0);
+                    },
+                    clearSelection() {
+                        document.querySelectorAll('.inq-row-check, #inqSelectAll').forEach(c => c.checked = false);
+                        document.getElementById('inqBulkBar').classList.remove('visible');
+                    },
+                    bulkMarkRead() {
+                        const checked = document.querySelectorAll('.inq-row-check:checked');
+                        let count = 0;
+                        checked.forEach(cb => {
+                            const id = parseInt(cb.dataset.id);
+                            const rec = allInquiries.find(r => r.id === id);
+                            if (rec && rec.status === 'new') { rec.status = 'read'; count++; }
+                        });
+                        this.clearSelection();
+                        this.filter();
+                        showToast(`${count} inquir${count !== 1 ? 'ies' : 'y'} marked as read.`, 'success');
+                    },
+                    markStatus(id, status, btn) {
+                        btn.disabled = true;
+                        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                        setTimeout(() => {
+                            const rec = allInquiries.find(r => r.id === id);
+                            if (rec) rec.status = status;
+                            this.filter();
+                            showToast(`Marked as ${status}!`, 'success');
+                        }, 600);
+                    },
+                    viewMessage(id, name, message, email) {
+                        document.getElementById('inqModalSenderName').textContent = name;
+                        document.getElementById('inqModalSenderEmail').textContent = email;
+                        document.getElementById('inqModalBody').textContent = message;
+                        document.getElementById('inqViewModal').classList.add('show');
+                    }
+                };
+
+                function showToast(msg, type='success') {
+                    const c = document.getElementById('toastContainer');
+                    const t = document.createElement('div');
+                    t.className = `toast${type==='error'?' error':''}`;
+                    t.innerHTML = `<i class="fas fa-${type==='success'?'check-circle':'exclamation-circle'}" style="color:${type==='success'?'#27ae60':'#e74c3c'};font-size:18px;"></i><span class="toast-msg">${msg}</span><button class="toast-close" onclick="this.parentElement.remove()">×</button>`;
+                    c.appendChild(t);
+                    setTimeout(() => { t.style.animation='toastIn .3s ease reverse'; setTimeout(()=>t.remove(),300); }, 3000);
+                }
+
+                document.getElementById('inqSearch').addEventListener('input', () => InqModule.filter());
+                document.getElementById('inqStatusFilter').addEventListener('change', () => InqModule.filter());
+                document.getElementById('inqSelectAll').addEventListener('change', function() { InqModule.toggleSelectAll(); });
+
+                renderTable(allInquiries);
+                </script>
             </div>
 
 
