@@ -150,7 +150,11 @@ $conn->close();
                 <p class="catalog-subtitle">Premium solar solutions for your energy needs</p>
             </div>
 
+            <!-- Search Bar -->
+            <?php include "includes/product-search-bar.php"; ?>
+
             <!-- Filter Bar -->
+
             <div class="filter-bar">
                 <div class="filter-buttons" id="categoryFilters">
                     <button class="filter-btn active" data-category="all">
@@ -437,8 +441,10 @@ document.addEventListener('DOMContentLoaded', function() {
     updateCartBadge();
     initializeFilters();
     initializeSort();
+    initializeSearch();
     initializeSubscription();
     setupCalculator();
+
 });
 
 function addToCartFromButton(btn) {
@@ -576,14 +582,20 @@ function initializeFilters() {
     });
 }
 
-function filterProducts(category) {
+function filterProducts(category, searchTerm) {
     const products = document.querySelectorAll('.product-card');
+    const term = (searchTerm || document.getElementById('productSearchInput')?.value || '').toLowerCase().trim();
     let visibleCount = 0;
     
     products.forEach(product => {
         const productCategory = product.getAttribute('data-category');
+        const productName = (product.getAttribute('data-name') || '').toLowerCase();
+        const productBrand = (product.querySelector('.product-brand')?.textContent || '').toLowerCase();
         
-        if (category === 'all' || productCategory === category) {
+        const categoryMatch = category === 'all' || productCategory === category;
+        const searchMatch = !term || productName.includes(term) || productBrand.includes(term);
+        
+        if (categoryMatch && searchMatch) {
             product.style.display = 'block';
             visibleCount++;
         } else {
@@ -596,6 +608,14 @@ function filterProducts(category) {
     
     // Show no products message if none visible
     showNoProductsMessage(visibleCount);
+
+    // Update search meta count
+    const meta = document.getElementById('searchMeta');
+    if (meta && term) {
+        meta.innerHTML = `Found <span class="highlight-count">${visibleCount}</span> result${visibleCount !== 1 ? 's' : ''} for "<strong>${term}</strong>"`;
+    } else if (meta) {
+        meta.innerHTML = '';
+    }
 }
 
 // ========================================
@@ -723,12 +743,48 @@ function showNoProductsMessage(visibleCount) {
 }
 
 // ========================================
+// SEARCH FUNCTIONALITY
+// ========================================
+function initializeSearch() {
+    const input = document.getElementById('productSearchInput');
+    const clearBtn = document.getElementById('searchClearBtn');
+    if (!input) return;
+
+    input.addEventListener('input', function() {
+        const term = this.value.trim();
+        clearBtn.style.display = term ? 'block' : 'none';
+
+        // Get active category filter
+        const activeBtn = document.querySelector('.filter-btn.active');
+        const category = activeBtn ? activeBtn.getAttribute('data-category') : 'all';
+        filterProducts(category, term);
+    });
+
+    clearBtn.addEventListener('click', function() {
+        input.value = '';
+        clearBtn.style.display = 'none';
+        document.getElementById('searchMeta').innerHTML = '';
+        const activeBtn = document.querySelector('.filter-btn.active');
+        const category = activeBtn ? activeBtn.getAttribute('data-category') : 'all';
+        filterProducts(category, '');
+        input.focus();
+    });
+
+    // Also wire Escape key to clear
+    input.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') clearBtn.click();
+    });
+}
+
+// ========================================
 // RESET FILTERS (UTILITY)
 // ========================================
 function resetFilters() {
     document.querySelector('.filter-btn[data-category="all"]').click();
     document.getElementById('sortSelect').value = 'default';
     sortProducts('default');
+    const input = document.getElementById('productSearchInput');
+    if (input) { input.value = ''; document.getElementById('searchClearBtn').style.display='none'; }
 }
 
 // ========================================

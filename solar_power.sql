@@ -1,11 +1,11 @@
 -- phpMyAdmin SQL Dump
--- version 5.2.2
+-- version 5.2.1
 -- https://www.phpmyadmin.net/
 --
--- Host: localhost:3306
--- Generation Time: Feb 10, 2026 at 05:09 PM
--- Server version: 10.6.24-MariaDB-cll-lve
--- PHP Version: 8.3.29
+-- Host: 127.0.0.1
+-- Generation Time: Feb 24, 2026 at 03:06 AM
+-- Server version: 10.4.32-MariaDB
+-- PHP Version: 8.0.30
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -42,6 +42,92 @@ CREATE TABLE `admin` (
 
 INSERT INTO `admin` (`id`, `firstName`, `lastName`, `email`, `password`, `created_at`) VALUES
 (5, 'Gab', 'Don', 'gabdon@gmail.com', '12345678', '2025-12-12 01:33:29');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `archived_products`
+--
+
+CREATE TABLE `archived_products` (
+  `archive_id` int(11) NOT NULL,
+  `original_id` int(11) NOT NULL,
+  `displayName` varchar(255) NOT NULL,
+  `brandName` varchar(255) NOT NULL,
+  `price` decimal(10,2) NOT NULL,
+  `category` varchar(50) NOT NULL,
+  `stockQuantity` int(11) NOT NULL DEFAULT 0,
+  `warranty` varchar(100) DEFAULT NULL,
+  `description` text DEFAULT NULL,
+  `imagePath` varchar(255) NOT NULL,
+  `postedByStaffId` int(11) DEFAULT NULL,
+  `deleted_by` int(11) DEFAULT NULL,
+  `deleted_at` datetime NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `archived_products`
+--
+
+INSERT INTO `archived_products` (`archive_id`, `original_id`, `displayName`, `brandName`, `price`, `category`, `stockQuantity`, `warranty`, `description`, `imagePath`, `postedByStaffId`, `deleted_by`, `deleted_at`) VALUES
+(1, 155, '650W', 'Nuuko', 5750.00, 'Panel', 1000, '12years', 'The Nuuko 620W solar panel (part of the NKM-132BDR12 series) is a high-efficiency module designed for both large-scale residential and commercial systems. Nuuko utilizes N-Type TOPCon technology, similar to the Jinko Tiger Neo, which ensures better performance in high-heat and low-light conditions.', 'path/to/uploaded/image.jpg', 10, 12, '2026-02-18 08:25:30'),
+(3, 166, 'asd', 'TrinaSolar', 123.00, 'Battery', 21, '5 years', 'asd', 'path/to/uploaded/image.jpg', 12, 12, '2026-02-18 16:20:18'),
+(4, 164, 'asd', 'TrinaSolar', 123.00, 'Battery', 21, '5 years', 'asd', 'path/to/uploaded/image.jpg', 12, 12, '2026-02-18 16:23:42');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `archived_quotations`
+--
+
+CREATE TABLE `archived_quotations` (
+  `archive_id` int(11) NOT NULL,
+  `original_id` int(11) NOT NULL,
+  `quotation_number` varchar(10) DEFAULT NULL,
+  `client_name` varchar(255) NOT NULL,
+  `email` varchar(50) NOT NULL,
+  `contact` int(11) DEFAULT NULL,
+  `location` varchar(255) DEFAULT NULL,
+  `system_type` varchar(50) DEFAULT NULL,
+  `kw` decimal(10,2) DEFAULT NULL,
+  `officer` varchar(50) DEFAULT NULL,
+  `status` varchar(50) DEFAULT NULL,
+  `remarks` text DEFAULT NULL,
+  `created_by` int(11) DEFAULT NULL,
+  `original_created_at` timestamp NULL DEFAULT NULL,
+  `deleted_by` int(11) DEFAULT NULL,
+  `deleted_at` datetime NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `archived_quotations`
+--
+
+INSERT INTO `archived_quotations` (`archive_id`, `original_id`, `quotation_number`, `client_name`, `email`, `contact`, `location`, `system_type`, `kw`, `officer`, `status`, `remarks`, `created_by`, `original_created_at`, `deleted_by`, `deleted_at`) VALUES
+(2, 10, 'Q20258958', 'Lebron James', 'markangelo@gmail.com', 912345678, 'laguna', 'HYBRID', 2.20, 'GAB', 'APPROVED', 'Sample', 5, '2025-12-27 07:46:06', 12, '2026-02-18 08:41:46'),
+(5, 14, 'Q20261850', 'meg formelos', 'meg@gmail.com', 2147483647, 'lipa', 'SUPPLY-ONLY', 150.00, 'PRINCESS', 'LOSS', 'nako nawala', 12, '2026-02-18 03:57:10', 12, '2026-02-18 14:29:41'),
+(6, 13, 'Q20267431', 'meg formelos', 'meg@gmail.com', 2147483647, 'lipa', 'SUPPLY-ONLY', 150.00, 'PRINCESS', 'LOSS', 'nako nawala', 12, '2026-02-18 03:57:10', 12, '2026-02-18 14:29:53');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `archived_suppliers`
+--
+
+CREATE TABLE `archived_suppliers` (
+  `archive_id` int(11) NOT NULL,
+  `original_id` int(11) NOT NULL,
+  `supplierName` varchar(255) NOT NULL,
+  `contactPerson` varchar(255) DEFAULT NULL,
+  `email` varchar(100) DEFAULT NULL,
+  `phone` varchar(20) DEFAULT NULL,
+  `address` text DEFAULT NULL,
+  `city` varchar(100) DEFAULT NULL,
+  `country` varchar(100) DEFAULT NULL,
+  `registrationDate` timestamp NULL DEFAULT NULL,
+  `deleted_by` int(11) DEFAULT NULL,
+  `deleted_at` datetime NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -116,7 +202,8 @@ CREATE TABLE `client` (
 --
 
 INSERT INTO `client` (`id`, `email`, `firstName`, `lastName`, `password`, `contact_number`, `address`, `created_at`) VALUES
-(1, 'janvierericksonaraque@gmail.com', 'janvier', '', '$2y$10$Mie2sM.pOS3w/pWL48NBUey9SBAbEq3NpI9IHPNAgV9CgK6fHcP/q', 0, '', '2025-12-10 02:11:15');
+(1, 'janvierericksonaraque@gmail.com', 'janvier', '', '$2y$10$Mie2sM.pOS3w/pWL48NBUey9SBAbEq3NpI9IHPNAgV9CgK6fHcP/q', 0, '', '2025-12-10 02:11:15'),
+(2, 'demo@gmail.com', 'demo', 'only', 'haha', 0, 'wala', '2026-02-16 05:03:43');
 
 -- --------------------------------------------------------
 
@@ -139,7 +226,8 @@ CREATE TABLE `contact_messages` (
 --
 
 INSERT INTO `contact_messages` (`id`, `name`, `email`, `phone`, `message`, `created_at`, `status`) VALUES
-(5, 'janvier', 'janvierericksonaraque@gmail.com', '09706911766', 'Hello! I`m interested in getting a solar installation for our home. Please provide an estimated cost and schedule for inspection. Thank you.', '2025-12-17 00:50:20', 'read');
+(5, 'janvier', 'janvierericksonaraque@gmail.com', '09706911766', 'Hello! I`m interested in getting a solar installation for our home. Please provide an estimated cost and schedule for inspection. Thank you.', '2025-12-17 00:50:20', 'read'),
+(6, 'Kent Jocel', 'kent@gmail.com', '0929292929292929', 'this is demo inquiries', '2026-02-23 05:51:46', 'new');
 
 -- --------------------------------------------------------
 
@@ -190,7 +278,12 @@ CREATE TABLE `orders` (
 --
 
 INSERT INTO `orders` (`id`, `order_reference`, `customer_name`, `customer_email`, `customer_phone`, `customer_address`, `total_amount`, `payment_method`, `payment_status`, `order_status`, `tracking_number`, `staff_notes`, `current_location`, `estimated_delivery`, `delivered_at`, `created_at`) VALUES
-(38, 'ORD-20260201055130-0E1949', 'Janvier', 'janviererickson@Gmail.com', '+639706911766', 'Punta Sta. Ana, 133914096, City of Manila, Metro Manila (NCR)', 320000.00, 'maya_full', 'pending', 'pending', NULL, NULL, NULL, NULL, NULL, '2026-02-01 05:51:31');
+(38, 'ORD-20260201055130-0E1949', 'Janvier', 'janviererickson@Gmail.com', '+639706911766', 'Punta Sta. Ana, 133914096, City of Manila, Metro Manila (NCR)', 320000.00, 'maya_full', 'partial', 'out_for_delivery', '566', NULL, 'sitio coral nabato', '2026-02-28', NULL, '2026-02-01 05:51:31'),
+(39, 'ORD-202602010551 30-0E20000', 'demo name order', 'demoorder@gmail.com', '09202656254', 'demo orders address ', 399.00, 'gcash', 'pending', 'preparing', '55', NULL, 'In Transit', '2026-02-28', NULL, '2026-02-16 06:00:26'),
+(40, 'ORD-202602010551 30-0E8966', 'demo jocel name', 'demo@gmail.com', '09556674484', 'sitio coral nabato', 50.00, 'union bank', 'pending', 'pending', '8953345', 'eto ay order notes', 'batangas', NULL, NULL, '2026-02-16 07:36:37'),
+(41, 'ORD-202602010551 30-0E26981', 'pop up demo', 'popupdemo@gmail.com', '09556674568', 'this is customer address', 100000.00, 'full_maya', 'pending', 'confirmed', '584946', 'this is for demo only', 'Main Warehouse - Alabang', '2026-02-27', NULL, '2026-03-04 07:46:49'),
+(42, 'ORD-202602010551 30-0E88787', 'mema lagay hehe', 'mema@gmail.com', '09264554774', 'mema address', 852.00, 'cash', 'pending', 'pending', '9292929', 'mema notes', 'bomb my location', NULL, NULL, '2026-02-18 07:25:22'),
+(43, 'ORD-202602010551 30-0E26883', 'pang pito name', 'pangpito@gmail.com', '095959595', 'pang pito address', 7777.00, 'pang pito payment method', 'paid', 'delivered', '14213123', 'pang pito notes', 'pang pito location', '2026-02-21', NULL, '2026-02-19 01:07:46');
 
 --
 -- Triggers `orders`
@@ -247,7 +340,17 @@ CREATE TABLE `order_tracking_history` (
 --
 
 INSERT INTO `order_tracking_history` (`id`, `order_id`, `status`, `location`, `description`, `updated_by_staff_id`, `created_at`) VALUES
-(46, 38, 'pending', NULL, 'Order has been placed and is awaiting confirmation', NULL, '2026-02-01 05:51:31');
+(46, 38, 'pending', NULL, 'Order has been placed and is awaiting confirmation', NULL, '2026-02-01 05:51:31'),
+(47, 39, 'pending', NULL, 'Order has been placed and is awaiting confirmation', NULL, '2026-02-16 06:00:26'),
+(49, 40, 'pending', NULL, 'Order has been placed and is awaiting confirmation', NULL, '2026-02-16 07:36:37'),
+(50, 41, 'pending', NULL, 'Order has been placed and is awaiting confirmation', NULL, '2026-02-16 07:49:38'),
+(53, 42, 'pending', NULL, 'Order has been placed and is awaiting confirmation', NULL, '2026-02-18 07:25:22'),
+(54, 43, 'pending', NULL, 'Order has been placed and is awaiting confirmation', NULL, '2026-02-19 01:07:46'),
+(55, 41, 'confirmed', 'Main Warehouse - Alabang', 'none', 12, '2026-02-19 01:37:03'),
+(56, 39, 'preparing', 'In Transit', 'This is for demo purposes only', 12, '2026-02-24 01:32:10'),
+(57, 39, 'preparing', 'In Transit', 'This is for demo purposes only', 12, '2026-02-24 01:32:13'),
+(58, 38, 'out_for_delivery', 'sitio coral nabato', 'this is demo for janvier tracking order', 12, '2026-02-24 01:39:00'),
+(59, 38, 'out_for_delivery', 'sitio coral nabato', 'this is demo for janvier tracking order', 12, '2026-02-24 01:39:02');
 
 -- --------------------------------------------------------
 
@@ -336,7 +439,19 @@ INSERT INTO `product` (`id`, `displayName`, `brandName`, `price`, `category`, `s
 (150, '650W', 'Nuuko', 5750.00, 'Panel', 1000, '12years', 'The Nuuko 620W solar panel (part of the NKM-132BDR12 series) is a high-efficiency module designed for both large-scale residential and commercial systems. Nuuko utilizes N-Type TOPCon technology, similar to the Jinko Tiger Neo, which ensures better performance in high-heat and low-light conditions.', 'path/to/uploaded/image.jpg', 10),
 (153, '650W', 'Austra', 7000.00, 'Panel', 1000, '12 years', 'The Austa 650W (specifically model AU650-33V-MH) is an ultra-high-power module designed for large-scale installations. Unlike some other brands that use standard widths, this Austa model is significantly wider, utilizing 210mm large-format cells to push the wattage boundary.', 'path/to/uploaded/image.jpg', 10),
 (154, '650W', 'Austra', 7000.00, 'Panel', 1000, '12 years', 'The Austa 650W (specifically model AU650-33V-MH) is an ultra-high-power module designed for large-scale installations. Unlike some other brands that use standard widths, this Austa model is significantly wider, utilizing 210mm large-format cells to push the wattage boundary.', 'path/to/uploaded/image.jpg', 10),
-(155, '650W', 'Nuuko', 5750.00, 'Panel', 1000, '12years', 'The Nuuko 620W solar panel (part of the NKM-132BDR12 series) is a high-efficiency module designed for both large-scale residential and commercial systems. Nuuko utilizes N-Type TOPCon technology, similar to the Jinko Tiger Neo, which ensures better performance in high-heat and low-light conditions.', 'path/to/uploaded/image.jpg', 10);
+(156, 'convert demo', 'Trina Solar', 500.00, 'Panel', 5, '5 years', 'connvert', 'path/to/uploaded/image.jpg', 12),
+(157, 'convert demo', 'Trina Solar', 500.00, 'Panel', 5, '5 years', 'connvert', 'path/to/uploaded/image.jpg', 12),
+(158, 'convert demo', 'Trina Solar', 500.00, 'Panel', 5, '5 years', 'connvert', 'path/to/uploaded/image.jpg', 12),
+(159, 'last demo', 'Hybrid', 800.00, 'Package', 6, '5 years', 'asdsad', 'path/to/uploaded/image.jpg', 12),
+(160, 'last demo', 'Hybrid', 800.00, 'Package', 6, '5 years', 'asdsad', 'path/to/uploaded/image.jpg', 12),
+(161, 'last demo', 'Hybrid', 800.00, 'Package', 6, '5 years', 'asdsad', 'path/to/uploaded/image.jpg', 12),
+(162, 'asd', 'TrinaSolar', 123.00, 'Battery', 21, '5 years', 'asd', 'path/to/uploaded/image.jpg', 12),
+(163, 'asd', 'TrinaSolar', 123.00, 'Battery', 21, '5 years', 'asd', 'path/to/uploaded/image.jpg', 12),
+(167, 'last product name ', 'Grid-tie', 10000.00, 'Package', 10, '10 years', 'eto ay description ng last product na aking ginagawa', 'path/to/uploaded/image.jpg', 12),
+(168, 'last product name ', 'Grid-tie', 10000.00, 'Package', 10, '10 years', 'eto ay description ng last product na aking ginagawa', 'path/to/uploaded/image.jpg', 12),
+(169, 'last product name ', 'Grid-tie', 10000.00, 'Package', 10, '10 years', 'eto ay description ng last product na aking ginagawa', 'path/to/uploaded/image.jpg', 12),
+(170, 'last product name ', 'Grid-tie', 10000.00, 'Package', 10, '10 years', 'eto ay description ng last product na aking ginagawa', 'path/to/uploaded/image.jpg', 12),
+(171, 'last product name ', 'Grid-tie', 10000.00, 'Package', 10, '10 years', 'eto ay description ng last product na aking ginagawa', 'path/to/uploaded/image.jpg', 12);
 
 -- --------------------------------------------------------
 
@@ -421,7 +536,16 @@ INSERT INTO `product_images` (`id`, `product_id`, `image_path`, `created_at`) VA
 (184, 150, 'uploads/products/150/img_698ae9440ceac.png', '2026-02-10 08:16:04'),
 (187, 153, 'uploads/products/153/img_698aea5312c1e.png', '2026-02-10 08:20:35'),
 (188, 154, 'uploads/products/154/img_698aea6755cff.png', '2026-02-10 08:20:55'),
-(189, 155, 'uploads/products/155/img_698aeea1931ff.png', '2026-02-10 08:38:57');
+(190, 156, 'uploads/products/156/img_6992d3b61a3c9.png', '2026-02-16 08:22:14'),
+(191, 157, 'uploads/products/157/img_6992d42e84c58.png', '2026-02-16 08:24:14'),
+(192, 158, 'uploads/products/158/img_6992d56bd210c.png', '2026-02-16 08:29:31'),
+(193, 159, 'uploads/products/159/img_6992d5932e68d.png', '2026-02-16 08:30:11'),
+(194, 160, 'uploads/products/160/img_6992d597c7b63.png', '2026-02-16 08:30:15'),
+(196, 167, 'uploads/products/167/img_6996a5c77db04.png', '2026-02-19 05:55:19'),
+(197, 168, 'uploads/products/168/img_6996a5cdbd4f7.png', '2026-02-19 05:55:25'),
+(198, 169, 'uploads/products/169/img_6996a633e1f11.png', '2026-02-19 05:57:07'),
+(199, 170, 'uploads/products/170/img_6996a68f8b391.png', '2026-02-19 05:58:39'),
+(200, 171, 'uploads/products/171/img_6996a86932c0c.png', '2026-02-19 06:06:33');
 
 -- --------------------------------------------------------
 
@@ -451,7 +575,9 @@ CREATE TABLE `quotations` (
 --
 
 INSERT INTO `quotations` (`id`, `quotation_number`, `client_name`, `email`, `contact`, `location`, `system_type`, `kw`, `officer`, `status`, `remarks`, `created_by`, `created_at`, `updated_at`) VALUES
-(7, 'Q20258958', 'Lebron James', 'markangelo@gmail.com', 912345678, 'laguna', 'HYBRID', 2.20, 'GAB', 'APPROVED', 'Sample', 5, '2025-12-27 07:46:06', '2025-12-27 07:46:06');
+(11, 'Q20268147', 'client name', 'haha@gmail.com', 48, 'Santa Rosa City Laguna', 'HYBRID', 85.00, '', 'APPROVED', 'hahaha', 12, '2026-02-18 03:55:55', '2026-02-18 03:55:55'),
+(12, 'Q20269851', 'client name', 'haha@gmail.com', 48, 'Santa Rosa City Laguna', 'HYBRID', 85.00, '', 'APPROVED', 'hahaha', 12, '2026-02-18 03:55:55', '2026-02-18 03:55:55'),
+(17, 'Q20269424', '1', '2@gmail.com', 911111111, 'mindanao', 'GRID-TIE-HYBRID', 62.00, '', 'ONGOING', 'asd', 12, '2026-02-18 03:58:07', '2026-02-18 06:30:28');
 
 -- --------------------------------------------------------
 
@@ -477,7 +603,8 @@ INSERT INTO `staff` (`id`, `firstName`, `lastName`, `email`, `password`, `contac
 (8, 'Princess', 'Tumala', 'princesstumala5@gmail.com', '$2y$10$3Ci', '09184148517', '2026-01-12 08:17:14'),
 (9, 'Aico', 'Raymundo', 'raymundoaicomarie@gmail.com', '$2y$10$had', '2147483647', '2026-01-30 08:20:50'),
 (10, 'Janvier', 'Erickson', 'janvieraraque@gmail.com', '$2y$10$FhVcoq8GXnPJDXDzIg9Mquw7u1FL.8QbSXkgAjC70EY74d1xCTwOG', '+639706911766', '2026-02-02 00:53:23'),
-(11, 'Joy', 'Madrigal', 'joymadrigal01@gmail.com', '$2y$10$U0WHtT1yiYU1nmEtHxA.c.gNJSYi3G04A8CFfWC9sVtoqrTSQbPzK', '099999999999', '2026-02-03 08:46:50');
+(11, 'Joy', 'Madrigal', 'joymadrigal01@gmail.com', '$2y$10$U0WHtT1yiYU1nmEtHxA.c.gNJSYi3G04A8CFfWC9sVtoqrTSQbPzK', '099999999999', '2026-02-03 08:46:50'),
+(12, 'kent jocel', 'lusdoc', 'kentjocellusdoc@gmail.com', 'kentjocel', '09201195508', '2026-02-16 02:26:03');
 
 -- --------------------------------------------------------
 
@@ -517,7 +644,8 @@ CREATE TABLE `supplier` (
 --
 
 INSERT INTO `supplier` (`id`, `supplierName`, `contactPerson`, `email`, `phone`, `address`, `city`, `country`, `registrationDate`) VALUES
-(1, 'PowerAi', 'Marilou', 'marilou@gmail.com', '0912345678', 'Alabang pbb', 'muntinlupa', 'Philippines', '2025-12-24 02:47:39');
+(1, 'PowerAi', 'Marilou', 'marilou@gmail.com', '0912345678', 'Alabang pbb', 'muntinlupa', 'Philippines', '2025-12-24 02:47:39'),
+(2, 'demo 2', 'demo contact', 'contactdemo@gmail.com', '09595656585', 'contact demo haha', 'city contact demo', 'country demdo', '2026-02-19 00:28:48');
 
 --
 -- Indexes for dumped tables
@@ -529,6 +657,24 @@ INSERT INTO `supplier` (`id`, `supplierName`, `contactPerson`, `email`, `phone`,
 ALTER TABLE `admin`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `email` (`email`);
+
+--
+-- Indexes for table `archived_products`
+--
+ALTER TABLE `archived_products`
+  ADD PRIMARY KEY (`archive_id`);
+
+--
+-- Indexes for table `archived_quotations`
+--
+ALTER TABLE `archived_quotations`
+  ADD PRIMARY KEY (`archive_id`);
+
+--
+-- Indexes for table `archived_suppliers`
+--
+ALTER TABLE `archived_suppliers`
+  ADD PRIMARY KEY (`archive_id`);
 
 --
 -- Indexes for table `brands`
@@ -650,6 +796,24 @@ ALTER TABLE `admin`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
 
 --
+-- AUTO_INCREMENT for table `archived_products`
+--
+ALTER TABLE `archived_products`
+  MODIFY `archive_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+
+--
+-- AUTO_INCREMENT for table `archived_quotations`
+--
+ALTER TABLE `archived_quotations`
+  MODIFY `archive_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+
+--
+-- AUTO_INCREMENT for table `archived_suppliers`
+--
+ALTER TABLE `archived_suppliers`
+  MODIFY `archive_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT for table `brands`
 --
 ALTER TABLE `brands`
@@ -665,7 +829,7 @@ ALTER TABLE `categories`
 -- AUTO_INCREMENT for table `client`
 --
 ALTER TABLE `client`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT for table `contact_messages`
@@ -683,19 +847,19 @@ ALTER TABLE `delivery_locations`
 -- AUTO_INCREMENT for table `orders`
 --
 ALTER TABLE `orders`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=39;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=45;
 
 --
 -- AUTO_INCREMENT for table `order_items`
 --
 ALTER TABLE `order_items`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=22;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=23;
 
 --
 -- AUTO_INCREMENT for table `order_tracking_history`
 --
 ALTER TABLE `order_tracking_history`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=47;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=60;
 
 --
 -- AUTO_INCREMENT for table `password_resets`
@@ -707,25 +871,25 @@ ALTER TABLE `password_resets`
 -- AUTO_INCREMENT for table `product`
 --
 ALTER TABLE `product`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=156;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=172;
 
 --
 -- AUTO_INCREMENT for table `product_images`
 --
 ALTER TABLE `product_images`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=190;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=201;
 
 --
 -- AUTO_INCREMENT for table `quotations`
 --
 ALTER TABLE `quotations`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=18;
 
 --
 -- AUTO_INCREMENT for table `staff`
 --
 ALTER TABLE `staff`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
 
 --
 -- AUTO_INCREMENT for table `subscribers`
@@ -737,7 +901,7 @@ ALTER TABLE `subscribers`
 -- AUTO_INCREMENT for table `supplier`
 --
 ALTER TABLE `supplier`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- Constraints for dumped tables
