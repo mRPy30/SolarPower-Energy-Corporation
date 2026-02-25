@@ -3711,10 +3711,8 @@ function animateProductReveal() {
     });
 }
 </script>
-<<<<<<< HEAD
-=======
 
 <!-- Toast Notification Container -->
 <div id="toast-container" style="position:fixed; top:20px; right:20px; z-index:99999; min-width:300px;"></div>
->>>>>>> 5fe5f0eb1bb586306e301f412d915c5deb8bd74f
+
 </html>
