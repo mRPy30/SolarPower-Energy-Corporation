@@ -116,7 +116,7 @@ $conn->close();
             <?php include "includes/promotional.php" ?>
 
             <!--SEARCH BAR FUNCTION -->
-            <?php include "includes/product-search-bar.php" ?> <br>
+            <?php include "includes/product-search-bar.php" ?>
 
 
             <!-- Filter Bar -->
@@ -3750,8 +3750,15 @@ $conn->close();
         });
     }
 </script>
+<<<<<<< HEAD
 <<<<<<< HEAD=======<!-- Toast Notification Container -->
     <div id="toast-container" style="position:fixed; top:20px; right:20px; z-index:99999; min-width:300px;"></div>
     >>>>>>> 5fe5f0eb1bb586306e301f412d915c5deb8bd74f
 
+=======
+
+<!-- Toast Notification Container -->
+<div id="toast-container" style="position:fixed; top:20px; right:20px; z-index:99999; min-width:300px;"></div>
+
+>>>>>>> 14bbec3fb2bd61885d33f62196084d0620aa6ac3
 </html>

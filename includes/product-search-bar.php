@@ -1,5 +1,5 @@
 <!-- Product Search Bar Include -->
-<div class="product-search-wrap">
+<div class="product-search-wrap" style="margin:0;padding:0;">
     <div class="product-search-box">
         <i class="fas fa-search product-search-icon"></i>
         <input
@@ -18,7 +18,8 @@
 </div>
 <style>
 .product-search-wrap {
-    margin-bottom: 22px;
+    margin: 0 !important;
+    padding: 0 !important;
 }
 .product-search-box {
     position: relative;
