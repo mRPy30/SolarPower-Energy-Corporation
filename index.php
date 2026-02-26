@@ -113,7 +113,10 @@ $conn->close();
             </div>
 
             <!--promotional product-->
-            <?php include "includes/promotional.php" ?>
+            <div class="pb-4">
+                <?php include "includes/promotional.php" ?>
+            </div>
+
 
             <!--SEARCH BAR FUNCTION -->
             <?php include "includes/product-search-bar.php" ?>
@@ -3751,14 +3754,15 @@ $conn->close();
     }
 </script>
 <<<<<<< HEAD
-<<<<<<< HEAD=======<!-- Toast Notification Container -->
+    <<<<<<< HEAD=======<!-- Toast Notification Container -->
     <div id="toast-container" style="position:fixed; top:20px; right:20px; z-index:99999; min-width:300px;"></div>
     >>>>>>> 5fe5f0eb1bb586306e301f412d915c5deb8bd74f
 
-=======
+    =======
 
-<!-- Toast Notification Container -->
-<div id="toast-container" style="position:fixed; top:20px; right:20px; z-index:99999; min-width:300px;"></div>
+    <!-- Toast Notification Container -->
+    <div id="toast-container" style="position:fixed; top:20px; right:20px; z-index:99999; min-width:300px;"></div>
 
->>>>>>> 14bbec3fb2bd61885d33f62196084d0620aa6ac3
+    >>>>>>> 14bbec3fb2bd61885d33f62196084d0620aa6ac3
+
 </html>

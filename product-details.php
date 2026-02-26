@@ -201,15 +201,25 @@ $conn->close();
             transition: var(--transition);
         }
 
-        .thumbnail-item:hover,
+        .thumbnail-item:hover {
+            border-color: var(--clr-primary);
+            opacity: 0.85;
+        }
+
         .thumbnail-item.active {
             border-color: var(--clr-primary);
+            box-shadow: 0 0 0 2px rgba(255, 193, 7, 0.35);
         }
 
         .thumbnail-item img {
             width: 100%;
             height: 100%;
             object-fit: cover;
+            transition: transform 0.2s ease;
+        }
+
+        .thumbnail-item:hover img {
+            transform: scale(1.05);
         }
 
 
@@ -944,17 +954,11 @@ $conn->close();
             <div class="product-layout">
                 <!-- Image Gallery -->
                 <div class="gallery-section">
-                    <div class="main-image-container" onclick="document.getElementById('imgModal').style.display='flex'" style="cursor:zoom-in;">
+                    <div class="main-image-container" onclick="openImgModal()" style="cursor:zoom-in;">
                         <img src="<?= htmlspecialchars($productImages[0]) ?>"
                             alt="<?= htmlspecialchars($product['displayName']) ?>"
                             class="main-image"
                             id="mainImage">
-                    </div>
-
-                    <!-- Zoom Modal -->
-                    <div id="imgModal" onclick="this.style.display='none'" style="display:none;position:fixed;inset:0;z-index:9999;align-items:center;justify-content:center;cursor:zoom-out;">
-                        <span onclick="event.stopPropagation(); document.getElementById('imgModal').style.display='none'" style="position:fixed;top:100px;right:120px;font-size:40px;color:black;cursor:pointer;line-height:1;z-index:10000;">&times;</span>
-                        <img id="modalImage" src="<?= htmlspecialchars($productImages[0]) ?>" style="max-width:90%;max-height:90vh;object-fit:contain;border-radius:8px;">
                     </div>
 
                     <?php if (count($productImages) > 1): ?>
@@ -1235,6 +1239,33 @@ $conn->close();
 
     <?php include "includes/footer.php" ?>
 
+    <!-- Lightbox Modal — placed here at body level so position:fixed works correctly on all screen sizes -->
+    <div id="imgModal" onclick="handleModalBackdropClick(event)" style="display:none;position:fixed;inset:0;z-index:99999;align-items:center;justify-content:center;background:rgba(0,0,0,0.55);">
+        <div onclick="event.stopPropagation()" style="display:flex;gap:0;background:#fff;border-radius:4px;max-width:980px;width:95vw;max-height:92vh;overflow:hidden;position:relative;box-shadow:0 8px 48px rgba(0,0,0,0.28);">
+            <!-- Close button -->
+            <button onclick="closeImgModal()" style="position:absolute;top:14px;right:14px;background:none;border:none;font-size:26px;line-height:1;cursor:pointer;color:#333;z-index:10;width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:50%;transition:background 0.2s;" onmouseover="this.style.background='#f0f0f0'" onmouseout="this.style.background='none'">&times;</button>
+
+            <!-- Main image area -->
+            <div style="flex:1;display:flex;align-items:center;justify-content:center;background:#fff;padding:32px 24px;min-height:480px;">
+                <img id="modalImage" src="<?= htmlspecialchars($productImages[0]) ?>" style="max-width:100%;max-height:68vh;object-fit:contain;display:block;">
+            </div>
+
+            <!-- Thumbnail sidebar -->
+            <?php if (count($productImages) > 1): ?>
+            <div style="width:140px;flex-shrink:0;border-left:1px solid #f0f0f0;background:#fafafa;overflow-y:auto;padding:16px 12px;display:flex;flex-direction:column;gap:10px;">
+                <p style="font-size:12px;color:#999;margin:0 0 6px;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;">All Photos</p>
+                <?php foreach ($productImages as $index => $image): ?>
+                <div class="modal-thumb <?= $index === 0 ? 'modal-thumb-active' : '' ?>"
+                    onclick="changeModalImage(this, '<?= htmlspecialchars($image) ?>')"
+                    style="border:2px solid <?= $index === 0 ? 'var(--clr-primary)' : '#e0e0e0' ?>;border-radius:6px;overflow:hidden;cursor:pointer;aspect-ratio:1;transition:all 0.2s;">
+                    <img src="<?= htmlspecialchars($image) ?>" alt="Thumb <?= $index + 1 ?>" style="width:100%;height:100%;object-fit:cover;display:block;">
+                </div>
+                <?php endforeach; ?>
+            </div>
+            <?php endif; ?>
+        </div>
+    </div>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
     <script>
         const productData = <?= json_encode($product) ?>;
@@ -1242,16 +1273,58 @@ $conn->close();
         let cart = [];
         let deliveryFee = 0;
 
+        function closeImgModal() {
+            const modal = document.getElementById('imgModal');
+            modal.style.display = 'none';
+            document.body.style.overflow = '';
+        }
+
         // WHEN CLICK THE "ESC" IT WILL CLOSE THE ZOOM
         document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') document.getElementById('imgModal').style.display = 'none';
+            if (e.key === 'Escape') closeImgModal();
         });
+
+        function openImgModal() {
+            const modal = document.getElementById('imgModal');
+            modal.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        }
+
+        function handleModalBackdropClick(e) {
+            if (e.target === document.getElementById('imgModal')) {
+                closeImgModal();
+            }
+        }
 
         function changeMainImage(el, src) {
             document.getElementById('mainImage').src = src;
             document.getElementById('modalImage').src = src;
             document.querySelectorAll('.thumbnail-item').forEach(t => t.classList.remove('active'));
             el.classList.add('active');
+
+            // Sync modal thumbnails
+            document.querySelectorAll('.modal-thumb').forEach(t => {
+                const isMatch = t.querySelector('img').src === el.querySelector('img').src;
+                t.style.borderColor = isMatch ? 'var(--clr-primary)' : '#e0e0e0';
+                t.classList.toggle('modal-thumb-active', isMatch);
+            });
+        }
+
+        function changeModalImage(el, src) {
+            document.getElementById('modalImage').src = src;
+            document.querySelectorAll('.modal-thumb').forEach(t => {
+                t.style.borderColor = '#e0e0e0';
+                t.classList.remove('modal-thumb-active');
+            });
+            el.style.borderColor = 'var(--clr-primary)';
+            el.classList.add('modal-thumb-active');
+
+            // Sync main gallery thumbnails
+            document.querySelectorAll('.thumbnail-item').forEach(t => {
+                const isMatch = t.querySelector('img') && t.querySelector('img').src === el.querySelector('img').src;
+                t.classList.toggle('active', isMatch);
+            });
+            document.getElementById('mainImage').src = src;
         }
 
         function updateGlobalDeliveryFee() {
