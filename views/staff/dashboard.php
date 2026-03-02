@@ -1389,9 +1389,29 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
                         <div class="form-section">
                             <h3><i class="fas fa-images"></i> Product Images</h3>
 
-                            <!-- Current Images Display -->
-                            <div id="currentImagesContainer" class="current-images-grid">
-                                <!-- Images will be loaded here via JavaScript -->
+                            <!-- Image Carousel -->
+                            <div class="edit-product-carousel" id="editProductCarousel">
+                                <div class="carousel-main">
+                                    <div id="carouselImageContainer" class="carousel-image-container">
+                                        <!-- Main image will be loaded here -->
+                                        <div class="no-images-placeholder">
+                                            <i class="fas fa-image"></i>
+                                            <p>No images uploaded yet</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="carousel-counter" id="carouselCounter"></div>
+                                <div class="carousel-thumbnails-wrapper">
+                                    <button type="button" class="carousel-nav carousel-prev" id="carouselPrevBtn" onclick="carouselPrev()" style="display: none;">
+                                        <i class="fas fa-chevron-left"></i>
+                                    </button>
+                                    <div id="carouselThumbnails" class="carousel-thumbnails">
+                                        <!-- Thumbnails will be loaded here -->
+                                    </div>
+                                    <button type="button" class="carousel-nav carousel-next" id="carouselNextBtn" onclick="carouselNext()" style="display: none;">
+                                        <i class="fas fa-chevron-right"></i>
+                                    </button>
+                                </div>
                             </div>
 
                             <!-- Add New Images -->
@@ -1399,6 +1419,7 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
                                 <label><i class="fas fa-plus-circle"></i> Add New Images</label>
                                 <input type="file" name="new_images[]" id="newImagesInput" accept="image/*" multiple>
                                 <small>You can select multiple images at once</small>
+                                <div id="newImagesPreview" class="new-images-preview-grid"></div>
                             </div>
                         </div>
 
@@ -4726,7 +4747,7 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
             });
 
             // Load first image for each product
-            loadProductImages();
+            loadProductCardImages();
 
             // Filter button click handler
             filterButtons.forEach(button => {
@@ -4874,30 +4895,161 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
             }
         }
 
-        // Load product images into the modal
+        // Carousel state
+        let carouselImages = [];
+        let currentCarouselIndex = 0;
+
+        // Load product images into the carousel
         function loadProductImages(images) {
-            const container = document.getElementById('currentImagesContainer');
-            container.innerHTML = '';
+            const mainContainer = document.getElementById('carouselImageContainer');
+            const thumbnailsContainer = document.getElementById('carouselThumbnails');
+            const counterContainer = document.getElementById('carouselCounter');
+            const prevBtn = document.getElementById('carouselPrevBtn');
+            const nextBtn = document.getElementById('carouselNextBtn');
+            
+            carouselImages = images || [];
+            currentCarouselIndex = 0;
+
+            // Clear containers
+            mainContainer.innerHTML = '';
+            thumbnailsContainer.innerHTML = '';
+            counterContainer.innerHTML = '';
 
             if (!images || images.length === 0) {
-                container.innerHTML = '<p style="color: #999; text-align: center; padding: 20px;">No images uploaded yet</p>';
+                // Show no images placeholder
+                mainContainer.innerHTML = `
+                    <div class="no-images-placeholder">
+                        <i class="fas fa-image"></i>
+                        <p>No images uploaded yet</p>
+                    </div>
+                `;
+                // Hide navigation buttons
+                if (prevBtn) prevBtn.style.display = 'none';
+                if (nextBtn) nextBtn.style.display = 'none';
                 return;
             }
 
-            images.forEach(image => {
-                const imageItem = document.createElement('div');
-                imageItem.className = 'image-item';
-                imageItem.dataset.imageId = image.id;
+            // Show navigation buttons if more than 1 image
+            if (prevBtn) prevBtn.style.display = images.length > 1 ? 'flex' : 'none';
+            if (nextBtn) nextBtn.style.display = images.length > 1 ? 'flex' : 'none';
 
-                imageItem.innerHTML = `
-            <img src="../../${image.image_path}" alt="Product image">
-            <button type="button" class="delete-image-btn" onclick="markImageForDeletion(${image.id}, this)">
-                <i class="fas fa-times"></i>
-            </button>
-        `;
+            // Create main carousel image display
+            const mainImageWrapper = document.createElement('div');
+            mainImageWrapper.className = 'carousel-slide-wrapper';
+            mainImageWrapper.innerHTML = `
+                <img id="carouselMainImage" src="../../${images[0].image_path}" alt="Product image" onerror="this.src='../../assets/img/product-placeholder.png'">
+                <button type="button" class="carousel-delete-btn" id="carouselDeleteBtn" onclick="markCarouselImageForDeletion()">
+                    <i class="fas fa-trash"></i> Delete This Image
+                </button>
+            `;
+            mainContainer.appendChild(mainImageWrapper);
 
-                container.appendChild(imageItem);
+            // Create thumbnails
+            images.forEach((image, index) => {
+                const thumb = document.createElement('div');
+                thumb.className = 'carousel-thumbnail' + (index === 0 ? ' active' : '');
+                thumb.dataset.imageId = image.id;
+                thumb.dataset.index = index;
+                thumb.innerHTML = `
+                    <img src="../../${image.image_path}" alt="Thumbnail ${index + 1}" onerror="this.src='../../assets/img/product-placeholder.png'">
+                    ${imagesToDelete.includes(image.id) ? '<span class="thumb-deleted-badge"><i class="fas fa-trash"></i></span>' : ''}
+                `;
+                thumb.onclick = () => goToCarouselSlide(index);
+                thumbnailsContainer.appendChild(thumb);
             });
+
+            // Update counter
+            updateCarouselCounter();
+        }
+
+        // Go to specific carousel slide
+        function goToCarouselSlide(index) {
+            if (carouselImages.length === 0) return;
+            
+            currentCarouselIndex = index;
+            if (currentCarouselIndex < 0) currentCarouselIndex = carouselImages.length - 1;
+            if (currentCarouselIndex >= carouselImages.length) currentCarouselIndex = 0;
+
+            const mainImage = document.getElementById('carouselMainImage');
+            const deleteBtn = document.getElementById('carouselDeleteBtn');
+            
+            if (mainImage) {
+                mainImage.src = '../../' + carouselImages[currentCarouselIndex].image_path;
+            }
+
+            // Update thumbnail active state
+            document.querySelectorAll('.carousel-thumbnail').forEach((thumb, i) => {
+                thumb.classList.toggle('active', i === currentCarouselIndex);
+            });
+
+            // Update delete button state
+            const currentImageId = carouselImages[currentCarouselIndex].id;
+            if (deleteBtn) {
+                if (imagesToDelete.includes(currentImageId)) {
+                    deleteBtn.innerHTML = '<i class="fas fa-undo"></i> Undo Delete';
+                    deleteBtn.classList.add('marked-delete');
+                } else {
+                    deleteBtn.innerHTML = '<i class="fas fa-trash"></i> Delete This Image';
+                    deleteBtn.classList.remove('marked-delete');
+                }
+            }
+
+            updateCarouselCounter();
+        }
+
+        // Carousel navigation
+        function carouselNext() {
+            goToCarouselSlide(currentCarouselIndex + 1);
+        }
+
+        function carouselPrev() {
+            goToCarouselSlide(currentCarouselIndex - 1);
+        }
+
+        // Update carousel counter
+        function updateCarouselCounter() {
+            const counter = document.getElementById('carouselCounter');
+            if (counter && carouselImages.length > 0) {
+                counter.innerHTML = `<span>${currentCarouselIndex + 1}</span> / <span>${carouselImages.length}</span>`;
+            }
+        }
+
+        // Mark current carousel image for deletion
+        function markCarouselImageForDeletion() {
+            if (carouselImages.length === 0) return;
+            
+            const currentImageId = carouselImages[currentCarouselIndex].id;
+            const deleteBtn = document.getElementById('carouselDeleteBtn');
+            const thumbnail = document.querySelector(`.carousel-thumbnail[data-index="${currentCarouselIndex}"]`);
+
+            if (imagesToDelete.includes(currentImageId)) {
+                // Unmark for deletion
+                imagesToDelete = imagesToDelete.filter(id => id !== currentImageId);
+                if (deleteBtn) {
+                    deleteBtn.innerHTML = '<i class="fas fa-trash"></i> Delete This Image';
+                    deleteBtn.classList.remove('marked-delete');
+                }
+                if (thumbnail) {
+                    const badge = thumbnail.querySelector('.thumb-deleted-badge');
+                    if (badge) badge.remove();
+                }
+            } else {
+                // Mark for deletion
+                imagesToDelete.push(currentImageId);
+                if (deleteBtn) {
+                    deleteBtn.innerHTML = '<i class="fas fa-undo"></i> Undo Delete';
+                    deleteBtn.classList.add('marked-delete');
+                }
+                if (thumbnail) {
+                    const badge = document.createElement('span');
+                    badge.className = 'thumb-deleted-badge';
+                    badge.innerHTML = '<i class="fas fa-trash"></i>';
+                    thumbnail.appendChild(badge);
+                }
+            }
+
+            // Update hidden input
+            document.getElementById('deleteImagesInput').value = imagesToDelete.join(',');
         }
 
         // Mark image for deletion
@@ -4923,6 +5075,13 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
         // Close edit modal
         function closeEditModal() {
             document.getElementById('editProductModal').style.display = 'none';
+            
+            // Clear new images input and preview
+            const newImagesInput = document.getElementById('newImagesInput');
+            const newImagesPreview = document.getElementById('newImagesPreview');
+            
+            if (newImagesInput) newImagesInput.value = '';
+            if (newImagesPreview) newImagesPreview.innerHTML = '';
         }
 
         // Close modal when clicking outside
@@ -4933,38 +5092,45 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
             }
         });
 
-        // Handle edit form submission
-        const editForm = document.getElementById('editProductForm');
-        if (editForm) {
-            editForm.addEventListener('submit', async function(e) {
-                e.preventDefault();
+        // Handle edit form submission via AJAX
+        document.addEventListener('DOMContentLoaded', function() {
+            const editForm = document.getElementById('editProductForm');
+            if (editForm) {
+                editForm.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
 
-                const formData = new FormData(this);
+                    const formData = new FormData(this);
 
-                try {
-                    const response = await fetch('edit_product.php', {
-                        method: 'POST',
-                        body: formData
-                    });
+                    // Remove new_images from form data since images are already
+                    // uploaded immediately via AJAX — prevents duplicate uploads
+                    formData.delete('new_images[]');
 
-                    const data = await response.json();
+                    try {
+                        const response = await fetch('edit_product.php', {
+                            method: 'POST',
+                            body: formData
+                        });
 
-                    if (data.success) {
-                        alert('Product updated successfully!');
-                        closeEditModal();
-                        location.reload();
-                    } else {
-                        alert('Error updating product: ' + data.message);
+                        const data = await response.json();
+
+                        if (data.success) {
+                            alert('Product updated successfully!');
+                            closeEditModal();
+                            location.reload();
+                        } else {
+                            alert('Error updating product: ' + data.message);
+                        }
+                    } catch (error) {
+                        console.error('Error:', error);
+                        alert('Failed to update product. Please try again.');
                     }
-                } catch (error) {
-                    console.error('Error:', error);
-                    alert('Failed to update product. Please try again.');
-                }
-            });
-        }
+                });
+            }
+        });
 
         // Load first image for each product from product_images table
-        async function loadProductImages() {
+        async function loadProductCardImages() {
             productCards.forEach(async (card) => {
                 const productId = card.getAttribute('data-product-id');
                 const imageElement = card.querySelector('.product-image img');
@@ -5052,28 +5218,94 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
             button.onclick = () => markImageForDeletion(imageFilename, button);
         }
 
-        // Handle new images preview
+        // Handle new images - upload immediately via AJAX and refresh carousel
         document.addEventListener('DOMContentLoaded', function() {
-            const newImagesInput = document.getElementById('editNewImages');
+            const newImagesInput = document.getElementById('newImagesInput');
             if (newImagesInput) {
-                newImagesInput.addEventListener('change', function(e) {
-                    const previewDiv = document.getElementById('editNewImagesPreview');
+                newImagesInput.addEventListener('change', async function(e) {
+                    const previewDiv = document.getElementById('newImagesPreview');
+                    if (!previewDiv) return;
+                    
                     previewDiv.innerHTML = '';
 
                     const files = e.target.files;
-                    for (let i = 0; i < files.length; i++) {
-                        const file = files[i];
-                        const reader = new FileReader();
+                    if (files.length === 0) return;
 
-                        reader.onload = function(e) {
-                            const preview = document.createElement('div');
-                            preview.className = 'new-image-preview';
-                            preview.innerHTML = `<img src="${e.target.result}" alt="New ${i + 1}">`;
-                            previewDiv.appendChild(preview);
-                        };
-
-                        reader.readAsDataURL(file);
+                    const productId = document.getElementById('editProductId').value;
+                    if (!productId) {
+                        alert('Product ID is missing. Please try again.');
+                        return;
                     }
+
+                    // Show uploading indicator
+                    const statusMsg = document.createElement('div');
+                    statusMsg.style.cssText = 'grid-column: 1/-1; text-align: center; padding: 10px; background: #fff3cd; color: #856404; border-radius: 6px; font-weight: 600; margin-bottom: 8px;';
+                    statusMsg.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading ' + files.length + ' image(s)...';
+                    previewDiv.appendChild(statusMsg);
+
+                    // Build FormData and upload via AJAX
+                    const formData = new FormData();
+                    formData.append('product_id', productId);
+                    for (let i = 0; i < files.length; i++) {
+                        if (files[i].type.startsWith('image/')) {
+                            formData.append('new_images[]', files[i]);
+                        }
+                    }
+
+                    try {
+                        const response = await fetch('ajax_upload_images.php', {
+                            method: 'POST',
+                            body: formData
+                        });
+                        const data = await response.json();
+
+                        previewDiv.innerHTML = '';
+
+                        if (data.success && data.images && data.images.length > 0) {
+                            // Show success message
+                            const successMsg = document.createElement('div');
+                            successMsg.style.cssText = 'grid-column: 1/-1; text-align: center; padding: 10px; background: #e6f7f1; color: #217346; border-radius: 6px; font-weight: 600; margin-bottom: 8px;';
+                            successMsg.innerHTML = '<i class="fas fa-check-circle"></i> ' + data.message;
+                            previewDiv.appendChild(successMsg);
+
+                            // Show preview thumbnails of newly uploaded images
+                            data.images.forEach((img, i) => {
+                                const preview = document.createElement('div');
+                                preview.className = 'new-image-preview-item';
+                                preview.innerHTML = 
+                                    '<img src="../../' + img.image_path + '" alt="New image ' + (i + 1) + '">' +
+                                    '<div class="new-image-badge"><i class="fas fa-plus-circle"></i> New</div>';
+                                previewDiv.appendChild(preview);
+                            });
+
+                            // Append new images to the carousel array
+                            data.images.forEach(img => {
+                                carouselImages.push({ id: img.id, image_path: img.image_path });
+                            });
+
+                            // Refresh the carousel to show all images including new ones
+                            loadProductImages(carouselImages);
+
+                            // Navigate to the first newly added image
+                            const firstNewIndex = carouselImages.length - data.images.length;
+                            goToCarouselSlide(firstNewIndex);
+                        } else {
+                            const errorMsg = document.createElement('div');
+                            errorMsg.style.cssText = 'grid-column: 1/-1; text-align: center; padding: 10px; background: #f8d7da; color: #721c24; border-radius: 6px; font-weight: 600; margin-bottom: 8px;';
+                            errorMsg.innerHTML = '<i class="fas fa-exclamation-circle"></i> ' + (data.message || 'Upload failed');
+                            previewDiv.appendChild(errorMsg);
+                        }
+                    } catch (error) {
+                        console.error('Upload error:', error);
+                        previewDiv.innerHTML = '';
+                        const errorMsg = document.createElement('div');
+                        errorMsg.style.cssText = 'grid-column: 1/-1; text-align: center; padding: 10px; background: #f8d7da; color: #721c24; border-radius: 6px; font-weight: 600; margin-bottom: 8px;';
+                        errorMsg.innerHTML = '<i class="fas fa-exclamation-circle"></i> Failed to upload images. Please try again.';
+                        previewDiv.appendChild(errorMsg);
+                    }
+
+                    // Reset the file input so the same files can be re-selected if needed
+                    newImagesInput.value = '';
                 });
             }
         });
@@ -6042,10 +6274,12 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
 
         // Form Submit Handler with Animation
         document.addEventListener('DOMContentLoaded', function() {
-            const productForm = document.querySelector('form[enctype="multipart/form-data"]');
+            // Only target the add-product form, not the edit form
+            const productForm = document.querySelector('form[enctype="multipart/form-data"] input[name="action"][value="add_product"]');
+            const addProductForm = productForm ? productForm.closest('form') : null;
 
-            if (productForm) {
-                productForm.addEventListener('submit', function(e) {
+            if (addProductForm) {
+                addProductForm.addEventListener('submit', function(e) {
                     // Check if this is the add product form
                     const actionInput = this.querySelector('input[name="action"]');
                     if (actionInput && actionInput.value === 'add_product') {

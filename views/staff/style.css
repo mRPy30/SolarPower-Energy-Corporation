@@ -1552,6 +1552,269 @@ tbody tr:last-child td {
     font-size: 18px;
 }
 
+/* Edit Product Image Carousel */
+.edit-product-carousel {
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    border: 1px solid #e0e0e0;
+}
+
+.carousel-main {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.carousel-image-container {
+    width: 100%;
+    max-width: 450px;
+    height: 280px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: white;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    margin-bottom: 10px;
+}
+
+.carousel-slide-wrapper {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+}
+
+.carousel-slide-wrapper img#carouselMainImage {
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+}
+
+.carousel-delete-btn {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    padding: 6px 12px;
+    background: rgba(220, 53, 69, 0.9);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    z-index: 10;
+}
+
+.carousel-delete-btn:hover {
+    background: #c82333;
+}
+
+.carousel-delete-btn.marked-delete {
+    background: rgba(40, 167, 69, 0.9);
+}
+
+.carousel-delete-btn.marked-delete:hover {
+    background: #218838;
+}
+
+.carousel-counter {
+    text-align: center;
+    font-size: 13px;
+    color: #666;
+    margin-bottom: 12px;
+}
+
+.carousel-counter span:first-child {
+    font-weight: bold;
+    color: #333;
+}
+
+/* Thumbnail section with arrows */
+.carousel-thumbnails-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    max-width: 450px;
+    margin: 0 auto;
+    padding: 5px 0;
+}
+
+.carousel-nav {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    border-radius: 50%;
+    background:#217346;
+    color: white;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.carousel-nav:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+    background: #1a5c37;
+}
+
+.carousel-thumbnails {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-start;
+    overflow-x: auto;
+    padding: 5px;
+    max-width: calc(100% - 100px);
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.carousel-thumbnails::-webkit-scrollbar {
+    display: none;
+}
+
+.carousel-thumbnail {
+    width: 60px;
+    height: 60px;
+    min-width: 60px;
+    border-radius: 6px;
+    overflow: hidden;
+    cursor: pointer;
+    border: 2px solid #e0e0e0;
+    transition: all 0.3s ease;
+    position: relative;
+    background: white;
+}
+
+.carousel-thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.carousel-thumbnail:hover {
+    border-color: #217346;
+    transform: scale(1.05);
+}
+
+.carousel-thumbnail.active {
+    border-color: #217346;
+    border-width: 3px;
+    box-shadow: 0 0 8px rgba(33, 115, 70, 0.4);
+}
+
+.thumb-deleted-badge {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(220, 53, 69, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 16px;
+}
+
+.no-images-text {
+    color: #999;
+    text-align: center;
+    padding: 40px 20px;
+    font-size: 14px;
+}
+
+.no-images-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: #aaa;
+    padding: 40px 20px;
+}
+
+.no-images-placeholder i {
+    font-size: 48px;
+    margin-bottom: 15px;
+    color: #ccc;
+}
+
+.no-images-placeholder p {
+    font-size: 14px;
+    margin: 0;
+    color: #999;
+}
+
+/* New Images Preview Grid */
+.new-images-preview-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 12px;
+    margin-top: 15px;
+    padding: 10px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.new-image-preview-item {
+    position: relative;
+    aspect-ratio: 1;
+    border: 2px solid #10b981;
+    border-radius: 8px;
+    overflow: hidden;
+    background: white;
+    box-shadow: 0 2px 6px rgba(16, 185, 129, 0.1);
+}
+
+.new-image-preview-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.new-image-badge {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: rgba(16, 185, 129, 0.95);
+    color: white;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: 10px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.new-image-badge i {
+    font-size: 10px;
+}
+
 /* Current Images Grid */
 .current-images-grid {
     display: grid;
