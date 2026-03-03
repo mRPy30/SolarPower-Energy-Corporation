@@ -15,7 +15,6 @@
       --green:    #3A5C1A;
       --green-d:  #2C4713;
       --green-l:  #EEF3E8;
-      --white:    #FFFFFF;
       --bg:       #F7F9F4;
       --border:   #DDE3D4;
       --text:     #1A2308;
@@ -75,7 +74,7 @@
 
     /* ── Steps ── */
     .step-nav {
-      background: var(--white); border-bottom: 2px solid var(--border);
+       border-bottom: 2px solid var(--border);
       display: flex; padding: 0 40px;
     }
     .step-tab {
@@ -106,7 +105,7 @@
 
     /* ── Radar panel ── */
     .radar-panel {
-      background: var(--white); border-right: 1.5px solid var(--border);
+      border-right: 1.5px solid var(--border);
       padding: 26px 20px; display: flex; flex-direction: column; align-items: center;
     }
     .panel-lbl {
@@ -137,9 +136,9 @@
     .stat-v { color: var(--green); font-weight: 700; transition: all 0.4s; }
 
     /* ── Components ── */
-    .comp-panel { background: var(--bg); display: flex; flex-direction: column; }
+    .comp-panel {  display: flex; flex-direction: column; }
     .comp-head {
-      background: var(--white); padding: 18px 28px;
+       padding: 18px 28px;
       border-bottom: 1.5px solid var(--border);
       display: flex; align-items: center; justify-content: space-between;
     }
@@ -161,7 +160,22 @@
     .comp-card:hover { border-color: var(--yellow); transform: translateY(-1px); box-shadow: 0 5px 18px rgba(58,92,26,0.13); }
     .comp-card.active-card { border-color: var(--yellow); border-left: 4px solid var(--yellow); background: var(--yellow-l); }
     .comp-card.done { border-left: 4px solid var(--green); border-color: var(--green); }
-    .comp-card.warn { border-left: 4px solid var(--yellow); background: #FFFBF0; border-color: #E8A020; }
+    .comp-card.warn { border-left: 4px solid #E8A020; background: #FFFBF0; border-color: #E8A020; }
+    .comp-card.warn .comp-tag { background: #FFF5E0; color: #9A6A00; border: 1px solid #EDD080; }
+
+    /* Compatibility Warnings Panel */
+    .compat-warnings { padding: 0 22px 10px; display: none; }
+    .compat-warn {
+      background: #FFF8E1; border: 1.5px solid #E8A020; border-radius: 8px;
+      padding: 9px 13px; margin-bottom: 6px; font-size: 0.72rem; font-weight: 600;
+      color: #7A5200; display: flex; align-items: flex-start; gap: 7px; line-height: 1.4;
+    }
+    .compat-warn .warn-icon { font-size: 1rem; flex-shrink: 0; }
+    .compat-ok {
+      background: #F0F9E8; border: 1.5px solid var(--green); border-radius: 8px;
+      padding: 9px 13px; font-size: 0.72rem; font-weight: 600;
+      color: var(--green); display: flex; align-items: center; gap: 7px;
+    }
 
     .comp-icon {
       width: 50px; height: 50px; border-radius: 8px;
@@ -170,6 +184,7 @@
       font-size: 1.45rem; flex-shrink: 0; transition: background 0.3s;
     }
     .comp-card.done .comp-icon { background: var(--green); }
+    .comp-icon img { width: 100%; height: 100%; object-fit: cover; border-radius: 6px; }
     .comp-info { flex: 1; }
     .comp-type { font-size: 0.63rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.13em; color: var(--yellow-d); margin-bottom: 3px; }
     .comp-name { font-size: 0.83rem; font-weight: 600; color: var(--text); line-height: 1.35; }
@@ -182,8 +197,13 @@
     .tag-a { background: #F2F4EE; color: var(--muted); border: 1px solid var(--border); }
 
     /* ── Selector ── */
-    .sel-panel { background: var(--white); border-left: 1.5px solid var(--border); display: flex; flex-direction: column; }
-    .sel-head { padding: 17px 20px 13px; border-bottom: 1.5px solid var(--border); }
+    .sel-panel { 
+      background: var(--white); border-left: 1.5px solid var(--border); 
+      display: flex; flex-direction: column; 
+      height: calc(100vh - 156px); /* Fix height so scrolling works */
+      position: sticky; top: 0;
+    }
+    .sel-head { padding: 17px 20px 13px; border-bottom: 1.5px solid var(--border); flex-shrink: 0; }
     .sel-head h3 { font-size: 0.9rem; font-weight: 800; color: var(--green); display: flex; align-items: center; gap: 7px; }
     .sel-head h3 .arr { color: var(--yellow); }
     .filter-row { display: flex; gap: 8px; margin-top: 11px; }
@@ -203,8 +223,22 @@
     .search-box input:focus { border-color: var(--green); }
     .search-box input::placeholder { color: #B0BC9A; }
     .search-box .ico { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--muted); }
+    .search-box { flex-shrink: 0; }
 
-    .prod-list { flex: 1; overflow-y: auto; padding: 4px 20px 14px; display: flex; flex-direction: column; gap: 8px; }
+    .prod-list { 
+      flex: 1; 
+      overflow-y: auto; 
+      padding: 4px 20px 14px; 
+      display: flex; 
+      flex-direction: column; 
+      gap: 8px;
+      min-height: 0; /* Required for flex child scrolling */
+    }
+    /* Custom scrollbar for product list */
+    .prod-list::-webkit-scrollbar { width: 8px; }
+    .prod-list::-webkit-scrollbar-track { background: var(--bg); border-radius: 4px; }
+    .prod-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+    .prod-list::-webkit-scrollbar-thumb:hover { background: var(--muted); }
     .prod-card {
       border: 1.5px solid var(--border); border-radius: 8px; padding: 11px;
       display: flex; gap: 10px; cursor: pointer; transition: all .2s;
@@ -271,7 +305,8 @@
       border: 1.5px solid var(--border);
     }
     .summary-item-left { display: flex; align-items: center; gap: 10px; }
-    .summary-item-icon { font-size: 1.2rem; }
+    .summary-item-icon { font-size: 1.2rem; width: 44px; height: 44px; min-width: 44px; border-radius: 8px; overflow: hidden; display: flex; align-items: center; justify-content: center; background: var(--bg); border: 1px solid var(--border); }
+    .summary-item-icon img { width: 100%; height: 100%; object-fit: cover; }
     .summary-item-name { font-size: 0.82rem; font-weight: 600; }
     .summary-item-spec { font-size: 0.67rem; color: var(--muted); }
     .summary-item-price { font-size: 0.9rem; font-weight: 800; color: var(--green); }
@@ -505,14 +540,11 @@
 
 <!-- Step Nav -->
 <nav class="step-nav" id="stepNav">
-  <div class="step-tab active" data-step="1" onclick="goToStep(1)">
+  <div class="step-tab active" data-step="1" onclick="solarGoToStep(1)">
     <div class="step-num">01</div> Components
   </div>
-  <div class="step-tab" data-step="2" onclick="goToStep(2)">
-    <div class="step-num">02</div> Peripherals
-  </div>
-  <div class="step-tab" data-step="3" onclick="goToStep(3)">
-    <div class="step-num">03</div> Summary
+  <div class="step-tab" data-step="3" onclick="solarGoToStep(3)">
+    <div class="step-num">02</div> Summary
   </div>
 </nav>
 
@@ -628,6 +660,10 @@
       </div>
 
     </div>
+
+    <!-- Compatibility Warnings -->
+    <div class="compat-warnings" id="compatWarnings"></div>
+
   </div>
 
   <!-- RIGHT: Product Selector Panel -->
@@ -677,6 +713,16 @@
       <div id="summaryComponents"></div>
     </div>
 
+    <div class="summary-section" id="summaryCompatSection" style="display:none;">
+      <div class="summary-section-title">Compatibility Check</div>
+      <div id="summaryCompat"></div>
+    </div>
+
+    <div class="summary-section" id="summaryStatsSection" style="display:none;">
+      <div class="summary-section-title">System Performance Estimate</div>
+      <div id="summaryStats"></div>
+    </div>
+
     <div class="summary-section" id="summaryPeriphSection">
       <div class="summary-section-title">Add-On Services</div>
       <div id="summaryPeripherals"></div>
@@ -688,8 +734,8 @@
     </div>
 
     <div class="summary-cta">
-      <button class="cta-secondary" onclick="goToStep(1)">← Edit Build</button>
-      <button class="cta-primary" onclick="showToast('🛒 Build added to cart! Our team will contact you within 24 hours.')">🛒 Add to Cart & Request Quote</button>
+      <button class="cta-secondary" onclick="solarGoToStep(1)">← Edit Build</button>
+      <button class="cta-primary" onclick="printBuildPDF()">🖨️ Print to PDF</button>
     </div>
   </div>
 </div>
@@ -730,98 +776,283 @@
     <div class="total-lbl">Subtotal</div>
     <div class="total-val" id="footerTotal">₱ 0.00</div>
   </div>
-  <button class="cart-btn" onclick="goToStep(3)">🛒 Review Build</button>
+  <button class="cart-btn" onclick="solarGoToStep(3)">🛒 Review Build</button>
 </div>
 
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
 <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
-// ─── DATA ─────────────────────────────────────────────────────────────────────
+// ─── DATA (loaded dynamically from database) ─────────────────────────────────
 
-const PRODUCTS = {
-  panels: {
-    title: '🌞 Solar Panels',
-    filterLabels: ['Brand', 'Wattage'],
-    filterKeys: ['brand', 'wattage'],
-    items: [
-      { id:'p1', name:'Jinko Solar Tiger Neo 440W Monocrystalline', spec:'440W · Mono PERC · 21.3% eff · 20 panels', price:95000, oldPrice:105000, brand:'Jinko Solar', wattage:'440W', radar:{panels:0.9, output:0.85}, stats:{kw:8.8, coverage:'3–4 BR', savings:480, roi:'4–5 Yrs', co2:6.5} },
-      { id:'p2', name:'Canadian Solar HiKu7 450W Bifacial', spec:'450W · Bifacial · 22.1% eff · 20 panels', price:112000, brand:'Canadian Solar', wattage:'450W', radar:{panels:0.95, output:0.9}, stats:{kw:9.0, coverage:'4–5 BR', savings:520, roi:'4–5 Yrs', co2:7.0} },
-      { id:'p3', name:'Longi Solar Hi-MO6 405W Monocrystalline', spec:'405W · Mono · 20.9% eff · 20 panels', price:78500, brand:'Longi Solar', wattage:'405W', radar:{panels:0.75, output:0.7}, stats:{kw:8.1, coverage:'2–3 BR', savings:420, roi:'3–4 Yrs', co2:5.8} },
-      { id:'p4', name:'Risen Solar Titan 550W Bifacial HJT', spec:'550W · HJT Bifacial · 23.5% eff · 14 panels', price:135000, brand:'Risen Solar', wattage:'550W', radar:{panels:1.0, output:1.0}, stats:{kw:7.7, coverage:'4–5 BR', savings:560, roi:'5–6 Yrs', co2:7.8} },
-      { id:'p5', name:'Trina Solar Vertex S 390W Mono', spec:'390W · Mono · 20.4% eff · 22 panels', price:72000, brand:'Trina Solar', wattage:'390W', radar:{panels:0.65, output:0.6}, stats:{kw:8.6, coverage:'2–3 BR', savings:390, roi:'3–4 Yrs', co2:5.4} },
-    ]
-  },
-  inverter: {
-    title: '⚡ Inverter',
-    filterLabels: ['Brand', 'Type'],
-    filterKeys: ['brand', 'type'],
-    items: [
-      { id:'i1', name:'Growatt SPH 8000TL3 BH-UP 8kW Hybrid', spec:'8kW · Hybrid · 3-Phase · WiFi built-in', price:58000, brand:'Growatt', type:'Hybrid', radar:{output:0.85}, stats:{} },
-      { id:'i2', name:'SolarEdge SE10K 10kW Grid-Tie Inverter', spec:'10kW · Grid-Tie · HD-Wave · Module-level MPPT', price:78000, oldPrice:85000, brand:'SolarEdge', type:'Grid-Tie', radar:{output:0.95}, stats:{} },
-      { id:'i3', name:'Fronius Symo 8.0-3-M 8kW 3-Phase', spec:'8kW · 3-Phase · SuperFlex Design', price:65000, brand:'Fronius', type:'Grid-Tie', radar:{output:0.8}, stats:{} },
-      { id:'i4', name:'Huawei SUN2000-10KTL-M1 10kW Smart', spec:'10kW · Hybrid · AI optimization · 2 MPPT', price:62000, brand:'Huawei', type:'Hybrid', radar:{output:0.9}, stats:{} },
-      { id:'i5', name:'Deye SUN-6K-SG03LP1 6kW Hybrid Off-Grid', spec:'6kW · Off-Grid/Hybrid · LV Battery support', price:44000, brand:'Deye', type:'Off-Grid', radar:{output:0.65}, stats:{} },
-    ]
-  },
-  battery: {
-    title: '🔋 Battery Storage',
-    filterLabels: ['Brand', 'Chemistry'],
-    filterKeys: ['brand', 'chemistry'],
-    items: [
-      { id:'b1', name:'Pylontech US5000 48V 74Ah LiFePO4 (2 units)', spec:'14.8kWh · LiFePO4 · 6000 cycles · CAN/RS485', price:88000, brand:'Pylontech', chemistry:'LiFePO4', radar:{battery:0.85}, stats:{} },
-      { id:'b2', name:'BYD Battery-Box Premium HVS 10.2kWh', spec:'10.2kWh · LFP · High Voltage · Modular', price:105000, oldPrice:115000, brand:'BYD', chemistry:'LFP', radar:{battery:0.9}, stats:{} },
-      { id:'b3', name:'Dyness Tower B4850 48V 100Ah 4.8kWh', spec:'4.8kWh · LFP · IP20 · Tower design', price:42000, brand:'Dyness', chemistry:'LFP', radar:{battery:0.55}, stats:{} },
-      { id:'b4', name:'CATL LUNA 2000-5-E1 5kWh LFP', spec:'5kWh · LFP · -20°C–55°C · IP55', price:65000, brand:'CATL', chemistry:'LFP', radar:{battery:0.7}, stats:{} },
-      { id:'b5', name:'Redway 48V 200Ah 9.6kWh LiFePO4 Rack', spec:'9.6kWh · LFP · Rack mount · RS485 comms', price:72000, brand:'Redway', chemistry:'LiFePO4', radar:{battery:0.8}, stats:{} },
-    ]
-  },
-  mounting: {
-    title: '🔩 Mounting System',
-    filterLabels: ['Brand', 'Type'],
-    filterKeys: ['brand', 'type'],
-    items: [
-      { id:'m1', name:'IronRidge Flush Mount Aluminum Rail System', spec:'Aluminum · Roof · Up to 30 panels', price:18500, brand:'IronRidge', type:'Roof', radar:{mounting:0.8}, stats:{} },
-      { id:'m2', name:'Unirac SolarMount Ground Array', spec:'Steel · Ground · Up to 40 panels', price:24000, brand:'Unirac', type:'Ground', radar:{mounting:0.9}, stats:{} },
-      { id:'m3', name:'K2 Systems RoofKit Compact', spec:'Aluminum · Roof · Up to 20 panels', price:14200, brand:'K2 Systems', type:'Roof', radar:{mounting:0.65}, stats:{} },
-      { id:'m4', name:'Schletter Eco15 Carport Mount', spec:'Galvanized · Carport · Up to 50 panels', price:38800, brand:'Schletter', type:'Carport', radar:{mounting:1.0}, stats:{} },
-      { id:'m5', name:'Renusol VS+ Flat Roof Ballast', spec:'Plastic · Flat Roof · No drilling', price:11900, brand:'Renusol', type:'Roof', radar:{mounting:0.55}, stats:{} },
-    ]
-  },
-  wiring: {
-    title: '🔌 Wiring & Protection',
-    filterLabels: ['Brand', 'Includes'],
-    filterKeys: ['brand', 'includes'],
-    items: [
-      { id:'w1', name:'Complete DC/AC Cable & Protection Kit – Standard', spec:'DC cables · AC breakers · SPD · Disconnect', price:12500, brand:'Generic', includes:'Full Kit', radar:{wiring:0.75}, stats:{} },
-      { id:'w2', name:'Schneider Electric Solar Protection Bundle', spec:'RCCB · MCB · SPD · Din Rail enclosure', price:22000, brand:'Schneider', includes:'Full Kit', radar:{wiring:0.9}, stats:{} },
-      { id:'w3', name:'ABB Fuse & DC Combiner Box Set', spec:'Fuse holders · Combiner · 1000V rated', price:17500, brand:'ABB', includes:'Combiner', radar:{wiring:0.85}, stats:{} },
-      { id:'w4', name:'Basic Cable Tray & MC4 Connector Set', spec:'MC4 connectors · PV cable 4mm² · 30m roll', price:6800, brand:'Generic', includes:'Cables Only', radar:{wiring:0.5}, stats:{} },
-    ]
-  },
-  monitoring: {
-    title: '📡 Monitoring System',
-    filterLabels: ['Brand', 'Connectivity'],
-    filterKeys: ['brand', 'connectivity'],
-    items: [
-      { id:'mo1', name:'Growatt ShineWifi-X Wireless Monitor', spec:'WiFi · Cloud · Growatt ShinePhone app', price:3200, brand:'Growatt', connectivity:'WiFi', radar:{}, stats:{} },
-      { id:'mo2', name:'SolarEdge Monitoring Portal + Meter', spec:'Cell/WiFi · Module-level monitoring', price:8500, brand:'SolarEdge', connectivity:'WiFi+Cell', radar:{}, stats:{} },
-      { id:'mo3', name:'Victron GX Touch 50 Display + VRM', spec:'5" touch · VRM cloud · Color display', price:14500, brand:'Victron', connectivity:'LAN/WiFi', radar:{}, stats:{} },
-      { id:'mo4', name:'Fronius Solar.web Smart Meter Kit', spec:'Smart meter · Web portal · API access', price:9800, brand:'Fronius', connectivity:'WiFi+LAN', radar:{}, stats:{} },
-    ]
-  }
+// Category metadata (static config)
+const CATEGORY_META = {
+  panels: { title: '🌞 Solar Panels', filterLabels: ['Brand', 'Type'], filterKeys: ['brand', 'spec_type'] },
+  inverter: { title: '⚡ Inverter', filterLabels: ['Brand', 'Type'], filterKeys: ['brand', 'spec_type'] },
+  battery: { title: '🔋 Battery Storage', filterLabels: ['Brand', 'Type'], filterKeys: ['brand', 'spec_type'] },
+  mounting: { title: '🔩 Mounting System', filterLabels: ['Brand', 'Type'], filterKeys: ['brand', 'spec_type'] },
+  wiring: { title: '🔌 Wiring & Protection', filterLabels: ['Brand', 'Type'], filterKeys: ['brand', 'spec_type'] },
+  monitoring: { title: '📡 Monitoring System', filterLabels: ['Brand', 'Type'], filterKeys: ['brand', 'spec_type'] }
 };
 
-const PERIPHERALS = [
-  { id:'pe1', name:'Site Assessment & Shade Analysis', type:'Service', price:3500, icon:'🏠', desc:'Professional roof inspection + shading report' },
-  { id:'pe2', name:'MERALCO Net Metering Application', type:'Service', price:8000, icon:'📋', desc:'Full application processing & requirements' },
-  { id:'pe3', name:'Extended 10-Year Labor Warranty', type:'Warranty', price:15000, icon:'🛡️', desc:'Extended workmanship guarantee' },
-  { id:'pe4', name:'Smart Home Energy Controller', type:'Accessory', price:22000, icon:'🏡', desc:'Automate load shifting & EV charging' },
-  { id:'pe5', name:'Annual Preventive Maintenance Plan', type:'Service', price:12000, icon:'🔧', desc:'Yearly cleaning + electrical check + report' },
-  { id:'pe6', name:'Panel Cleaning Kit + Anti-Dust Coating', type:'Accessory', price:4500, icon:'🧹', desc:'Professional-grade cleaning supplies' },
-  { id:'pe7', name:'Lightning Arrester & Earthing System', type:'Safety', price:9500, icon:'⚡', desc:'Surge & lightning protection for system' },
-  { id:'pe8', name:'CCTV Camera for Inverter Room', type:'Security', price:7800, icon:'📷', desc:'Remote monitoring of equipment room' },
-];
+// Products cache - loaded from database
+const PRODUCTS = {
+  panels: { ...CATEGORY_META.panels, items: [], loaded: false },
+  inverter: { ...CATEGORY_META.inverter, items: [], loaded: false },
+  battery: { ...CATEGORY_META.battery, items: [], loaded: false },
+  mounting: { ...CATEGORY_META.mounting, items: [], loaded: false },
+  wiring: { ...CATEGORY_META.wiring, items: [], loaded: false },
+  monitoring: { ...CATEGORY_META.monitoring, items: [], loaded: false }
+};
+
+// Peripherals removed (table deleted)
+const PERIPHERALS = [];
+
+// API base path (relative to current page location)
+const API_BASE = '/SolarPower-Energy-Corporation/controllers/solar-builder';
+
+// ─── FETCH PRODUCTS FROM DATABASE ─────────────────────────────────────────────
+
+// Parse real specs from product name and description
+// Based on actual manufacturer datasheets (Aiko, Trina, Jinko, Deye, LuxPower, Solax, SRNE, etc.)
+function parseProductSpecs(category, product) {
+  const name = (product.name || '').toLowerCase();
+  const desc = (product.description || product.spec || '').toLowerCase();
+  const combined = name + ' ' + desc;
+  const specs = {};
+
+  switch (category) {
+    case 'panels': {
+      // Extract wattage: "580W", "635W", "705W" etc.
+      const wMatch = combined.match(/(\d{3,4})\s*w(?:att|p)?/i);
+      specs.watts = wMatch ? parseInt(wMatch[1]) : 0;
+      
+      // Efficiency from description (real datasheet values)
+      const effMatch = desc.match(/([\d.]+)[\s-]*(?:to\s*[\d.]+)?%?\s*efficiency/i);
+      if (effMatch) {
+        specs.efficiency = parseFloat(effMatch[1]);
+      } else {
+        // Real-world defaults by brand/wattage based on manufacturer data:
+        // Aiko ABC: 23.6-24.2%, Trina TOPCon: 22.5-23.1%, Jinko TOPCon: 22.3-22.8%
+        // Lvtopsun PERC: 21.2-22.5%, Nuuko TOPCon: 22.0-22.6%, AE Solar: 21.0-22.0%
+        if (combined.includes('aiko')) specs.efficiency = 23.8;
+        else if (combined.includes('trina')) specs.efficiency = 22.8;
+        else if (combined.includes('jinko')) specs.efficiency = 22.5;
+        else if (combined.includes('nuuko')) specs.efficiency = 22.3;
+        else if (combined.includes('lvtopsun') && specs.watts >= 580) specs.efficiency = 22.5;
+        else if (combined.includes('lvtopsun')) specs.efficiency = 21.3;
+        else if (combined.includes('austra') || combined.includes('austa')) specs.efficiency = 22.0;
+        else if (combined.includes('aerosolar') || combined.includes('ae solar')) specs.efficiency = 21.5;
+        else specs.efficiency = 21.0;
+      }
+      
+      // Cell type from description
+      if (combined.includes('abc') || combined.includes('all-back contact')) specs.cell_type = 'N-Type ABC';
+      else if (combined.includes('topcon') || combined.includes('n-type')) specs.cell_type = 'N-Type TOPCon';
+      else if (combined.includes('perc')) specs.cell_type = 'PERC';
+      else if (combined.includes('hjt') || combined.includes('heterojunction')) specs.cell_type = 'HJT';
+      else specs.cell_type = 'Monocrystalline';
+      
+      // Bifacial
+      specs.bifacial = combined.includes('bifacial') || combined.includes('bificial');
+      break;
+    }
+    
+    case 'inverter': {
+      // Extract kW: "10kW", "6kW", "5kW", "14kW", "15kW"
+      const kwMatch = combined.match(/(\d+(?:\.\d+)?)\s*k\s*w/i);
+      specs.kw = kwMatch ? parseFloat(kwMatch[1]) : 0;
+      
+      // Phase
+      if (combined.includes('three phase') || combined.includes('3-phase') || combined.includes('3 phase')) {
+        specs.phase = 'Three Phase';
+      } else {
+        specs.phase = 'Single Phase';
+      }
+      
+      // Type
+      if (combined.includes('hybrid')) specs.type = 'Hybrid';
+      else if (combined.includes('grid-tie') || combined.includes('grid tie') || combined.includes('gti')) specs.type = 'Grid-Tie';
+      else specs.type = 'Hybrid'; // Default for Philippine market
+      
+      // Efficiency: Real datasheet values
+      const invEffMatch = desc.match(/(9[\d.]+)%\s*efficiency/i);
+      if (invEffMatch) {
+        specs.efficiency = parseFloat(invEffMatch[1]);
+      } else {
+        // Real values: Deye 97.5%, LuxPower 97.0%, Solax 97.8%, SRNE 96.5%
+        if (combined.includes('deye')) specs.efficiency = 97.5;
+        else if (combined.includes('luxpower') || combined.includes('lux power')) specs.efficiency = 97.0;
+        else if (combined.includes('solax')) specs.efficiency = 97.8;
+        else if (combined.includes('srne')) specs.efficiency = 96.5;
+        else specs.efficiency = 96.0;
+      }
+      
+      // Voltage level (all Philippine residential inverters in your catalog are LV/48V)
+      specs.battery_voltage = 48; // Low Voltage standard
+      break;
+    }
+    
+    case 'battery': {
+      // Extract kWh: "5.12kWh", "10.24kwh", "16.07kwh"
+      const kwhMatch = combined.match(/([\d.]+)\s*kwh/i);
+      specs.kwh = kwhMatch ? parseFloat(kwhMatch[1]) : 0;
+      
+      // Voltage: "100V", "48V", "51.2V"
+      const vMatch = combined.match(/([\d.]+)\s*v(?:olt)?(?:\/piece)?/i);
+      specs.voltage = vMatch ? parseFloat(vMatch[1]) : 51.2; // Default LiFePO4 nominal
+      
+      // Normalize: 100V is actually a Hoymiles high-voltage module
+      // 48-51.2V is standard LV, 100V+ is HV
+      specs.voltage_class = specs.voltage >= 80 ? 'HV' : 'LV';
+      
+      // Chemistry (all products in catalog are LiFePO4)
+      if (combined.includes('lifepo') || combined.includes('lfp') || combined.includes('lithium iron')) {
+        specs.chemistry = 'LiFePO4';
+      } else {
+        specs.chemistry = 'LiFePO4'; // Standard for modern solar storage
+      }
+      
+      // Cycle life: Real values ~6000 for LiFePO4
+      const cycleMatch = desc.match(/([\d,]+)[\s-]*cycle/i);
+      specs.cycle_life = cycleMatch ? parseInt(cycleMatch[1].replace(',', '')) : 6000;
+      
+      // DoD (Depth of Discharge): Standard 90-95% for LiFePO4
+      specs.dod = 0.95;
+      break;
+    }
+    
+    case 'mounting': {
+      // Extract max panels: "Up to 15 Panels", "Up to 25 Panels", "Up to 40 Panels"
+      const panelMatch = combined.match(/(?:up\s*to\s*)?(\d+)\s*panel/i);
+      specs.max_panels = panelMatch ? parseInt(panelMatch[1]) : 0;
+      
+      // Mount type
+      if (combined.includes('ground')) specs.mount_type = 'Ground Mount';
+      else if (combined.includes('flat roof') || combined.includes('ballast')) specs.mount_type = 'Flat Roof';
+      else if (combined.includes('carport')) specs.mount_type = 'Carport';
+      else if (combined.includes('roof')) specs.mount_type = 'Roof Mount';
+      else specs.mount_type = 'Universal';
+      
+      // Material
+      if (combined.includes('aluminum') || combined.includes('aluminium')) specs.material = 'Aluminum';
+      else if (combined.includes('galvanized steel') || combined.includes('steel')) specs.material = 'Galvanized Steel';
+      else specs.material = 'Aluminum';
+      
+      // Wind rating (Philippine typhoon standard)
+      const windMatch = desc.match(/(\d+)\s*km\/h/i);
+      specs.wind_rating_kmh = windMatch ? parseInt(windMatch[1]) : 150; // Default PH standard
+      break;
+    }
+    
+    case 'wiring': {
+      // Extract max system kW: "Up to 5kW", "Up to 10kW", "Up to 15kW", "20kW+"
+      const kwMatch = combined.match(/(?:up\s*to\s*)?(\d+)\s*kw/i);
+      specs.max_kw = kwMatch ? parseInt(kwMatch[1]) : 0;
+      
+      // Cable size from description
+      const cableMatch = desc.match(/(\d+)\s*mm/i);
+      specs.cable_mm2 = cableMatch ? parseInt(cableMatch[1]) : 4;
+      
+      // Protection level
+      if (combined.includes('industrial') || combined.includes('heavy')) specs.grade = 'Industrial';
+      else if (combined.includes('premium')) specs.grade = 'Premium';
+      else if (combined.includes('standard') || combined.includes('professional')) specs.grade = 'Standard';
+      else specs.grade = 'Basic';
+      
+      // SPD type
+      if (combined.includes('type i+ii') || combined.includes('type i &')) specs.spd = 'Type I+II';
+      else if (combined.includes('type ii')) specs.spd = 'Type II';
+      else specs.spd = 'Type II';
+      break;
+    }
+    
+    case 'monitoring': {
+      // Connectivity
+      if (combined.includes('ethernet') && combined.includes('wifi')) specs.connectivity = 'WiFi + Ethernet';
+      else if (combined.includes('wifi') && combined.includes('cloud')) specs.connectivity = 'WiFi + Cloud';
+      else if (combined.includes('wifi')) specs.connectivity = 'WiFi';
+      else specs.connectivity = 'WiFi';
+      
+      // Has display
+      specs.has_display = combined.includes('display') || combined.includes('touchscreen') || combined.includes('screen');
+      
+      // Has energy meter
+      specs.has_energy_meter = combined.includes('energy meter') || combined.includes('smart meter');
+      
+      // Module-level monitoring
+      specs.module_level = combined.includes('module-level') || combined.includes('optimizer');
+      
+      // API access
+      specs.has_api = combined.includes('api') || combined.includes('modbus') || combined.includes('mqtt');
+      
+      // Monitoring score (0-1) based on features
+      let score = 0.3; // base WiFi monitoring
+      if (specs.has_display) score += 0.2;
+      if (specs.has_energy_meter) score += 0.2;
+      if (specs.module_level) score += 0.15;
+      if (specs.has_api) score += 0.15;
+      specs.score = Math.min(1, score);
+      break;
+    }
+  }
+  
+  return specs;
+}
+
+async function fetchProducts(category) {
+  if (PRODUCTS[category].loaded && PRODUCTS[category].items.length > 0) {
+    return PRODUCTS[category];
+  }
+
+  const list = document.getElementById('prodList');
+  list.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:0.78rem;padding:40px 0;">Loading products...</div>';
+
+  try {
+    const response = await fetch(`${API_BASE}/get_products.php?category=${category}`);
+    const data = await response.json();
+
+    if (data.success && data.products) {
+      // Transform API response to match expected format
+      PRODUCTS[category].items = data.products.map(p => {
+        const parsedSpecs = parseProductSpecs(category, {
+          name: p.name,
+          description: p.description || '',
+          spec: p.spec_summary || '',
+          brand: p.brand
+        });
+        return {
+          id: String(p.id),
+          name: p.name,
+          spec: p.spec_summary || p.description?.substring(0, 80) || `${p.brand} · ${p.warranty || 'Standard warranty'}`,
+          price: p.price,
+          brand: p.brand,
+          spec_type: p.specs?.inverter_type || p.specs?.chemistry || p.specs?.mount_type || p.specs?.kit_type || p.specs?.connectivity || p.specs?.cell_type || 'Standard',
+          image: p.image,
+          stock: p.stock,
+          warranty: p.warranty,
+          description: p.description || '',
+          parsedSpecs: parsedSpecs
+        };
+      });
+      PRODUCTS[category].loaded = true;
+
+      // Update filter labels from API if available
+      if (data.category) {
+        PRODUCTS[category].filterLabels = data.category.filter_labels || PRODUCTS[category].filterLabels;
+        // Keep filterKeys as ['brand', 'spec_type'] since that's how items are mapped
+      }
+    } else {
+      console.error('Failed to load products:', data.error);
+      PRODUCTS[category].items = [];
+    }
+  } catch (err) {
+    console.error('Error fetching products:', err);
+    PRODUCTS[category].items = [];
+  }
+
+  return PRODUCTS[category];
+}
 
 // ─── STATE ────────────────────────────────────────────────────────────────────
 
@@ -856,26 +1087,50 @@ function getRadarPoint(axisIdx, value) {
 
 function computeRadarValues() {
   // [power_output, panels, battery, inverter, wiring, mounting]
+  // Normalized 0-1 based on real-world benchmarks for Philippine solar market
   const vals = [0, 0, 0, 0, 0, 0];
 
-  // Power output: average of panels + inverter output
   const panelsItem = selected.panels;
   const inverterItem = selected.inverter;
-  if (panelsItem) vals[1] = panelsItem.radar.panels || 0;
-  if (inverterItem) vals[3] = inverterItem.radar.output || 0;
-  vals[0] = (vals[1] + vals[3]) / 2;
-
-  // Battery
   const battItem = selected.battery;
-  if (battItem) vals[2] = battItem.radar.battery || 0;
-
-  // Wiring
   const wiringItem = selected.wiring;
-  if (wiringItem) vals[4] = wiringItem.radar.wiring || 0;
-
-  // Mounting
   const mountItem = selected.mounting;
-  if (mountItem) vals[5] = mountItem.radar.mounting || 0;
+  const monItem = selected.monitoring;
+
+  // Panels axis: wattage normalized against 750W (near max commercial panel)
+  // Real range: 550W (Lvtopsun entry) to 705W (Trina Vertex N flagship)
+  if (panelsItem && panelsItem.parsedSpecs) {
+    vals[1] = Math.min(1, (panelsItem.parsedSpecs.watts || 0) / 750);
+  }
+
+  // Inverter axis: kW normalized against 20kW (large residential/light commercial)
+  // Real range: 5kW (Solax entry) to 15kW (Solax X3-NEO three-phase)
+  if (inverterItem && inverterItem.parsedSpecs) {
+    vals[3] = Math.min(1, (inverterItem.parsedSpecs.kw || 0) / 20);
+  }
+
+  // Power output: weighted combination of panel efficiency + inverter capacity
+  const panelScore = panelsItem?.parsedSpecs?.efficiency ? (panelsItem.parsedSpecs.efficiency / 25) : 0;
+  const invScore = vals[3];
+  vals[0] = Math.min(1, (panelScore * 0.4 + invScore * 0.6));
+
+  // Battery axis: kWh normalized against 20kWh (large home storage)
+  // Real range: 5.12kWh (single module) to 16.07kWh (SRNE max)
+  if (battItem && battItem.parsedSpecs) {
+    vals[2] = Math.min(1, (battItem.parsedSpecs.kwh || 0) / 20);
+  }
+
+  // Wiring axis: max supported kW normalized against 25kW
+  // Real range: 5kW (Generic basic) to 20kW+ (Schneider industrial)
+  if (wiringItem && wiringItem.parsedSpecs) {
+    vals[4] = Math.min(1, (wiringItem.parsedSpecs.max_kw || 0) / 25);
+  }
+
+  // Mounting axis: max panels normalized against 50
+  // Real range: 15 (IronRidge Standard) to 40 (K2 Heavy Duty)
+  if (mountItem && mountItem.parsedSpecs) {
+    vals[5] = Math.min(1, (mountItem.parsedSpecs.max_panels || 0) / 50);
+  }
 
   return vals;
 }
@@ -893,21 +1148,139 @@ function updateRadar() {
 
 function updateStats() {
   const panelItem = selected.panels;
-  if (panelItem && panelItem.stats && panelItem.stats.kw) {
-    const s = panelItem.stats;
-    document.getElementById('statOutput').textContent = s.kw + ' kWp';
-    document.getElementById('statCoverage').textContent = s.coverage;
-    document.getElementById('statSavings').textContent = '~₱' + s.savings.toLocaleString() + ' / day';
-    document.getElementById('statROI').textContent = s.roi;
-    document.getElementById('statCO2').textContent = s.co2 + ' t / year';
+  const invItem = selected.inverter;
+  const battItem = selected.battery;
+
+  // Determine system capacity (kW) from inverter or panel
+  // Inverter is the bottleneck that determines max AC output
+  let systemKW = 0;
+  if (invItem && invItem.parsedSpecs && invItem.parsedSpecs.kw) {
+    systemKW = invItem.parsedSpecs.kw;
+  } else if (panelItem && panelItem.parsedSpecs && panelItem.parsedSpecs.watts) {
+    // Without inverter, estimate from single panel (user hasn't selected qty)
+    systemKW = panelItem.parsedSpecs.watts / 1000;
+  }
+
+  if (systemKW > 0) {
+    // ── Philippine Solar Constants (sourced from NREL, DOE PH, Meralco) ──
+    // Peak Sun Hours: 4.5-5.0 avg for Philippines (NREL Solar GIS data)
+    const PEAK_SUN_HOURS = 4.5;
+    // Meralco residential rate: ₱11.5-12.5/kWh (2024 average)
+    const ELECTRIC_RATE = 11.50;
+    // Philippine grid emission factor: ~0.68 tCO₂/MWh (DOE/UNFCCC)
+    // Per kWp annual: kWp × PSH × 365 × 0.68/1000 ≈ kWp × 1.12 tCO₂/year
+    const CO2_FACTOR_PER_KWP = 1.12;
+    // System losses (wiring, inverter efficiency, soiling, temp): ~18-22%
+    const SYSTEM_EFFICIENCY = 0.80;
+
+    // Daily energy output in kWh
+    const dailyOutputKWH = systemKW * PEAK_SUN_HOURS * SYSTEM_EFFICIENCY;
+    // Daily savings in PHP
+    const dailySavings = dailyOutputKWH * ELECTRIC_RATE;
+    // Annual savings
+    const annualSavings = dailySavings * 365;
+    // ROI period (simple payback)
+    const totalCost = getSubtotal();
+    const roiYears = annualSavings > 0 ? (totalCost / annualSavings) : 0;
+    // CO₂ reduction (tons/year)
+    const co2Reduced = systemKW * CO2_FACTOR_PER_KWP;
+
+    // Home coverage category (based on Philippine household averages)
+    // Average PH household: 200-300 kWh/month → needs ~2-3 kWp
+    // Source: DOE Philippines Household Energy Consumption data
+    let coverage = '–';
+    if (systemKW < 2) coverage = 'Partial (Lights & Fans)';
+    else if (systemKW < 3) coverage = 'Basic Home';
+    else if (systemKW < 5) coverage = 'Standard Home';
+    else if (systemKW < 8) coverage = 'Large Home';
+    else if (systemKW < 12) coverage = 'Full Home + AC';
+    else coverage = 'Commercial Grade';
+
+    document.getElementById('statOutput').textContent = systemKW.toFixed(1) + ' kWp';
+    document.getElementById('statCoverage').textContent = coverage;
+    document.getElementById('statSavings').textContent = '~₱' + Math.round(dailySavings).toLocaleString() + ' / day';
+    document.getElementById('statROI').textContent = roiYears > 0 ? roiYears.toFixed(1) + ' yrs' : '–';
+    document.getElementById('statCO2').textContent = co2Reduced.toFixed(1) + ' t / yr';
   } else {
     ['statOutput','statCoverage','statSavings','statROI','statCO2'].forEach(id => {
       document.getElementById(id).textContent = '–';
     });
   }
+  checkCompatibility();
   updateBuildCategory();
   updateTotal();
   updateRadar();
+}
+
+// ─── COMPATIBILITY VALIDATION ─────────────────────────────────────────────────
+// Checks for component mismatches based on real solar engineering rules
+
+function checkCompatibility() {
+  const warnings = getCompatibilityWarnings();
+
+  // ── Update UI: Component card warning states ──
+  Object.keys(selected).forEach(cat => {
+    const card = document.getElementById('card-' + cat);
+    const tag = document.getElementById('tag-' + cat);
+    if (card) card.classList.remove('warn');
+    if (tag && selected[cat]) {
+      tag.textContent = '✓ Added';
+      tag.className = 'comp-tag tag-g';
+    }
+  });
+
+  const errorCats = new Set();
+  const warnCats = new Set();
+  warnings.forEach(w => {
+    if (w.severity === 'error') w.cats.forEach(cat => errorCats.add(cat));
+    else if (w.severity === 'warn') w.cats.forEach(cat => warnCats.add(cat));
+  });
+
+  errorCats.forEach(cat => {
+    const card = document.getElementById('card-' + cat);
+    const tag = document.getElementById('tag-' + cat);
+    if (card && selected[cat]) {
+      card.classList.add('warn');
+      if (tag) { tag.textContent = '⚠ Mismatch'; tag.className = 'comp-tag tag-w'; }
+    }
+  });
+  warnCats.forEach(cat => {
+    if (errorCats.has(cat)) return;
+    const card = document.getElementById('card-' + cat);
+    const tag = document.getElementById('tag-' + cat);
+    if (card && selected[cat]) {
+      card.classList.add('warn');
+      if (tag) { tag.textContent = '⚠ Caution'; tag.className = 'comp-tag tag-w'; }
+    }
+  });
+
+  // ── Update Compatibility Warnings Panel ──
+  const warnPanel = document.getElementById('compatWarnings');
+  if (!warnPanel) return;
+
+  if (warnings.length > 0) {
+    const icons = { error: '🚫', warn: '⚠️', info: 'ℹ️' };
+    const colors = {
+      error: 'background:#FFF0F0;border-color:#E53935;color:#B71C1C;',
+      warn: 'background:#FFF8E1;border-color:#E8A020;color:#7A5200;',
+      info: 'background:#E3F2FD;border-color:#1976D2;color:#0D47A1;'
+    };
+    warnPanel.innerHTML = warnings.map(w =>
+      `<div class="compat-warn" style="${colors[w.severity]}">
+        <span class="warn-icon">${icons[w.severity]}</span>
+        <span>${w.msg}</span>
+      </div>`
+    ).join('');
+    warnPanel.style.display = 'block';
+  } else {
+    const selectedCount = Object.values(selected).filter(Boolean).length;
+    if (selectedCount >= 2) {
+      warnPanel.innerHTML = '<div class="compat-ok">✅ All selected components are compatible</div>';
+      warnPanel.style.display = 'block';
+    } else {
+      warnPanel.style.display = 'none';
+    }
+  }
 }
 
 function updateBuildCategory() {
@@ -946,17 +1319,28 @@ function updateCompCard(cat, item) {
   const tagEl = document.getElementById('tag-' + cat);
   const iconEl = document.getElementById('icon-' + cat);
 
+  // Store the default emoji on first call
+  if (!iconEl.dataset.defaultIcon) {
+    iconEl.dataset.defaultIcon = iconEl.innerHTML;
+  }
+
   card.classList.remove('done', 'warn', 'active-card');
   if (item) {
     nameEl.textContent = item.name;
     tagEl.textContent = '✓ Added';
     tagEl.className = 'comp-tag tag-g';
     card.classList.add('done');
-    iconEl.style.background = 'var(--green)';
+    if (item.image) {
+      iconEl.innerHTML = `<img src="/SolarPower-Energy-Corporation/${item.image}" alt="${item.name}" onerror="this.parentElement.innerHTML=this.parentElement.dataset.defaultIcon">`;
+      iconEl.style.background = 'var(--green)';
+    } else {
+      iconEl.style.background = 'var(--green)';
+    }
   } else {
     nameEl.textContent = 'Select item';
     tagEl.textContent = '+ Select';
     tagEl.className = 'comp-tag tag-a';
+    iconEl.innerHTML = iconEl.dataset.defaultIcon;
     iconEl.style.background = '';
   }
 }
@@ -972,9 +1356,12 @@ function renderProducts(items) {
   list.innerHTML = items.map(item => {
     const isActive = selected[cat] && selected[cat].id === item.id;
     const saleTag = item.oldPrice ? `<span class="prod-sale">SALE</span> <span class="prod-old-price">₱${item.oldPrice.toLocaleString()}</span>` : '';
+    const imgHtml = item.image
+      ? `<img src="/SolarPower-Energy-Corporation/${item.image}" alt="${item.name}" style="width:100%;height:100%;object-fit:cover;border-radius:6px;" onerror="this.parentElement.innerHTML='${getIcon(cat)}'">`
+      : getIcon(cat);
     return `
       <div class="prod-card ${isActive ? 'active' : ''}" id="prod-${item.id}" onclick="selectProduct('${cat}', '${item.id}')">
-        <div class="prod-img">${getIcon(cat)}</div>
+        <div class="prod-img">${imgHtml}</div>
         <div class="prod-inf">
           <div class="prod-name">${item.name}</div>
           <div class="prod-spec">${item.spec}</div>
@@ -1081,9 +1468,12 @@ function renderSummary() {
   const compHtml = compCategories.map(({ key, label, icon }) => {
     const item = selected[key];
     if (item) {
+      const imgHtml = item.image
+        ? `<img src="/SolarPower-Energy-Corporation/${item.image}" alt="${item.name}" onerror="this.parentElement.innerHTML='${icon}'">`
+        : icon;
       return `<div class="summary-item">
         <div class="summary-item-left">
-          <div class="summary-item-icon">${icon}</div>
+          <div class="summary-item-icon">${imgHtml}</div>
           <div>
             <div class="summary-item-name">${item.name}</div>
             <div class="summary-item-spec">${item.spec}</div>
@@ -1126,16 +1516,163 @@ function renderSummary() {
 
   const total = getSubtotal();
   document.getElementById('summaryTotal').textContent = '₱ ' + total.toLocaleString('en-PH', {minimumFractionDigits:2});
+
+  // ── Summary: Compatibility Check ──
+  renderSummaryCompat();
+
+  // ── Summary: System Performance Stats ──
+  renderSummaryStats();
+}
+
+function renderSummaryCompat() {
+  const compatSection = document.getElementById('summaryCompatSection');
+  const compatDiv = document.getElementById('summaryCompat');
+  if (!compatSection || !compatDiv) return;
+
+  // Re-run compatibility check to get warnings
+  const warnings = getCompatibilityWarnings();
+  const selectedCount = Object.values(selected).filter(Boolean).length;
+
+  if (selectedCount >= 2) {
+    compatSection.style.display = 'block';
+    if (warnings.length > 0) {
+      const icons = { error: '🚫', warn: '⚠️', info: 'ℹ️' };
+      const colors = {
+        error: 'background:#FFF0F0;border-color:#E53935;color:#B71C1C;',
+        warn: 'background:#FFF8E1;border-color:#E8A020;color:#7A5200;',
+        info: 'background:#E3F2FD;border-color:#1976D2;color:#0D47A1;'
+      };
+      compatDiv.innerHTML = warnings.map(w =>
+        `<div class="compat-warn" style="${colors[w.severity]}">
+          <span class="warn-icon">${icons[w.severity]}</span>
+          <span>${w.msg}</span>
+        </div>`
+      ).join('');
+    } else {
+      compatDiv.innerHTML = '<div class="compat-ok">✅ All selected components are compatible</div>';
+    }
+  } else {
+    compatSection.style.display = 'none';
+  }
+}
+
+function renderSummaryStats() {
+  const statsSection = document.getElementById('summaryStatsSection');
+  const statsDiv = document.getElementById('summaryStats');
+  if (!statsSection || !statsDiv) return;
+
+  const invItem = selected.inverter;
+  const panelItem = selected.panels;
+  let systemKW = 0;
+  if (invItem && invItem.parsedSpecs?.kw) systemKW = invItem.parsedSpecs.kw;
+  else if (panelItem && panelItem.parsedSpecs?.watts) systemKW = panelItem.parsedSpecs.watts / 1000;
+
+  if (systemKW > 0) {
+    statsSection.style.display = 'block';
+    const dailyKWH = systemKW * 4.5 * 0.80;
+    const dailySavings = dailyKWH * 11.50;
+    const annualSavings = dailySavings * 365;
+    const totalCost = getSubtotal();
+    const roiYears = annualSavings > 0 ? totalCost / annualSavings : 0;
+    const co2 = systemKW * 1.12;
+
+    statsDiv.innerHTML = `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <div class="summary-item" style="flex-direction:column;align-items:flex-start;padding:10px 14px;">
+          <div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;color:var(--muted);letter-spacing:0.08em;">System Capacity</div>
+          <div style="font-size:1rem;font-weight:800;color:var(--green);">${systemKW.toFixed(1)} kWp</div>
+        </div>
+        <div class="summary-item" style="flex-direction:column;align-items:flex-start;padding:10px 14px;">
+          <div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;color:var(--muted);letter-spacing:0.08em;">Daily Output</div>
+          <div style="font-size:1rem;font-weight:800;color:var(--green);">${dailyKWH.toFixed(1)} kWh</div>
+        </div>
+        <div class="summary-item" style="flex-direction:column;align-items:flex-start;padding:10px 14px;">
+          <div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;color:var(--muted);letter-spacing:0.08em;">Est. Daily Savings</div>
+          <div style="font-size:1rem;font-weight:800;color:var(--green);">₱${Math.round(dailySavings).toLocaleString()}</div>
+        </div>
+        <div class="summary-item" style="flex-direction:column;align-items:flex-start;padding:10px 14px;">
+          <div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;color:var(--muted);letter-spacing:0.08em;">ROI Period</div>
+          <div style="font-size:1rem;font-weight:800;color:var(--green);">${roiYears > 0 ? roiYears.toFixed(1) + ' yrs' : '–'}</div>
+        </div>
+        <div class="summary-item" style="flex-direction:column;align-items:flex-start;padding:10px 14px;">
+          <div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;color:var(--muted);letter-spacing:0.08em;">CO₂ Reduced</div>
+          <div style="font-size:1rem;font-weight:800;color:var(--green);">${co2.toFixed(1)} t/yr</div>
+        </div>
+        <div class="summary-item" style="flex-direction:column;align-items:flex-start;padding:10px 14px;">
+          <div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;color:var(--muted);letter-spacing:0.08em;">Annual Savings</div>
+          <div style="font-size:1rem;font-weight:800;color:var(--green);">₱${Math.round(annualSavings).toLocaleString()}</div>
+        </div>
+      </div>
+      <div style="font-size:0.6rem;color:var(--muted);margin-top:8px;font-style:italic;">
+        Based on PH avg 4.5 peak sun hours (NREL), ₱11.50/kWh Meralco rate, 80% system efficiency, 0.68 tCO₂/MWh grid factor.
+      </div>
+    `;
+  } else {
+    statsSection.style.display = 'none';
+  }
+}
+
+// Helper: returns warnings array (shared between checkCompatibility and renderSummaryCompat)
+function getCompatibilityWarnings() {
+  const warnings = [];
+  const p = selected.panels;
+  const inv = selected.inverter;
+  const batt = selected.battery;
+  const wir = selected.wiring;
+  const mnt = selected.mounting;
+
+  const panelW = p?.parsedSpecs?.watts || 0;
+  const invKW = inv?.parsedSpecs?.kw || 0;
+  const battKWH = batt?.parsedSpecs?.kwh || 0;
+  const battVClass = batt?.parsedSpecs?.voltage_class || '';
+  const wireMaxKW = wir?.parsedSpecs?.max_kw || 0;
+  const mountMaxPanels = mnt?.parsedSpecs?.max_panels || 0;
+  const invType = inv?.parsedSpecs?.type || '';
+
+  if (inv && wir && wireMaxKW > 0 && invKW > wireMaxKW) {
+    warnings.push({ cats: ['wiring','inverter'], severity: 'error', msg: `Wiring kit rated for ${wireMaxKW}kW but inverter is ${invKW}kW — risk of overload. Upgrade wiring to ${invKW}kW+ kit.` });
+  }
+  if (p && inv && mnt && mountMaxPanels > 0 && panelW > 0 && invKW > 0) {
+    const panelsNeeded = Math.ceil((invKW * 1000 * 1.1) / panelW);
+    if (panelsNeeded > mountMaxPanels) {
+      warnings.push({ cats: ['mounting'], severity: 'error', msg: `A ${invKW}kW system needs ~${panelsNeeded}× ${panelW}W panels, but mount only supports ${mountMaxPanels}.` });
+    }
+  }
+  if (inv && batt && battVClass) {
+    const invVoltage = inv.parsedSpecs?.battery_voltage || 48;
+    if (battVClass === 'HV' && invVoltage <= 60) {
+      warnings.push({ cats: ['battery','inverter'], severity: 'error', msg: `Battery is high-voltage (${batt.parsedSpecs.voltage}V) but inverter is low-voltage (${invVoltage}V). Not compatible.` });
+    }
+  }
+  if (inv && batt && battKWH > 0 && invKW > 0) {
+    const dailyOutput = invKW * 4.5 * 0.80;
+    if (battKWH < dailyOutput * 0.25) {
+      warnings.push({ cats: ['battery'], severity: 'warn', msg: `Battery (${battKWH}kWh) is small for a ${invKW}kW system (~${dailyOutput.toFixed(0)}kWh/day). Consider ${Math.ceil(dailyOutput * 0.25)}kWh+ for backup.` });
+    }
+  }
+  if (inv && batt && invType === 'Grid-Tie') {
+    warnings.push({ cats: ['battery','inverter'], severity: 'info', msg: `Grid-Tie inverters don't use batteries. Switch to Hybrid if you want battery storage.` });
+  }
+  if (inv && wir && wireMaxKW > 0 && invKW > 0 && invKW <= wireMaxKW && invKW > wireMaxKW * 0.8) {
+    warnings.push({ cats: ['wiring'], severity: 'info', msg: `Wiring kit (${wireMaxKW}kW) is tight for ${invKW}kW inverter. Consider higher-rated kit for future expansion.` });
+  }
+  if (p && mnt && panelW >= 700) {
+    if (mnt.parsedSpecs?.mount_type === 'Flat Roof') {
+      warnings.push({ cats: ['panels','mounting'], severity: 'warn', msg: `${panelW}W panels are large/heavy. Verify flat roof mount can handle the extra weight.` });
+    }
+  }
+  return warnings;
 }
 
 // ─── STEPS ────────────────────────────────────────────────────────────────────
 
-function goToStep(n) {
+function solarGoToStep(n) {
   // Update tabs
-  document.querySelectorAll('.step-tab').forEach((tab, idx) => {
+  document.querySelectorAll('.step-tab').forEach(tab => {
+    const tabStep = parseInt(tab.getAttribute('data-step'));
     tab.classList.remove('active', 'completed');
-    if (idx + 1 === n) tab.classList.add('active');
-    if (idx + 1 < n) tab.classList.add('completed');
+    if (tabStep === n) tab.classList.add('active');
+    if (tabStep < n) tab.classList.add('completed');
   });
 
   // Show page
@@ -1145,7 +1682,12 @@ function goToStep(n) {
   if (n === 2) renderPeripherals();
   if (n === 3) renderSummary();
 
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  const solarSection = document.getElementById('solarBuilderSection');
+  if (solarSection) {
+    solarSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  } else {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
 }
 
 // ─── TOAST ────────────────────────────────────────────────────────────────────
@@ -1161,18 +1703,20 @@ function showToast(msg) {
 
 // ─── MOBILE DRAWER & INIT ─────────────────────────────────────────────────────
 
-// Mobile: update openSelector to use drawer
-const _origOpenSelector = openSelector;
-function openSelector(cat) {
+// Open selector panel (async - fetches products from API)
+async function openSelector(cat) {
   activeCategory = cat;
   document.querySelectorAll('.comp-card').forEach(c => c.classList.remove('active-card'));
   const card = document.getElementById('card-' + cat);
   if (card) card.classList.add('active-card');
 
+  // Fetch products from API if not loaded
+  await fetchProducts(cat);
+  const catData = PRODUCTS[cat];
+
   if (window.innerWidth <= 767) {
-    openDrawer(cat);
+    openDrawerWithData(cat, catData);
   } else {
-    const catData = PRODUCTS[cat];
     document.getElementById('selTitle').innerHTML = catData.title + ' <span class="arr">›</span>';
     const brands = [...new Set(catData.items.map(i => i[catData.filterKeys[0]]))];
     const types  = [...new Set(catData.items.map(i => i[catData.filterKeys[1]]))];
@@ -1187,8 +1731,8 @@ function openSelector(cat) {
 
 function isMobile() { return window.innerWidth <= 767; }
 
-function openDrawer(cat) {
-  const catData = PRODUCTS[cat];
+// Open drawer with pre-loaded data
+function openDrawerWithData(cat, catData) {
   document.getElementById('drawerTitle').textContent = catData.title;
   const brands = [...new Set(catData.items.map(i => i[catData.filterKeys[0]]))];
   const types  = [...new Set(catData.items.map(i => i[catData.filterKeys[1]]))];
@@ -1199,6 +1743,12 @@ function openDrawer(cat) {
   document.getElementById('drawerOverlay').classList.add('show');
   document.getElementById('drawer').classList.add('open');
   document.body.style.overflow = 'hidden';
+}
+
+// Legacy openDrawer (async wrapper)
+async function openDrawer(cat) {
+  await fetchProducts(cat);
+  openDrawerWithData(cat, PRODUCTS[cat]);
 }
 
 function closeDrawer() {
@@ -1228,8 +1778,11 @@ function renderDrawerProducts(items) {
   list.innerHTML = items.map(item => {
     const isActive = selected[cat] && selected[cat].id === item.id;
     const saleTag = item.oldPrice ? `<span class="prod-sale">SALE</span> <span class="prod-old-price">₱${item.oldPrice.toLocaleString()}</span>` : '';
+    const imgHtml = item.image
+      ? `<img src="/SolarPower-Energy-Corporation/${item.image}" alt="${item.name}" style="width:100%;height:100%;object-fit:cover;border-radius:6px;" onerror="this.parentElement.innerHTML='${getIcon(cat)}'">`
+      : getIcon(cat);
     return `<div class="prod-card ${isActive?'active':''}" onclick="selectProductDrawer('${cat}','${item.id}')">
-      <div class="prod-img">${getIcon(cat)}</div>
+      <div class="prod-img">${imgHtml}</div>
       <div class="prod-inf">
         <div class="prod-name">${item.name}</div>
         <div class="prod-spec">${item.spec}</div>
@@ -1255,6 +1808,69 @@ function selectProductDrawer(cat, itemId) {
 }
 
 updateStats();
+
+// ─── PRINT TO PDF ─────────────────────────────────────────────────────────────
+
+function printBuildPDF() {
+  const summaryEl = document.querySelector('.summary-wrap');
+  if (!summaryEl) return;
+
+  const printWindow = window.open('', '_blank');
+  printWindow.document.write(`
+    <html>
+    <head>
+      <title>Solar Build Summary - SolarPower Energy Corporation</title>
+      <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+      <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Montserrat', sans-serif; background: #fff; color: #1A2308; padding: 40px; }
+        .summary-title { font-size: 1.3rem; font-weight: 900; color: #3A5C1A; margin-bottom: 6px; }
+        .summary-sub { font-size: 0.78rem; color: #6B7C52; margin-bottom: 28px; }
+        .summary-section { margin-bottom: 24px; }
+        .summary-section-title {
+          font-size: 0.68rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.13em;
+          color: #6B7C52; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1.5px solid #DDE3D4;
+        }
+        .summary-item {
+          display: flex; justify-content: space-between; align-items: center;
+          padding: 11px 14px; background: #fff; border-radius: 8px; margin-bottom: 6px;
+          border: 1.5px solid #DDE3D4;
+        }
+        .summary-item-left { display: flex; align-items: center; gap: 10px; }
+        .summary-item-icon { font-size: 1.2rem; width: 44px; height: 44px; min-width: 44px; border-radius: 8px; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #F7F9F4; border: 1px solid #DDE3D4; }
+        .summary-item-icon img { width: 100%; height: 100%; object-fit: cover; }
+        .summary-item-name { font-size: 0.82rem; font-weight: 600; }
+        .summary-item-spec { font-size: 0.67rem; color: #6B7C52; }
+        .summary-item-price { font-size: 0.9rem; font-weight: 800; color: #3A5C1A; }
+        .summary-item.empty { opacity: 0.4; border-style: dashed; }
+        .summary-total-row {
+          display: flex; justify-content: space-between; align-items: center;
+          padding: 14px 18px; background: #3A5C1A; border-radius: 10px; margin-top: 14px;
+        }
+        .summary-total-lbl { color: rgba(255,255,255,0.75); font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; }
+        .summary-total-val { color: #ffc107; font-size: 1.6rem; font-weight: 900; }
+        .print-footer { margin-top: 30px; text-align: center; font-size: 0.7rem; color: #6B7C52; border-top: 1px solid #DDE3D4; padding-top: 15px; }
+        @media print {
+          body { padding: 20px; }
+          .no-print { display: none; }
+        }
+      </style>
+    </head>
+    <body>
+      ${summaryEl.innerHTML}
+      <div class="print-footer">
+        <p>Generated on ${new Date().toLocaleDateString('en-PH', { year:'numeric', month:'long', day:'numeric' })} — SolarPower Energy Corporation</p>
+      </div>
+      <script>
+        // Remove CTA buttons from print
+        document.querySelectorAll('.summary-cta').forEach(el => el.remove());
+        window.onload = function() { window.print(); };
+      <\/script>
+    </body>
+    </html>
+  `);
+  printWindow.document.close();
+}
 </script>
 </body>
 </html>

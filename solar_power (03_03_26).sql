@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Feb 24, 2026 at 03:06 AM
+-- Generation Time: Mar 03, 2026 at 01:51 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.0.30
 
@@ -72,7 +72,9 @@ CREATE TABLE `archived_products` (
 INSERT INTO `archived_products` (`archive_id`, `original_id`, `displayName`, `brandName`, `price`, `category`, `stockQuantity`, `warranty`, `description`, `imagePath`, `postedByStaffId`, `deleted_by`, `deleted_at`) VALUES
 (1, 155, '650W', 'Nuuko', 5750.00, 'Panel', 1000, '12years', 'The Nuuko 620W solar panel (part of the NKM-132BDR12 series) is a high-efficiency module designed for both large-scale residential and commercial systems. Nuuko utilizes N-Type TOPCon technology, similar to the Jinko Tiger Neo, which ensures better performance in high-heat and low-light conditions.', 'path/to/uploaded/image.jpg', 10, 12, '2026-02-18 08:25:30'),
 (3, 166, 'asd', 'TrinaSolar', 123.00, 'Battery', 21, '5 years', 'asd', 'path/to/uploaded/image.jpg', 12, 12, '2026-02-18 16:20:18'),
-(4, 164, 'asd', 'TrinaSolar', 123.00, 'Battery', 21, '5 years', 'asd', 'path/to/uploaded/image.jpg', 12, 12, '2026-02-18 16:23:42');
+(4, 164, 'asd', 'TrinaSolar', 123.00, 'Battery', 21, '5 years', 'asd', 'path/to/uploaded/image.jpg', 12, 12, '2026-02-18 16:23:42'),
+(5, 190, 'motolite', 'HoyMiles', 500.00, 'Battery', 5, '5 years', 'motolite description', 'path/to/uploaded/image.jpg', 12, 12, '2026-02-25 13:04:48'),
+(6, 191, 'motolite', 'HoyMiles', 500.00, 'Battery', 5, '5 years', 'motolite description', 'path/to/uploaded/image.jpg', 12, 12, '2026-02-25 13:04:48');
 
 -- --------------------------------------------------------
 
@@ -156,7 +158,18 @@ INSERT INTO `brands` (`brand_id`, `brand_name`, `category_id`) VALUES
 (8, 'Huawei', 3),
 (9, 'Solis', 3),
 (10, 'Growatt', 3),
-(11, 'Holymiles', 3);
+(11, 'Holymiles', 3),
+(20, 'Schneider Electric', 6),
+(21, 'ABB', 6),
+(22, 'Generic Solar', 6),
+(23, 'IronRidge', 4),
+(24, 'Unirac', 4),
+(25, 'K2 Systems', 4),
+(26, 'Schletter', 4),
+(27, 'Renusol', 4),
+(28, 'Victron Energy', 7),
+(29, 'Fronius', 7),
+(30, 'SolarEdge', 7);
 
 -- --------------------------------------------------------
 
@@ -176,9 +189,11 @@ CREATE TABLE `categories` (
 INSERT INTO `categories` (`category_id`, `category_name`) VALUES
 (2, 'Battery'),
 (3, 'Inverter'),
+(7, 'Monitoring System'),
 (4, 'Mounting & Accessories'),
 (5, 'Package'),
-(1, 'Panel');
+(1, 'Panel'),
+(6, 'Wiring & Protection');
 
 -- --------------------------------------------------------
 
@@ -451,7 +466,139 @@ INSERT INTO `product` (`id`, `displayName`, `brandName`, `price`, `category`, `s
 (168, 'last product name ', 'Grid-tie', 10000.00, 'Package', 10, '10 years', 'eto ay description ng last product na aking ginagawa', 'path/to/uploaded/image.jpg', 12),
 (169, 'last product name ', 'Grid-tie', 10000.00, 'Package', 10, '10 years', 'eto ay description ng last product na aking ginagawa', 'path/to/uploaded/image.jpg', 12),
 (170, 'last product name ', 'Grid-tie', 10000.00, 'Package', 10, '10 years', 'eto ay description ng last product na aking ginagawa', 'path/to/uploaded/image.jpg', 12),
-(171, 'last product name ', 'Grid-tie', 10000.00, 'Package', 10, '10 years', 'eto ay description ng last product na aking ginagawa', 'path/to/uploaded/image.jpg', 12);
+(171, 'last product name ', 'Grid-tie', 10000.00, 'Package', 10, '10 years', 'eto ay description ng last product na aking ginagawa', 'path/to/uploaded/image.jpg', 12),
+(172, 'convert demo', 'Huawei', 500.00, 'Inverter', 600, '5 years', 'demo', 'path/to/uploaded/image.jpg', 12),
+(173, 'convert demo', 'Huawei', 500.00, 'Inverter', 600, '5 years', 'demo', 'path/to/uploaded/image.jpg', 12),
+(174, 'motolite', 'HoyMiles', 500.00, 'Battery', 5, '5 years', 'motolite description', 'path/to/uploaded/image.jpg', 12),
+(175, 'motolite', 'HoyMiles', 500.00, 'Battery', 5, '5 years', 'motolite description', 'path/to/uploaded/image.jpg', 12),
+(176, 'motolite updated', 'HoyMiles', 500.00, 'Battery', 5, '5 years', 'motolite description', 'path/to/uploaded/image.jpg', 12),
+(177, 'motolite', 'HoyMiles', 500.00, 'Battery', 5, '5 years', 'motolite description', 'path/to/uploaded/image.jpg', 12),
+(178, 'motolite', 'HoyMiles', 500.00, 'Battery', 5, '5 years', 'motolite description', 'path/to/uploaded/image.jpg', 12),
+(179, 'motolite', 'HoyMiles', 500.00, 'Battery', 5, '5 years', 'motolite description', 'path/to/uploaded/image.jpg', 12),
+(180, 'motolite', 'HoyMiles', 500.00, 'Battery', 5, '5 years', 'motolite description', 'path/to/uploaded/image.jpg', 12),
+(181, 'motolite', 'HoyMiles', 500.00, 'Battery', 5, '5 years', 'motolite description', 'path/to/uploaded/image.jpg', 12),
+(182, 'motolite', 'HoyMiles', 500.00, 'Battery', 5, '5 years', 'motolite description', 'path/to/uploaded/image.jpg', 12),
+(183, 'motolite', 'HoyMiles', 500.00, 'Battery', 5, '5 years', 'motolite description', 'path/to/uploaded/image.jpg', 12),
+(184, 'motolite', 'HoyMiles', 500.00, 'Battery', 5, '5 years', 'motolite description', 'path/to/uploaded/image.jpg', 12),
+(185, 'motolite', 'HoyMiles', 500.00, 'Battery', 5, '5 years', 'motolite description', 'path/to/uploaded/image.jpg', 12),
+(186, 'motolite', 'HoyMiles', 500.00, 'Battery', 5, '5 years', 'motolite description', 'path/to/uploaded/image.jpg', 12),
+(187, 'motolite', 'HoyMiles', 500.00, 'Battery', 5, '5 years', 'motolite description', 'path/to/uploaded/image.jpg', 12),
+(188, 'motolite', 'HoyMiles', 500.00, 'Battery', 5, '5 years', 'motolite description', 'path/to/uploaded/image.jpg', 12),
+(189, 'motolite', 'HoyMiles', 500.00, 'Battery', 5, '5 years', 'motolite description', 'path/to/uploaded/image.jpg', 12),
+(192, 'motolite', 'HoyMiles', 500.00, 'Battery', 5, '5 years', 'motolite description', 'path/to/uploaded/image.jpg', 12),
+(193, 'motolite', 'HoyMiles', 500.00, 'Battery', 5, '5 years', 'motolite description', 'path/to/uploaded/image.jpg', 12),
+(194, 'convert demo hehe', 'Trina Solar hehe', 65555555.00, 'Panel', 210, '5 years', 'rggdsf', 'path/to/uploaded/image.jpg', 12),
+(195, 'find me', 'Huawei', 502.00, 'Inverter', 6, '5 years', 'hahu', 'path/to/uploaded/image.jpg', 12),
+(196, 'find me', 'Huawei', 502.00, 'Inverter', 6, '5 years', 'hahu', 'path/to/uploaded/image.jpg', 12),
+(197, 'motolite', 'TrinaSolar', 99999999.99, 'Inverter', 2147483647, '5 years', 'oipio', 'path/to/uploaded/image.jpg', 12),
+(198, 'motolite', 'TrinaSolar', 99999999.99, 'Inverter', 2147483647, '5 years', 'oipio', 'path/to/uploaded/image.jpg', 12),
+(199, 'ang lala', 'Solis', 99999999.99, 'Inverter', 65, '5 years', 'ang lala men', 'path/to/uploaded/image.jpg', 12),
+(200, 'ang lala', 'Solis', 99999999.99, 'Inverter', 65, '5 years', 'ang lala men', 'path/to/uploaded/image.jpg', 12),
+(201, 'debug', 'Deye', 500.00, 'Inverter', 3, '5 years', 'asd', 'path/to/uploaded/image.jpg', 12),
+(202, 'debug', 'Deye', 500.00, 'Inverter', 3, '5 years', 'asd', 'path/to/uploaded/image.jpg', 12),
+(203, 'carousel demo', 'Trina Solar', 65.00, 'Panel', 50, '5 years', 'carousel image dapat laman', 'path/to/uploaded/image.jpg', 12),
+(204, 'carousel demo', 'Trina Solar', 65.00, 'Panel', 50, '5 years', 'carousel image dapat laman', 'path/to/uploaded/image.jpg', 12),
+(205, 'carousel demo', 'Trina Solar', 65.00, 'Panel', 50, '5 years', 'carousel image dapat laman', 'path/to/uploaded/image.jpg', 12),
+(206, 'carousel demo', 'Trina Solar', 65.00, 'Panel', 50, '5 years', 'carousel image dapat laman', 'path/to/uploaded/image.jpg', 12),
+(207, 'carousel demo', 'Trina Solar', 65.00, 'Panel', 50, '5 years', 'carousel image dapat laman', 'path/to/uploaded/image.jpg', 12),
+(208, 'carousel demo', 'Trina Solar', 65.00, 'Panel', 50, '5 years', 'carousel image dapat laman', 'path/to/uploaded/image.jpg', 12),
+(209, 'carousel demo', 'Trina Solar', 65.00, 'Panel', 50, '5 years', 'carousel image dapat laman', 'path/to/uploaded/image.jpg', 12),
+(210, 'carousel demo', 'Trina Solar', 65.00, 'Panel', 50, '5 years', 'carousel image dapat laman', 'path/to/uploaded/image.jpg', 12),
+(211, 'second demo', 'Grid-tie', 85.00, 'Package', 46, '5 years', 'second demo ulit', 'path/to/uploaded/image.jpg', 12),
+(212, 'second demo', 'Grid-tie', 85.00, 'Package', 46, '5 years', 'second demo ulit', 'path/to/uploaded/image.jpg', 12),
+(213, 'poste', 'Huawei', 855.00, 'Inverter', 64, '9 years', 'lala', 'path/to/uploaded/image.jpg', 12),
+(214, 'poste', 'Huawei', 855.00, 'Inverter', 64, '9 years', 'lala', 'path/to/uploaded/image.jpg', 12),
+(215, 'poste', 'Huawei', 855.00, 'Inverter', 64, '9 years', 'lala', 'path/to/uploaded/image.jpg', 12),
+(216, 'poste', 'Huawei', 855.00, 'Inverter', 64, '9 years', 'lala', 'path/to/uploaded/image.jpg', 12),
+(217, 'ultra demo', 'HoyMiles', 852852.00, 'Battery', 96, '5 years', '456', 'path/to/uploaded/image.jpg', 12),
+(218, 'ultra demo', 'HoyMiles', 852852.00, 'Battery', 96, '5 years', '456', 'path/to/uploaded/image.jpg', 12),
+(219, 'ultra demo', 'HoyMiles', 852852.00, 'Battery', 96, '5 years', '456', 'path/to/uploaded/image.jpg', 12),
+(220, 'last demo', 'IanSolar', 969.00, 'Battery', 52, '5 years', 'benepisyo sa katawan haha', 'path/to/uploaded/image.jpg', 12),
+(221, 'last demo', 'IanSolar', 969.00, 'Battery', 52, '5 years', 'benepisyo sa katawan haha', 'path/to/uploaded/image.jpg', 12),
+(222, 'last demo', 'IanSolar', 969.00, 'Battery', 52, '5 years', 'benepisyo sa katawan haha', 'path/to/uploaded/image.jpg', 12),
+(223, 'last demo', 'IanSolar', 969.00, 'Battery', 52, '5 years', 'benepisyo sa katawan haha', 'path/to/uploaded/image.jpg', 12),
+(224, 'last demo', 'IanSolar', 969.00, 'Battery', 52, '5 years', 'benepisyo sa katawan haha', 'path/to/uploaded/image.jpg', 12),
+(225, 'last demo', 'IanSolar', 969.00, 'Battery', 52, '5 years', 'benepisyo sa katawan haha', 'path/to/uploaded/image.jpg', 12),
+(226, 'last demo', 'IanSolar', 969.00, 'Battery', 52, '5 years', 'benepisyo sa katawan haha', 'path/to/uploaded/image.jpg', 12),
+(227, 'last demo', 'IanSolar', 969.00, 'Battery', 52, '5 years', 'benepisyo sa katawan haha', 'path/to/uploaded/image.jpg', 12),
+(228, 'last demo', 'IanSolar', 969.00, 'Battery', 52, '5 years', 'benepisyo sa katawan haha', 'path/to/uploaded/image.jpg', 12),
+(229, 'last demo', 'IanSolar', 969.00, 'Battery', 52, '5 years', 'benepisyo sa katawan haha', 'path/to/uploaded/image.jpg', 12),
+(230, 'last demo', 'IanSolar', 969.00, 'Battery', 52, '5 years', 'benepisyo sa katawan haha', 'path/to/uploaded/image.jpg', 12),
+(231, 'last demo', 'IanSolar', 969.00, 'Battery', 52, '5 years', 'benepisyo sa katawan haha', 'path/to/uploaded/image.jpg', 12),
+(232, 'last demo', 'IanSolar', 969.00, 'Battery', 52, '5 years', 'benepisyo sa katawan haha', 'path/to/uploaded/image.jpg', 12),
+(233, 'last demo', 'IanSolar', 969.00, 'Battery', 52, '5 years', 'benepisyo sa katawan haha', 'path/to/uploaded/image.jpg', 12),
+(234, 'last demo', 'IanSolar', 969.00, 'Battery', 52, '5 years', 'benepisyo sa katawan haha', 'path/to/uploaded/image.jpg', 12),
+(235, 'last demo', 'IanSolar', 969.00, 'Battery', 52, '5 years', 'benepisyo sa katawan haha', 'path/to/uploaded/image.jpg', 12),
+(236, 'last demo', 'IanSolar', 969.00, 'Battery', 52, '5 years', 'benepisyo sa katawan haha', 'path/to/uploaded/image.jpg', 12),
+(237, 'last demo', 'IanSolar', 969.00, 'Battery', 52, '5 years', 'benepisyo sa katawan haha', 'path/to/uploaded/image.jpg', 12),
+(238, 'last demo', 'IanSolar', 969.00, 'Battery', 52, '5 years', 'benepisyo sa katawan haha', 'path/to/uploaded/image.jpg', 12),
+(239, 'last demo', 'IanSolar', 969.00, 'Battery', 52, '5 years', 'benepisyo sa katawan haha', 'path/to/uploaded/image.jpg', 12),
+(240, 'last demo', 'IanSolar', 969.00, 'Battery', 52, '5 years', 'benepisyo sa katawan haha', 'path/to/uploaded/image.jpg', 12),
+(241, 'last demo', 'IanSolar', 969.00, 'Battery', 52, '5 years', 'benepisyo sa katawan haha', 'path/to/uploaded/image.jpg', 12),
+(242, 'last demo', 'IanSolar', 969.00, 'Battery', 52, '5 years', 'benepisyo sa katawan haha', 'path/to/uploaded/image.jpg', 12),
+(243, 'last demo', 'IanSolar', 969.00, 'Battery', 52, '5 years', 'benepisyo sa katawan haha', 'path/to/uploaded/image.jpg', 12),
+(244, 'last demo', 'IanSolar', 969.00, 'Battery', 52, '5 years', 'benepisyo sa katawan haha', 'path/to/uploaded/image.jpg', 12),
+(245, 'last demo', 'IanSolar', 969.00, 'Battery', 52, '5 years', 'benepisyo sa katawan haha', 'path/to/uploaded/image.jpg', 12),
+(246, 'last demo', 'IanSolar', 969.00, 'Battery', 52, '5 years', 'benepisyo sa katawan haha', 'path/to/uploaded/image.jpg', 12),
+(247, 'last demo', 'IanSolar', 969.00, 'Battery', 52, '5 years', 'benepisyo sa katawan haha', 'path/to/uploaded/image.jpg', 12),
+(248, 'last demo', 'IanSolar', 969.00, 'Battery', 52, '5 years', 'benepisyo sa katawan haha', 'path/to/uploaded/image.jpg', 12),
+(249, 'last demo', 'IanSolar', 969.00, 'Battery', 52, '5 years', 'benepisyo sa katawan haha', 'path/to/uploaded/image.jpg', 12),
+(250, 'last demo', 'IanSolar', 969.00, 'Battery', 52, '5 years', 'benepisyo sa katawan haha', 'path/to/uploaded/image.jpg', 12),
+(251, 'last demo', 'IanSolar', 969.00, 'Battery', 52, '5 years', 'benepisyo sa katawan haha', 'path/to/uploaded/image.jpg', 12),
+(252, 'poste', 'Huawei', 855.00, 'Inverter', 64, '9 years', 'lala', 'path/to/uploaded/image.jpg', 12),
+(253, 'last demo', 'IanSolar', 969.00, 'Battery', 52, '5 years', 'benepisyo sa katawan haha', 'path/to/uploaded/image.jpg', 12),
+(254, 'last demo', 'IanSolar', 969.00, 'Battery', 52, '5 years', 'benepisyo sa katawan haha', 'path/to/uploaded/image.jpg', 12),
+(255, 'last demo', 'IanSolar', 969.00, 'Battery', 52, '5 years', 'benepisyo sa katawan haha', 'path/to/uploaded/image.jpg', 12),
+(256, 'last demo', 'IanSolar', 969.00, 'Battery', 52, '5 years', 'benepisyo sa katawan haha', 'path/to/uploaded/image.jpg', 12),
+(257, 'last demo', 'IanSolar', 969.00, 'Battery', 52, '5 years', 'benepisyo sa katawan haha', 'path/to/uploaded/image.jpg', 12),
+(258, 'last demo', 'IanSolar', 969.00, 'Battery', 52, '5 years', 'benepisyo sa katawan haha', 'path/to/uploaded/image.jpg', 12),
+(259, 'last demo', 'IanSolar', 969.00, 'Battery', 52, '5 years', 'benepisyo sa katawan haha', 'path/to/uploaded/image.jpg', 12),
+(260, 'last demo', 'IanSolar', 969.00, 'Battery', 52, '5 years', 'benepisyo sa katawan haha', 'path/to/uploaded/image.jpg', 12),
+(261, 'last demo', 'IanSolar', 969.00, 'Battery', 52, '5 years', 'benepisyo sa katawan haha', 'path/to/uploaded/image.jpg', 12),
+(262, 'last demo', 'IanSolar', 969.00, 'Battery', 52, '5 years', 'benepisyo sa katawan haha', 'path/to/uploaded/image.jpg', 12),
+(263, 'last demo', 'IanSolar', 969.00, 'Battery', 52, '5 years', 'benepisyo sa katawan haha', 'path/to/uploaded/image.jpg', 12),
+(264, 'last demo', 'IanSolar', 969.00, 'Battery', 52, '5 years', 'benepisyo sa katawan haha', 'path/to/uploaded/image.jpg', 12),
+(265, 'last demo', 'IanSolar', 969.00, 'Battery', 52, '5 years', 'benepisyo sa katawan haha', 'path/to/uploaded/image.jpg', 12),
+(266, 'last demo', 'IanSolar', 969.00, 'Battery', 52, '5 years', 'benepisyo sa katawan haha', 'path/to/uploaded/image.jpg', 12),
+(267, 'last demo', 'IanSolar', 969.00, 'Battery', 52, '5 years', 'benepisyo sa katawan haha', 'path/to/uploaded/image.jpg', 12),
+(268, 'last demo', 'IanSolar', 969.00, 'Battery', 52, '5 years', 'benepisyo sa katawan haha', 'path/to/uploaded/image.jpg', 12),
+(269, 'last demo', 'IanSolar', 969.00, 'Battery', 52, '5 years', 'benepisyo sa katawan haha', 'path/to/uploaded/image.jpg', 12),
+(270, 'ayaw gumana', 'IanSolar', 89.00, 'Battery', 87, '5 years', 'haha', 'path/to/uploaded/image.jpg', 12),
+(271, 'ayaw gumana', 'IanSolar', 89.00, 'Battery', 87, '5 years', 'haha', 'path/to/uploaded/image.jpg', 12),
+(272, 'ayaw gumana', 'IanSolar', 89.00, 'Battery', 87, '5 years', 'haha', 'path/to/uploaded/image.jpg', 12),
+(273, 'ayaw gumana', 'IanSolar', 89.00, 'Battery', 87, '5 years', 'haha', 'path/to/uploaded/image.jpg', 12),
+(274, 'ayaw gumana', 'IanSolar', 89.00, 'Battery', 87, '5 years', 'haha', 'path/to/uploaded/image.jpg', 12),
+(275, 'ayaw gumana', 'IanSolar', 89.00, 'Battery', 87, '5 years', 'haha', 'path/to/uploaded/image.jpg', 12),
+(276, 'ayaw gumana', 'IanSolar', 89.00, 'Battery', 87, '5 years', 'haha', 'path/to/uploaded/image.jpg', 12),
+(277, 'ayaw gumana', 'IanSolar', 89.00, 'Battery', 87, '5 years', 'haha', 'path/to/uploaded/image.jpg', 12),
+(278, 'ayaw gumana', 'IanSolar', 89.00, 'Battery', 87, '5 years', 'haha', 'path/to/uploaded/image.jpg', 12),
+(279, 'ayaw gumana', 'IanSolar', 89.00, 'Battery', 87, '5 years', 'haha', 'path/to/uploaded/image.jpg', 12),
+(500, 'Complete Roof Mount Kit ??? Standard (Up to 15 Panels)', 'IronRidge', 18500.00, 'Mounting & Accessories', 200, '10 years', 'Complete aluminum rail mounting system for pitched roofs. Includes rails, L-feet brackets, mid clamps, end clamps, and all hardware for up to 15 panels. Anodized aluminum construction with stainless steel fasteners. Wind rated to 200 km/h.', 'path/to/uploaded/image.jpg', NULL),
+(501, 'Complete Roof Mount Kit ??? Large (Up to 25 Panels)', 'IronRidge', 28000.00, 'Mounting & Accessories', 150, '10 years', 'Heavy-duty aluminum rail mounting system for pitched roofs. Full kit for up to 25 panels including extended rails, reinforced L-feet, all clamps and hardware. Suitable for residential and light commercial installations.', 'path/to/uploaded/image.jpg', NULL),
+(502, 'Ground Mount Array System (Up to 20 Panels)', 'Unirac', 32000.00, 'Mounting & Accessories', 100, '15 years', 'Industrial galvanized steel ground mount array. Adjustable tilt angle 10?????45??. Complete foundation kit with concrete pier mounts, cross-rails, and all hardware for up to 20 panels. Hot-dip galvanized for 25+ year outdoor life.', 'path/to/uploaded/image.jpg', NULL),
+(503, 'Flat Roof Ballast Mount System (Up to 15 Panels)', 'Renusol', 22000.00, 'Mounting & Accessories', 120, '10 years', 'No-penetration ballasted mounting system for flat roofs. High-density polyethylene trays with 10?? fixed tilt. No drilling required ??? weighted with ballast blocks. Includes all trays, connectors, and wind deflectors.', 'path/to/uploaded/image.jpg', NULL),
+(504, 'Carport Solar Mount Structure (Up to 20 Panels)', 'Schletter', 45000.00, 'Mounting & Accessories', 50, '20 years', 'Premium dual-purpose carport + solar mount. Galvanized steel with powder coating. Covers one standard parking bay. Includes all structural members, panel rails, and ground anchors. Engineered for typhoon-prone regions.', 'path/to/uploaded/image.jpg', NULL),
+(505, 'Heavy Duty Ground Mount (Up to 40 Panels)', 'K2 Systems', 58000.00, 'Mounting & Accessories', 40, '20 years', 'Commercial-grade ground mount system. Galvanized steel with adjustable tilt. Dual-row design for up to 40 panels. Includes screw pile foundations, all structural members, cable management trays.', 'path/to/uploaded/image.jpg', NULL),
+(510, 'Basic DC/AC Wiring & Protection Kit ??? Up to 5kW', 'Generic Solar', 8500.00, 'Wiring & Protection', 300, '2 years', 'Complete wiring and protection package for systems up to 5kW. Includes: 30m 4mm?? PV DC cable (red+black), MC4 connector pairs, DC isolator switch, AC circuit breaker 32A, basic surge protector (SPD Type II), PVC conduit, cable ties and glands.', 'path/to/uploaded/image.jpg', NULL),
+(511, 'Standard DC/AC Protection Kit ??? Up to 10kW', 'Schneider Electric', 15000.00, 'Wiring & Protection', 250, '5 years', 'Professional-grade protection for systems up to 10kW. Includes: 50m 6mm?? PV DC cable, premium MC4 connectors, DC combiner box (2-string), DC isolator 1000V, AC RCCB 63A, MCB 40A, SPD Type I+II, DIN rail enclosure IP65, labeling kit.', 'path/to/uploaded/image.jpg', NULL),
+(512, 'Premium Protection Bundle ??? Up to 15kW', 'ABB', 25000.00, 'Wiring & Protection', 150, '5 years', 'Industrial-quality protection for up to 15kW systems. Includes: 80m 6mm?? PV DC cable, St??ubli MC4 connectors, 4-string DC combiner with fuses, dual DC isolator, AC RCCB 80A, MCB 63A, SPD Type I+II (DC + AC), IP65 enclosure, earth rod kit, full cable management.', 'path/to/uploaded/image.jpg', NULL),
+(513, 'Industrial Grade Protection Kit ??? 20kW+ Systems', 'Schneider Electric', 38000.00, 'Wiring & Protection', 80, '5 years', 'Heavy-duty protection for large residential and commercial systems 20kW+. Includes: 120m 10mm?? PV DC cable, professional MC4 sets, 6-string DC combiner with monitoring, dual DC isolators 1000V, 3-phase AC distribution board, RCCB 100A, MCBs, dual SPD arrays, full earthing system, cable trays, labeling and documentation.', 'path/to/uploaded/image.jpg', NULL),
+(520, 'WiFi Smart Monitor ??? Basic', 'Growatt', 3500.00, 'Monitoring System', 400, '2 years', 'Basic WiFi monitoring dongle. Plug-and-play with compatible inverters. Real-time generation tracking via Growatt ShinePhone app. Daily/monthly/yearly statistics. Push notifications for faults. Cloud data storage.', 'path/to/uploaded/image.jpg', NULL),
+(521, 'WiFi + Cloud Monitor ??? Standard', 'Growatt', 8500.00, 'Monitoring System', 300, '3 years', 'Advanced WiFi monitoring with external current sensors. Works with any inverter brand. Real-time and historical data on the ShineServer cloud platform. Export reports (PDF/CSV). Multiple plant management. Email alerts for anomalies.', 'path/to/uploaded/image.jpg', NULL),
+(522, 'Professional Monitoring System with Display', 'Victron Energy', 15000.00, 'Monitoring System', 100, '5 years', 'Victron GX Touch 50 ??? 5-inch color touchscreen display + VRM cloud portal. Shows real-time solar, battery, grid, and load flows. Historical graphing. Remote firmware updates. MQTT/Modbus integration. Tank level and temperature inputs. Built-in WiFi + Ethernet.', 'path/to/uploaded/image.jpg', NULL),
+(523, 'Enterprise Monitoring Suite with Energy Meter', 'SolarEdge', 22000.00, 'Monitoring System', 60, '5 years', 'Full SolarEdge monitoring ecosystem. Module-level monitoring with power optimizers. Smart energy meter (import/export). SolarEdge cloud portal with API access. Revenue-grade metering. Free lifetime cloud monitoring. Ideal for net metering documentation.', 'path/to/uploaded/image.jpg', NULL),
+(524, 'Smart Monitoring Kit with Weather Station', 'Fronius', 18500.00, 'Monitoring System', 80, '5 years', 'Fronius Solar.web PRO monitoring package. Includes Fronius Smart Meter, WiFi card, and optional weather station sensor. Compare actual vs. expected yield. Automatic fault detection. API access for third-party integration. Free Fronius Solar.web portal.', 'path/to/uploaded/image.jpg', NULL),
+(525, 'convert demo', 'TrinaSolar', 5656.00, 'Battery', 56, '5 years', '5656', 'path/to/uploaded/image.jpg', 12),
+(526, 'convert demo', 'TrinaSolar', 5656.00, 'Battery', 56, '5 years', '5656', 'path/to/uploaded/image.jpg', 12),
+(527, 'convert demo', 'TrinaSolar', 5656.00, 'Battery', 56, '5 years', '5656', 'path/to/uploaded/image.jpg', 12),
+(528, 'convert demo', 'TrinaSolar', 5656.00, 'Battery', 56, '5 years', '5656', 'path/to/uploaded/image.jpg', 12),
+(529, 'convert demo', 'TrinaSolar', 5656.00, 'Battery', 56, '5 years', '5656', 'path/to/uploaded/image.jpg', 12),
+(530, 'convert demo', 'TrinaSolar', 5656.00, 'Battery', 56, '5 years', '5656', 'path/to/uploaded/image.jpg', 12),
+(531, 'convert demo', 'TrinaSolar', 5656.00, 'Battery', 56, '5 years', '5656', 'path/to/uploaded/image.jpg', 12),
+(532, 'convert demo', 'TrinaSolar', 5656.00, 'Battery', 56, '5 years', '5656', 'path/to/uploaded/image.jpg', 12),
+(533, 'convert demo', 'TrinaSolar', 5656.00, 'Battery', 56, '5 years', '5656', 'path/to/uploaded/image.jpg', 12),
+(534, 'ayaw gumana', 'IanSolar', 89.00, 'Battery', 87, '5 years', 'haha', 'path/to/uploaded/image.jpg', 12),
+(535, 'convert demo', 'TrinaSolar', 5656.00, 'Battery', 56, '5 years', '5656', 'path/to/uploaded/image.jpg', 12);
 
 -- --------------------------------------------------------
 
@@ -522,7 +669,6 @@ INSERT INTO `product_images` (`id`, `product_id`, `image_path`, `created_at`) VA
 (157, 124, 'uploads/products/124/img_697ff7cabc5a5.png', '2026-02-02 01:03:06'),
 (162, 128, 'uploads/products/128/img_69892fd722c9e.png', '2026-02-09 00:52:39'),
 (164, 130, 'uploads/products/130/img_6989309e992c5.png', '2026-02-09 00:55:58'),
-(166, 132, 'uploads/products/132/img_698932db4b551.png', '2026-02-09 01:05:31'),
 (169, 135, 'uploads/products/135/img_6989353d9a833.png', '2026-02-09 01:15:41'),
 (170, 136, 'uploads/products/136/img_69894a0ccbfae.png', '2026-02-09 02:44:28'),
 (172, 138, 'uploads/products/138/img_69898695e52f9.png', '2026-02-09 07:02:45'),
@@ -545,7 +691,283 @@ INSERT INTO `product_images` (`id`, `product_id`, `image_path`, `created_at`) VA
 (197, 168, 'uploads/products/168/img_6996a5cdbd4f7.png', '2026-02-19 05:55:25'),
 (198, 169, 'uploads/products/169/img_6996a633e1f11.png', '2026-02-19 05:57:07'),
 (199, 170, 'uploads/products/170/img_6996a68f8b391.png', '2026-02-19 05:58:39'),
-(200, 171, 'uploads/products/171/img_6996a86932c0c.png', '2026-02-19 06:06:33');
+(200, 171, 'uploads/products/171/img_6996a86932c0c.png', '2026-02-19 06:06:33'),
+(201, 172, 'uploads/products/172/img_699e498c6f8c4.png', '2026-02-25 00:59:56'),
+(202, 172, 'uploads/products/172/img_699e498c704d1.png', '2026-02-25 00:59:56'),
+(203, 172, 'uploads/products/172/img_699e498c70dd7.png', '2026-02-25 00:59:56'),
+(204, 173, 'uploads/products/173/img_699e4991cf90a.png', '2026-02-25 01:00:01'),
+(205, 173, 'uploads/products/173/img_699e4991d05dd.png', '2026-02-25 01:00:01'),
+(206, 173, 'uploads/products/173/img_699e4991d0f90.png', '2026-02-25 01:00:01'),
+(207, 174, 'uploads/products/174/img_699e4ff219b9f.png', '2026-02-25 01:27:14'),
+(208, 175, 'uploads/products/175/img_699e55927f5f6.png', '2026-02-25 01:51:14'),
+(209, 176, 'uploads/products/176/img_699e560edaa84.png', '2026-02-25 01:53:18'),
+(210, 177, 'uploads/products/177/img_699e5637578df.png', '2026-02-25 01:53:59'),
+(211, 178, 'uploads/products/178/img_699e5725abb9e.png', '2026-02-25 01:57:57'),
+(212, 179, 'uploads/products/179/img_699e57285fec7.png', '2026-02-25 01:58:00'),
+(213, 180, 'uploads/products/180/img_699e59a6c49ac.png', '2026-02-25 02:08:38'),
+(214, 181, 'uploads/products/181/img_699e5a0ece0e2.png', '2026-02-25 02:10:22'),
+(215, 182, 'uploads/products/182/img_699e5b731de1e.png', '2026-02-25 02:16:19'),
+(216, 183, 'uploads/products/183/img_699e5c6ce4997.png', '2026-02-25 02:20:28'),
+(217, 184, 'uploads/products/184/img_699e68ebddd36.png', '2026-02-25 03:13:47'),
+(218, 185, 'uploads/products/185/img_699e69de37440.png', '2026-02-25 03:17:50'),
+(219, 186, 'uploads/products/186/img_699e6a803ff1d.png', '2026-02-25 03:20:32'),
+(220, 187, 'uploads/products/187/img_699e6ae540300.png', '2026-02-25 03:22:13'),
+(221, 188, 'uploads/products/188/img_699e6b6894c4d.png', '2026-02-25 03:24:24'),
+(222, 189, 'uploads/products/189/img_699e6bea17741.png', '2026-02-25 03:26:34'),
+(225, 192, 'uploads/products/192/img_699e6c1aea09d.png', '2026-02-25 03:27:22'),
+(226, 193, 'uploads/products/193/img_699e6e266e0a1.png', '2026-02-25 03:36:06'),
+(227, 194, 'uploads/products/194/img_699e921628853.jpg', '2026-02-25 06:09:26'),
+(228, 194, 'uploads/products/194/img_699e92162958a.jpg', '2026-02-25 06:09:26'),
+(229, 195, 'uploads/products/195/img_699ead4e0f031.png', '2026-02-25 08:05:34'),
+(230, 196, 'uploads/products/196/img_699ead53bdcec.png', '2026-02-25 08:05:39'),
+(231, 197, 'uploads/products/197/img_699eada45588f.jpg', '2026-02-25 08:07:00'),
+(232, 198, 'uploads/products/198/img_699eada746bbf.jpg', '2026-02-25 08:07:03'),
+(233, 199, 'uploads/products/199/img_699eb1c00e443.jpg', '2026-02-25 08:24:32'),
+(234, 200, 'uploads/products/200/img_699eb1cc3e2ab.jpg', '2026-02-25 08:24:44'),
+(235, 201, 'uploads/products/201/img_699eb2c89b955.png', '2026-02-25 08:28:56'),
+(236, 202, 'uploads/products/202/img_699eb2cc9b43c.png', '2026-02-25 08:29:00'),
+(237, 203, 'uploads/products/203/img_69a4da42deecf.jpg', '2026-03-02 00:30:58'),
+(238, 203, 'uploads/products/203/img_69a4da42dfafd.png', '2026-03-02 00:30:58'),
+(239, 203, 'uploads/products/203/img_69a4da42e043b.jpg', '2026-03-02 00:30:58'),
+(240, 204, 'uploads/products/204/img_69a4da49c6fc4.jpg', '2026-03-02 00:31:05'),
+(241, 204, 'uploads/products/204/img_69a4da49c7d12.png', '2026-03-02 00:31:05'),
+(242, 204, 'uploads/products/204/img_69a4da49c8a07.jpg', '2026-03-02 00:31:05'),
+(243, 205, 'uploads/products/205/img_69a4dc23db341.jpg', '2026-03-02 00:38:59'),
+(244, 205, 'uploads/products/205/img_69a4dc23dbf43.png', '2026-03-02 00:38:59'),
+(245, 205, 'uploads/products/205/img_69a4dc23dcab9.jpg', '2026-03-02 00:38:59'),
+(246, 203, 'uploads/products/203/img_69a4dc37c8665.jpg', '2026-03-02 00:39:19'),
+(247, 206, 'uploads/products/206/img_69a4dc393faa4.jpg', '2026-03-02 00:39:21'),
+(248, 206, 'uploads/products/206/img_69a4dc39409ba.png', '2026-03-02 00:39:21'),
+(249, 206, 'uploads/products/206/img_69a4dc3941a04.jpg', '2026-03-02 00:39:21'),
+(250, 207, 'uploads/products/207/img_69a4dc47e5983.jpg', '2026-03-02 00:39:35'),
+(251, 207, 'uploads/products/207/img_69a4dc47e6519.png', '2026-03-02 00:39:35'),
+(252, 207, 'uploads/products/207/img_69a4dc47e6ed7.jpg', '2026-03-02 00:39:35'),
+(253, 208, 'uploads/products/208/img_69a4dc8bde9c0.jpg', '2026-03-02 00:40:43'),
+(254, 208, 'uploads/products/208/img_69a4dc8bdf6af.png', '2026-03-02 00:40:43'),
+(255, 208, 'uploads/products/208/img_69a4dc8be01c3.jpg', '2026-03-02 00:40:43'),
+(256, 209, 'uploads/products/209/img_69a4ddce60bcc.jpg', '2026-03-02 00:46:06'),
+(257, 209, 'uploads/products/209/img_69a4ddce619df.png', '2026-03-02 00:46:06'),
+(258, 209, 'uploads/products/209/img_69a4ddce6264f.jpg', '2026-03-02 00:46:06'),
+(259, 210, 'uploads/products/210/img_69a4e4d0d124d.jpg', '2026-03-02 01:16:00'),
+(260, 210, 'uploads/products/210/img_69a4e4d0d1ebb.png', '2026-03-02 01:16:00'),
+(261, 210, 'uploads/products/210/img_69a4e4d0d2f47.jpg', '2026-03-02 01:16:00'),
+(262, 211, 'uploads/products/211/img_69a4e58536ef0.png', '2026-03-02 01:19:01'),
+(263, 211, 'uploads/products/211/img_69a4e58537958.jpg', '2026-03-02 01:19:01'),
+(265, 212, 'uploads/products/212/img_69a4e5872c0c1.png', '2026-03-02 01:19:03'),
+(266, 212, 'uploads/products/212/img_69a4e5872caad.jpg', '2026-03-02 01:19:03'),
+(268, 213, 'uploads/products/213/img_69a4e5c01966f.jpg', '2026-03-02 01:20:00'),
+(269, 214, 'uploads/products/214/img_69a4e5c363ca2.jpg', '2026-03-02 01:20:03'),
+(270, 215, 'uploads/products/215/img_69a4e71ac3a16.jpg', '2026-03-02 01:25:46'),
+(271, 216, 'uploads/products/216/img_69a4e761ef630.jpg', '2026-03-02 01:26:57'),
+(272, 220, 'uploads/products/220/img_69a4e9f9d8147.png', '2026-03-02 01:38:01'),
+(273, 220, 'uploads/products/220/img_69a4e9f9d8ae0.jpg', '2026-03-02 01:38:01'),
+(274, 220, 'uploads/products/220/img_69a4e9f9d95bb.jpg', '2026-03-02 01:38:01'),
+(275, 221, 'uploads/products/221/img_69a4e9fdce674.png', '2026-03-02 01:38:05'),
+(276, 221, 'uploads/products/221/img_69a4e9fdcf144.jpg', '2026-03-02 01:38:05'),
+(277, 221, 'uploads/products/221/img_69a4e9fdcfbb8.jpg', '2026-03-02 01:38:05'),
+(278, 220, 'uploads/products/220/img_69a4ea484169d.jpg', '2026-03-02 01:39:20'),
+(279, 222, 'uploads/products/222/img_69a4ea4a1b09c.png', '2026-03-02 01:39:22'),
+(280, 222, 'uploads/products/222/img_69a4ea4a1bbad.jpg', '2026-03-02 01:39:22'),
+(281, 222, 'uploads/products/222/img_69a4ea4a1c4e4.jpg', '2026-03-02 01:39:22'),
+(282, 223, 'uploads/products/223/img_69a4ea4c581d5.png', '2026-03-02 01:39:24'),
+(283, 223, 'uploads/products/223/img_69a4ea4c5910e.jpg', '2026-03-02 01:39:24'),
+(284, 223, 'uploads/products/223/img_69a4ea4c59b6f.jpg', '2026-03-02 01:39:24'),
+(285, 224, 'uploads/products/224/img_69a4eadf49413.png', '2026-03-02 01:41:51'),
+(286, 224, 'uploads/products/224/img_69a4eadf4a1fa.jpg', '2026-03-02 01:41:51'),
+(287, 224, 'uploads/products/224/img_69a4eadf4ad3c.jpg', '2026-03-02 01:41:51'),
+(288, 225, 'uploads/products/225/img_69a4eb0742154.png', '2026-03-02 01:42:31'),
+(289, 225, 'uploads/products/225/img_69a4eb0742d0b.jpg', '2026-03-02 01:42:31'),
+(290, 225, 'uploads/products/225/img_69a4eb07437fe.jpg', '2026-03-02 01:42:31'),
+(291, 226, 'uploads/products/226/img_69a4ec2fa3b2e.png', '2026-03-02 01:47:27'),
+(292, 226, 'uploads/products/226/img_69a4ec2fa4977.jpg', '2026-03-02 01:47:27'),
+(293, 226, 'uploads/products/226/img_69a4ec2fa55cd.jpg', '2026-03-02 01:47:27'),
+(294, 225, 'uploads/products/225/img_69a4ec4142ef9.jpg', '2026-03-02 01:47:45'),
+(295, 225, 'uploads/products/225/img_69a4ec41434cc.jpg', '2026-03-02 01:47:45'),
+(296, 227, 'uploads/products/227/img_69a4ec42409fc.png', '2026-03-02 01:47:46'),
+(297, 227, 'uploads/products/227/img_69a4ec4241382.jpg', '2026-03-02 01:47:46'),
+(298, 227, 'uploads/products/227/img_69a4ec4242257.jpg', '2026-03-02 01:47:46'),
+(299, 228, 'uploads/products/228/img_69a4ec43e8fc2.png', '2026-03-02 01:47:47'),
+(300, 228, 'uploads/products/228/img_69a4ec43e9949.jpg', '2026-03-02 01:47:47'),
+(301, 228, 'uploads/products/228/img_69a4ec43ea41d.jpg', '2026-03-02 01:47:47'),
+(302, 229, 'uploads/products/229/img_69a4ec59c2a43.png', '2026-03-02 01:48:09'),
+(303, 229, 'uploads/products/229/img_69a4ec59c35d8.jpg', '2026-03-02 01:48:09'),
+(304, 229, 'uploads/products/229/img_69a4ec59c3fc3.jpg', '2026-03-02 01:48:09'),
+(305, 230, 'uploads/products/230/img_69a4ec6a1ab80.png', '2026-03-02 01:48:26'),
+(306, 230, 'uploads/products/230/img_69a4ec6a1b6db.jpg', '2026-03-02 01:48:26'),
+(307, 230, 'uploads/products/230/img_69a4ec6a1c2a7.jpg', '2026-03-02 01:48:26'),
+(308, 231, 'uploads/products/231/img_69a4ed5d95a01.png', '2026-03-02 01:52:29'),
+(309, 231, 'uploads/products/231/img_69a4ed5d9655c.jpg', '2026-03-02 01:52:29'),
+(310, 231, 'uploads/products/231/img_69a4ed5d970a6.jpg', '2026-03-02 01:52:29'),
+(311, 230, 'uploads/products/230/img_69a4ed6ef0a55.jpg', '2026-03-02 01:52:46'),
+(312, 232, 'uploads/products/232/img_69a4ed7136591.png', '2026-03-02 01:52:49'),
+(313, 232, 'uploads/products/232/img_69a4ed7136fe8.jpg', '2026-03-02 01:52:49'),
+(314, 232, 'uploads/products/232/img_69a4ed7137afa.jpg', '2026-03-02 01:52:49'),
+(315, 233, 'uploads/products/233/img_69a4ed7314e25.png', '2026-03-02 01:52:51'),
+(316, 233, 'uploads/products/233/img_69a4ed73157e0.jpg', '2026-03-02 01:52:51'),
+(317, 233, 'uploads/products/233/img_69a4ed7316135.jpg', '2026-03-02 01:52:51'),
+(318, 234, 'uploads/products/234/img_69a4ee86bb1ae.png', '2026-03-02 01:57:26'),
+(319, 234, 'uploads/products/234/img_69a4ee86bbb90.jpg', '2026-03-02 01:57:26'),
+(320, 234, 'uploads/products/234/img_69a4ee86bc649.jpg', '2026-03-02 01:57:26'),
+(321, 233, 'uploads/products/233/img_69a4ee9b68322.png', '2026-03-02 01:57:47'),
+(322, 233, 'uploads/products/233/img_69a4ee9b68ad2.png', '2026-03-02 01:57:47'),
+(323, 235, 'uploads/products/235/img_69a4ee9cb5ce4.png', '2026-03-02 01:57:48'),
+(324, 235, 'uploads/products/235/img_69a4ee9cb6687.jpg', '2026-03-02 01:57:48'),
+(325, 235, 'uploads/products/235/img_69a4ee9cb6f34.jpg', '2026-03-02 01:57:48'),
+(326, 236, 'uploads/products/236/img_69a4ee9e9253d.png', '2026-03-02 01:57:50'),
+(327, 236, 'uploads/products/236/img_69a4ee9e930f5.jpg', '2026-03-02 01:57:50'),
+(328, 236, 'uploads/products/236/img_69a4ee9e93a28.jpg', '2026-03-02 01:57:50'),
+(329, 235, 'uploads/products/235/img_69a4eec657254.jpg', '2026-03-02 01:58:30'),
+(331, 237, 'uploads/products/237/img_69a4eec77afc9.jpg', '2026-03-02 01:58:31'),
+(332, 237, 'uploads/products/237/img_69a4eec77b98c.jpg', '2026-03-02 01:58:31'),
+(333, 238, 'uploads/products/238/img_69a4eec9433ad.png', '2026-03-02 01:58:33'),
+(334, 238, 'uploads/products/238/img_69a4eec943e0f.jpg', '2026-03-02 01:58:33'),
+(335, 238, 'uploads/products/238/img_69a4eec94478f.jpg', '2026-03-02 01:58:33'),
+(336, 239, 'uploads/products/239/img_69a4eedb25950.png', '2026-03-02 01:58:51'),
+(337, 239, 'uploads/products/239/img_69a4eedb26498.jpg', '2026-03-02 01:58:51'),
+(339, 240, 'uploads/products/240/img_69a4eee5c4d7e.png', '2026-03-02 01:59:01'),
+(340, 240, 'uploads/products/240/img_69a4eee5c58e7.jpg', '2026-03-02 01:59:01'),
+(341, 240, 'uploads/products/240/img_69a4eee5c64fd.jpg', '2026-03-02 01:59:01'),
+(342, 241, 'uploads/products/241/img_69a4eef561adc.png', '2026-03-02 01:59:17'),
+(343, 241, 'uploads/products/241/img_69a4eef562718.jpg', '2026-03-02 01:59:17'),
+(345, 242, 'uploads/products/242/img_69a4eefcd779d.png', '2026-03-02 01:59:24'),
+(346, 242, 'uploads/products/242/img_69a4eefcd846f.jpg', '2026-03-02 01:59:24'),
+(347, 242, 'uploads/products/242/img_69a4eefcd8dbb.jpg', '2026-03-02 01:59:24'),
+(349, 243, 'uploads/products/243/img_69a4ef0bbb9ac.jpg', '2026-03-02 01:59:39'),
+(350, 243, 'uploads/products/243/img_69a4ef0bbc5e8.jpg', '2026-03-02 01:59:39'),
+(351, 244, 'uploads/products/244/img_69a4ef13ebb13.png', '2026-03-02 01:59:47'),
+(352, 244, 'uploads/products/244/img_69a4ef13ec41c.jpg', '2026-03-02 01:59:47'),
+(353, 244, 'uploads/products/244/img_69a4ef13ece85.jpg', '2026-03-02 01:59:47'),
+(354, 245, 'uploads/products/245/img_69a4ef2bd7831.png', '2026-03-02 02:00:11'),
+(355, 245, 'uploads/products/245/img_69a4ef2bd8269.jpg', '2026-03-02 02:00:11'),
+(356, 245, 'uploads/products/245/img_69a4ef2bd8c92.jpg', '2026-03-02 02:00:11'),
+(358, 246, 'uploads/products/246/img_69a4ef2eb1148.jpg', '2026-03-02 02:00:14'),
+(359, 246, 'uploads/products/246/img_69a4ef2eb19ab.jpg', '2026-03-02 02:00:14'),
+(360, 247, 'uploads/products/247/img_69a4ef51647b0.png', '2026-03-02 02:00:49'),
+(361, 247, 'uploads/products/247/img_69a4ef5164ffd.jpg', '2026-03-02 02:00:49'),
+(362, 247, 'uploads/products/247/img_69a4ef5165a8c.jpg', '2026-03-02 02:00:49'),
+(363, 248, 'uploads/products/248/img_69a4ef5841df4.png', '2026-03-02 02:00:56'),
+(364, 248, 'uploads/products/248/img_69a4ef5842729.jpg', '2026-03-02 02:00:56'),
+(365, 248, 'uploads/products/248/img_69a4ef5843027.jpg', '2026-03-02 02:00:56'),
+(366, 249, 'uploads/products/249/img_69a4ef59e0f3b.png', '2026-03-02 02:00:57'),
+(367, 249, 'uploads/products/249/img_69a4ef59e1a26.jpg', '2026-03-02 02:00:57'),
+(368, 249, 'uploads/products/249/img_69a4ef59e22be.jpg', '2026-03-02 02:00:57'),
+(369, 248, 'uploads/products/248/img_69a4ef6871675.jpg', '2026-03-02 02:01:12'),
+(370, 248, 'uploads/products/248/img_69a4ef6871d63.jpg', '2026-03-02 02:01:12'),
+(371, 250, 'uploads/products/250/img_69a4ef69df5d2.png', '2026-03-02 02:01:13'),
+(372, 250, 'uploads/products/250/img_69a4ef69dffc4.jpg', '2026-03-02 02:01:13'),
+(373, 250, 'uploads/products/250/img_69a4ef69e08b7.jpg', '2026-03-02 02:01:13'),
+(374, 251, 'uploads/products/251/img_69a4ef6c7eeb6.png', '2026-03-02 02:01:16'),
+(375, 251, 'uploads/products/251/img_69a4ef6c7f832.jpg', '2026-03-02 02:01:16'),
+(376, 251, 'uploads/products/251/img_69a4ef6c8016d.jpg', '2026-03-02 02:01:16'),
+(378, 253, 'uploads/products/253/img_69a4f15651fc4.png', '2026-03-02 02:09:26'),
+(379, 253, 'uploads/products/253/img_69a4f15652a82.jpg', '2026-03-02 02:09:26'),
+(380, 253, 'uploads/products/253/img_69a4f1565360d.jpg', '2026-03-02 02:09:26'),
+(383, 254, 'uploads/products/254/img_69a4f16d3dd97.png', '2026-03-02 02:09:49'),
+(384, 254, 'uploads/products/254/img_69a4f16d3e7f1.jpg', '2026-03-02 02:09:49'),
+(385, 254, 'uploads/products/254/img_69a4f16d3f57b.jpg', '2026-03-02 02:09:49'),
+(386, 255, 'uploads/products/255/img_69a4f17031a2f.png', '2026-03-02 02:09:52'),
+(387, 255, 'uploads/products/255/img_69a4f170323c8.jpg', '2026-03-02 02:09:52'),
+(388, 255, 'uploads/products/255/img_69a4f17032c28.jpg', '2026-03-02 02:09:52'),
+(389, 256, 'uploads/products/256/img_69a4f17984fd4.png', '2026-03-02 02:10:01'),
+(390, 256, 'uploads/products/256/img_69a4f17985b3f.jpg', '2026-03-02 02:10:01'),
+(391, 256, 'uploads/products/256/img_69a4f179865ba.jpg', '2026-03-02 02:10:01'),
+(392, 257, 'uploads/products/257/img_69a4f17b236f1.png', '2026-03-02 02:10:03'),
+(393, 257, 'uploads/products/257/img_69a4f17b24013.jpg', '2026-03-02 02:10:03'),
+(394, 257, 'uploads/products/257/img_69a4f17b24cff.jpg', '2026-03-02 02:10:03'),
+(395, 258, 'uploads/products/258/img_69a4f19200f23.png', '2026-03-02 02:10:26'),
+(396, 258, 'uploads/products/258/img_69a4f19201a56.jpg', '2026-03-02 02:10:26'),
+(397, 258, 'uploads/products/258/img_69a4f192024df.jpg', '2026-03-02 02:10:26'),
+(398, 259, 'uploads/products/259/img_69a4f1949d818.png', '2026-03-02 02:10:28'),
+(399, 259, 'uploads/products/259/img_69a4f1949e29a.jpg', '2026-03-02 02:10:28'),
+(400, 259, 'uploads/products/259/img_69a4f1949ef00.jpg', '2026-03-02 02:10:28'),
+(401, 260, 'uploads/products/260/img_69a4fdfe7a04f.png', '2026-03-02 03:03:26'),
+(402, 260, 'uploads/products/260/img_69a4fdfe7a9f6.jpg', '2026-03-02 03:03:26'),
+(403, 260, 'uploads/products/260/img_69a4fdfe7b3d3.jpg', '2026-03-02 03:03:26'),
+(404, 261, 'uploads/products/261/img_69a4fe011fd04.png', '2026-03-02 03:03:29'),
+(405, 261, 'uploads/products/261/img_69a4fe0120875.jpg', '2026-03-02 03:03:29'),
+(406, 261, 'uploads/products/261/img_69a4fe01212d2.jpg', '2026-03-02 03:03:29'),
+(407, 260, 'uploads/products/260/img_69a4fe0d732ad.jpg', '2026-03-02 03:03:41'),
+(408, 260, 'uploads/products/260/img_69a4fe0d73e2f.jpg', '2026-03-02 03:03:41'),
+(409, 262, 'uploads/products/262/img_69a4fe0f78fe9.png', '2026-03-02 03:03:43'),
+(410, 262, 'uploads/products/262/img_69a4fe0f79999.jpg', '2026-03-02 03:03:43'),
+(411, 262, 'uploads/products/262/img_69a4fe0f7ad8b.jpg', '2026-03-02 03:03:43'),
+(412, 263, 'uploads/products/263/img_69a4fe13d6df2.png', '2026-03-02 03:03:47'),
+(413, 263, 'uploads/products/263/img_69a4fe13d762b.jpg', '2026-03-02 03:03:47'),
+(414, 263, 'uploads/products/263/img_69a4fe13d7db5.jpg', '2026-03-02 03:03:47'),
+(415, 262, 'uploads/products/262/img_69a4fe286176c.jpg', '2026-03-02 03:04:08'),
+(416, 262, 'uploads/products/262/img_69a4fe2862dc4.jpg', '2026-03-02 03:04:08'),
+(417, 264, 'uploads/products/264/img_69a4fe3ce3e72.png', '2026-03-02 03:04:28'),
+(418, 264, 'uploads/products/264/img_69a4fe3ce4898.jpg', '2026-03-02 03:04:28'),
+(419, 264, 'uploads/products/264/img_69a4fe3ce51af.jpg', '2026-03-02 03:04:28'),
+(420, 265, 'uploads/products/265/img_69a4fe95a6ebd.png', '2026-03-02 03:05:57'),
+(421, 265, 'uploads/products/265/img_69a4fe95a78f4.jpg', '2026-03-02 03:05:57'),
+(422, 265, 'uploads/products/265/img_69a4fe95a82db.jpg', '2026-03-02 03:05:57'),
+(423, 266, 'uploads/products/266/img_69a4fea6c7346.png', '2026-03-02 03:06:14'),
+(424, 266, 'uploads/products/266/img_69a4fea6c7d5b.jpg', '2026-03-02 03:06:14'),
+(425, 266, 'uploads/products/266/img_69a4fea6c877a.jpg', '2026-03-02 03:06:14'),
+(426, 267, 'uploads/products/267/img_69a4ff51227a3.png', '2026-03-02 03:09:05'),
+(427, 267, 'uploads/products/267/img_69a4ff5123323.jpg', '2026-03-02 03:09:05'),
+(428, 267, 'uploads/products/267/img_69a4ff512401d.jpg', '2026-03-02 03:09:05'),
+(429, 266, 'uploads/products/266/img_69a4ff57f02d6.jpg', '2026-03-02 03:09:11'),
+(430, 266, 'uploads/products/266/img_69a4ff57f195d.jpg', '2026-03-02 03:09:11'),
+(431, 268, 'uploads/products/268/img_69a4ff6581d60.png', '2026-03-02 03:09:25'),
+(432, 268, 'uploads/products/268/img_69a4ff65826d9.jpg', '2026-03-02 03:09:25'),
+(433, 268, 'uploads/products/268/img_69a4ff6583071.jpg', '2026-03-02 03:09:25'),
+(435, 269, 'uploads/products/269/img_69a4ff69725b8.jpg', '2026-03-02 03:09:29'),
+(436, 269, 'uploads/products/269/img_69a4ff6972fa4.jpg', '2026-03-02 03:09:29'),
+(437, 269, 'uploads/products/269/img_69a4ff9fdb9b2.png', '2026-03-02 03:10:23'),
+(439, 270, 'uploads/products/270/img_69a4ffe1e176a.jpg', '2026-03-02 03:11:29'),
+(440, 271, 'uploads/products/271/img_69a4ffe586dc1.png', '2026-03-02 03:11:33'),
+(441, 271, 'uploads/products/271/img_69a4ffe587a73.jpg', '2026-03-02 03:11:33'),
+(443, 272, 'uploads/products/272/img_69a4ffeb9ac97.jpg', '2026-03-02 03:11:39'),
+(444, 273, 'uploads/products/273/img_69a4fff167e01.png', '2026-03-02 03:11:45'),
+(445, 273, 'uploads/products/273/img_69a4fff168807.jpg', '2026-03-02 03:11:45'),
+(446, 274, 'uploads/products/274/img_69a4fff9556ef.png', '2026-03-02 03:11:53'),
+(447, 274, 'uploads/products/274/img_69a4fff9562a1.jpg', '2026-03-02 03:11:53'),
+(449, 275, 'uploads/products/275/img_69a4fffbbac55.jpg', '2026-03-02 03:11:55'),
+(451, 275, 'uploads/products/275/img_69a5005bf1c8c.png', '2026-03-02 03:13:31'),
+(452, 276, 'uploads/products/276/img_69a50157dc493.png', '2026-03-02 03:17:43'),
+(453, 276, 'uploads/products/276/img_69a50157dcf8b.jpg', '2026-03-02 03:17:43'),
+(454, 277, 'uploads/products/277/img_69a5015b10441.png', '2026-03-02 03:17:47'),
+(455, 277, 'uploads/products/277/img_69a5015b10df9.jpg', '2026-03-02 03:17:47'),
+(456, 184, 'uploads/products/184/img_69a5016c2acdc.jpg', '2026-03-02 03:18:04'),
+(457, 278, 'uploads/products/278/img_69a5016ea59d9.png', '2026-03-02 03:18:06'),
+(458, 278, 'uploads/products/278/img_69a5016ea6685.jpg', '2026-03-02 03:18:06'),
+(459, 279, 'uploads/products/279/img_69a501724d140.png', '2026-03-02 03:18:10'),
+(460, 279, 'uploads/products/279/img_69a501724dbee.jpg', '2026-03-02 03:18:10'),
+(461, 525, 'uploads/products/525/img_69a52280bd24d.jpg', '2026-03-02 05:39:12'),
+(462, 525, 'uploads/products/525/img_69a52280be31a.jpg', '2026-03-02 05:39:12'),
+(464, 526, 'uploads/products/526/img_69a522841f143.jpg', '2026-03-02 05:39:16'),
+(465, 526, 'uploads/products/526/img_69a522841fb03.jpg', '2026-03-02 05:39:16'),
+(466, 526, 'uploads/products/526/img_69a52284206f1.png', '2026-03-02 05:39:16'),
+(467, 527, 'uploads/products/527/img_69a5228f7b1bf.jpg', '2026-03-02 05:39:27'),
+(468, 527, 'uploads/products/527/img_69a5228f7bc8b.jpg', '2026-03-02 05:39:27'),
+(469, 527, 'uploads/products/527/img_69a5228f7c6e3.png', '2026-03-02 05:39:27'),
+(470, 528, 'uploads/products/528/img_69a52292145b5.jpg', '2026-03-02 05:39:30'),
+(471, 528, 'uploads/products/528/img_69a52292150e4.jpg', '2026-03-02 05:39:30'),
+(473, 529, 'uploads/products/529/img_69a5229c50c6c.jpg', '2026-03-02 05:39:40'),
+(474, 529, 'uploads/products/529/img_69a5229c51a31.jpg', '2026-03-02 05:39:40'),
+(475, 529, 'uploads/products/529/img_69a5229c52449.png', '2026-03-02 05:39:40'),
+(476, 530, 'uploads/products/530/img_69a522a567cc9.jpg', '2026-03-02 05:39:49'),
+(477, 530, 'uploads/products/530/img_69a522a568646.jpg', '2026-03-02 05:39:49'),
+(478, 530, 'uploads/products/530/img_69a522a56913e.png', '2026-03-02 05:39:49'),
+(479, 531, 'uploads/products/531/img_69a522a860830.jpg', '2026-03-02 05:39:52'),
+(480, 531, 'uploads/products/531/img_69a522a86112b.jpg', '2026-03-02 05:39:52'),
+(481, 531, 'uploads/products/531/img_69a522a861b82.png', '2026-03-02 05:39:52'),
+(482, 530, 'uploads/products/530/img_69a522b8e08fe.jpg', '2026-03-02 05:40:08'),
+(483, 530, 'uploads/products/530/img_69a522b8e12ce.jpg', '2026-03-02 05:40:08'),
+(484, 530, 'uploads/products/530/img_69a522b8e1f7b.jpg', '2026-03-02 05:40:08'),
+(485, 532, 'uploads/products/532/img_69a522bc15113.jpg', '2026-03-02 05:40:12'),
+(486, 532, 'uploads/products/532/img_69a522bc15bb6.jpg', '2026-03-02 05:40:12'),
+(487, 532, 'uploads/products/532/img_69a522bc164fc.png', '2026-03-02 05:40:12'),
+(488, 533, 'uploads/products/533/img_69a522bf9568f.jpg', '2026-03-02 05:40:15'),
+(489, 533, 'uploads/products/533/img_69a522bf96282.jpg', '2026-03-02 05:40:15'),
+(490, 533, 'uploads/products/533/img_69a522bf96ef2.png', '2026-03-02 05:40:15'),
+(491, 534, 'uploads/products/534/img_69a522cb0b8b0.png', '2026-03-02 05:40:27'),
+(492, 534, 'uploads/products/534/img_69a522cb0c1c2.jpg', '2026-03-02 05:40:27'),
+(493, 535, 'uploads/products/535/img_69a5242369bb2.jpg', '2026-03-02 05:46:11'),
+(494, 535, 'uploads/products/535/img_69a524236a6bc.jpg', '2026-03-02 05:46:11'),
+(495, 535, 'uploads/products/535/img_69a524236af4e.png', '2026-03-02 05:46:11');
 
 -- --------------------------------------------------------
 
@@ -578,6 +1000,43 @@ INSERT INTO `quotations` (`id`, `quotation_number`, `client_name`, `email`, `con
 (11, 'Q20268147', 'client name', 'haha@gmail.com', 48, 'Santa Rosa City Laguna', 'HYBRID', 85.00, '', 'APPROVED', 'hahaha', 12, '2026-02-18 03:55:55', '2026-02-18 03:55:55'),
 (12, 'Q20269851', 'client name', 'haha@gmail.com', 48, 'Santa Rosa City Laguna', 'HYBRID', 85.00, '', 'APPROVED', 'hahaha', 12, '2026-02-18 03:55:55', '2026-02-18 03:55:55'),
 (17, 'Q20269424', '1', '2@gmail.com', 911111111, 'mindanao', 'GRID-TIE-HYBRID', 62.00, '', 'ONGOING', 'asd', 12, '2026-02-18 03:58:07', '2026-02-18 06:30:28');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `solar_builds`
+--
+
+CREATE TABLE `solar_builds` (
+  `id` int(11) NOT NULL,
+  `build_reference` varchar(50) NOT NULL,
+  `session_id` varchar(128) DEFAULT NULL,
+  `customer_name` varchar(255) DEFAULT NULL,
+  `customer_email` varchar(255) DEFAULT NULL,
+  `customer_phone` varchar(50) DEFAULT NULL,
+  `total_amount` decimal(12,2) NOT NULL DEFAULT 0.00,
+  `status` enum('draft','submitted','quoted','approved','completed') DEFAULT 'draft',
+  `performance_data` text DEFAULT NULL,
+  `notes` text DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `solar_build_items`
+--
+
+CREATE TABLE `solar_build_items` (
+  `id` int(11) NOT NULL,
+  `build_id` int(11) NOT NULL,
+  `product_id` int(11) NOT NULL,
+  `category_slug` varchar(50) NOT NULL,
+  `quantity` int(11) DEFAULT 1,
+  `unit_price` decimal(10,2) NOT NULL,
+  `subtotal` decimal(12,2) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -764,6 +1223,20 @@ ALTER TABLE `quotations`
   ADD UNIQUE KEY `quotation_number` (`quotation_number`);
 
 --
+-- Indexes for table `solar_builds`
+--
+ALTER TABLE `solar_builds`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `build_reference` (`build_reference`);
+
+--
+-- Indexes for table `solar_build_items`
+--
+ALTER TABLE `solar_build_items`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `fk_builditem_build` (`build_id`);
+
+--
 -- Indexes for table `staff`
 --
 ALTER TABLE `staff`
@@ -799,7 +1272,7 @@ ALTER TABLE `admin`
 -- AUTO_INCREMENT for table `archived_products`
 --
 ALTER TABLE `archived_products`
-  MODIFY `archive_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `archive_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT for table `archived_quotations`
@@ -817,13 +1290,13 @@ ALTER TABLE `archived_suppliers`
 -- AUTO_INCREMENT for table `brands`
 --
 ALTER TABLE `brands`
-  MODIFY `brand_id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
+  MODIFY `brand_id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=31;
 
 --
 -- AUTO_INCREMENT for table `categories`
 --
 ALTER TABLE `categories`
-  MODIFY `category_id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `category_id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT for table `client`
@@ -871,19 +1344,31 @@ ALTER TABLE `password_resets`
 -- AUTO_INCREMENT for table `product`
 --
 ALTER TABLE `product`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=172;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=536;
 
 --
 -- AUTO_INCREMENT for table `product_images`
 --
 ALTER TABLE `product_images`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=201;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=496;
 
 --
 -- AUTO_INCREMENT for table `quotations`
 --
 ALTER TABLE `quotations`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=18;
+
+--
+-- AUTO_INCREMENT for table `solar_builds`
+--
+ALTER TABLE `solar_builds`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `solar_build_items`
+--
+ALTER TABLE `solar_build_items`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `staff`
@@ -931,6 +1416,12 @@ ALTER TABLE `order_tracking_history`
 --
 ALTER TABLE `product_images`
   ADD CONSTRAINT `product_images_ibfk_1` FOREIGN KEY (`product_id`) REFERENCES `product` (`id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `solar_build_items`
+--
+ALTER TABLE `solar_build_items`
+  ADD CONSTRAINT `fk_builditem_build` FOREIGN KEY (`build_id`) REFERENCES `solar_builds` (`id`) ON DELETE CASCADE;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

@@ -942,7 +942,12 @@ $conn->close();
     </section>
 
     <!--I ADD INCLUDE BEFORE 6 REASON SECTIONS-->
-    <?php include "includes/custom-solar.php"; ?>
+
+    <div id="solarBuilderSection" class="container" style="padding:60px 0">
+        <?php include "includes/custom-solar.php"; ?>
+    </div>
+
+
 
 
 
@@ -3753,16 +3758,6 @@ $conn->close();
         });
     }
 </script>
-<<<<<<< HEAD
-    <<<<<<< HEAD=======<!-- Toast Notification Container -->
-    <div id="toast-container" style="position:fixed; top:20px; right:20px; z-index:99999; min-width:300px;"></div>
-    >>>>>>> 5fe5f0eb1bb586306e301f412d915c5deb8bd74f
 
-    =======
-
-    <!-- Toast Notification Container -->
-    <div id="toast-container" style="position:fixed; top:20px; right:20px; z-index:99999; min-width:300px;"></div>
-
-    >>>>>>> 14bbec3fb2bd61885d33f62196084d0620aa6ac3
 
 </html>
