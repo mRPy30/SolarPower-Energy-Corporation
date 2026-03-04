@@ -5209,7 +5209,7 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
             }
 
             const keepInput = document.createElement('input');
-            keepInput.type = 'hidden';
+            keepInput.type = 'hidden';f
             keepInput.name = 'keep_images[]';
             keepInput.value = imageFilename;
             imageItem.appendChild(keepInput);

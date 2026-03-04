@@ -378,6 +378,122 @@
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
+    /* ── Calculator Page (Step 0) ── */
+    .calc-page {
+      display: flex; align-items: center; justify-content: center;
+      min-height: calc(100vh - 200px); padding: 40px 20px;
+    }
+    .calc-box {
+      background: #fff; border: 3px solid var(--yellow); border-radius: 20px;
+      padding: 50px 40px 40px; max-width: 680px; width: 100%; text-align: center;
+      box-shadow: 0 8px 40px rgba(255,193,7,0.12);
+      position: relative;
+    }
+    .calc-box .calc-bulb {
+      width: 72px; 
+      height: 72px;
+       background: 
+       linear-gradient(135deg, #ffc107, #ffab00);
+      border-radius: 50%; margin: -86px auto 18px;
+       display: flex; align-items: center; 
+       justify-content: center;
+      font-size: 2rem; box-shadow: 0 0 0 8px #FFF8E1, 0 0 0 12px rgba(255,193,7,0.2);
+      position: relative;
+    }
+    .calc-box .calc-bulb::before {
+      content: ''; position: absolute; top: -10px; left: 50%; transform: translateX(-50%);
+      width: 40px; height: 20px; background: radial-gradient(ellipse, rgba(255,193,7,0.35), transparent);
+      border-radius: 50%;
+    }
+    .calc-box h2 {
+      font-size: 1.5rem; font-weight: 900; color: var(--text); margin-bottom: 6px;
+    }
+    .calc-box .calc-sub {
+      font-size: 0.85rem; color: var(--muted); margin-bottom: 24px;
+    }
+    .calc-input-wrap {
+      max-width: 340px; margin: 0 auto 8px;
+    }
+    .calc-input-wrap input {
+      width: 100%; border: 2px solid var(--yellow); border-radius: 10px;
+      padding: 14px 18px; font-family: 'Montserrat', sans-serif;
+      font-size: 1.2rem; font-weight: 700; text-align: center;
+      outline: none; color: var(--text); transition: border-color .2s;
+    }
+    .calc-input-wrap input:focus { border-color: var(--green); }
+    .calc-input-wrap input::placeholder { color: #ccc; font-weight: 500; }
+    .calc-input-label {
+      font-size: 0.75rem; color: var(--muted); margin-bottom: 20px;
+    }
+    .calc-btn {
+      background: var(--yellow); border: none; color: var(--green-d);
+      font-family: 'Montserrat', sans-serif; font-weight: 900; font-size: 0.9rem;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      padding: 14px 40px; border-radius: 30px; cursor: pointer;
+      transition: all .2s; box-shadow: 0 4px 14px rgba(255,193,7,0.3);
+    }
+    .calc-btn:hover { background: var(--yellow-d); transform: translateY(-1px); }
+    .calc-error {
+      color: #C0392B; font-size: 0.78rem; font-weight: 600; margin-top: 10px; min-height: 20px;
+    }
+    .calc-results {
+      display: none; margin-top: 28px;
+      grid-template-columns: repeat(4, 1fr); gap: 14px;
+    }
+    .calc-results.show { display: grid; }
+    .calc-result-card {
+      background: var(--yellow-l); border: 1.5px solid var(--yellow);
+      border-radius: 12px; padding: 18px 10px; text-align: center;
+    }
+    .calc-result-val {
+      font-size: 1.5rem; font-weight: 900; color: var(--yellow-d);
+    }
+    .calc-result-lbl {
+      font-size: 0.7rem; font-weight: 600; color: var(--muted); margin-top: 4px;
+    }
+    .calc-proceed {
+      display: none; margin-top: 28px;
+    }
+    .calc-proceed.show { display: block; }
+    .calc-proceed-btn {
+      background: var(--green); border: none; color: #fff;
+      font-family: 'Montserrat', sans-serif; font-weight: 900; font-size: 0.88rem;
+      letter-spacing: 0.06em; text-transform: uppercase;
+      padding: 15px 36px; border-radius: 10px; cursor: pointer;
+      transition: all .2s; box-shadow: 0 4px 14px rgba(58,92,26,0.2);
+      display: inline-flex; align-items: center; gap: 8px;
+    }
+    .calc-proceed-btn:hover { background: var(--green-d); transform: translateY(-1px); }
+    .calc-skip {
+      display: block; margin-top: 14px; font-size: 0.75rem; color: var(--muted);
+      cursor: pointer; text-decoration: underline; transition: color .2s;
+    }
+    .calc-skip:hover { color: var(--green); }
+    .calc-recommendation {
+      display: none; margin-top: 22px; background: var(--green-l); border: 1.5px solid var(--green);
+      border-radius: 10px; padding: 14px 18px; text-align: left;
+    }
+    .calc-recommendation.show { display: block; }
+    .calc-recommendation .rec-title {
+      font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em;
+      color: var(--green); margin-bottom: 6px;
+    }
+    .calc-recommendation .rec-item {
+      font-size: 0.78rem; color: var(--text); font-weight: 600; padding: 3px 0;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .calc-recommendation .rec-item span { color: var(--muted); font-weight: 500; }
+
+    @media (max-width: 767px) {
+      .calc-box { padding: 40px 18px 28px; }
+      .calc-box h2 { font-size: 1.2rem; }
+      .calc-results { grid-template-columns: 1fr 1fr; }
+      .calc-result-val { font-size: 1.2rem; }
+    }
+    @media (max-width: 400px) {
+      .calc-results { grid-template-columns: 1fr; }
+    }
+
     /* ── Mobile Drawer ── */
     .drawer-overlay {
       display: none; position: fixed; inset: 0;
@@ -530,9 +646,87 @@
     .comp-card:nth-child(4) { animation-delay: 0.18s; }
     .comp-card:nth-child(5) { animation-delay: 0.24s; }
     .comp-card:nth-child(6) { animation-delay: 0.30s; }
+
+    /* ── Recommendation Progress Bars ── */
+    .rec-bar-section { margin-top: 10px; border-top: 1px solid rgba(255,193,7,0.35); padding-top: 9px; }
+    .rec-bar-item { margin-bottom: 9px; }
+    .rec-bar-item:last-child { margin-bottom: 0; }
+    .rec-bar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px; }
+    .rec-bar-lbl { font-size: 0.61rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .rec-bar-val { font-size: 0.61rem; font-weight: 800; color: var(--green); }
+    .rec-bar-track { width: 100%; height: 7px; background: rgba(0,0,0,0.10); border-radius: 4px; overflow: hidden; }
+    .rec-bar-fill { height: 100%; border-radius: 4px; transition: width 0.55s cubic-bezier(.4,0,.2,1), background 0.35s; }
+    .rec-bar-fill.bar-none { width: 0% !important; background: var(--border); }
+    .rec-bar-fill.bar-low  { background: #E74C3C; }
+    .rec-bar-fill.bar-mid  { background: #E8A020; }
+    .rec-bar-fill.bar-ok   { background: #27AE60; }
+    .rec-bar-status { font-size: 0.58rem; font-weight: 700; margin-top: 2px; text-align: right; }
+    .rec-bar-status.s-none { color: var(--muted); }
+    .rec-bar-status.s-low  { color: #C0392B; }
+    .rec-bar-status.s-mid  { color: #9A6A00; }
+    .rec-bar-status.s-ok   { color: #27AE60; }
+
+    /* ── Quantity Stepper (inside product cards) ── */
+    .qty-row { display: flex; align-items: center; gap: 6px; margin-top: 7px; }
+    .qty-stepper { display: flex; align-items: center; gap: 0; border: 1.5px solid var(--green); border-radius: 6px; overflow: hidden; }
+    .qty-btn { background: var(--green); border: none; color: #fff; width: 26px; height: 26px;
+      font-size: 1.1rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center;
+      font-family: 'Montserrat', sans-serif; transition: background .15s; flex-shrink: 0; }
+    .qty-btn:hover { background: var(--green-d); }
+    .qty-display { min-width: 28px; text-align: center; font-size: 0.8rem; font-weight: 800;
+      color: var(--green); padding: 0 4px; background: #fff; height: 26px; line-height: 26px; }
+    .remove-item-btn { background: transparent; border: 1.5px solid #F0C8C8; color: #C0392B;
+      font-family: 'Montserrat', sans-serif; font-size: 0.67rem; font-weight: 700;
+      padding: 4px 8px; border-radius: 5px; cursor: pointer; transition: all .15s; white-space: nowrap; }
+    .remove-item-btn:hover { background: #FFF0EE; }
+
+    /* ── Mismatch Warning Popup ── */
+    .mismatch-popup-overlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.6); z-index: 10000;
+      display: none; align-items: center; justify-content: center;
+      animation: fadeInOverlay 0.25s ease;
+    }
+    .mismatch-popup-overlay.show { display: flex; }
+    @keyframes fadeInOverlay { from { opacity: 0; } to { opacity: 1; } }
+    .mismatch-popup {
+      background: #fff; border-radius: 16px; max-width: 420px; width: 90%;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3); overflow: hidden;
+      animation: popupSlideIn 0.3s cubic-bezier(.4,0,.2,1);
+    }
+    @keyframes popupSlideIn { from { opacity: 0; transform: scale(0.9) translateY(20px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+    .mismatch-popup-img { width: 100%; height: 160px; object-fit: cover; }
+    .mismatch-popup-content { padding: 20px 24px 24px; }
+    .mismatch-popup-title { font-size: 1.1rem; font-weight: 800; color: #C0392B; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+    .mismatch-popup-title .icon { font-size: 1.3rem; }
+    .mismatch-popup-list { margin: 0 0 16px 0; padding: 0; list-style: none; }
+    .mismatch-popup-list li {
+      background: #FFF5F5; border-left: 3px solid #E53935; padding: 10px 12px;
+      margin-bottom: 8px; border-radius: 0 8px 8px 0; font-size: 0.78rem;
+      color: #7A1A1A; line-height: 1.4;
+    }
+    .mismatch-popup-list li:last-child { margin-bottom: 0; }
+    .mismatch-popup-btn {
+      width: 100%; padding: 12px 20px; background: var(--green); color: #fff;
+      border: none; border-radius: 8px; font-family: 'Montserrat', sans-serif;
+      font-size: 0.85rem; font-weight: 700; cursor: pointer; transition: background 0.2s;
+    }
+    .mismatch-popup-btn:hover { background: var(--green-d); }
   </style>
 </head>
 <body>
+
+<!-- Mismatch Warning Popup -->
+<div class="mismatch-popup-overlay" id="mismatchPopupOverlay" onclick="closeMismatchPopup(event)">
+  <div class="mismatch-popup" onclick="event.stopPropagation()">
+    <img src="assets/img/pop-up-error.jpg" alt="Warning" class="mismatch-popup-img" onerror="this.style.display='none'">
+    <div class="mismatch-popup-content">
+      <div class="mismatch-popup-title"><span class="icon">PUTANG INA!🚫</span> Component Mismatch Detected</div>
+      <ul class="mismatch-popup-list" id="mismatchPopupList"></ul>
+      <button class="mismatch-popup-btn" onclick="closeMismatchPopup()">I Understand — Continue Anyway</button>
+    </div>
+  </div>
+</div>
 
 
 
@@ -540,16 +734,64 @@
 
 <!-- Step Nav -->
 <nav class="step-nav" id="stepNav">
-  <div class="step-tab active" data-step="1" onclick="solarGoToStep(1)">
-    <div class="step-num">01</div> Components
+  <div class="step-tab active" data-step="0" onclick="solarGoToStep(0)">
+    <div class="step-num">01</div> Your Bill
+  </div>
+  <div class="step-tab" data-step="1" onclick="solarGoToStep(1)">
+    <div class="step-num">02</div> Components
   </div>
   <div class="step-tab" data-step="3" onclick="solarGoToStep(3)">
-    <div class="step-num">02</div> Summary
+    <div class="step-num">03</div> Summary
   </div>
 </nav>
 
+<!-- ══════════════════ PAGE 0: CALCULATOR ══════════════════ -->
+<div class="page active" id="page0">
+  <div class="calc-page">
+    <div class="calc-box">
+      <div class="calc-bulb">💡</div>
+      <h2>Let's check how much you can save!</h2>
+      <p class="calc-sub">What's your monthly electric bill?</p>
+      <div class="calc-input-wrap">
+        <input type="number" id="calcBillInput" placeholder="0" min="0" step="0.01" />
+        <div class="calc-input-label">Monthly Electric Bill (₱)</div>
+      </div>
+      <button class="calc-btn" onclick="runCalculator()">Calculate</button>
+      <div class="calc-error" id="calcError"></div>
+      <div class="calc-results" id="calcResults">
+        <div class="calc-result-card">
+          <div class="calc-result-val" id="calcKwp">0.0</div>
+          <div class="calc-result-lbl">Required System Size (kWp)</div>
+        </div>
+        <div class="calc-result-card">
+          <div class="calc-result-val" id="calcPanels">0</div>
+          <div class="calc-result-lbl">Solar Panels</div>
+        </div>
+        <div class="calc-result-card">
+          <div class="calc-result-val" id="calcMonthlySavings">₱0</div>
+          <div class="calc-result-lbl">Monthly Savings (₱)</div>
+        </div>
+        <div class="calc-result-card">
+          <div class="calc-result-val" id="calcYearlySavings">₱0</div>
+          <div class="calc-result-lbl">Yearly Savings (₱)</div>
+        </div>
+      </div>
+      <div class="calc-recommendation" id="calcRecommendation">
+        <div class="rec-title">📋 Recommended System</div>
+        <div class="rec-item">☀️ <strong id="recPanels">–</strong> <span>Solar Panels</span></div>
+        <div class="rec-item">⚡ <strong id="recInverter">–</strong> <span>Inverter Size</span></div>
+        <div class="rec-item">🔋 <strong id="recBattery">–</strong> <span>Battery Capacity</span></div>
+      </div>
+      <div class="calc-proceed" id="calcProceed">
+        <button class="calc-proceed-btn" onclick="solarGoToStep(1)">Start Building Your System →</button>
+      </div>
+      <span class="calc-skip" onclick="solarGoToStep(1)">Skip — I already know what I need</span>
+    </div>
+  </div>
+</div>
+
 <!-- ══════════════════ PAGE 1: COMPONENTS ══════════════════ -->
-<div class="page active" id="page1">
+<div class="page" id="page1">
 <div class="builder">
 
   <!-- LEFT: Radar + Stats -->
@@ -588,6 +830,60 @@
       <div class="tier-lbls"><span>Entry Level</span><span>Mid-Range</span><span>High End</span></div>
     </div>
 
+    <!-- Bill Info (shown when calculator was used) -->
+    <div id="billInfoBox" style="display:none; width:100%; background:var(--yellow-l); border:1.5px solid var(--yellow); border-radius:10px; padding:12px 15px; margin-bottom:14px;">
+      <div style="font-size:0.64rem; font-weight:700; text-transform:uppercase; letter-spacing:0.12em; color:var(--yellow-d); margin-bottom:4px;">💡 Your Monthly Bill</div>
+      <div style="font-weight:900; font-size:1.1rem; color:var(--green);" id="billInfoVal">₱ 0</div>
+      <div style="font-size:0.65rem; color:var(--muted); margin-top:6px;">📋 <strong>Recommended System</strong></div>
+      <div style="font-size:0.65rem; color:var(--muted); margin-top:3px;">☀️ Total Required: <strong id="billInfoKw">–</strong></div>
+      <div style="font-size:0.65rem; color:var(--muted); margin-top:2px;">☀️ Panels: <strong id="billInfoRec">–</strong></div>
+      <div style="font-size:0.65rem; color:var(--muted); margin-top:2px;">⚡ Inverter: <strong id="billInfoInverter">–</strong></div>
+      <div style="font-size:0.65rem; color:var(--muted); margin-top:2px;">🔋 Battery: <strong id="billInfoBattery">–</strong></div>
+      <!-- Progress Bars -->
+      <div class="rec-bar-section">
+        <div class="rec-bar-item">
+          <div class="rec-bar-header">
+            <span class="rec-bar-lbl">☀️ Panel Output</span>
+            <span class="rec-bar-val" id="barPanelsVal">–</span>
+          </div>
+          <div class="rec-bar-track"><div class="rec-bar-fill bar-none" id="barPanelsFill" style="width:0%"></div></div>
+          <div class="rec-bar-status s-none" id="barPanelsStatus">Not selected</div>
+        </div>
+        <div class="rec-bar-item">
+          <div class="rec-bar-header">
+            <span class="rec-bar-lbl">⚡ Inverter Size</span>
+            <span class="rec-bar-val" id="barInverterVal">–</span>
+          </div>
+          <div class="rec-bar-track"><div class="rec-bar-fill bar-none" id="barInverterFill" style="width:0%"></div></div>
+          <div class="rec-bar-status s-none" id="barInverterStatus">Not selected</div>
+        </div>
+        <div class="rec-bar-item">
+          <div class="rec-bar-header">
+            <span class="rec-bar-lbl">🔋 Battery Capacity</span>
+            <span class="rec-bar-val" id="barBatteryVal">–</span>
+          </div>
+          <div class="rec-bar-track"><div class="rec-bar-fill bar-none" id="barBatteryFill" style="width:0%"></div></div>
+          <div class="rec-bar-status s-none" id="barBatteryStatus">Not selected</div>
+        </div>
+        <div class="rec-bar-item">
+          <div class="rec-bar-header">
+            <span class="rec-bar-lbl">🔩 Mounting System</span>
+            <span class="rec-bar-val" id="barMountingVal">–</span>
+          </div>
+          <div class="rec-bar-track"><div class="rec-bar-fill bar-none" id="barMountingFill" style="width:0%"></div></div>
+          <div class="rec-bar-status s-none" id="barMountingStatus">Not selected</div>
+        </div>
+        <div class="rec-bar-item">
+          <div class="rec-bar-header">
+            <span class="rec-bar-lbl">🔌 Wiring &amp; Protection</span>
+            <span class="rec-bar-val" id="barWiringVal">–</span>
+          </div>
+          <div class="rec-bar-track"><div class="rec-bar-fill bar-none" id="barWiringFill" style="width:0%"></div></div>
+          <div class="rec-bar-status s-none" id="barWiringStatus">Not selected</div>
+        </div>
+      </div>
+    </div>
+
     <div class="stats">
       <div class="stat-row"><span class="stat-n">Est. Output</span><span class="stat-v" id="statOutput">–</span></div>
       <div class="stat-row"><span class="stat-n">Home Coverage</span><span class="stat-v" id="statCoverage">–</span></div>
@@ -606,7 +902,7 @@
     <div class="comp-list" id="compList">
 
       <div class="comp-card" id="card-panels" onclick="openSelector('panels')">
-        <div class="comp-icon" id="icon-panels">🌞</div>
+        <div class="comp-icon" id="icon-panels"><img src="includes/solar_svg.png" alt="sola"></div>
         <div class="comp-info">
           <div class="comp-type">Solar Panels</div>
           <div class="comp-name" id="name-panels">Select item</div>
@@ -615,7 +911,7 @@
       </div>
 
       <div class="comp-card" id="card-inverter" onclick="openSelector('inverter')">
-        <div class="comp-icon" id="icon-inverter">⚡</div>
+        <div class="comp-icon" id="icon-inverter"><img src="includes/inverter.png" alt="inverter"></div>
         <div class="comp-info">
           <div class="comp-type">Inverter</div>
           <div class="comp-name" id="name-inverter">Select item</div>
@@ -624,7 +920,7 @@
       </div>
 
       <div class="comp-card" id="card-battery" onclick="openSelector('battery')">
-        <div class="comp-icon" id="icon-battery">🔋</div>
+        <div class="comp-icon" id="icon-battery"><img src="includes/battery.png" alt="battery"></div>
         <div class="comp-info">
           <div class="comp-type">Battery Storage</div>
           <div class="comp-name" id="name-battery">Select item</div>
@@ -633,7 +929,7 @@
       </div>
 
       <div class="comp-card" id="card-mounting" onclick="openSelector('mounting')">
-        <div class="comp-icon" id="icon-mounting">🔩</div>
+        <div class="comp-icon" id="icon-mounting"><img src="includes/mounting.jpg" alt="mounting"></div>
         <div class="comp-info">
           <div class="comp-type">Mounting System</div>
           <div class="comp-name" id="name-mounting">Select item</div>
@@ -642,21 +938,12 @@
       </div>
 
       <div class="comp-card" id="card-wiring" onclick="openSelector('wiring')">
-        <div class="comp-icon" id="icon-wiring">🔌</div>
+        <div class="comp-icon" id="icon-wiring"><img src="includes/wiring-protection.jpg" alt="wiring"></div>
         <div class="comp-info">
           <div class="comp-type">Wiring & Protection</div>
           <div class="comp-name" id="name-wiring">Select item</div>
         </div>
         <span class="comp-tag tag-a" id="tag-wiring">+ Select</span>
-      </div>
-
-      <div class="comp-card" id="card-monitoring" onclick="openSelector('monitoring')">
-        <div class="comp-icon" id="icon-monitoring">📡</div>
-        <div class="comp-info">
-          <div class="comp-type">Monitoring System</div>
-          <div class="comp-name" id="name-monitoring">Select item</div>
-        </div>
-        <span class="comp-tag tag-a" id="tag-monitoring">+ Select</span>
       </div>
 
     </div>
@@ -731,6 +1018,25 @@
     <div class="summary-total-row">
       <span class="summary-total-lbl">Total Build Cost</span>
       <span class="summary-total-val" id="summaryTotal">₱ 0.00</span>
+    </div>
+
+    <!-- Savings comparison (shown when calculator was used) -->
+    <div id="summarySavingsSection" style="display:none; margin-top:18px; background:var(--yellow-l); border:2px solid var(--yellow); border-radius:12px; padding:18px 20px;">
+      <div style="font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.13em; color:var(--yellow-d); margin-bottom:12px;">💡 Savings Estimate (based on your ₱<span id="summaryBillAmt">0</span>/mo bill)</div>
+      <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px;">
+        <div style="text-align:center;">
+          <div style="font-size:1.2rem; font-weight:900; color:var(--green);" id="summaryMonthlySave">₱0</div>
+          <div style="font-size:0.67rem; color:var(--muted); font-weight:600;">Monthly Savings</div>
+        </div>
+        <div style="text-align:center;">
+          <div style="font-size:1.2rem; font-weight:900; color:var(--green);" id="summaryYearlySave">₱0</div>
+          <div style="font-size:0.67rem; color:var(--muted); font-weight:600;">Yearly Savings</div>
+        </div>
+        <div style="text-align:center;">
+          <div style="font-size:1.2rem; font-weight:900; color:var(--green);" id="summaryROI">–</div>
+          <div style="font-size:0.67rem; color:var(--muted); font-weight:600;">Est. ROI Period</div>
+        </div>
+      </div>
     </div>
 
     <div class="summary-cta">
@@ -1056,9 +1362,16 @@ async function fetchProducts(category) {
 
 // ─── STATE ────────────────────────────────────────────────────────────────────
 
-const selected = { panels: null, inverter: null, battery: null, mounting: null, wiring: null, monitoring: null };
+const selected = { panels: [], inverter: [], battery: [], mounting: [], wiring: [], monitoring: [] };
 const selectedPeriphs = new Set();
 let activeCategory = null;
+
+// Helper: get first item in a selected category (for spec/stat lookups)
+function selFirst(cat) { return selected[cat].length > 0 ? selected[cat][0].item : null; }
+// Helper: total qty across a category
+function selTotalQty(cat) { return selected[cat].reduce((s, e) => s + e.qty, 0); }
+// Helper: whether any items are selected in a category
+function selHas(cat) { return selected[cat].length > 0; }
 
 // ─── RADAR MATH ───────────────────────────────────────────────────────────────
 
@@ -1090,23 +1403,23 @@ function computeRadarValues() {
   // Normalized 0-1 based on real-world benchmarks for Philippine solar market
   const vals = [0, 0, 0, 0, 0, 0];
 
-  const panelsItem = selected.panels;
-  const inverterItem = selected.inverter;
-  const battItem = selected.battery;
-  const wiringItem = selected.wiring;
-  const mountItem = selected.mounting;
-  const monItem = selected.monitoring;
+  const panelsItem = selFirst('panels');
+  const inverterItem = selFirst('inverter');
+  const battItem = selFirst('battery');
+  const wiringItem = selFirst('wiring');
+  const mountItem = selFirst('mounting');
+  const monItem = selFirst('monitoring');
 
-  // Panels axis: wattage normalized against 750W (near max commercial panel)
-  // Real range: 550W (Lvtopsun entry) to 705W (Trina Vertex N flagship)
-  if (panelsItem && panelsItem.parsedSpecs) {
-    vals[1] = Math.min(1, (panelsItem.parsedSpecs.watts || 0) / 750);
+  // ─ Panels axis: total watts across all qty (normalized against 6000W = ~8×750W)
+  if (selected.panels.length > 0) {
+    const totalW = selected.panels.reduce((s, e) => s + e.qty * (e.item.parsedSpecs.watts || 0), 0);
+    vals[1] = Math.min(1, totalW / 6000);
   }
 
-  // Inverter axis: kW normalized against 20kW (large residential/light commercial)
-  // Real range: 5kW (Solax entry) to 15kW (Solax X3-NEO three-phase)
-  if (inverterItem && inverterItem.parsedSpecs) {
-    vals[3] = Math.min(1, (inverterItem.parsedSpecs.kw || 0) / 20);
+  // ─ Inverter axis: total kW across all qty
+  if (selected.inverter.length > 0) {
+    const totalKw = selected.inverter.reduce((s, e) => s + e.qty * (e.item.parsedSpecs.kw || 0), 0);
+    vals[3] = Math.min(1, totalKw / 20);
   }
 
   // Power output: weighted combination of panel efficiency + inverter capacity
@@ -1114,22 +1427,20 @@ function computeRadarValues() {
   const invScore = vals[3];
   vals[0] = Math.min(1, (panelScore * 0.4 + invScore * 0.6));
 
-  // Battery axis: kWh normalized against 20kWh (large home storage)
-  // Real range: 5.12kWh (single module) to 16.07kWh (SRNE max)
-  if (battItem && battItem.parsedSpecs) {
-    vals[2] = Math.min(1, (battItem.parsedSpecs.kwh || 0) / 20);
+  // ─ Battery axis: total kWh across all qty
+  if (selected.battery.length > 0) {
+    const totalKwh = selected.battery.reduce((s, e) => s + e.qty * (e.item.parsedSpecs.kwh || 0), 0);
+    vals[2] = Math.min(1, totalKwh / 20);
   }
 
-  // Wiring axis: max supported kW normalized against 25kW
-  // Real range: 5kW (Generic basic) to 20kW+ (Schneider industrial)
-  if (wiringItem && wiringItem.parsedSpecs) {
-    vals[4] = Math.min(1, (wiringItem.parsedSpecs.max_kw || 0) / 25);
+  // ─ Wiring axis
+  if (selected.wiring.length > 0) {
+    vals[4] = Math.min(1, (selected.wiring[0].item.parsedSpecs.max_kw || 0) / 25);
   }
 
-  // Mounting axis: max panels normalized against 50
-  // Real range: 15 (IronRidge Standard) to 40 (K2 Heavy Duty)
-  if (mountItem && mountItem.parsedSpecs) {
-    vals[5] = Math.min(1, (mountItem.parsedSpecs.max_panels || 0) / 50);
+  // ─ Mounting axis
+  if (selected.mounting.length > 0) {
+    vals[5] = Math.min(1, (selected.mounting[0].item.parsedSpecs.max_panels || 0) / 50);
   }
 
   return vals;
@@ -1147,18 +1458,18 @@ function updateRadar() {
 // ─── STATS ────────────────────────────────────────────────────────────────────
 
 function updateStats() {
-  const panelItem = selected.panels;
-  const invItem = selected.inverter;
-  const battItem = selected.battery;
+  const panelItem = selFirst('panels');
+  const invItem   = selFirst('inverter');
+  const battItem  = selFirst('battery');
 
-  // Determine system capacity (kW) from inverter or panel
-  // Inverter is the bottleneck that determines max AC output
+  // Determine system capacity (kW)
+  // For multiple inverters: sum their kW
   let systemKW = 0;
-  if (invItem && invItem.parsedSpecs && invItem.parsedSpecs.kw) {
-    systemKW = invItem.parsedSpecs.kw;
-  } else if (panelItem && panelItem.parsedSpecs && panelItem.parsedSpecs.watts) {
-    // Without inverter, estimate from single panel (user hasn't selected qty)
-    systemKW = panelItem.parsedSpecs.watts / 1000;
+  if (selected.inverter.length > 0) {
+    systemKW = selected.inverter.reduce((s, e) => s + e.qty * (e.item.parsedSpecs.kw || 0), 0);
+  } else if (selected.panels.length > 0) {
+    const totalPanelW = selected.panels.reduce((s, e) => s + e.qty * (e.item.parsedSpecs.watts || 0), 0);
+    systemKW = totalPanelW / 1000;
   }
 
   if (systemKW > 0) {
@@ -1221,16 +1532,17 @@ function checkCompatibility() {
   // ── Update UI: Component card warning states ──
   Object.keys(selected).forEach(cat => {
     const card = document.getElementById('card-' + cat);
-    const tag = document.getElementById('tag-' + cat);
+    const tag  = document.getElementById('tag-' + cat);
     if (card) card.classList.remove('warn');
-    if (tag && selected[cat]) {
-      tag.textContent = '✓ Added';
+    if (tag && selHas(cat)) {
+      const tq = selTotalQty(cat);
+      tag.textContent = tq > 1 ? `✓ ${tq} added` : '✓ Added';
       tag.className = 'comp-tag tag-g';
     }
   });
 
   const errorCats = new Set();
-  const warnCats = new Set();
+  const warnCats  = new Set();
   warnings.forEach(w => {
     if (w.severity === 'error') w.cats.forEach(cat => errorCats.add(cat));
     else if (w.severity === 'warn') w.cats.forEach(cat => warnCats.add(cat));
@@ -1238,8 +1550,8 @@ function checkCompatibility() {
 
   errorCats.forEach(cat => {
     const card = document.getElementById('card-' + cat);
-    const tag = document.getElementById('tag-' + cat);
-    if (card && selected[cat]) {
+    const tag  = document.getElementById('tag-' + cat);
+    if (card && selHas(cat)) {
       card.classList.add('warn');
       if (tag) { tag.textContent = '⚠ Mismatch'; tag.className = 'comp-tag tag-w'; }
     }
@@ -1247,23 +1559,29 @@ function checkCompatibility() {
   warnCats.forEach(cat => {
     if (errorCats.has(cat)) return;
     const card = document.getElementById('card-' + cat);
-    const tag = document.getElementById('tag-' + cat);
-    if (card && selected[cat]) {
+    const tag  = document.getElementById('tag-' + cat);
+    if (card && selHas(cat)) {
       card.classList.add('warn');
       if (tag) { tag.textContent = '⚠ Caution'; tag.className = 'comp-tag tag-w'; }
     }
   });
+
+  // ── Show Popup for Error-level Mismatches ──
+  const errorWarnings = warnings.filter(w => w.severity === 'error');
+  if (errorWarnings.length > 0) {
+    showMismatchPopup(errorWarnings);
+  }
 
   // ── Update Compatibility Warnings Panel ──
   const warnPanel = document.getElementById('compatWarnings');
   if (!warnPanel) return;
 
   if (warnings.length > 0) {
-    const icons = { error: '🚫', warn: '⚠️', info: 'ℹ️' };
+    const icons  = { error: '🚫', warn: '⚠️', info: 'ℹ️' };
     const colors = {
       error: 'background:#FFF0F0;border-color:#E53935;color:#B71C1C;',
-      warn: 'background:#FFF8E1;border-color:#E8A020;color:#7A5200;',
-      info: 'background:#E3F2FD;border-color:#1976D2;color:#0D47A1;'
+      warn:  'background:#FFF8E1;border-color:#E8A020;color:#7A5200;',
+      info:  'background:#E3F2FD;border-color:#1976D2;color:#0D47A1;'
     };
     warnPanel.innerHTML = warnings.map(w =>
       `<div class="compat-warn" style="${colors[w.severity]}">
@@ -1273,7 +1591,7 @@ function checkCompatibility() {
     ).join('');
     warnPanel.style.display = 'block';
   } else {
-    const selectedCount = Object.values(selected).filter(Boolean).length;
+    const selectedCount = Object.values(selected).filter(a => a.length > 0).length;
     if (selectedCount >= 2) {
       warnPanel.innerHTML = '<div class="compat-ok">✅ All selected components are compatible</div>';
       warnPanel.style.display = 'block';
@@ -1284,7 +1602,7 @@ function checkCompatibility() {
 }
 
 function updateBuildCategory() {
-  const count = Object.values(selected).filter(Boolean).length;
+  const count = Object.values(selected).filter(a => a.length > 0).length;
   const total = getSubtotal();
   let cat = '–', pct = 0;
   if (count === 0) { cat = '–'; pct = 0; }
@@ -1297,7 +1615,9 @@ function updateBuildCategory() {
 
 function getSubtotal() {
   let t = 0;
-  Object.values(selected).forEach(v => { if (v) t += v.price; });
+  Object.entries(selected).forEach(([cat, entries]) => {
+    entries.forEach(e => { t += e.qty * e.item.price; });
+  });
   selectedPeriphs.forEach(id => {
     const p = PERIPHERALS.find(x => x.id === id);
     if (p) t += p.price;
@@ -1313,25 +1633,28 @@ function updateTotal() {
 
 // ─── COMPONENT CARDS ─────────────────────────────────────────────────────────
 
-function updateCompCard(cat, item) {
-  const card = document.getElementById('card-' + cat);
+function updateCompCard(cat) {
+  const entries = selected[cat];
+  const card   = document.getElementById('card-' + cat);
   const nameEl = document.getElementById('name-' + cat);
-  const tagEl = document.getElementById('tag-' + cat);
+  const tagEl  = document.getElementById('tag-' + cat);
   const iconEl = document.getElementById('icon-' + cat);
 
-  // Store the default emoji on first call
-  if (!iconEl.dataset.defaultIcon) {
-    iconEl.dataset.defaultIcon = iconEl.innerHTML;
-  }
+  if (!iconEl.dataset.defaultIcon) iconEl.dataset.defaultIcon = iconEl.innerHTML;
 
   card.classList.remove('done', 'warn', 'active-card');
-  if (item) {
-    nameEl.textContent = item.name;
-    tagEl.textContent = '✓ Added';
+
+  if (entries.length > 0) {
+    const first = entries[0].item;
+    const totalQty = selTotalQty(cat);
+    nameEl.textContent = entries.length === 1
+      ? (totalQty > 1 ? `${first.name} ×${totalQty}` : first.name)
+      : `${entries.length} items selected (qty ${totalQty})`;
+    tagEl.textContent = totalQty > 1 ? `✓ ${totalQty} added` : '✓ Added';
     tagEl.className = 'comp-tag tag-g';
     card.classList.add('done');
-    if (item.image) {
-      iconEl.innerHTML = `<img src="/SolarPower-Energy-Corporation/${item.image}" alt="${item.name}" onerror="this.parentElement.innerHTML=this.parentElement.dataset.defaultIcon">`;
+    if (first.image) {
+      iconEl.innerHTML = `<img src="/SolarPower-Energy-Corporation/${first.image}" alt="${first.name}" onerror="this.parentElement.innerHTML=this.parentElement.dataset.defaultIcon">`;
       iconEl.style.background = 'var(--green)';
     } else {
       iconEl.style.background = 'var(--green)';
@@ -1354,11 +1677,23 @@ function renderProducts(items) {
     return;
   }
   list.innerHTML = items.map(item => {
-    const isActive = selected[cat] && selected[cat].id === item.id;
-    const saleTag = item.oldPrice ? `<span class="prod-sale">SALE</span> <span class="prod-old-price">₱${item.oldPrice.toLocaleString()}</span>` : '';
-    const imgHtml = item.image
-      ? `<img src="/SolarPower-Energy-Corporation/${item.image}" alt="${item.name}" style="width:100%;height:100%;object-fit:cover;border-radius:6px;" onerror="this.parentElement.innerHTML='${getIcon(cat)}'">`
+    const entry    = selected[cat].find(e => e.item.id === item.id);
+    const isActive = !!entry;
+    const qty      = entry ? entry.qty : 0;
+    const saleTag  = item.oldPrice ? `<span class="prod-sale">SALE</span> <span class="prod-old-price">₱${item.oldPrice.toLocaleString()}</span>` : '';
+    const imgHtml  = item.image
+      ? `<img src="/SolarPower-Energy-Corporation/${item.image}" alt="${item.name}" style="width:100%;height:100%;object-fit:cover;border-radius:6px;" onerror="applyFallbackIcon(this.parentElement, '${cat}')">`
       : getIcon(cat);
+    const qtyControls = isActive ? `
+      <div class="qty-row">
+        <div class="qty-stepper">
+          <button class="qty-btn" onclick="event.stopPropagation();changeQty('${cat}','${item.id}',-1)">−</button>
+          <span class="qty-display">${qty}</span>
+          <button class="qty-btn" onclick="event.stopPropagation();changeQty('${cat}','${item.id}',1)">+</button>
+        </div>
+        <button class="remove-item-btn" onclick="event.stopPropagation();removeItem('${cat}','${item.id}')">Remove</button>
+      </div>` : `
+      <button class="select-btn" onclick="event.stopPropagation(); selectProduct('${cat}','${item.id}')">SELECT</button>`;
     return `
       <div class="prod-card ${isActive ? 'active' : ''}" id="prod-${item.id}" onclick="selectProduct('${cat}', '${item.id}')">
         <div class="prod-img">${imgHtml}</div>
@@ -1366,15 +1701,38 @@ function renderProducts(items) {
           <div class="prod-name">${item.name}</div>
           <div class="prod-spec">${item.spec}</div>
           <div class="prod-price"><span>₱</span> ${item.price.toLocaleString()} ${saleTag}</div>
-          <button class="select-btn" onclick="event.stopPropagation(); selectProduct('${cat}','${item.id}')">${isActive ? '✓ Selected' : 'SELECT'}</button>
+          ${qtyControls}
         </div>
       </div>`;
   }).join('');
 }
 
 function getIcon(cat) {
-  const icons = { panels:'🌞', inverter:'⚡', battery:'🔋', mounting:'🔩', wiring:'🔌', monitoring:'📡' };
+  const icons = {
+    panels: '<img src="includes/solar_svg.png" alt="Solar Panels" style="width:100%;height:100%;object-fit:cover;border-radius:6px;">',
+    inverter: '<img src="includes/inverter.png" alt="Inverter" style="width:100%;height:100%;object-fit:cover;border-radius:6px;">',
+    battery: '<img src="includes/battery.png" alt="Battery" style="width:100%;height:100%;object-fit:cover;border-radius:6px;">',
+    mounting: '<img src="includes/mounting.jpg" alt="Mounting" style="width:100%;height:100%;object-fit:cover;border-radius:6px;">',
+    wiring: '<img src="includes/wiring-protection.jpg" alt="Wiring" style="width:100%;height:100%;object-fit:cover;border-radius:6px;">',
+    monitoring: '📡'
+  };
   return icons[cat] || '⚙️';
+}
+
+function applyFallbackIcon(el, cat) {
+  el.innerHTML = getIcon(cat);
+}
+
+function applySummaryFallback(el, cat) {
+  const icons = {
+    panels: '<img src="includes/solar_svg.png" alt="Solar Panels" style="width:28px;height:28px;object-fit:cover;border-radius:4px;">',
+    inverter: '<img src="includes/inverter.png" alt="Inverter" style="width:28px;height:28px;object-fit:cover;border-radius:4px;">',
+    battery: '<img src="includes/battery.png" alt="Battery" style="width:28px;height:28px;object-fit:cover;border-radius:4px;">',
+    mounting: '<img src="includes/mounting.jpg" alt="Mounting" style="width:28px;height:28px;object-fit:cover;border-radius:4px;">',
+    wiring: '<img src="includes/wiring-protection.jpg" alt="Wiring" style="width:28px;height:28px;object-fit:cover;border-radius:4px;">',
+    monitoring: '📡'
+  };
+  el.innerHTML = icons[cat] || '⚙️';
 }
 
 function filterProducts() {
@@ -1397,16 +1755,42 @@ function selectProduct(cat, itemId) {
   const item = PRODUCTS[cat].items.find(i => i.id === itemId);
   if (!item) return;
 
-  const wasSelected = selected[cat] && selected[cat].id === itemId;
-  selected[cat] = wasSelected ? null : item;
-
-  updateCompCard(cat, selected[cat]);
-  updateStats();
-  renderProducts(PRODUCTS[cat].items); // re-render to update active state
-
-  if (!wasSelected) {
+  const existingIdx = selected[cat].findIndex(e => e.item.id === itemId);
+  if (existingIdx >= 0) {
+    // Already selected — increment qty
+    selected[cat][existingIdx].qty++;
+    showToast(`➕ ${item.name.split(' ').slice(0,4).join(' ')} qty: ${selected[cat][existingIdx].qty}`);
+  } else {
+    // New item — add with qty 1
+    selected[cat].push({ item, qty: 1 });
     showToast(`✅ ${item.name.split(' ').slice(0,4).join(' ')} added!`);
   }
+
+  updateCompCard(cat);
+  updateStats();
+  renderProducts(PRODUCTS[cat].items);
+
+  if (['panels','inverter','battery','mounting','wiring'].includes(cat)) updateRecommendationBars();
+}
+
+function changeQty(cat, itemId, delta) {
+  const idx = selected[cat].findIndex(e => e.item.id === itemId);
+  if (idx < 0) return;
+  selected[cat][idx].qty = Math.max(1, selected[cat][idx].qty + delta);
+  updateCompCard(cat);
+  updateStats();
+  renderProducts(PRODUCTS[cat].items);
+  if (['panels','inverter','battery','mounting','wiring'].includes(cat)) updateRecommendationBars();
+}
+
+function removeItem(cat, itemId) {
+  selected[cat] = selected[cat].filter(e => e.item.id !== itemId);
+  resetMismatchPopupState();
+  updateCompCard(cat);
+  updateStats();
+  renderProducts(PRODUCTS[cat].items);
+  if (['panels','inverter','battery','mounting','wiring'].includes(cat)) updateRecommendationBars();
+  showToast(`🗑️ Item removed.`);
 }
 
 // ─── CLEAR ALL ────────────────────────────────────────────────────────────────
@@ -1417,6 +1801,7 @@ function clearAll() {
     updateCompCard(cat, null);
   });
   selectedPeriphs.clear();
+  resetMismatchPopupState();
   updateStats();
   if (activeCategory) renderProducts(PRODUCTS[activeCategory].items);
   showToast('🗑️ Build cleared.');
@@ -1457,30 +1842,33 @@ function togglePeriph(id) {
 
 function renderSummary() {
   const compCategories = [
-    { key: 'panels', label: 'Solar Panels', icon: '🌞' },
-    { key: 'inverter', label: 'Inverter', icon: '⚡' },
-    { key: 'battery', label: 'Battery Storage', icon: '🔋' },
-    { key: 'mounting', label: 'Mounting System', icon: '🔩' },
-    { key: 'wiring', label: 'Wiring & Protection', icon: '🔌' },
+    { key: 'panels', label: 'Solar Panels', icon: '<img src="includes/solar_svg.png" alt="Solar Panels" style="width:28px;height:28px;object-fit:cover;border-radius:4px;">' },
+    { key: 'inverter', label: 'Inverter', icon: '<img src="includes/inverter.png" alt="Inverter" style="width:28px;height:28px;object-fit:cover;border-radius:4px;">' },
+    { key: 'battery', label: 'Battery Storage', icon: '<img src="includes/battery.png" alt="Battery" style="width:28px;height:28px;object-fit:cover;border-radius:4px;">' },
+    { key: 'mounting', label: 'Mounting System', icon: '<img src="includes/mounting.jpg" alt="Mounting" style="width:28px;height:28px;object-fit:cover;border-radius:4px;">' },
+    { key: 'wiring', label: 'Wiring & Protection', icon: '<img src="includes/wiring-protection.jpg" alt="Wiring" style="width:28px;height:28px;object-fit:cover;border-radius:4px;">' },
     { key: 'monitoring', label: 'Monitoring System', icon: '📡' },
   ];
 
   const compHtml = compCategories.map(({ key, label, icon }) => {
-    const item = selected[key];
-    if (item) {
-      const imgHtml = item.image
-        ? `<img src="/SolarPower-Energy-Corporation/${item.image}" alt="${item.name}" onerror="this.parentElement.innerHTML='${icon}'">`
-        : icon;
-      return `<div class="summary-item">
-        <div class="summary-item-left">
-          <div class="summary-item-icon">${imgHtml}</div>
-          <div>
-            <div class="summary-item-name">${item.name}</div>
-            <div class="summary-item-spec">${item.spec}</div>
+    const entries = selected[key];
+    if (entries.length > 0) {
+      return entries.map(({ item, qty }) => {
+        const lineTotal = qty * item.price;
+        const imgHtml = item.image
+          ? `<img src="/SolarPower-Energy-Corporation/${item.image}" alt="${item.name}" onerror="applySummaryFallback(this.parentElement, '${key}')">`
+          : icon;
+        return `<div class="summary-item">
+          <div class="summary-item-left">
+            <div class="summary-item-icon">${imgHtml}</div>
+            <div>
+              <div class="summary-item-name">${item.name}${qty > 1 ? ` <span style="color:var(--yellow-d);font-weight:900">×${qty}</span>` : ''}</div>
+              <div class="summary-item-spec">${item.spec}</div>
+            </div>
           </div>
-        </div>
-        <div class="summary-item-price">₱ ${item.price.toLocaleString()}</div>
-      </div>`;
+          <div class="summary-item-price">₱ ${lineTotal.toLocaleString()}</div>
+        </div>`;
+      }).join('');
     } else {
       return `<div class="summary-item empty">
         <div class="summary-item-left">
@@ -1517,6 +1905,24 @@ function renderSummary() {
   const total = getSubtotal();
   document.getElementById('summaryTotal').textContent = '₱ ' + total.toLocaleString('en-PH', {minimumFractionDigits:2});
 
+  // ── Summary: Savings estimate (from calculator) ──
+  const savingsSection = document.getElementById('summarySavingsSection');
+  if (calcData.bill > 0 && savingsSection) {
+    document.getElementById('summaryBillAmt').textContent = calcData.bill.toLocaleString('en-PH', {maximumFractionDigits:0});
+    document.getElementById('summaryMonthlySave').textContent = '₱' + calcData.monthlySavings.toLocaleString('en-PH', {maximumFractionDigits:0});
+    document.getElementById('summaryYearlySave').textContent = '₱' + calcData.yearlySavings.toLocaleString('en-PH', {maximumFractionDigits:0});
+    if (total > 0 && calcData.monthlySavings > 0) {
+      const roiMonths = Math.ceil(total / calcData.monthlySavings);
+      const roiYears = (roiMonths / 12).toFixed(1);
+      document.getElementById('summaryROI').textContent = roiYears + ' yrs';
+    } else {
+      document.getElementById('summaryROI').textContent = '–';
+    }
+    savingsSection.style.display = '';
+  } else if (savingsSection) {
+    savingsSection.style.display = 'none';
+  }
+
   // ── Summary: Compatibility Check ──
   renderSummaryCompat();
 
@@ -1531,7 +1937,7 @@ function renderSummaryCompat() {
 
   // Re-run compatibility check to get warnings
   const warnings = getCompatibilityWarnings();
-  const selectedCount = Object.values(selected).filter(Boolean).length;
+  const selectedCount = Object.values(selected).filter(a => a.length > 0).length;
 
   if (selectedCount >= 2) {
     compatSection.style.display = 'block';
@@ -1561,11 +1967,14 @@ function renderSummaryStats() {
   const statsDiv = document.getElementById('summaryStats');
   if (!statsSection || !statsDiv) return;
 
-  const invItem = selected.inverter;
-  const panelItem = selected.panels;
+  const invItem   = selFirst('inverter');
+  const panelItem = selFirst('panels');
   let systemKW = 0;
-  if (invItem && invItem.parsedSpecs?.kw) systemKW = invItem.parsedSpecs.kw;
-  else if (panelItem && panelItem.parsedSpecs?.watts) systemKW = panelItem.parsedSpecs.watts / 1000;
+  if (invItem && invItem.parsedSpecs?.kw) {
+    systemKW = selected.inverter.reduce((s, e) => s + e.qty * (e.item.parsedSpecs.kw || 0), 0);
+  } else if (panelItem && panelItem.parsedSpecs?.watts) {
+    systemKW = selected.panels.reduce((s, e) => s + e.qty * (e.item.parsedSpecs.watts || 0), 0) / 1000;
+  }
 
   if (systemKW > 0) {
     statsSection.style.display = 'block';
@@ -1615,11 +2024,11 @@ function renderSummaryStats() {
 // Helper: returns warnings array (shared between checkCompatibility and renderSummaryCompat)
 function getCompatibilityWarnings() {
   const warnings = [];
-  const p = selected.panels;
-  const inv = selected.inverter;
-  const batt = selected.battery;
-  const wir = selected.wiring;
-  const mnt = selected.mounting;
+  const p    = selFirst('panels');
+  const inv  = selFirst('inverter');
+  const batt = selFirst('battery');
+  const wir = selFirst('wiring');
+  const mnt = selFirst('mounting');
 
   const panelW = p?.parsedSpecs?.watts || 0;
   const invKW = inv?.parsedSpecs?.kw || 0;
@@ -1664,6 +2073,114 @@ function getCompatibilityWarnings() {
   return warnings;
 }
 
+// ─── RECOMMENDATION PROGRESS BARS ───────────────────────────────────────────
+
+function updateRecommendationBars() {
+  if (!calcData || !calcData.bill || calcData.bill <= 0) return;
+  if (!document.getElementById('billInfoBox') || document.getElementById('billInfoBox').style.display === 'none') return;
+
+  // Panel bar: total selected wattage vs required total watts from calculator
+  const reqW = calcData.requiredTotalWatts || 0;
+  const selPanelW = selected.panels.reduce((s, e) => s + e.qty * (e.item.parsedSpecs?.watts || 0), 0);
+  setRecBar('barPanels', selPanelW, reqW,
+    selPanelW > 0 ? (selPanelW >= 1000 ? (selPanelW/1000).toFixed(1)+' kW' : selPanelW+' W') : '–',
+    reqW >= 1000 ? (reqW/1000).toFixed(1)+' kW required' : Math.round(reqW)+' W required');
+
+  // Inverter bar: total selected inverter kW vs recommended inverter kW
+  const recInvKw = calcData.recInverterKw || 0;
+  const selInvKw = selected.inverter.reduce((s, e) => s + e.qty * (e.item.parsedSpecs?.kw || 0), 0);
+  setRecBar('barInverter', selInvKw, recInvKw,
+    selInvKw > 0 ? selInvKw + ' kW' : '–', recInvKw + ' kW required');
+
+  // Battery bar: total selected kWh vs recommended kWh
+  const recBatKwh = calcData.recBatteryKwh || 0;
+  const selBatKwh = selected.battery.reduce((s, e) => s + e.qty * (e.item.parsedSpecs?.kwh || 0), 0);
+  setRecBar('barBattery', selBatKwh, recBatKwh,
+    selBatKwh > 0 ? selBatKwh + ' kWh' : '–', recBatKwh + ' kWh required');
+
+  // Mounting bar: mount max_panels vs required panel count from calculator
+  const reqPanels = calcData.panels || 0;
+  const mntItem = selected.mounting.length > 0 ? selected.mounting[0].item : null;
+  const mntMaxPanels = mntItem ? (mntItem.parsedSpecs?.max_panels || 0) : 0;
+  setRecBarCapable('barMounting', mntMaxPanels, reqPanels,
+    mntMaxPanels > 0 ? mntMaxPanels + ' panels supported' : '–',
+    reqPanels + ' panels required');
+
+  // Wiring bar: wire max_kw vs recommended inverter kW
+  const recWireKw = calcData.recInverterKw || 0;
+  const wirItem = selected.wiring.length > 0 ? selected.wiring[0].item : null;
+  const wirMaxKw = wirItem ? (wirItem.parsedSpecs?.max_kw || 0) : 0;
+  setRecBarCapable('barWiring', wirMaxKw, recWireKw,
+    wirMaxKw > 0 ? wirMaxKw + ' kW rated' : '–',
+    recWireKw + ' kW required');
+}
+
+function setRecBar(id, current, target, currentLabel, targetLabel) {
+  const fill   = document.getElementById(id + 'Fill');
+  const val    = document.getElementById(id + 'Val');
+  const status = document.getElementById(id + 'Status');
+  if (!fill || !val || !status) return;
+
+  if (!current || current <= 0 || !target || target <= 0) {
+    fill.style.width = '0%';
+    fill.className   = 'rec-bar-fill bar-none';
+    val.textContent  = '– / ' + targetLabel;
+    status.textContent = 'Not selected';
+    status.className   = 'rec-bar-status s-none';
+    return;
+  }
+
+  const pct = Math.min(100, (current / target) * 100);
+  fill.style.width = pct + '%';
+  val.textContent  = currentLabel + ' / ' + targetLabel;
+
+  if (pct >= 100) {
+    fill.className     = 'rec-bar-fill bar-ok';
+    status.textContent = '✓ Meets requirement (' + Math.round(pct) + '%)';
+    status.className   = 'rec-bar-status s-ok';
+  } else if (pct >= 70) {
+    fill.className     = 'rec-bar-fill bar-mid';
+    status.textContent = '⚠ ' + Math.round(pct) + '% of requirement — consider higher capacity';
+    status.className   = 'rec-bar-status s-mid';
+  } else {
+    fill.className     = 'rec-bar-fill bar-low';
+    status.textContent = '✗ Only ' + Math.round(pct) + '% of requirement — insufficient';
+    status.className   = 'rec-bar-status s-low';
+  }
+}
+
+// Capable/not-capable bar variant (used for mounting & wiring)
+// current >= target means capable; partial coverage shown if below
+function setRecBarCapable(id, current, target, currentLabel, targetLabel) {
+  const fill   = document.getElementById(id + 'Fill');
+  const val    = document.getElementById(id + 'Val');
+  const status = document.getElementById(id + 'Status');
+  if (!fill || !val || !status) return;
+
+  if (!current || current <= 0 || !target || target <= 0) {
+    fill.style.width = '0%';
+    fill.className   = 'rec-bar-fill bar-none';
+    val.textContent  = '– / ' + targetLabel;
+    status.textContent = 'Not selected';
+    status.className   = 'rec-bar-status s-none';
+    return;
+  }
+
+  const pct = Math.min(100, (current / target) * 100);
+  fill.style.width = pct + '%';
+  val.textContent  = currentLabel + ' / ' + targetLabel;
+
+  if (current >= target) {
+    fill.className     = 'rec-bar-fill bar-ok';
+    status.textContent = '✓ Capable — supports ' + current + (id === 'barMounting' ? ' panels' : ' kW') + ' (need ' + target + ')';
+    status.className   = 'rec-bar-status s-ok';
+  } else {
+    fill.className     = 'rec-bar-fill bar-low';
+    status.textContent = '✗ Not capable — ' + current + (id === 'barMounting' ? ' panels' : ' kW') + ' rated, need ' + target;
+    status.className   = 'rec-bar-status s-low';
+  }
+}
+
 // ─── STEPS ────────────────────────────────────────────────────────────────────
 
 function solarGoToStep(n) {
@@ -1682,6 +2199,28 @@ function solarGoToStep(n) {
   if (n === 2) renderPeripherals();
   if (n === 3) renderSummary();
 
+  // Populate bill info banner on components page
+  if (n === 1 && typeof calcData !== 'undefined' && calcData.bill > 0) {
+    const box = document.getElementById('billInfoBox');
+    if (box) {
+      document.getElementById('billInfoVal').textContent = '₱ ' + calcData.bill.toLocaleString('en-PH', {maximumFractionDigits:0});
+      // Show total required kW/W instead of just panel count
+      const totalW = calcData.requiredTotalWatts;
+      document.getElementById('billInfoKw').textContent = totalW >= 1000
+        ? (totalW / 1000).toFixed(1) + ' kW'
+        : Math.round(totalW) + ' W';
+      document.getElementById('billInfoRec').textContent = calcData.panels + ' × panels (based on ' + (totalW >= 1000 ? (totalW / 1000).toFixed(1) + ' kW' : Math.round(totalW) + ' W') + ' required)';
+      document.getElementById('billInfoInverter').textContent = calcData.recInverterStr || '–';
+      document.getElementById('billInfoBattery').textContent = calcData.recBatteryStr || '–';
+      box.style.display = '';
+      updateRecommendationBars();
+    }
+  }
+
+  // Show/hide footer bar on calculator page
+  const footer = document.querySelector('.footer-bar');
+  if (footer) footer.style.display = (n === 0) ? 'none' : '';
+
   const solarSection = document.getElementById('solarBuilderSection');
   if (solarSection) {
     solarSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -1699,6 +2238,38 @@ function showToast(msg) {
   t.classList.add('show');
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ─── MISMATCH WARNING POPUP ───────────────────────────────────────────────────
+
+let lastShownMismatchKey = '';
+function showMismatchPopup(errorWarnings) {
+  // Create a unique key for current warnings to avoid showing same popup repeatedly
+  const currentKey = errorWarnings.map(w => w.msg).sort().join('|');
+  if (currentKey === lastShownMismatchKey) return;
+  lastShownMismatchKey = currentKey;
+
+  const list = document.getElementById('mismatchPopupList');
+  const overlay = document.getElementById('mismatchPopupOverlay');
+  if (!list || !overlay) return;
+
+  list.innerHTML = errorWarnings.map(w => `<li>${w.msg}</li>`).join('');
+  overlay.classList.add('show');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeMismatchPopup(event) {
+  if (event && event.target !== event.currentTarget) return;
+  const overlay = document.getElementById('mismatchPopupOverlay');
+  if (overlay) {
+    overlay.classList.remove('show');
+    document.body.style.overflow = '';
+  }
+}
+
+// Reset mismatch key when selection changes significantly (e.g., clearing all)
+function resetMismatchPopupState() {
+  lastShownMismatchKey = '';
 }
 
 // ─── MOBILE DRAWER & INIT ─────────────────────────────────────────────────────
@@ -1776,18 +2347,30 @@ function renderDrawerProducts(items) {
   const list = document.getElementById('drawerProdList');
   if (!items.length) { list.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:0.78rem;padding:30px 0">No results.</div>'; return; }
   list.innerHTML = items.map(item => {
-    const isActive = selected[cat] && selected[cat].id === item.id;
+    const entry = selected[cat].find(e => e.item.id === item.id);
+    const isActive = !!entry;
+    const qty = entry ? entry.qty : 0;
     const saleTag = item.oldPrice ? `<span class="prod-sale">SALE</span> <span class="prod-old-price">₱${item.oldPrice.toLocaleString()}</span>` : '';
     const imgHtml = item.image
-      ? `<img src="/SolarPower-Energy-Corporation/${item.image}" alt="${item.name}" style="width:100%;height:100%;object-fit:cover;border-radius:6px;" onerror="this.parentElement.innerHTML='${getIcon(cat)}'">`
+      ? `<img src="/SolarPower-Energy-Corporation/${item.image}" alt="${item.name}" style="width:100%;height:100%;object-fit:cover;border-radius:6px;" onerror="applyFallbackIcon(this.parentElement, '${cat}')">`
       : getIcon(cat);
+    const qtyControls = isActive ? `
+      <div class="qty-row">
+        <div class="qty-stepper">
+          <button class="qty-btn" onclick="event.stopPropagation();changeQtyDrawer('${cat}','${item.id}',-1)">−</button>
+          <span class="qty-display">${qty}</span>
+          <button class="qty-btn" onclick="event.stopPropagation();changeQtyDrawer('${cat}','${item.id}',1)">+</button>
+        </div>
+        <button class="remove-item-btn" onclick="event.stopPropagation();removeItemDrawer('${cat}','${item.id}')">Remove</button>
+      </div>` : `
+      <button class="select-btn" style="display:inline-block" onclick="event.stopPropagation();selectProductDrawer('${cat}','${item.id}')">SELECT</button>`;
     return `<div class="prod-card ${isActive?'active':''}" onclick="selectProductDrawer('${cat}','${item.id}')">
       <div class="prod-img">${imgHtml}</div>
       <div class="prod-inf">
         <div class="prod-name">${item.name}</div>
         <div class="prod-spec">${item.spec}</div>
         <div class="prod-price"><span>₱</span> ${item.price.toLocaleString()} ${saleTag}</div>
-        <button class="select-btn" style="display:inline-block" onclick="event.stopPropagation();selectProductDrawer('${cat}','${item.id}')">${isActive?'✓ Selected':'SELECT'}</button>
+        ${qtyControls}
       </div>
     </div>`;
   }).join('');
@@ -1796,18 +2379,132 @@ function renderDrawerProducts(items) {
 function selectProductDrawer(cat, itemId) {
   const item = PRODUCTS[cat].items.find(i => i.id === itemId);
   if (!item) return;
-  const wasSelected = selected[cat] && selected[cat].id === itemId;
-  selected[cat] = wasSelected ? null : item;
-  updateCompCard(cat, selected[cat]);
-  updateStats();
-  renderDrawerProducts(PRODUCTS[cat].items);
-  if (!wasSelected) {
+  const existingIdx = selected[cat].findIndex(e => e.item.id === itemId);
+  if (existingIdx >= 0) {
+    selected[cat][existingIdx].qty++;
+    showToast(`➕ ${item.name.split(' ').slice(0,4).join(' ')} qty: ${selected[cat][existingIdx].qty}`);
+  } else {
+    selected[cat].push({ item, qty: 1 });
     showToast(`✅ ${item.name.split(' ').slice(0,4).join(' ')} added!`);
     setTimeout(closeDrawer, 800);
   }
+  updateCompCard(cat);
+  updateStats();
+  renderDrawerProducts(PRODUCTS[cat].items);
+  if (['panels','inverter','battery','mounting','wiring'].includes(cat)) updateRecommendationBars();
+}
+
+function changeQtyDrawer(cat, itemId, delta) {
+  const idx = selected[cat].findIndex(e => e.item.id === itemId);
+  if (idx < 0) return;
+  selected[cat][idx].qty = Math.max(1, selected[cat][idx].qty + delta);
+  updateCompCard(cat);
+  updateStats();
+  renderDrawerProducts(PRODUCTS[cat].items);
+  if (['panels','inverter','battery','mounting','wiring'].includes(cat)) updateRecommendationBars();
+}
+
+function removeItemDrawer(cat, itemId) {
+  selected[cat] = selected[cat].filter(e => e.item.id !== itemId);
+  resetMismatchPopupState();
+  updateCompCard(cat);
+  updateStats();
+  renderDrawerProducts(PRODUCTS[cat].items);
+  if (['panels','inverter','battery','mounting','wiring'].includes(cat)) updateRecommendationBars();
+  showToast(`🗑️ Item removed.`);
 }
 
 updateStats();
+
+// Hide footer initially (calculator page is first)
+(function() {
+  const footer = document.querySelector('.footer-bar');
+  if (footer) footer.style.display = 'none';
+})();
+
+// ─── CALCULATOR ──────────────────────────────────────────────────────────────
+
+// Stored calculator results (shared with builder)
+let calcData = { bill: 0, kwp: 0, panels: 0, monthlySavings: 0, yearlySavings: 0 };
+
+function runCalculator() {
+  const billInput = document.getElementById('calcBillInput');
+  const bill = parseFloat(billInput.value);
+  const errorEl = document.getElementById('calcError');
+  const resultsEl = document.getElementById('calcResults');
+  const proceedEl = document.getElementById('calcProceed');
+  const recomEl = document.getElementById('calcRecommendation');
+
+  if (!bill || bill <= 0) {
+    errorEl.textContent = 'Please enter a valid electric bill amount.';
+    resultsEl.classList.remove('show');
+    proceedEl.classList.remove('show');
+    recomEl.classList.remove('show');
+    return;
+  }
+  errorEl.textContent = '';
+
+  // Philippine solar constants
+  const avgRate = 13.40;       // ₱/kWh average Meralco rate
+  const sunHours = 4.5;        // Peak sun hours (PH average)
+  const efficiency = 0.85;     // System efficiency factor
+  const panelWattage = 705;    // Watts per panel (modern panels)
+  const savingsPct = 0.95;     // 95% of bill saved with solar
+
+  const monthlyKwh = bill / avgRate;
+  const dailyKwh = monthlyKwh / 30;
+  const requiredKwp = dailyKwh / (sunHours * efficiency);
+  const panels = Math.ceil((requiredKwp * 1000) / panelWattage);
+  const monthly = bill * savingsPct;
+  const yearly = monthly * 12;
+
+  // Total required wattage
+  const requiredTotalWatts = requiredKwp * 1000;
+
+  // Store for builder use
+  calcData = { bill, kwp: requiredKwp, panels, monthlySavings: monthly, yearlySavings: yearly, requiredTotalWatts };
+
+  // Determine recommended inverter size (round up to common sizes)
+  const inverterKw = requiredKwp;
+  let recInverterStr;
+  let recInverterKwNum;
+  if (inverterKw <= 3)       { recInverterStr = '3 kW';                      recInverterKwNum = 3; }
+  else if (inverterKw <= 5)  { recInverterStr = '5 kW';                      recInverterKwNum = 5; }
+  else if (inverterKw <= 8)  { recInverterStr = '8 kW';                      recInverterKwNum = 8; }
+  else if (inverterKw <= 10) { recInverterStr = '10 kW';                     recInverterKwNum = 10; }
+  else if (inverterKw <= 15) { recInverterStr = '15 kW';                     recInverterKwNum = 15; }
+  else                       { recInverterKwNum = Math.ceil(inverterKw); recInverterStr = recInverterKwNum + ' kW'; }
+
+  // Recommended battery (rule of thumb: 1 kWh per kWp for basic backup)
+  const recBatteryKwh = Math.ceil(requiredKwp * 2.5);
+  const recBatteryStr = recBatteryKwh + ' kWh';
+
+  // Update UI
+  document.getElementById('calcKwp').textContent = requiredKwp.toFixed(1);
+  document.getElementById('calcPanels').textContent = panels;
+  document.getElementById('calcMonthlySavings').textContent = '₱' + monthly.toLocaleString('en-PH', { maximumFractionDigits: 0 });
+  document.getElementById('calcYearlySavings').textContent = '₱' + yearly.toLocaleString('en-PH', { maximumFractionDigits: 0 });
+
+  // Recommendation
+  document.getElementById('recPanels').textContent = panels + ' × ' + panelWattage + 'W';
+  document.getElementById('recInverter').textContent = recInverterStr;
+  document.getElementById('recBattery').textContent = recBatteryStr;
+
+  // Store recommendation strings & numeric values for Page 1 display
+  calcData.recInverterStr  = recInverterStr;
+  calcData.recBatteryStr   = recBatteryStr;
+  calcData.recInverterKw   = recInverterKwNum;
+  calcData.recBatteryKwh   = recBatteryKwh;
+
+  resultsEl.classList.add('show');
+  recomEl.classList.add('show');
+  proceedEl.classList.add('show');
+}
+
+// Enter key support for calculator
+document.getElementById('calcBillInput').addEventListener('keypress', function(e) {
+  if (e.key === 'Enter') runCalculator();
+});
 
 // ─── PRINT TO PDF ─────────────────────────────────────────────────────────────
 
