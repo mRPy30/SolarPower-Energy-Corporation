@@ -929,7 +929,7 @@
       </div>
 
       <div class="comp-card" id="card-mounting" onclick="openSelector('mounting')">
-        <div class="comp-icon" id="icon-mounting"><img src="includes/mounting.jpg" alt="mounting"></div>
+        <div class="comp-icon" id="icon-mounting"><img src="includes/mounting.png" alt="mounting"></div>
         <div class="comp-info">
           <div class="comp-type">Mounting System</div>
           <div class="comp-name" id="name-mounting">Select item</div>
@@ -938,7 +938,7 @@
       </div>
 
       <div class="comp-card" id="card-wiring" onclick="openSelector('wiring')">
-        <div class="comp-icon" id="icon-wiring"><img src="includes/wiring-protection.jpg" alt="wiring"></div>
+        <div class="comp-icon" id="icon-wiring"><img src="includes/wiring-protection.png" alt="wiring"></div>
         <div class="comp-info">
           <div class="comp-type">Wiring & Protection</div>
           <div class="comp-name" id="name-wiring">Select item</div>
@@ -992,7 +992,10 @@
 <!-- ══════════════════ PAGE 3: SUMMARY ══════════════════ -->
 <div class="page" id="page3">
   <div class="summary-wrap">
-    <div class="summary-title">🌞 Build Summary</div>
+    <div class="summary-title" style="display:flex;align-items:center;gap:16px;margin-bottom:18px;">
+      <img src="/SolarPower-Energy-Corporation/assets/img/logo_no_background.png" alt="Solarpower LOGO" style="height:48px;width:auto;border-radius:8px;box-shadow:0 2px 12px rgba(58,92,26,0.09);background:#fff;padding:4px;">
+      <span style="font-size:1.35rem;font-weight:900;color:var(--green);letter-spacing:0.04em;">SolarPower Energy Corporation</span>
+    </div>
     <div class="summary-sub">Review your solar system configuration before adding to cart.</div>
 
     <div class="summary-section">
@@ -1019,6 +1022,7 @@
       <span class="summary-total-lbl">Total Build Cost</span>
       <span class="summary-total-val" id="summaryTotal">₱ 0.00</span>
     </div>
+
 
     <!-- Savings comparison (shown when calculator was used) -->
     <div id="summarySavingsSection" style="display:none; margin-top:18px; background:var(--yellow-l); border:2px solid var(--yellow); border-radius:12px; padding:18px 20px;">
@@ -1712,8 +1716,8 @@ function getIcon(cat) {
     panels: '<img src="includes/solar_svg.png" alt="Solar Panels" style="width:100%;height:100%;object-fit:cover;border-radius:6px;">',
     inverter: '<img src="includes/inverter.png" alt="Inverter" style="width:100%;height:100%;object-fit:cover;border-radius:6px;">',
     battery: '<img src="includes/battery.png" alt="Battery" style="width:100%;height:100%;object-fit:cover;border-radius:6px;">',
-    mounting: '<img src="includes/mounting.jpg" alt="Mounting" style="width:100%;height:100%;object-fit:cover;border-radius:6px;">',
-    wiring: '<img src="includes/wiring-protection.jpg" alt="Wiring" style="width:100%;height:100%;object-fit:cover;border-radius:6px;">',
+    mounting: '<img src="includes/mounting.png" alt="Mounting" style="width:100%;height:100%;object-fit:cover;border-radius:6px;">',
+    wiring: '<img src="includes/wiring-protection.png" alt="Wiring" style="width:100%;height:100%;object-fit:cover;border-radius:6px;">',
     monitoring: '📡'
   };
   return icons[cat] || '⚙️';
@@ -1728,7 +1732,7 @@ function applySummaryFallback(el, cat) {
     panels: '<img src="includes/solar_svg.png" alt="Solar Panels" style="width:28px;height:28px;object-fit:cover;border-radius:4px;">',
     inverter: '<img src="includes/inverter.png" alt="Inverter" style="width:28px;height:28px;object-fit:cover;border-radius:4px;">',
     battery: '<img src="includes/battery.png" alt="Battery" style="width:28px;height:28px;object-fit:cover;border-radius:4px;">',
-    mounting: '<img src="includes/mounting.jpg" alt="Mounting" style="width:28px;height:28px;object-fit:cover;border-radius:4px;">',
+    mounting: '<img src="includes/mounting.png" alt="Mounting" style="width:28px;height:28px;object-fit:cover;border-radius:4px;">',
     wiring: '<img src="includes/wiring-protection.jpg" alt="Wiring" style="width:28px;height:28px;object-fit:cover;border-radius:4px;">',
     monitoring: '📡'
   };
@@ -1845,9 +1849,9 @@ function renderSummary() {
     { key: 'panels', label: 'Solar Panels', icon: '<img src="includes/solar_svg.png" alt="Solar Panels" style="width:28px;height:28px;object-fit:cover;border-radius:4px;">' },
     { key: 'inverter', label: 'Inverter', icon: '<img src="includes/inverter.png" alt="Inverter" style="width:28px;height:28px;object-fit:cover;border-radius:4px;">' },
     { key: 'battery', label: 'Battery Storage', icon: '<img src="includes/battery.png" alt="Battery" style="width:28px;height:28px;object-fit:cover;border-radius:4px;">' },
-    { key: 'mounting', label: 'Mounting System', icon: '<img src="includes/mounting.jpg" alt="Mounting" style="width:28px;height:28px;object-fit:cover;border-radius:4px;">' },
+    { key: 'mounting', label: 'Mounting System', icon: '<img src="includes/mounting.png" alt="Mounting" style="width:28px;height:28px;object-fit:cover;border-radius:4px;">' },
     { key: 'wiring', label: 'Wiring & Protection', icon: '<img src="includes/wiring-protection.jpg" alt="Wiring" style="width:28px;height:28px;object-fit:cover;border-radius:4px;">' },
-    { key: 'monitoring', label: 'Monitoring System', icon: '📡' },
+    
   ];
 
   const compHtml = compCategories.map(({ key, label, icon }) => {
