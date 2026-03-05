@@ -53,15 +53,18 @@ $conn->close();
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;900&display=swap" rel="stylesheet">
     <!-- AOS Animation -->
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
     <link rel="stylesheet" href="assets/style.css">
-
+</head>
 <body>
 
     <!-- VIDEO POPUP BANNER -->
+    <!--
     <div class="video-popup-overlay" id="videoPopup">
         <div class="video-popup-container">
             <button class="video-popup-close" id="closeVideoPopup" aria-label="Close popup">
@@ -69,12 +72,15 @@ $conn->close();
             </button>
             <div class="video-popup-content" style="cursor: pointer;" onclick="handleVideoClick(event)">
                 <video id="promoVideo" autoplay muted loop playsinline>
-                    <source src="assets/img/promo-banner.webm" type="video/mp4">
+                    <source src="assets/img/promo-banner.webm" type="video/webm">
                     Your browser does not support the video tag.
                 </video>
             </div>
         </div>
     </div>
+    -->
+
+   
 
     <?php include "includes/header.php" ?>
 
@@ -1632,6 +1638,8 @@ $conn->close();
 
 
 
+    <?php include "includes/march-popup.php" ?>
+
     <!-- Bootstrap JS Bundle -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
     <!-- AOS Animation -->
@@ -1668,9 +1676,57 @@ $conn->close();
         initializeContactForm();
         initializeInspectionForm();
         setupCalculator();
+        initializeVideoPopup();
 
         console.log('✅ All modules loaded successfully');
     });
+
+    // ============================================
+    // VIDEO POPUP
+    // ============================================
+
+    function initializeVideoPopup() {
+        const overlay = document.getElementById('videoPopup');
+        const closeBtn = document.getElementById('closeVideoPopup');
+        const video = document.getElementById('promoVideo');
+
+        if (!overlay) return;
+
+        // Show popup on page load
+        overlay.classList.add('active');
+
+        // Close on close button click
+        closeBtn.addEventListener('click', function() {
+            overlay.classList.remove('active');
+            video.pause();
+        });
+
+        // Close when clicking the dark backdrop (outside the container)
+        overlay.addEventListener('click', function(e) {
+            if (e.target === overlay) {
+                overlay.classList.remove('active');
+                video.pause();
+            }
+        });
+
+        // Close on Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && overlay.classList.contains('active')) {
+                overlay.classList.remove('active');
+                video.pause();
+            }
+        });
+    }
+
+    function handleVideoClick(event) {
+        // Clicking the video toggles mute so users can hear audio
+        const video = document.getElementById('promoVideo');
+        if (video.muted) {
+            video.muted = false;
+        } else {
+            video.muted = true;
+        }
+    }
 
     // ============================================
     // 2. CART MANAGEMENT
