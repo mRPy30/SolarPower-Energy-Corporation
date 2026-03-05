@@ -605,7 +605,7 @@ body {
             border-radius: 15px;
         }
 
-        /* Mobile Responsive */
+        /* Mobile Responsive *
         @media (max-width: 768px) {
             .video-popup-container {
                 width: 90%;

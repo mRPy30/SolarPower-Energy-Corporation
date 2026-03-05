@@ -736,6 +736,79 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
     $conn->close();
     exit;
 }
+
+// ── PRG: Handle add_product POST before any HTML output ──
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['action'] === 'add_product') {
+    $conn_post = mysqli_connect($servername, $username, $password, $dbname);
+    if ($conn_post->connect_error) {
+        $_SESSION['add_product_msg'] = 'Connection failed: ' . $conn_post->connect_error;
+        $_SESSION['add_product_msg_type'] = 'error';
+    } else {
+        $category = $conn_post->real_escape_string($_POST['category'] ?? '');
+        $brand = $conn_post->real_escape_string($_POST['brand'] ?? '');
+        $productName = $conn_post->real_escape_string($_POST['product-name'] ?? '');
+        $warranty = $conn_post->real_escape_string($_POST['warranty'] ?? '');
+        $price = (float)($_POST['price'] ?? 0);
+        $stockQuantity = (int)($_POST['stock-quantity'] ?? 0);
+        $description = $conn_post->real_escape_string($_POST['description'] ?? '');
+        $imagePath = 'path/to/uploaded/image.jpg';
+
+        if (empty($category) || empty($brand) || empty($productName) || $price <= 0 || $stockQuantity < 0) {
+            $_SESSION['add_product_msg'] = 'Please fill all required fields correctly.';
+            $_SESSION['add_product_msg_type'] = 'error';
+        } else {
+            $stmt = $conn_post->prepare("INSERT INTO product (displayName, brandName, price, category, stockQuantity, warranty, description, imagePath, postedByStaffId) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt->bind_param("ssdsisssi", $productName, $brand, $price, $category, $stockQuantity, $warranty, $description, $imagePath, $user_id);
+
+            if ($stmt->execute()) {
+                $product_id = $stmt->insert_id;
+
+                // ===== IMAGE UPLOAD =====
+                $uploadDir = "../../uploads/products/$product_id/";
+                if (!is_dir($uploadDir)) {
+                    mkdir($uploadDir, 0777, true);
+                }
+
+                $allowedTypes = ['jpg', 'jpeg', 'png', 'webp'];
+                $maxImages = 15;
+                $count = 0;
+
+                if (!empty($_FILES['product-images']['name'][0])) {
+                    foreach ($_FILES['product-images']['tmp_name'] as $key => $tmpName) {
+                        if ($count >= $maxImages) break;
+                        if ($_FILES['product-images']['error'][$key] !== 0) continue;
+
+                        $ext = strtolower(pathinfo($_FILES['product-images']['name'][$key], PATHINFO_EXTENSION));
+                        if (!in_array($ext, $allowedTypes)) continue;
+
+                        $newName = uniqid("img_") . "." . $ext;
+                        $targetPath = $uploadDir . $newName;
+
+                        if (move_uploaded_file($tmpName, $targetPath)) {
+                            $relativePath = "uploads/products/$product_id/$newName";
+                            $imgStmt = $conn_post->prepare("INSERT INTO product_images (product_id, image_path) VALUES (?, ?)");
+                            $imgStmt->bind_param("is", $product_id, $relativePath);
+                            $imgStmt->execute();
+                            $imgStmt->close();
+                            $count++;
+                        }
+                    }
+                }
+
+                $_SESSION['add_product_msg'] = "Product '{$productName}' added successfully with {$count} image(s)!";
+                $_SESSION['add_product_msg_type'] = 'success';
+            } else {
+                $_SESSION['add_product_msg'] = 'Error adding product: ' . $stmt->error;
+                $_SESSION['add_product_msg_type'] = 'error';
+            }
+            $stmt->close();
+        }
+        $conn_post->close();
+    }
+    // PRG redirect — converts POST to GET, prevents duplicate on reload
+    header("Location: dashboard.php");
+    exit;
+}
 ?>
 
 <!DOCTYPE html>
@@ -1633,81 +1706,13 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
             <!-- Other page sections remain the same -->
             <div id="add-product" class="page-content add-product-page">
                 <?php
+                // Display add product message from PRG redirect (session flash)
                 $addProductMsg = '';
-                if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['action'] === 'add_product') {
-                    $conn_post = mysqli_connect($servername, $username, $password, $dbname);
-                    if ($conn_post->connect_error) {
-                        $addProductMsg = "<div class='alert error'>Connection failed: " . $conn_post->connect_error . "</div>";
-                    } else {
-                        $category = $conn_post->real_escape_string($_POST['category'] ?? '');
-                        $brand = $conn_post->real_escape_string($_POST['brand'] ?? '');
-                        $productName = $conn_post->real_escape_string($_POST['product-name'] ?? '');
-                        $warranty = $conn_post->real_escape_string($_POST['warranty'] ?? '');
-                        $price = (float)($_POST['price'] ?? 0);
-                        $stockQuantity = (int)($_POST['stock-quantity'] ?? 0);
-                        $description = $conn_post->real_escape_string($_POST['description'] ?? '');
-                        $imagePath = 'path/to/uploaded/image.jpg';
-
-                        if (empty($category) || empty($brand) || empty($productName) || $price <= 0 || $stockQuantity < 0) {
-                            $addProductMsg = "<div class='alert error'>Please fill all required fields correctly.</div>";
-                        } else {
-                            $stmt = $conn_post->prepare("INSERT INTO product (displayName, brandName, price, category, stockQuantity, warranty, description, imagePath, postedByStaffId) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
-                            $stmt->bind_param("ssdsisssi", $productName, $brand, $price, $category, $stockQuantity, $warranty, $description, $imagePath, $user_id);
-
-                            if ($stmt->execute()) {
-
-                                $product_id = $stmt->insert_id;
-
-                                // ===== IMAGE UPLOAD =====
-                                $uploadDir = "../../uploads/products/$product_id/";
-                                if (!is_dir($uploadDir)) {
-                                    mkdir($uploadDir, 0777, true);
-                                }
-
-                                $allowedTypes = ['jpg', 'jpeg', 'png', 'webp'];
-                                $maxImages = 15;
-                                $count = 0;
-
-                                if (!empty($_FILES['product-images']['name'][0])) {
-
-                                    foreach ($_FILES['product-images']['tmp_name'] as $key => $tmpName) {
-
-                                        if ($count >= $maxImages) break;
-                                        if ($_FILES['product-images']['error'][$key] !== 0) continue;
-
-                                        $ext = strtolower(pathinfo($_FILES['product-images']['name'][$key], PATHINFO_EXTENSION));
-                                        if (!in_array($ext, $allowedTypes)) continue;
-
-                                        $newName = uniqid("img_") . "." . $ext;
-                                        $targetPath = $uploadDir . $newName;
-
-                                        if (move_uploaded_file($tmpName, $targetPath)) {
-
-                                            $relativePath = "uploads/products/$product_id/$newName";
-
-                                            $imgStmt = $conn_post->prepare("
-                                    INSERT INTO product_images (product_id, image_path)
-                                    VALUES (?, ?)
-                                ");
-                                            $imgStmt->bind_param("is", $product_id, $relativePath);
-                                            $imgStmt->execute();
-                                            $imgStmt->close();
-
-                                            $count++;
-                                        }
-                                    }
-                                }
-
-                                $addProductMsg = "<div class='alert success'>
-                        Product '{$productName}' added successfully with {$count} image(s)!
-                    </div>";
-                            } else {
-                                $addProductMsg = "<div class='alert error'>Error adding product: " . $stmt->error . "</div>";
-                            }
-                            $stmt->close();
-                        }
-                        $conn_post->close();
-                    }
+                if (isset($_SESSION['add_product_msg'])) {
+                    $type = $_SESSION['add_product_msg_type'] ?? 'success';
+                    $msg = htmlspecialchars($_SESSION['add_product_msg'], ENT_QUOTES, 'UTF-8');
+                    $addProductMsg = "<div class='alert {$type}'>{$msg}</div>";
+                    unset($_SESSION['add_product_msg'], $_SESSION['add_product_msg_type']);
                 }
                 ?>
                 <style>
@@ -3814,11 +3819,12 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
             },
 
             setupFormSubmission() {
-                const productForm = document.querySelector('form[enctype="multipart/form-data"]');
+                const productForm = document.querySelector('form[enctype="multipart/form-data"] input[name="action"][value="add_product"]');
+                const addForm = productForm ? productForm.closest('form') : null;
 
-                if (productForm) {
-                    productForm.addEventListener('submit', async (e) => {
-                        const actionInput = productForm.querySelector('input[name="action"]');
+                if (addForm) {
+                    addForm.addEventListener('submit', async (e) => {
+                        const actionInput = addForm.querySelector('input[name="action"]');
 
                         // Only intercept add_product submissions
                         if (actionInput && actionInput.value === 'add_product') {
@@ -5117,7 +5123,7 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
                         if (data.success) {
                             alert('Product updated successfully!');
                             closeEditModal();
-                            location.reload();
+                            window.location.href = window.location.pathname;
                         } else {
                             alert('Error updating product: ' + data.message);
                         }

@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Solar System Builder – SolarPower Energy Corporation</title>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -19,6 +20,7 @@
       --border:   #DDE3D4;
       --text:     #1A2308;
       --muted:    #6B7C52;
+      --white:    #ffffff;
       --shadow:   0 2px 12px rgba(58,92,26,0.09);
     }
 
@@ -74,21 +76,24 @@
 
     /* ── Steps ── */
     .step-nav {
-       border-bottom: 2px solid var(--border);
+      border-bottom: 2px solid var(--border);
       display: flex; padding: 0 40px;
     }
     .step-tab {
-      padding: 13px 26px; font-size: 0.77rem; font-weight: 700;
+      padding: 14px 28px; font-size: 0.77rem; font-weight: 700;
       color: var(--muted); cursor: pointer; border-bottom: 3px solid transparent;
       margin-bottom: -2px; transition: all .2s; letter-spacing: 0.06em; text-transform: uppercase;
       display: flex; align-items: center; gap: 8px;
     }
+    .step-tab:hover { color: var(--green); }
     .step-num {
-      width: 22px; height: 22px; border-radius: 50%;
+      width: 24px; height: 24px; border-radius: 50%;
       background: var(--border); color: var(--muted);
       font-size: 0.67rem; font-weight: 800;
       display: flex; align-items: center; justify-content: center;
+      transition: all .2s;
     }
+    .step-tab:hover .step-num { background: var(--green-l); color: var(--green); }
     .step-tab.active { color: var(--green); border-bottom-color: var(--yellow); }
     .step-tab.active .step-num { background: var(--yellow); color: var(--green-d); }
     .step-tab.completed .step-num { background: var(--green); color: #fff; }
@@ -99,50 +104,95 @@
 
     /* ── Layout ── */
     .builder {
-      display: grid; grid-template-columns: 280px 1fr 330px;
+      display: grid; grid-template-columns: 320px 1fr 360px;
       min-height: calc(100vh - 36px - 68px - 50px - 60px);
     }
 
-    /* ── Radar panel ── */
+    /* ── Monthly Production Chart Panel ── */
     .radar-panel {
       border-right: 1.5px solid var(--border);
-      padding: 26px 20px; display: flex; flex-direction: column; align-items: center;
+      padding: 22px 18px; display: flex; flex-direction: column; align-items: center;
+      overflow-y: auto;
     }
     .panel-lbl {
-      font-size: 0.67rem; font-weight: 800; text-transform: uppercase;
-      letter-spacing: 0.13em; color: var(--muted); margin-bottom: 18px; align-self: flex-start;
+      font-size: 0.7rem; font-weight: 800; text-transform: uppercase;
+      letter-spacing: 0.13em; color: var(--green); margin-bottom: 14px; align-self: flex-start;
+      display: flex; align-items: center; gap: 6px;
     }
-    .radar-wrap { width: 195px; height: 195px; margin-bottom: 20px; }
-    .radar-wrap svg { width: 100%; height: 100%; }
-
-    .radar-polygon { transition: all 0.6s cubic-bezier(.4,0,.2,1); }
+    .panel-lbl::before { content: ''; display: inline-block; width: 3px; height: 14px; background: var(--yellow); border-radius: 2px; }
+    .chart-wrap { width: 100%; margin-bottom: 10px; position: relative; }
+    .chart-wrap canvas { width: 100% !important; height: 200px !important; }
+    .chart-location-row {
+      display: flex; align-items: center; gap: 6px; margin-bottom: 10px; width: 100%;
+    }
+    .chart-location-row label {
+      font-size: 0.62rem; font-weight: 700; color: var(--muted); text-transform: uppercase;
+      letter-spacing: 0.08em; white-space: nowrap;
+    }
+    .chart-location-row select {
+      flex: 1; background: var(--bg); border: 1.5px solid var(--border); border-radius: 5px;
+      color: var(--text); font-family: 'Montserrat', sans-serif; font-size: 0.68rem;
+      font-weight: 600; padding: 5px 8px; outline: none; cursor: pointer;
+    }
+    .chart-location-row select:focus { border-color: var(--green); }
+    .chart-legend {
+      display: flex; flex-wrap: wrap; gap: 6px 10px; justify-content: flex-start; margin-bottom: 10px;
+      font-size: 0.62rem; font-weight: 700; color: var(--muted); width: 100%;
+      background: var(--bg); border-radius: 8px; padding: 8px 10px;
+      border: 1px solid var(--border);
+    }
+    .chart-legend span { display: flex; align-items: center; gap: 5px; white-space: nowrap; }
+    .chart-legend .dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+    .chart-kwh-row {
+      display: flex; justify-content: space-between; width: 100%; padding: 4px 2px;
+      font-size: 0.6rem; font-weight: 800; color: var(--green);
+      background: var(--green-l); border-radius: 6px; margin-bottom: 6px;
+    }
+    .chart-kwh-row span { width: calc(100%/12); text-align: center; padding: 2px 0; }
+    .seasonal-badges {
+      display: flex; flex-wrap: wrap; gap: 5px; width: 100%; margin-top: 10px; margin-bottom: 4px;
+    }
+    .seasonal-badge {
+      font-size: 0.62rem; font-weight: 700; padding: 4px 10px; border-radius: 20px;
+      display: inline-flex; align-items: center; gap: 4px; line-height: 1.3;
+      transition: transform 0.15s;
+    }
+    .seasonal-badge:hover { transform: translateY(-1px); }
+    .seasonal-badge.peak { background: #E8F5E9; color: #2E7D32; border: 1px solid #A5D6A7; }
+    .seasonal-badge.low { background: #FFF3E0; color: #E65100; border: 1px solid #FFCC80; }
+    .seasonal-badge.info { background: #E3F2FD; color: #1565C0; border: 1px solid #90CAF9; }
 
     .build-box {
-      width: 100%; background: var(--green); border-radius: 10px;
-      padding: 15px 17px; margin-bottom: 14px; color: #fff;
+      width: 100%; background: linear-gradient(135deg, var(--green) 0%, #2C4713 100%);
+      border-radius: 12px; padding: 16px 18px; margin-bottom: 14px; color: #fff;
+      box-shadow: 0 4px 16px rgba(58,92,26,0.18);
     }
     .build-lbl { font-size: 0.64rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; opacity: 0.65; margin-bottom: 3px; }
-    .build-val { font-weight: 900; font-size: 1.35rem; color: var(--yellow); transition: all 0.4s; }
-    .tier-bar { width: 100%; height: 6px; background: rgba(255,255,255,0.18); border-radius: 3px; margin-top: 9px; overflow: hidden; }
-    .tier-fill { height: 100%; background: linear-gradient(90deg, var(--yellow), #82C820); border-radius: 3px; transition: width 0.6s cubic-bezier(.4,0,.2,1); }
+    .build-val { font-weight: 900; font-size: 1.4rem; color: var(--yellow); transition: all 0.4s; }
+    .tier-bar { width: 100%; height: 7px; background: rgba(255,255,255,0.18); border-radius: 4px; margin-top: 10px; overflow: hidden; }
+    .tier-fill { height: 100%; background: linear-gradient(90deg, var(--yellow), #82C820); border-radius: 4px; transition: width 0.6s cubic-bezier(.4,0,.2,1); }
     .tier-lbls { display: flex; justify-content: space-between; margin-top: 5px; font-size: 0.6rem; opacity: 0.55; }
 
-    .stats { width: 100%; }
+    .stats { width: 100%; background: var(--bg); border-radius: 10px; overflow: hidden; border: 1px solid var(--border); }
     .stat-row {
       display: flex; justify-content: space-between; align-items: center;
-      padding: 8px 0; border-top: 1px solid var(--border); font-size: 0.77rem;
+      padding: 9px 12px; border-top: 1px solid var(--border); font-size: 0.77rem;
+      transition: background 0.15s;
     }
+    .stat-row:first-child { border-top: none; }
+    .stat-row:hover { background: var(--green-l); }
     .stat-n { color: var(--muted); font-weight: 500; }
-    .stat-v { color: var(--green); font-weight: 700; transition: all 0.4s; }
+    .stat-v { color: var(--green); font-weight: 800; transition: all 0.4s; }
 
     /* ── Components ── */
-    .comp-panel {  display: flex; flex-direction: column; }
+    .comp-panel { display: flex; flex-direction: column; background: #fafbf8; }
     .comp-head {
-       padding: 18px 28px;
+      padding: 18px 28px;
       border-bottom: 1.5px solid var(--border);
       display: flex; align-items: center; justify-content: space-between;
+      
     }
-    .comp-head h2 { font-size: 1.1rem; font-weight: 800; color: var(--green); }
+    .comp-head h2 { font-size: 1.15rem; font-weight: 900; color: var(--green); }
     .clear-btn {
       background: transparent; border: 1.5px solid #F0C8C8; color: #C0392B;
       font-family: 'Montserrat', sans-serif; font-size: 0.72rem; font-weight: 700;
@@ -150,16 +200,16 @@
     }
     .clear-btn:hover { background: #FFF0EE; }
 
-    .comp-list { padding: 16px 22px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; }
+    .comp-list { padding: 18px 24px; display: flex; flex-direction: column; gap: 11px; overflow-y: auto; }
 
     .comp-card {
-      background: var(--white); border: 1.5px solid var(--border); border-radius: 10px;
-      padding: 13px 15px; display: flex; align-items: center; gap: 13px;
-      cursor: pointer; transition: all .22s; box-shadow: var(--shadow);
+      background: #fff; border: 1.5px solid var(--border); border-radius: 12px;
+      padding: 14px 16px; display: flex; align-items: center; gap: 14px;
+      cursor: pointer; transition: all .22s; box-shadow: 0 1px 6px rgba(58,92,26,0.06);
     }
-    .comp-card:hover { border-color: var(--yellow); transform: translateY(-1px); box-shadow: 0 5px 18px rgba(58,92,26,0.13); }
-    .comp-card.active-card { border-color: var(--yellow); border-left: 4px solid var(--yellow); background: var(--yellow-l); }
-    .comp-card.done { border-left: 4px solid var(--green); border-color: var(--green); }
+    .comp-card:hover { border-color: var(--yellow); transform: translateY(-2px); box-shadow: 0 6px 22px rgba(58,92,26,0.14); }
+    .comp-card.active-card { border-color: var(--yellow); border-left: 4px solid var(--yellow); background: var(--yellow-l); box-shadow: 0 4px 16px rgba(255,193,7,0.15); }
+    .comp-card.done { border-left: 4px solid var(--green); border-color: var(--green); background: #f6fdf0; }
     .comp-card.warn { border-left: 4px solid #E8A020; background: #FFFBF0; border-color: #E8A020; }
     .comp-card.warn .comp-tag { background: #FFF5E0; color: #9A6A00; border: 1px solid #EDD080; }
 
@@ -178,16 +228,18 @@
     }
 
     .comp-icon {
-      width: 50px; height: 50px; border-radius: 8px;
+      width: 54px; height: 54px; border-radius: 10px;
       background: var(--green-l); border: 1.5px solid var(--border);
       display: flex; align-items: center; justify-content: center;
-      font-size: 1.45rem; flex-shrink: 0; transition: background 0.3s;
+      font-size: 1.45rem; flex-shrink: 0; transition: all 0.3s;
+      overflow: hidden;
     }
-    .comp-card.done .comp-icon { background: var(--green); }
-    .comp-icon img { width: 100%; height: 100%; object-fit: cover; border-radius: 6px; }
+    .comp-card:hover .comp-icon { border-color: var(--yellow); }
+    .comp-card.done .comp-icon { background: var(--green); border-color: var(--green); }
+    .comp-icon img { width: 100%; height: 100%; object-fit: cover; border-radius: 8px; }
     .comp-info { flex: 1; }
-    .comp-type { font-size: 0.63rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.13em; color: var(--yellow-d); margin-bottom: 3px; }
-    .comp-name { font-size: 0.83rem; font-weight: 600; color: var(--text); line-height: 1.35; }
+    .comp-type { font-size: 0.62rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.13em; color: var(--yellow-d); margin-bottom: 3px; }
+    .comp-name { font-size: 0.85rem; font-weight: 700; color: var(--text); line-height: 1.35; }
     .comp-tag {
       font-size: 0.67rem; font-weight: 700; padding: 4px 10px; border-radius: 20px;
       letter-spacing: 0.04em; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px;
@@ -198,14 +250,14 @@
 
     /* ── Selector ── */
     .sel-panel { 
-      background: var(--white); border-left: 1.5px solid var(--border); 
+       border-left: 1.5px solid var(--border); 
       display: flex; flex-direction: column; 
-      height: calc(100vh - 156px); /* Fix height so scrolling works */
+      height: calc(100vh - 156px);
       position: sticky; top: 0;
     }
-    .sel-head { padding: 17px 20px 13px; border-bottom: 1.5px solid var(--border); flex-shrink: 0; }
-    .sel-head h3 { font-size: 0.9rem; font-weight: 800; color: var(--green); display: flex; align-items: center; gap: 7px; }
-    .sel-head h3 .arr { color: var(--yellow); }
+    .sel-head { padding: 18px 20px 14px; border-bottom: 1.5px solid var(--border); flex-shrink: 0; background: #fafbf8; }
+    .sel-head h3 { font-size: 0.95rem; font-weight: 900; color: var(--green); display: flex; align-items: center; gap: 7px; }
+    .sel-head h3 .arr { color: var(--yellow); font-size: 1.1rem; }
     .filter-row { display: flex; gap: 8px; margin-top: 11px; }
     .f-sel {
       flex: 1; background: var(--bg); border: 1.5px solid var(--border); border-radius: 6px;
@@ -240,10 +292,11 @@
     .prod-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
     .prod-list::-webkit-scrollbar-thumb:hover { background: var(--muted); }
     .prod-card {
-      border: 1.5px solid var(--border); border-radius: 8px; padding: 11px;
-      display: flex; gap: 10px; cursor: pointer; transition: all .2s;
+      border: 1.5px solid var(--border); border-radius: 10px; padding: 12px;
+      display: flex; gap: 11px; cursor: pointer; transition: all .2s;
+      box-shadow: 0 1px 4px rgba(58,92,26,0.04);
     }
-    .prod-card:hover { border-color: var(--yellow); background: var(--yellow-l); }
+    .prod-card:hover { border-color: var(--yellow); background: var(--yellow-l); transform: translateY(-1px); box-shadow: 0 4px 14px rgba(255,193,7,0.12); }
     .prod-card.active { border-left: 4px solid var(--yellow); border-color: var(--green); background: var(--green-l); }
     .prod-card.hidden { display: none; }
     .prod-img {
@@ -335,9 +388,11 @@
 
     /* ── Footer ── */
     .footer-bar {
-      background: var(--green); padding: 13px 40px;
+      background: linear-gradient(90deg, var(--green-d) 0%, var(--green) 100%);
+      padding: 13px 40px;
       display: flex; align-items: center; justify-content: space-between; gap: 20px;
       position: sticky; bottom: 0; z-index: 100;
+      box-shadow: 0 -3px 16px rgba(58,92,26,0.22);
     }
     .ship { color: rgba(255,255,255,0.8); font-size: 0.77rem; }
     .ship strong { color: #fff; }
@@ -390,20 +445,33 @@
       position: relative;
     }
     .calc-box .calc-bulb {
-      width: 72px; 
+      width: 72px;
       height: 72px;
-       background: 
-       linear-gradient(135deg, #ffc107, #ffab00);
+      background: radial-gradient(circle, #ffc107, #ff9800);
       border-radius: 50%; margin: -86px auto 18px;
-       display: flex; align-items: center; 
-       justify-content: center;
-      font-size: 2rem; box-shadow: 0 0 0 8px #FFF8E1, 0 0 0 12px rgba(255,193,7,0.2);
+      display: flex; align-items: center;
+      justify-content: center;
+      font-size: 2rem; box-shadow: 0 6px 18px rgba(255, 193, 7, 0.35);
       position: relative;
+      transition: all 0.3s ease;
+      animation: bulbGlow 2s ease-in-out infinite;
+      cursor: pointer;
+    }
+    .calc-box .calc-bulb:hover {
+      animation: bulbWiggle 0.5s ease-in-out, bulbGlow 2s ease-in-out infinite;
+    }
+    .calc-box .calc-bulb.active {
+      animation: bulbWiggle 0.8s ease-in-out, bulbGlowActive 1.5s ease-in-out infinite;
     }
     .calc-box .calc-bulb::before {
-      content: ''; position: absolute; top: -10px; left: 50%; transform: translateX(-50%);
-      width: 40px; height: 20px; background: radial-gradient(ellipse, rgba(255,193,7,0.35), transparent);
+      content: '';
+      position: absolute;
+      width: 100%;
+      height: 100%;
       border-radius: 50%;
+      background: radial-gradient(circle, rgba(255, 193, 7, 0.4), transparent);
+      animation: pulseGlow 2s ease-in-out infinite;
+      z-index: -1;
     }
     .calc-box h2 {
       font-size: 1.5rem; font-weight: 900; color: var(--text); margin-bottom: 6px;
@@ -541,7 +609,7 @@
 
     /* ── RESPONSIVE ── */
 
-    /* Tablet: 768px–1024px — collapse radar into top bar, 2-col layout */
+    /* Tablet: 768px–1024px — collapse chart into top bar, 2-col layout */
     @media (max-width: 1024px) {
       .top-bar-right { display: none; }
       .top-bar { padding: 8px 20px; }
@@ -550,17 +618,22 @@
       .step-nav { padding: 0 20px; }
       .step-tab { padding: 12px 16px; font-size: 0.7rem; }
 
-      .builder { grid-template-columns: 1fr 300px; grid-template-rows: auto 1fr; }
+      .builder { grid-template-columns: 1fr 320px; grid-template-rows: auto 1fr; }
       .radar-panel {
         grid-column: 1 / -1; grid-row: 1;
-        flex-direction: row; align-items: flex-start; gap: 20px;
-        padding: 16px 20px; border-right: none; border-bottom: 1.5px solid var(--border);
+        flex-direction: row; align-items: flex-start; gap: 16px;
+        padding: 14px 20px; border-right: none; border-bottom: 1.5px solid var(--border);
         flex-wrap: wrap;
       }
       .panel-lbl { display: none; }
-      .radar-wrap { width: 130px; height: 130px; margin-bottom: 0; flex-shrink: 0; }
-      .build-box { flex: 1; min-width: 160px; margin-bottom: 0; }
-      .stats { flex: 2; min-width: 200px; display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
+      .chart-wrap { flex: 1; min-width: 280px; margin-bottom: 0; }
+      .chart-wrap canvas { height: 180px !important; }
+      .chart-location-row { display: none; }
+      .chart-kwh-row { display: none; }
+      .seasonal-badges { display: none; }
+      .chart-legend { display: none; }
+      .build-box { flex: 0 0 180px; min-width: 160px; margin-bottom: 0; }
+      .stats { flex: 1; min-width: 200px; display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
       .stat-row { padding: 5px 0; font-size: 0.72rem; }
 
       .comp-panel { grid-column: 1; grid-row: 2; }
@@ -583,14 +656,18 @@
 
       .builder { grid-template-columns: 1fr; grid-template-rows: auto auto; }
 
-      /* Radar collapses to a compact horizontal strip */
+      /* Chart collapses to compact view */
       .radar-panel {
         grid-column: 1; grid-row: 1;
         flex-direction: column; align-items: center;
-        padding: 16px 14px; border-right: none; border-bottom: 1.5px solid var(--border);
+        padding: 14px 14px; border-right: none; border-bottom: 1.5px solid var(--border);
       }
       .panel-lbl { display: none; }
-      .radar-wrap { width: 140px; height: 140px; }
+      .chart-wrap { width: 100%; }
+      .chart-wrap canvas { height: 160px !important; }
+      .chart-location-row { display: none; }
+      .chart-kwh-row { font-size: 0.5rem; }
+      .seasonal-badges { display: none; }
       .build-box { width: 100%; margin-bottom: 10px; }
       .stats { width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
       .stat-row { padding: 5px 0; font-size: 0.72rem; }
@@ -624,6 +701,29 @@
       /* Summary */
       .summary-wrap { padding: 20px 14px 80px; }
       .summary-cta { flex-direction: column; }
+    }
+
+    /* Large desktop: ≥1440px — wider columns, bigger chart */
+    @media (min-width: 1440px) {
+      .builder { grid-template-columns: 360px 1fr 400px; }
+      .radar-panel { padding: 26px 22px; }
+      .chart-wrap canvas { height: 230px !important; }
+      .comp-list { padding: 20px 28px; gap: 13px; }
+      .comp-card { padding: 16px 18px; gap: 16px; }
+      .comp-icon { width: 60px; height: 60px; }
+      .comp-name { font-size: 0.9rem; }
+      .comp-head { padding: 20px 32px; }
+      .comp-head h2 { font-size: 1.25rem; }
+      .sel-head { padding: 20px 24px 16px; }
+      .prod-list { padding: 8px 24px 18px; gap: 10px; }
+      .prod-card { padding: 14px; }
+      .prod-img { width: 52px; height: 52px; }
+      .prod-name { font-size: 0.82rem; }
+      .stat-row { font-size: 0.82rem; padding: 10px 14px; }
+      .seasonal-badge { font-size: 0.66rem; padding: 5px 11px; }
+      .chart-kwh-row { font-size: 0.64rem; }
+      .footer-bar { padding: 14px 60px; }
+      .step-nav { padding: 0 60px; }
     }
 
     /* Very small: ≤400px */
@@ -712,6 +812,37 @@
       font-size: 0.85rem; font-weight: 700; cursor: pointer; transition: background 0.2s;
     }
     .mismatch-popup-btn:hover { background: var(--green-d); }
+
+    /* ── Bulb animations (mirrors savings-icon from index.php) ── */
+    @keyframes bulbGlow {
+      0%, 100% { box-shadow: 0 6px 18px rgba(255, 193, 7, 0.35); transform: scale(1); }
+      50%       { box-shadow: 0 8px 25px rgba(255, 193, 7, 0.5);  transform: scale(1.05); }
+    }
+    @keyframes bulbGlowActive {
+      0%, 100% { box-shadow: 0 8px 25px rgba(255,193,7,0.6), 0 0 40px rgba(255,193,7,0.3); transform: scale(1); }
+      50%       { box-shadow: 0 10px 35px rgba(255,193,7,0.8), 0 0 60px rgba(255,193,7,0.5); transform: scale(1.08); }
+    }
+    @keyframes pulseGlow {
+      0%, 100% { transform: scale(1);   opacity: 0.5; }
+      50%       { transform: scale(1.3); opacity: 0.8; }
+    }
+    @keyframes bulbWiggle {
+      0%,100% { transform: rotate(0deg);  }
+      10%     { transform: rotate(-10deg); }
+      20%     { transform: rotate(10deg);  }
+      30%     { transform: rotate(-10deg); }
+      40%     { transform: rotate(10deg);  }
+      50%     { transform: rotate(-5deg);  }
+      60%     { transform: rotate(5deg);   }
+      70%     { transform: rotate(-2deg);  }
+      80%     { transform: rotate(2deg);   }
+      90%     { transform: rotate(0deg);   }
+    }
+    @keyframes bulbLightUp {
+      0%   { filter: brightness(0.7); transform: scale(0.9); }
+      50%  { filter: brightness(1.3); transform: scale(1.1); }
+      100% { filter: brightness(1);   transform: scale(1);   }
+    }
   </style>
 </head>
 <body>
@@ -749,7 +880,7 @@
 <div class="page active" id="page0">
   <div class="calc-page">
     <div class="calc-box">
-      <div class="calc-bulb">💡</div>
+      <div class="calc-bulb" onclick="this.style.animation='none'; setTimeout(()=>{ this.style.animation=''; }, 10);">💡</div>
       <h2>Let's check how much you can save!</h2>
       <p class="calc-sub">What's your monthly electric bill?</p>
       <div class="calc-input-wrap">
@@ -777,10 +908,30 @@
         </div>
       </div>
       <div class="calc-recommendation" id="calcRecommendation">
-        <div class="rec-title">📋 Recommended System</div>
-        <div class="rec-item">☀️ <strong id="recPanels">–</strong> <span>Solar Panels</span></div>
-        <div class="rec-item">⚡ <strong id="recInverter">–</strong> <span>Inverter Size</span></div>
-        <div class="rec-item">🔋 <strong id="recBattery">–</strong> <span>Battery Capacity</span></div>
+        <div class="rec-title"> Recommended System</div>
+        <div class="rec-item"> <strong id="recPanels">–</strong> <span>Solar Panels</span></div>
+        <div class="rec-item"> <strong id="recInverter">–</strong> <span>Inverter Size</span></div>
+        <div class="rec-item"> <strong id="recBattery">–</strong> <span>Battery Capacity</span></div>
+      </div>
+
+      <!-- Monthly Savings Preview Chart -->
+      <div id="calcChartSection" style="display:none; margin-top:22px; text-align:left;">
+        <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; letter-spacing:0.1em; color:var(--green); margin-bottom:8px;">
+           Estimated Monthly Savings
+        </div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:center; margin-bottom:12px; font-size:0.55rem; font-weight:700; color:var(--muted);">
+          <span style="display:flex;align-items:center;gap:3px;"><span style="width:7px;height:7px;border-radius:2px;background:#C8C8C8;display:inline-block;"></span> Current Bill</span>
+          <span style="display:flex;align-items:center;gap:3px;"><span style="width:7px;height:7px;border-radius:2px;background:#2D5016;display:inline-block;"></span> Peak Dry</span>
+          <span style="display:flex;align-items:center;gap:3px;"><span style="width:7px;height:7px;border-radius:2px;background:#3A5C1A;display:inline-block;"></span> Cool Dry</span>
+          <span style="display:flex;align-items:center;gap:3px;"><span style="width:7px;height:7px;border-radius:2px;background:#D35400;display:inline-block;"></span> Wet/Typhoon</span>
+          <span style="display:flex;align-items:center;gap:3px;"><span style="width:7px;height:7px;border-radius:2px;background:#689F38;display:inline-block;"></span> Improving</span>
+        </div>
+        <div style="position:relative; width:100%; height:200px;">
+          <canvas id="calcPreviewChart"></canvas>
+        </div>
+        <div style="font-size:0.58rem; color:var(--muted); margin-top:8px; text-align:center; font-style:italic;">
+          📡 Data source: NASA POWER satellite irradiance for <span id="calcCityLabel">Manila</span> · Updated seasonally
+        </div>
       </div>
       <div class="calc-proceed" id="calcProceed">
         <button class="calc-proceed-btn" onclick="solarGoToStep(1)">Start Building Your System →</button>
@@ -794,35 +945,35 @@
 <div class="page" id="page1">
 <div class="builder">
 
-  <!-- LEFT: Radar + Stats -->
+  <!-- LEFT: Monthly Production Chart + Stats -->
   <div class="radar-panel">
-    <div class="panel-lbl">System Performance Map</div>
-    <div class="radar-wrap">
-      <svg id="radarSvg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-        <!-- Grid -->
-        <polygon points="100,18 182,68 182,142 100,182 18,142 18,68" fill="none" stroke="#DDE3D4" stroke-width="1.5"/>
-        <polygon points="100,38 162,76 162,132 100,162 38,132 38,76" fill="none" stroke="#DDE3D4" stroke-width="1.5"/>
-        <polygon points="100,58 142,84 142,122 100,142 58,122 58,84" fill="none" stroke="#DDE3D4" stroke-width="1.5"/>
-        <polygon points="100,78 122,92 122,112 100,122 78,112 78,92" fill="none" stroke="#DDE3D4" stroke-width="1.5"/>
-        <!-- Axes -->
-        <line x1="100" y1="18" x2="100" y2="182" stroke="#DDE3D4" stroke-width="1"/>
-        <line x1="18" y1="68" x2="182" y2="142" stroke="#DDE3D4" stroke-width="1"/>
-        <line x1="18" y1="142" x2="182" y2="68" stroke="#DDE3D4" stroke-width="1"/>
-        <!-- Dynamic polygon -->
-        <polygon id="radarPolygon" class="radar-polygon"
-          points="100,100 100,100 100,100 100,100 100,100 100,100"
-          fill="rgba(245,168,0,0.15)" stroke="#F5A800" stroke-width="2.5" stroke-linejoin="round"/>
-        <circle id="radarCenter" cx="100" cy="100" r="5" fill="#F5A800"/>
-        <!-- Labels -->
-        <text x="100" y="11" text-anchor="middle" fill="#6B7C52" font-size="8" font-family="Montserrat,sans-serif" font-weight="700">POWER OUTPUT</text>
-        <text x="188" y="66" text-anchor="start" fill="#6B7C52" font-size="8" font-family="Montserrat,sans-serif" font-weight="700">PANELS</text>
-        <text x="188" y="148" text-anchor="start" fill="#6B7C52" font-size="8" font-family="Montserrat,sans-serif" font-weight="700">BATTERY</text>
-        <text x="100" y="196" text-anchor="middle" fill="#6B7C52" font-size="8" font-family="Montserrat,sans-serif" font-weight="700">INVERTER</text>
-        <text x="12" y="148" text-anchor="end" fill="#6B7C52" font-size="8" font-family="Montserrat,sans-serif" font-weight="700">WIRING</text>
-        <text x="12" y="66" text-anchor="end" fill="#6B7C52" font-size="8" font-family="Montserrat,sans-serif" font-weight="700">MOUNTING</text>
-      </svg>
+    <div class="panel-lbl">Monthly Solar Production</div>
+
+    <!-- Location Selector -->
+    <div class="chart-location-row">
+      <label>📍 Location:</label>
+      <select id="chartCitySelect" onchange="onCityChange()">
+        <option value="manila" selected>Manila / NCR</option>
+      </select>
     </div>
 
+    <!-- Custom Legend -->
+    <div class="chart-legend">
+      <span><span class="dot" style="background:#C8C8C8"></span> Without Solar</span>
+      <span><span class="dot" style="background:#2E7D32"></span> Peak Dry (Mar-May)</span>
+      <span><span class="dot" style="background:#43A047"></span> Cool Dry (Jan-Feb)</span>
+      <span><span class="dot" style="background:#E65100"></span> Wet / Typhoon (Jul-Aug)</span>
+      <span><span class="dot" style="background:#F57C00"></span> Monsoon (Jun, Sep)</span>
+      <span><span class="dot" style="background:#66BB6A"></span> Improving (Nov-Dec)</span>
+    </div>
+
+    <!-- Bar Chart Canvas -->
+    <div class="chart-wrap">
+      <canvas id="monthlyProductionChart"></canvas>
+    </div>
+
+    <!-- Seasonal Insight Badges -->
+   
     <div class="build-box">
       <div class="build-lbl">Build Category</div>
       <div class="build-val" id="buildCategoryVal">–</div>
@@ -830,20 +981,22 @@
       <div class="tier-lbls"><span>Entry Level</span><span>Mid-Range</span><span>High End</span></div>
     </div>
 
+  
+
     <!-- Bill Info (shown when calculator was used) -->
     <div id="billInfoBox" style="display:none; width:100%; background:var(--yellow-l); border:1.5px solid var(--yellow); border-radius:10px; padding:12px 15px; margin-bottom:14px;">
-      <div style="font-size:0.64rem; font-weight:700; text-transform:uppercase; letter-spacing:0.12em; color:var(--yellow-d); margin-bottom:4px;">💡 Your Monthly Bill</div>
+      <div style="font-size:0.64rem; font-weight:700; text-transform:uppercase; letter-spacing:0.12em; color:var(--yellow-d); margin-bottom:4px;"> Your Monthly Bill</div>
       <div style="font-weight:900; font-size:1.1rem; color:var(--green);" id="billInfoVal">₱ 0</div>
-      <div style="font-size:0.65rem; color:var(--muted); margin-top:6px;">📋 <strong>Recommended System</strong></div>
-      <div style="font-size:0.65rem; color:var(--muted); margin-top:3px;">☀️ Total Required: <strong id="billInfoKw">–</strong></div>
-      <div style="font-size:0.65rem; color:var(--muted); margin-top:2px;">☀️ Panels: <strong id="billInfoRec">–</strong></div>
-      <div style="font-size:0.65rem; color:var(--muted); margin-top:2px;">⚡ Inverter: <strong id="billInfoInverter">–</strong></div>
-      <div style="font-size:0.65rem; color:var(--muted); margin-top:2px;">🔋 Battery: <strong id="billInfoBattery">–</strong></div>
+      <div style="font-size:0.65rem; color:var(--muted); margin-top:6px;"> <strong>Recommended System</strong></div>
+      <div style="font-size:0.65rem; color:var(--muted); margin-top:3px;"> Total Required: <strong id="billInfoKw">–</strong></div>
+      <div style="font-size:0.65rem; color:var(--muted); margin-top:2px;"> Panels: <strong id="billInfoRec">–</strong></div>
+      <div style="font-size:0.65rem; color:var(--muted); margin-top:2px;"> Inverter: <strong id="billInfoInverter">–</strong></div>
+      <div style="font-size:0.65rem; color:var(--muted); margin-top:2px;"> Battery: <strong id="billInfoBattery">–</strong></div>
       <!-- Progress Bars -->
       <div class="rec-bar-section">
         <div class="rec-bar-item">
           <div class="rec-bar-header">
-            <span class="rec-bar-lbl">☀️ Panel Output</span>
+            <span class="rec-bar-lbl"> Panel Output</span>
             <span class="rec-bar-val" id="barPanelsVal">–</span>
           </div>
           <div class="rec-bar-track"><div class="rec-bar-fill bar-none" id="barPanelsFill" style="width:0%"></div></div>
@@ -851,7 +1004,7 @@
         </div>
         <div class="rec-bar-item">
           <div class="rec-bar-header">
-            <span class="rec-bar-lbl">⚡ Inverter Size</span>
+            <span class="rec-bar-lbl"> Inverter Size</span>
             <span class="rec-bar-val" id="barInverterVal">–</span>
           </div>
           <div class="rec-bar-track"><div class="rec-bar-fill bar-none" id="barInverterFill" style="width:0%"></div></div>
@@ -859,7 +1012,7 @@
         </div>
         <div class="rec-bar-item">
           <div class="rec-bar-header">
-            <span class="rec-bar-lbl">🔋 Battery Capacity</span>
+            <span class="rec-bar-lbl"> Battery Capacity</span>
             <span class="rec-bar-val" id="barBatteryVal">–</span>
           </div>
           <div class="rec-bar-track"><div class="rec-bar-fill bar-none" id="barBatteryFill" style="width:0%"></div></div>
@@ -867,7 +1020,7 @@
         </div>
         <div class="rec-bar-item">
           <div class="rec-bar-header">
-            <span class="rec-bar-lbl">🔩 Mounting System</span>
+            <span class="rec-bar-lbl"> Mounting System</span>
             <span class="rec-bar-val" id="barMountingVal">–</span>
           </div>
           <div class="rec-bar-track"><div class="rec-bar-fill bar-none" id="barMountingFill" style="width:0%"></div></div>
@@ -961,7 +1114,7 @@
         <select class="f-sel" id="filterBrand" onchange="filterProducts()">
           <option value="">Brand: All</option>
         </select>
-        <select class="f-sel" id="filterType" onchange="filterProducts()">
+        <select class="f-sel" id="filterType" onchange="filterProductss()">
           <option value="">Type: All</option>
         </select>
       </div>
@@ -1026,7 +1179,7 @@
 
     <!-- Savings comparison (shown when calculator was used) -->
     <div id="summarySavingsSection" style="display:none; margin-top:18px; background:var(--yellow-l); border:2px solid var(--yellow); border-radius:12px; padding:18px 20px;">
-      <div style="font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.13em; color:var(--yellow-d); margin-bottom:12px;">💡 Savings Estimate (based on your ₱<span id="summaryBillAmt">0</span>/mo bill)</div>
+      <div style="font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.13em; color:var(--yellow-d); margin-bottom:12px;"> Savings Estimate (based on your ₱<span id="summaryBillAmt">0</span>/mo bill)</div>
       <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px;">
         <div style="text-align:center;">
           <div style="font-size:1.2rem; font-weight:900; color:var(--green);" id="summaryMonthlySave">₱0</div>
@@ -1045,7 +1198,10 @@
 
     <div class="summary-cta">
       <button class="cta-secondary" onclick="solarGoToStep(1)">← Edit Build</button>
-      <button class="cta-primary" onclick="printBuildPDF()">🖨️ Print to PDF</button>
+      <button class="cta-primary" onclick="printBuildPDF()" style="display:flex; align-items:center; gap:10px; font-size:1rem;justify-content:center; font-weight:700;">
+        <img src="assets/img/pdf.png" alt="PDF" style="width:50px; height:50px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));">
+        Print to PDF
+      </button>
     </div>
   </div>
 </div>
@@ -1097,12 +1253,12 @@
 
 // Category metadata (static config)
 const CATEGORY_META = {
-  panels: { title: '🌞 Solar Panels', filterLabels: ['Brand', 'Type'], filterKeys: ['brand', 'spec_type'] },
-  inverter: { title: '⚡ Inverter', filterLabels: ['Brand', 'Type'], filterKeys: ['brand', 'spec_type'] },
-  battery: { title: '🔋 Battery Storage', filterLabels: ['Brand', 'Type'], filterKeys: ['brand', 'spec_type'] },
-  mounting: { title: '🔩 Mounting System', filterLabels: ['Brand', 'Type'], filterKeys: ['brand', 'spec_type'] },
-  wiring: { title: '🔌 Wiring & Protection', filterLabels: ['Brand', 'Type'], filterKeys: ['brand', 'spec_type'] },
-  monitoring: { title: '📡 Monitoring System', filterLabels: ['Brand', 'Type'], filterKeys: ['brand', 'spec_type'] }
+  panels: { title: 'Solar Panels', filterLabels: ['Brand', 'Type'], filterKeys: ['brand', 'spec_type'] },
+  inverter: { title: 'Inverter', filterLabels: ['Brand', 'Type'], filterKeys: ['brand', 'spec_type'] },
+  battery: { title: 'Battery Storage', filterLabels: ['Brand', 'Type'], filterKeys: ['brand', 'spec_type'] },
+  mounting: { title: 'Mounting System', filterLabels: ['Brand', 'Type'], filterKeys: ['brand', 'spec_type'] },
+  wiring: { title: 'Wiring & Protection', filterLabels: ['Brand', 'Type'], filterKeys: ['brand', 'spec_type'] },
+  monitoring: { title: 'Monitoring System', filterLabels: ['Brand', 'Type'], filterKeys: ['brand', 'spec_type'] }
 };
 
 // Products cache - loaded from database
@@ -1377,87 +1533,379 @@ function selTotalQty(cat) { return selected[cat].reduce((s, e) => s + e.qty, 0);
 // Helper: whether any items are selected in a category
 function selHas(cat) { return selected[cat].length > 0; }
 
-// ─── RADAR MATH ───────────────────────────────────────────────────────────────
+// ─── MONTHLY PRODUCTION CHART (replaces radar) ───────────────────────────────
 
-// Hexagon vertices (6 axes): top, top-right, bottom-right, bottom, bottom-left, top-left
-// Axes: POWER OUTPUT(top), PANELS(top-right), BATTERY(bot-right), INVERTER(bot), WIRING(bot-left), MOUNTING(top-left)
-const RADAR_CENTER = { x: 100, y: 100 };
-const RADAR_MAX = 82; // max radius
+// Philippine monthly solar data — loaded from NASA POWER API with static fallback
+const MONTH_LABELS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
-const AXIS_ANGLES = [
-  -90,   // top: POWER OUTPUT
-  -30,   // top-right: PANELS
-  30,    // bottom-right: BATTERY
-  90,    // bottom: INVERTER
-  150,   // bottom-left: WIRING
-  210,   // top-left: MOUNTING
-];
+// Default Philippine monthly multipliers (vs annual average)
+// Source: NASA POWER satellite data, averaged across PH (2020-2025)
+const DEFAULT_MONTHLY_MULTIPLIERS = {
+  1: 1.08, 2: 1.13, 3: 1.22, 4: 1.28, 5: 1.20, 6: 0.98,
+  7: 0.84, 8: 0.82, 9: 0.86, 10: 0.93, 11: 1.02, 12: 1.04
+};
 
-function getRadarPoint(axisIdx, value) {
-  const angle = AXIS_ANGLES[axisIdx] * Math.PI / 180;
-  const r = RADAR_MAX * value;
-  return {
-    x: RADAR_CENTER.x + r * Math.cos(angle),
-    y: RADAR_CENTER.y + r * Math.sin(angle)
+// Default peak sun hours per month (Manila baseline)
+const DEFAULT_PEAK_SUN_HOURS_MONTHLY = {
+  1: 4.40, 2: 4.72, 3: 5.20, 4: 5.50, 5: 5.15, 6: 4.10,
+  7: 3.50, 8: 3.40, 9: 3.60, 10: 3.90, 11: 4.20, 12: 4.30
+};
+
+// Season info for tooltips
+const SEASON_INFO = {
+  1:  { season: 'Cool Dry (Amihan)',      emoji: '', note: 'NE monsoon, mostly clear' },
+  2:  { season: 'Cool Dry (Amihan)',      emoji: '',  note: 'Dry season starting' },
+  3:  { season: 'Hot Dry Season',         emoji: '',  note: 'Excellent solar conditions' },
+  4:  { season: 'Peak Dry Season',        emoji: '',  note: 'Best month for solar' },
+  5:  { season: 'Hot Dry (Late)',         emoji: '',  note: 'Still excellent output' },
+  6:  { season: 'Wet Season (Habagat)',   emoji: '', note: 'SW monsoon begins' },
+  7:  { season: 'Wet Season (Peak)',      emoji: '', note: 'Heavy monsoon rains' },
+  8:  { season: 'Wet + Typhoons',         emoji: '',  note: 'Typhoon season peak — lowest production' },
+  9:  { season: 'Wet (Ber Month)',        emoji: '',  note: 'Rainy, typhoon risk continues' },
+  10: { season: 'Transition (Ber Month)', emoji: '',  note: 'Monsoon weakening, improving slowly' },
+  11: { season: 'Amihan Returns',         emoji: '', note: 'NE monsoon, drier — recovering output' },
+  12: { season: 'Cool Dry (Ber Month)',   emoji: '', note: 'Good production, shorter daylight' },
+  11: { season: 'Cool Dry (Amihan)',      emoji: '', note: 'Dry season returning' },
+  12: { season: 'Cool Dry (Amihan)',      emoji: '',  note: 'Good but shorter days' }
+};
+
+// Current active solar data (may be updated by API)
+let currentSolarData = {
+  multipliers: { ...DEFAULT_MONTHLY_MULTIPLIERS },
+  peakSunHours: { ...DEFAULT_PEAK_SUN_HOURS_MONTHLY },
+  cityName: 'Manila / NCR',
+  source: 'static'
+};
+
+// Chart.js instance
+let monthlyChart = null;
+
+/**
+ * Calculate monthly production (kWh) for each month given system kW.
+ * Formula per month: systemKW × peakSunHours[month] × systemEfficiency × daysInMonth
+ * Applies seasonal multiplier from NASA data.
+ */
+function getMonthlyProduction(systemKW) {
+  const SYSTEM_EFFICIENCY = 0.85;
+  const DAYS_IN_MONTH = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  
+  const production = [];
+  for (let m = 1; m <= 12; m++) {
+    const psh = currentSolarData.peakSunHours[m] || 4.5;
+    const days = DAYS_IN_MONTH[m - 1];
+    const kwhMonth = systemKW * psh * SYSTEM_EFFICIENCY * days;
+    production.push(Math.round(kwhMonth));
+  }
+  return production;
+}
+
+/**
+ * Calculate monthly savings (₱) from production.
+ */
+function getMonthlySavings(productionArray) {
+  const ELECTRIC_RATE = 13.40; // ₱/kWh Meralco average
+  return productionArray.map(kwh => Math.round(kwh * ELECTRIC_RATE));
+}
+
+/**
+ * Get the "without solar" monthly consumption (from bill input).
+ * Distributes the monthly bill's kWh evenly but applies seasonal demand patterns.
+ * In Philippines, consumption is higher in summer (aircon) and lower in cool months.
+ */
+function getMonthlyConsumption(monthlyBill) {
+  const ELECTRIC_RATE = 13.40; // ₱/kWh average rate
+  const monthlyKwh = monthlyBill / ELECTRIC_RATE;
+  
+  // Philippine household consumption multipliers (aircon usage pattern)
+  const CONSUMPTION_MULTIPLIERS = {
+    1: 0.92, 2: 0.95, 3: 1.08, 4: 1.15, 5: 1.12,  6: 1.05,
+    7: 1.00, 8: 0.98, 9: 0.95, 10: 0.93, 11: 0.90, 12: 0.92
   };
+  
+  const consumption = [];
+  for (let m = 1; m <= 12; m++) {
+    consumption.push(Math.round(monthlyKwh * CONSUMPTION_MULTIPLIERS[m]));
+  }
+  return consumption;
 }
 
-function computeRadarValues() {
-  // [power_output, panels, battery, inverter, wiring, mounting]
-  // Normalized 0-1 based on real-world benchmarks for Philippine solar market
-  const vals = [0, 0, 0, 0, 0, 0];
-
-  const panelsItem = selFirst('panels');
-  const inverterItem = selFirst('inverter');
-  const battItem = selFirst('battery');
-  const wiringItem = selFirst('wiring');
-  const mountItem = selFirst('mounting');
-  const monItem = selFirst('monitoring');
-
-  // ─ Panels axis: total watts across all qty (normalized against 6000W = ~8×750W)
-  if (selected.panels.length > 0) {
-    const totalW = selected.panels.reduce((s, e) => s + e.qty * (e.item.parsedSpecs.watts || 0), 0);
-    vals[1] = Math.min(1, totalW / 6000);
+/**
+ * Initialize or update the monthly production bar chart.
+ */
+function renderMonthlyChart(systemKW) {
+  const canvas = document.getElementById('monthlyProductionChart');
+  if (!canvas) return;
+  
+  // If no system selected yet, show placeholder
+  if (!systemKW || systemKW <= 0) {
+    if (monthlyChart) {
+      monthlyChart.destroy();
+      monthlyChart = null;
+    }
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#B0BC9A';
+    ctx.font = '12px Montserrat, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Select components to see monthly production', canvas.width / 2, canvas.height / 2);
+    
+    // Reset kWh row
+    const kwhRow = document.getElementById('chartKwhRow');
+    if (kwhRow) kwhRow.innerHTML = Array(12).fill('<span>–</span>').join('');
+    return;
   }
 
-  // ─ Inverter axis: total kW across all qty
-  if (selected.inverter.length > 0) {
-    const totalKw = selected.inverter.reduce((s, e) => s + e.qty * (e.item.parsedSpecs.kw || 0), 0);
-    vals[3] = Math.min(1, totalKw / 20);
-  }
-
-  // Power output: weighted combination of panel efficiency + inverter capacity
-  const panelScore = panelsItem?.parsedSpecs?.efficiency ? (panelsItem.parsedSpecs.efficiency / 25) : 0;
-  const invScore = vals[3];
-  vals[0] = Math.min(1, (panelScore * 0.4 + invScore * 0.6));
-
-  // ─ Battery axis: total kWh across all qty
-  if (selected.battery.length > 0) {
-    const totalKwh = selected.battery.reduce((s, e) => s + e.qty * (e.item.parsedSpecs.kwh || 0), 0);
-    vals[2] = Math.min(1, totalKwh / 20);
-  }
-
-  // ─ Wiring axis
-  if (selected.wiring.length > 0) {
-    vals[4] = Math.min(1, (selected.wiring[0].item.parsedSpecs.max_kw || 0) / 25);
-  }
-
-  // ─ Mounting axis
-  if (selected.mounting.length > 0) {
-    vals[5] = Math.min(1, (selected.mounting[0].item.parsedSpecs.max_panels || 0) / 50);
-  }
-
-  return vals;
-}
-
-function updateRadar() {
-  const vals = computeRadarValues();
-  const points = vals.map((v, i) => {
-    const pt = getRadarPoint(i, Math.max(0.05, v));
-    return `${pt.x.toFixed(1)},${pt.y.toFixed(1)}`;
+  const production = getMonthlyProduction(systemKW);
+  const savings = getMonthlySavings(production);
+  
+  // Get consumption data if bill was entered
+  const bill = calcData?.bill || 0;
+  const consumption = bill > 0 ? getMonthlyConsumption(bill) : null;
+  
+  // Color bars by 5 Philippine seasons for full-year visibility
+  const barColors = production.map((_, i) => {
+    const m = i + 1;
+    if (m >= 3 && m <= 5) return '#2E7D32';    // Peak Dry (Mar-May) — deep green, best output
+    if (m === 1 || m === 2) return '#43A047';   // Cool Dry Amihan (Jan-Feb) — medium green, good
+    if (m === 11 || m === 12) return '#66BB6A'; // Ber-end / Amihan return (Nov-Dec) — light green, recovering
+    if (m === 7 || m === 8) return '#E65100';   // Peak Wet + Typhoons (Jul-Aug) — burnt orange, lowest
+    if (m === 6 || m === 9) return '#F57C00';   // Wet shoulders (Jun, Sep) — orange, low
+    return '#FFA726';                            // Transition (Oct) — amber, moderate
   });
-  document.getElementById('radarPolygon').setAttribute('points', points.join(' '));
+  
+  const datasets = [];
+  
+  // Consumption bars (gray, behind) — only if bill was entered
+  if (consumption) {
+    datasets.push({
+      label: 'Without Solar (kWh)',
+      data: consumption,
+      backgroundColor: '#C8C8C8',
+      borderColor: '#AAAAAA',
+      borderWidth: 1,
+      borderRadius: 2,
+      order: 2,
+      barPercentage: 0.7,
+      categoryPercentage: 0.8,
+    });
+  }
+  
+  // Production bars (green, in front)
+  datasets.push({
+    label: 'Solar Production (kWh)',
+    data: production,
+    backgroundColor: barColors,
+    borderColor: barColors.map(c => c),
+    borderWidth: 1,
+    borderRadius: 3,
+    order: 1,
+    barPercentage: 0.7,
+    categoryPercentage: 0.8,
+  });
+
+  if (monthlyChart) {
+    // Update existing chart
+    monthlyChart.data.datasets = datasets;
+    monthlyChart.options.scales.y.max = Math.ceil(Math.max(...production, ...(consumption || [0])) / 50) * 50 + 50;
+    monthlyChart.update('active');
+  } else {
+    // Create new chart
+    const ctx = canvas.getContext('2d');
+    monthlyChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: MONTH_LABELS,
+        datasets: datasets
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: { duration: 600, easing: 'easeOutQuart' },
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: 'rgba(58,92,26,0.95)',
+            titleFont: { family: 'Montserrat', size: 11, weight: '700' },
+            bodyFont: { family: 'Montserrat', size: 10 },
+            padding: 10,
+            cornerRadius: 8,
+            displayColors: true,
+            callbacks: {
+              title: function(items) {
+                const idx = items[0].dataIndex;
+                const m = idx + 1;
+                const info = SEASON_INFO[m];
+                const fullMonths = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+                return info.emoji + ' ' + fullMonths[idx] + ' — ' + info.season;
+              },
+              afterTitle: function(items) {
+                const m = items[0].dataIndex + 1;
+                return SEASON_INFO[m].note;
+              },
+              label: function(context) {
+                if (context.dataset.label.includes('Without')) {
+                  return '  ⚡ Without Solar: ' + context.parsed.y + ' kWh';
+                }
+                const idx = context.dataIndex;
+                const sav = savings[idx];
+                return '   Solar Output: ' + context.parsed.y + ' kWh (₱' + sav.toLocaleString() + ' saved)';
+              },
+              afterBody: function(items) {
+                const m = items[0].dataIndex + 1;
+                const mult = currentSolarData.multipliers[m];
+                const pct = ((mult - 1) * 100).toFixed(0);
+                const prefix = pct >= 0 ? '+' : '';
+                return '\n   ' + prefix + pct + '% vs annual average';
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid: { display: false },
+            ticks: {
+              font: { family: 'Montserrat', size: 9, weight: '600' },
+              color: '#6B7C52'
+            }
+          },
+          y: {
+            beginAtZero: true,
+            max: Math.ceil(Math.max(...production, ...(consumption || [0])) / 50) * 50 + 50,
+            grid: { color: 'rgba(221,227,212,0.5)', drawBorder: false },
+            ticks: {
+              font: { family: 'Montserrat', size: 9, weight: '600' },
+              color: '#6B7C52',
+              stepSize: 50,
+              callback: function(value) { return value; }
+            },
+            title: {
+              display: true,
+              text: 'kWh',
+              font: { family: 'Montserrat', size: 9, weight: '700' },
+              color: '#6B7C52'
+            }
+          }
+        }
+      }
+    });
+  }
+
+  // Update kWh row beneath chart
+  const kwhRow = document.getElementById('chartKwhRow');
+  if (kwhRow) {
+    kwhRow.innerHTML = production.map(v => `<span>${v}</span>`).join('');
+  }
+
+  // Update seasonal badges — show all 5 season groups
+  const badgesEl = document.getElementById('seasonalBadges');
+  if (badgesEl) {
+    const peakMonth = production.indexOf(Math.max(...production)) + 1;
+    const lowMonth = production.indexOf(Math.min(...production)) + 1;
+    const peakPct = ((currentSolarData.multipliers[peakMonth] - 1) * 100).toFixed(0);
+    const lowPct = ((1 - currentSolarData.multipliers[lowMonth]) * 100).toFixed(0);
+    
+    const avgSavings = savings.reduce((a, b) => a + b, 0) / 12;
+
+    // Jan-Feb average
+    const janFebAvg = ((currentSolarData.multipliers[1] + currentSolarData.multipliers[2]) / 2 - 1) * 100;
+    // Jun+Sep average
+    const monsoonAvg = (1 - (currentSolarData.multipliers[6] + currentSolarData.multipliers[9]) / 2) * 100;
+    // Nov-Dec average
+    const novDecAvg = ((currentSolarData.multipliers[11] + currentSolarData.multipliers[12]) / 2 - 1) * 100;
+    
+    badgesEl.innerHTML = `
+      <span class="seasonal-badge peak"> Peak: ${MONTH_LABELS[peakMonth-1]} (+${peakPct}%)</span>
+      <span class="seasonal-badge" style="background:rgba(67,160,71,0.12);color:#43A047"> Jan-Feb: +${janFebAvg.toFixed(0)}% (Amihan)</span>
+      <span class="seasonal-badge low"> Lowest: ${MONTH_LABELS[lowMonth-1]} (-${lowPct}%)</span>
+      <span class="seasonal-badge" style="background:rgba(245,124,0,0.12);color:#E65100"> Jun & Sep: -${monsoonAvg.toFixed(0)}% (Monsoon)</span>
+      <span class="seasonal-badge" style="background:rgba(102,187,106,0.12);color:#558B2F"> Nov-Dec: +${novDecAvg.toFixed(0)}% (Recovering)</span>
+      <span class="seasonal-badge info"> Avg savings: ₱${Math.round(avgSavings).toLocaleString()}/mo</span>
+    `;
+  }
 }
+
+/**
+ * Fetch solar data from API for selected city.
+ */
+async function fetchSolarData(cityKey) {
+  try {
+    const res = await fetch(API_BASE + '/get_solar_data.php?city=' + encodeURIComponent(cityKey));
+    const data = await res.json();
+    
+    if (data.success && data.monthly) {
+      const multipliers = {};
+      const peakSunHours = {};
+      
+      for (let m = 1; m <= 12; m++) {
+        const md = data.monthly[m];
+        if (md) {
+          multipliers[m] = md.multiplier;
+          peakSunHours[m] = md.peak_sun_hours;
+        }
+      }
+      
+      currentSolarData = {
+        multipliers,
+        peakSunHours,
+        cityName: data.city?.name || cityKey,
+        source: 'nasa-power'
+      };
+      
+      // Populate city dropdown if cities available
+      if (data.cities && data.cities.length > 0) {
+        const sel = document.getElementById('chartCitySelect');
+        if (sel && sel.options.length <= 1) {
+          sel.innerHTML = data.cities.map(c =>
+            `<option value="${c.value}" ${c.value === cityKey ? 'selected' : ''}>${c.label}</option>`
+          ).join('');
+        }
+      }
+      
+      return true;
+    }
+  } catch (err) {
+    console.warn('[SolarData] API unavailable, using static data:', err.message);
+  }
+  return false;
+}
+
+/**
+ * Handle city dropdown change.
+ */
+async function onCityChange() {
+  const sel = document.getElementById('chartCitySelect');
+  const cityKey = sel?.value || 'manila';
+  
+  await fetchSolarData(cityKey);
+  
+  // Re-render chart with current system
+  const systemKW = getCurrentSystemKW();
+  renderMonthlyChart(systemKW);
+  updateStats();
+}
+
+/**
+ * Get current system KW from selected components.
+ */
+function getCurrentSystemKW() {
+  let systemKW = 0;
+  if (selected.inverter.length > 0) {
+    systemKW = selected.inverter.reduce((s, e) => s + e.qty * (e.item.parsedSpecs.kw || 0), 0);
+  } else if (selected.panels.length > 0) {
+    const totalPanelW = selected.panels.reduce((s, e) => s + e.qty * (e.item.parsedSpecs.watts || 0), 0);
+    systemKW = totalPanelW / 1000;
+  }
+  return systemKW;
+}
+
+/**
+ * Init: Load solar data for Manila on page load.
+ */
+(async function initSolarData() {
+  await fetchSolarData('manila');
+  renderMonthlyChart(0); // Show placeholder until components chosen
+})();
 
 // ─── STATS ────────────────────────────────────────────────────────────────────
 
@@ -1468,32 +1916,21 @@ function updateStats() {
 
   // Determine system capacity (kW)
   // For multiple inverters: sum their kW
-  let systemKW = 0;
-  if (selected.inverter.length > 0) {
-    systemKW = selected.inverter.reduce((s, e) => s + e.qty * (e.item.parsedSpecs.kw || 0), 0);
-  } else if (selected.panels.length > 0) {
-    const totalPanelW = selected.panels.reduce((s, e) => s + e.qty * (e.item.parsedSpecs.watts || 0), 0);
-    systemKW = totalPanelW / 1000;
-  }
+  let systemKW = getCurrentSystemKW();
 
   if (systemKW > 0) {
     // ── Philippine Solar Constants (sourced from NREL, DOE PH, Meralco) ──
-    // Peak Sun Hours: 4.5-5.0 avg for Philippines (NREL Solar GIS data)
-    const PEAK_SUN_HOURS = 4.5;
-    // Meralco residential rate: ₱11.5-12.5/kWh (2024 average)
     const ELECTRIC_RATE = 11.50;
-    // Philippine grid emission factor: ~0.68 tCO₂/MWh (DOE/UNFCCC)
-    // Per kWp annual: kWp × PSH × 365 × 0.68/1000 ≈ kWp × 1.12 tCO₂/year
     const CO2_FACTOR_PER_KWP = 1.12;
-    // System losses (wiring, inverter efficiency, soiling, temp): ~18-22%
     const SYSTEM_EFFICIENCY = 0.80;
 
-    // Daily energy output in kWh
-    const dailyOutputKWH = systemKW * PEAK_SUN_HOURS * SYSTEM_EFFICIENCY;
-    // Daily savings in PHP
-    const dailySavings = dailyOutputKWH * ELECTRIC_RATE;
-    // Annual savings
-    const annualSavings = dailySavings * 365;
+    // Use monthly data for accurate annual calculation
+    const monthlyProduction = getMonthlyProduction(systemKW);
+    const annualKwh = monthlyProduction.reduce((a, b) => a + b, 0);
+    const dailyAvgKwh = annualKwh / 365;
+    const dailySavings = dailyAvgKwh * ELECTRIC_RATE;
+    const annualSavings = annualKwh * ELECTRIC_RATE;
+    
     // ROI period (simple payback)
     const totalCost = getSubtotal();
     const roiYears = annualSavings > 0 ? (totalCost / annualSavings) : 0;
@@ -1501,8 +1938,6 @@ function updateStats() {
     const co2Reduced = systemKW * CO2_FACTOR_PER_KWP;
 
     // Home coverage category (based on Philippine household averages)
-    // Average PH household: 200-300 kWh/month → needs ~2-3 kWp
-    // Source: DOE Philippines Household Energy Consumption data
     let coverage = '–';
     if (systemKW < 2) coverage = 'Partial (Lights & Fans)';
     else if (systemKW < 3) coverage = 'Basic Home';
@@ -1516,15 +1951,18 @@ function updateStats() {
     document.getElementById('statSavings').textContent = '~₱' + Math.round(dailySavings).toLocaleString() + ' / day';
     document.getElementById('statROI').textContent = roiYears > 0 ? roiYears.toFixed(1) + ' yrs' : '–';
     document.getElementById('statCO2').textContent = co2Reduced.toFixed(1) + ' t / yr';
+    
+    // Update monthly production chart
+    renderMonthlyChart(systemKW);
   } else {
     ['statOutput','statCoverage','statSavings','statROI','statCO2'].forEach(id => {
       document.getElementById(id).textContent = '–';
     });
+    renderMonthlyChart(0);
   }
   checkCompatibility();
   updateBuildCategory();
   updateTotal();
-  updateRadar();
 }
 
 // ─── COMPATIBILITY VALIDATION ─────────────────────────────────────────────────
@@ -1733,7 +2171,7 @@ function applySummaryFallback(el, cat) {
     inverter: '<img src="includes/inverter.png" alt="Inverter" style="width:28px;height:28px;object-fit:cover;border-radius:4px;">',
     battery: '<img src="includes/battery.png" alt="Battery" style="width:28px;height:28px;object-fit:cover;border-radius:4px;">',
     mounting: '<img src="includes/mounting.png" alt="Mounting" style="width:28px;height:28px;object-fit:cover;border-radius:4px;">',
-    wiring: '<img src="includes/wiring-protection.jpg" alt="Wiring" style="width:28px;height:28px;object-fit:cover;border-radius:4px;">',
+    wiring: '<img src="includes/wiring-protection.png" alt="Wiring" style="width:28px;height:28px;object-fit:cover;border-radius:4px;">',
     monitoring: '📡'
   };
   el.innerHTML = icons[cat] || '⚙️';
@@ -1850,7 +2288,7 @@ function renderSummary() {
     { key: 'inverter', label: 'Inverter', icon: '<img src="includes/inverter.png" alt="Inverter" style="width:28px;height:28px;object-fit:cover;border-radius:4px;">' },
     { key: 'battery', label: 'Battery Storage', icon: '<img src="includes/battery.png" alt="Battery" style="width:28px;height:28px;object-fit:cover;border-radius:4px;">' },
     { key: 'mounting', label: 'Mounting System', icon: '<img src="includes/mounting.png" alt="Mounting" style="width:28px;height:28px;object-fit:cover;border-radius:4px;">' },
-    { key: 'wiring', label: 'Wiring & Protection', icon: '<img src="includes/wiring-protection.jpg" alt="Wiring" style="width:28px;height:28px;object-fit:cover;border-radius:4px;">' },
+    { key: 'wiring', label: 'Wiring & Protection', icon: '<img src="includes/wiring-protection.png" alt="Wiring" style="width:28px;height:28px;object-fit:cover;border-radius:4px;">' },
     
   ];
 
@@ -2431,6 +2869,8 @@ updateStats();
 // Stored calculator results (shared with builder)
 let calcData = { bill: 0, kwp: 0, panels: 0, monthlySavings: 0, yearlySavings: 0 };
 
+let calcPreviewChart = null;
+
 function runCalculator() {
   const billInput = document.getElementById('calcBillInput');
   const bill = parseFloat(billInput.value);
@@ -2438,35 +2878,65 @@ function runCalculator() {
   const resultsEl = document.getElementById('calcResults');
   const proceedEl = document.getElementById('calcProceed');
   const recomEl = document.getElementById('calcRecommendation');
+  const chartSection = document.getElementById('calcChartSection');
 
   if (!bill || bill <= 0) {
     errorEl.textContent = 'Please enter a valid electric bill amount.';
     resultsEl.classList.remove('show');
     proceedEl.classList.remove('show');
     recomEl.classList.remove('show');
+    if (chartSection) chartSection.style.display = 'none';
     return;
   }
   errorEl.textContent = '';
 
   // Philippine solar constants
   const avgRate = 13.40;       // ₱/kWh average Meralco rate
-  const sunHours = 4.5;        // Peak sun hours (PH average)
+  const baseSunHours = 4.5;    // Peak sun hours (PH average)
   const efficiency = 0.85;     // System efficiency factor
   const panelWattage = 705;    // Watts per panel (modern panels)
-  const savingsPct = 0.95;     // 95% of bill saved with solar
 
   const monthlyKwh = bill / avgRate;
   const dailyKwh = monthlyKwh / 30;
-  const requiredKwp = dailyKwh / (sunHours * efficiency);
+  const requiredKwp = dailyKwh / (baseSunHours * efficiency);
   const panels = Math.ceil((requiredKwp * 1000) / panelWattage);
-  const monthly = bill * savingsPct;
-  const yearly = monthly * 12;
+
+  // --- Monthly production using seasonal multipliers ---
+  const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const multipliers = currentSolarData && currentSolarData.monthly
+    ? Object.values(currentSolarData.monthly).map(m => m.multiplier)
+    : Object.values(DEFAULT_MONTHLY_MULTIPLIERS);
+  const peakSunArr = currentSolarData && currentSolarData.monthly
+    ? Object.values(currentSolarData.monthly).map(m => m.peak_sun_hours)
+    : Object.values(DEFAULT_PEAK_SUN_HOURS_MONTHLY);
+  const daysInMonth = [31,28,31,30,31,30,31,31,30,31,30,31];
+
+  let monthlyProductions = [];
+  let monthlySavingsArr = [];
+  for (let i = 0; i < 12; i++) {
+    const prod = requiredKwp * peakSunArr[i] * efficiency * daysInMonth[i];
+    const saving = Math.min(prod * avgRate, bill); // per-month production-based (for chart)
+    monthlyProductions.push(prod);
+    monthlySavingsArr.push(saving);
+  }
+
+  // Savings formula: 95% of monthly bill (matches savings-calculator.php)
+  const savingsRate = 0.95;
+  const avgMonthlySavings = Math.round(bill * savingsRate);
+  const totalYearlySavings = avgMonthlySavings * 12;
 
   // Total required wattage
   const requiredTotalWatts = requiredKwp * 1000;
 
   // Store for builder use
-  calcData = { bill, kwp: requiredKwp, panels, monthlySavings: monthly, yearlySavings: yearly, requiredTotalWatts };
+  calcData = {
+    bill, kwp: requiredKwp, panels,
+    monthlySavings: avgMonthlySavings,
+    yearlySavings: totalYearlySavings,
+    requiredTotalWatts,
+    monthlyProductions,
+    monthlySavingsArr
+  };
 
   // Determine recommended inverter size (round up to common sizes)
   const inverterKw = requiredKwp;
@@ -2486,8 +2956,8 @@ function runCalculator() {
   // Update UI
   document.getElementById('calcKwp').textContent = requiredKwp.toFixed(1);
   document.getElementById('calcPanels').textContent = panels;
-  document.getElementById('calcMonthlySavings').textContent = '₱' + monthly.toLocaleString('en-PH', { maximumFractionDigits: 0 });
-  document.getElementById('calcYearlySavings').textContent = '₱' + yearly.toLocaleString('en-PH', { maximumFractionDigits: 0 });
+  document.getElementById('calcMonthlySavings').textContent = '₱' + Math.round(avgMonthlySavings).toLocaleString('en-PH');
+  document.getElementById('calcYearlySavings').textContent = '₱' + Math.round(totalYearlySavings).toLocaleString('en-PH');
 
   // Recommendation
   document.getElementById('recPanels').textContent = panels + ' × ' + panelWattage + 'W';
@@ -2503,6 +2973,133 @@ function runCalculator() {
   resultsEl.classList.add('show');
   recomEl.classList.add('show');
   proceedEl.classList.add('show');
+
+  // --- Render preview chart ---
+  renderCalcPreviewChart(bill, monthlySavingsArr, monthNames);
+}
+
+function renderCalcPreviewChart(bill, savings, labels) {
+  const chartSection = document.getElementById('calcChartSection');
+  if (!chartSection) return;
+  chartSection.style.display = 'block';
+
+  const ctx = document.getElementById('calcPreviewChart');
+  if (!ctx) return;
+
+  if (calcPreviewChart) { calcPreviewChart.destroy(); calcPreviewChart = null; }
+
+  const withoutSolar = labels.map(() => bill);
+
+  calcPreviewChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [
+        {
+          label: 'Without Solar',
+          data: withoutSolar,
+          backgroundColor: '#C8C8C8',
+          borderRadius: 3,
+          barPercentage: 0.8,
+          categoryPercentage: 0.7
+        },
+        {
+          label: 'With Solar',
+          data: savings.map((s, i) => Math.max(bill - s, 0)),
+          backgroundColor: function(context) {
+            const idx = context.dataIndex;
+            const m = idx + 1;
+            // 5-season color coding for full-year visibility
+            if (m >= 3 && m <= 5) return '#2D5016';    // Peak Dry (Mar-May) — deep green
+            if (m === 1 || m === 2) return '#3A5C1A';   // Cool Dry Amihan (Jan-Feb) — standard green
+            if (m === 7 || m === 8) return '#D35400';   // Peak Wet + Typhoons (Jul-Aug) — dark orange
+            if (m === 6 || m === 9) return '#E67E22';   // Wet shoulders (Jun, Sep) — orange
+            if (m === 10) return '#D4A017';              // Transition (Oct) — amber
+            return '#689F38';                            // Nov-Dec improving — olive green
+          },
+          borderRadius: 3,
+          barPercentage: 0.8,
+          categoryPercentage: 0.7
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#1A2308',
+          titleFont: { family: 'Montserrat', weight: '700', size: 11 },
+          bodyFont: { family: 'Montserrat', size: 10 },
+          callbacks: {
+            label: function(ctx) {
+              const val = ctx.raw;
+              if (ctx.datasetIndex === 0) return 'Current bill: ₱' + val.toLocaleString('en-PH', {maximumFractionDigits:0});
+              return 'With solar: ₱' + val.toLocaleString('en-PH', {maximumFractionDigits:0});
+            },
+            afterBody: function(items) {
+              if (items.length >= 2) {
+                const saved = items[0].raw - items[1].raw;
+                return ['You save: ₱' + saved.toLocaleString('en-PH', {maximumFractionDigits:0})];
+              }
+              return [];
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { display: false },
+          ticks: { font: { family: 'Montserrat', size: 9, weight: '700' }, color: '#6B7C52' }
+        },
+        y: {
+          beginAtZero: true,
+          grid: { color: 'rgba(107,124,82,0.12)' },
+          ticks: {
+            font: { family: 'Montserrat', size: 9 }, color: '#6B7C52',
+            callback: v => '₱' + v.toLocaleString('en-PH', {maximumFractionDigits:0})
+          }
+        }
+      }
+    }
+  });
+}
+
+function renderCalcSeasonalInfo(savings, monthNames) {
+  const container = document.getElementById('calcSeasonalInfo');
+  if (!container) return;
+
+  const peakIdx = savings.indexOf(Math.max(...savings));
+  const lowIdx = savings.indexOf(Math.min(...savings));
+
+  // Seasonal averages
+  const janFebAvg = (savings[0] + savings[1]) / 2;
+  const wetAvg = (savings[6] + savings[7]) / 2; // Jul-Aug worst
+  const berAvg = (savings[8] + savings[9] + savings[10] + savings[11]) / 4;
+  const dryAvg = (savings[2] + savings[3] + savings[4]) / 3; // Mar-Apr-May peak dry
+
+  container.innerHTML = `
+    <div style="color:#1A2308;">
+      <div style="font-weight:700; font-size:0.85rem; margin-bottom:2px;">Highest Bill: <span style="font-weight:700;">${monthNames[peakIdx]} (₱${Math.round(savings[peakIdx]).toLocaleString('en-PH')})</span></div>
+      <div style="font-weight:700; font-size:0.85rem;">Peak Dry Average: <span style="font-weight:700;">₱${Math.round(dryAvg).toLocaleString('en-PH')}</span></div>
+    </div>
+    <div style="color:#D35400;">
+      <div style="font-weight:700; font-size:0.85rem; margin-bottom:2px;">Wet Season Lows:</div>
+      <div style="font-weight:700; font-size:0.85rem;">Jul-Aug ₱${Math.round(wetAvg).toLocaleString('en-PH')} <span style="font-weight:600;">(Lowest)</span></div>
+    </div>
+    <div style="color:#689F38;">
+      <div style="font-weight:700; font-size:0.85rem; margin-bottom:2px;">Ber Months Average: <span style="font-weight:700;">₱${Math.round(berAvg).toLocaleString('en-PH')}</span></div>
+      <div style="font-weight:600; font-size:0.8rem;">(Recovering, ~${Math.round((1 - berAvg / (dryAvg || 1)) * 100)}% less vs Peak Dry)</div>
+    </div                 >
+  `;
+
+  // Update city label
+  const cityLabel = document.getElementById('calcCityLabel');
+  if (cityLabel && currentSolarData && currentSolarData.city) {
+    cityLabel.textContent = currentSolarData.city.charAt(0).toUpperCase() + currentSolarData.city.slice(1);
+  }
 }
 
 // Enter key support for calculator

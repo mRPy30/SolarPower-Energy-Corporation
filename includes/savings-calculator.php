@@ -150,23 +150,25 @@ function calculateSavings() {
     }
 
     const avgRate       = 13.40;
-    const sunHours      = 4.5;
+    const baseSunHours  = 4.5;
     const efficiency    = 0.85;
     const panelWattage  = 705;
-    const savingsPct    = 0.95;
+    const savingsRate   = 0.95;  // Solar offsets ~95% of electric bill
 
     const monthlyKwh   = billAmount / avgRate;
     const dailyKwh     = monthlyKwh / 30;
-    const requiredKwp  = dailyKwh / (sunHours * efficiency);
+    const requiredKwp  = dailyKwh / (baseSunHours * efficiency);
     const panels       = Math.ceil((requiredKwp * 1000) / panelWattage);
-    const monthly      = billAmount * savingsPct;
-    const yearly       = monthly * 12;
+
+    // Savings: 95% of monthly bill (accounts for nighttime usage, cloudy days, etc.)
+    const avgMonthlySavings = Math.round(billAmount * savingsRate);
+    const totalYearlySavings = avgMonthlySavings * 12;
 
     setTimeout(() => {
         document.getElementById('kwpValue').textContent      = requiredKwp.toFixed(1);
         document.getElementById('panelsValue').textContent   = panels;
-        document.getElementById('monthlySavings').textContent = '₱' + monthly.toLocaleString('en-PH', { maximumFractionDigits: 0 });
-        document.getElementById('yearlySavings').textContent  = '₱' + yearly.toLocaleString('en-PH',  { maximumFractionDigits: 0 });
+        document.getElementById('monthlySavings').textContent = '₱' + Math.round(avgMonthlySavings).toLocaleString('en-PH');
+        document.getElementById('yearlySavings').textContent  = '₱' + Math.round(totalYearlySavings).toLocaleString('en-PH');
         results.classList.add('show');
     }, 100);
 }
