@@ -6,6 +6,7 @@
 
         <!-- LEFT PANEL (form) -->
         <div class="col-12 col-md-7 newsletter-left d-flex flex-column justify-content-center p-4 p-md-5">
+          <button type="button" class="newsletter-close-btn-mobile" data-bs-dismiss="modal" aria-label="Close">✕</button>
           <h2 class="newsletter-heading">Subscribe<br>Now!</h2>
           <p class="newsletter-subtext">Get weekly solar tips, updates, and exclusive offers delivered to your inbox</p>
           <form id="newsletterPopupForm" action="controllers/subscribe.php" method="POST" novalidate class="w-100" style="max-width: 450px;">
@@ -206,37 +207,86 @@
   border-radius: 0 8px 8px 0;
 }
 
+/* ── Mobile close button (visible only on small screens) ── */
+.newsletter-close-btn-mobile {
+  display: none;
+}
+
 /* ── Responsive ─────────────────────────────────────── */
 @media (max-width: 767.98px) {
+  .newsletter-modal-dialog {
+    width: 90vw;
+    max-width: 400px;
+    margin: auto;
+  }
   .newsletter-modal-content {
     height: auto;
     min-height: unset;
   }
-  .newsletter-right {
-    border-radius: 0 0 8px 8px;
-    min-height: 220px;
-  }
-  .newsletter-product-img {
-    border-radius: 0 0 8px 8px;
-  }
   .newsletter-left {
-    border-radius: 8px 8px 0 0;
-    padding: 2rem 1.5rem 1.8rem !important;
+    border-radius: 8px;
+    padding: 1.8rem 1.5rem 1.5rem !important;
+    position: relative;
+  }
+  /* Hide image panel on mobile */
+  .newsletter-right {
+    display: none !important;
+  }
+  /* Show mobile close button */
+  .newsletter-close-btn-mobile {
+    display: flex;
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: rgba(255, 255, 255, 0.9);
+    border: none;
+    color: #333;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+    font-weight: 700;
+    font-size: 14px;
+    z-index: 10;
+    transition: all 0.2s;
+  }
+  .newsletter-close-btn-mobile:hover {
+    background: #fff;
+    transform: scale(1.08);
   }
   .newsletter-heading {
-    font-size: 2.25rem;
+    font-size: 2rem;
+    margin-bottom: 10px;
   }
   .newsletter-subtext {
-    font-size: 0.9rem;
-    margin-bottom: 28px;
+    font-size: 0.85rem;
+    margin-bottom: 20px;
+    line-height: 1.5;
   }
   .newsletter-email-input {
-    padding: 16px 18px;
+    padding: 14px 16px;
     font-size: 0.9rem;
   }
   .newsletter-submit-btn {
-    padding: 16px;
-    font-size: 0.95rem;
+    padding: 14px;
+    font-size: 0.9rem;
+  }
+}
+
+/* ── Small phones ── */
+@media (max-width: 380px) {
+  .newsletter-modal-dialog {
+    width: 94vw;
+  }
+  .newsletter-heading {
+    font-size: 1.75rem;
+  }
+  .newsletter-left {
+    padding: 1.5rem 1.2rem 1.3rem !important;
   }
 }
 </style>
