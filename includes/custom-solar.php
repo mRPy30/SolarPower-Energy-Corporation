@@ -37,7 +37,7 @@
     .top-bar-left { display: flex; align-items: center; gap: 10px; }
     .doe-badge {
       background: var(--yellow); color: var(--green-d);
-      font-weight: 800; font-size: 0.67rem; padding: 3px 9px; border-radius: 3px; letter-spacing: 0.05em;
+      font-weight: 800; font-size: 0.67rem; padding: 3px 9px; border-radius: 3px;
     }
     .top-bar-right { font-weight: 700; font-size: 0.8rem; }
 
@@ -59,9 +59,9 @@
       border-radius: 50%; border: 2.5px solid white;
       display: flex; align-items: center; justify-content: center; font-size: 0.6rem;
     }
-    .logo-text .brand { font-weight: 900; font-size: 1.1rem; color: var(--green); letter-spacing: 0.05em; display: block; }
+    .logo-text .brand { font-weight: 900; font-size: 1.1rem; color: var(--green); display: block; }
     .logo-text .brand em { color: var(--yellow); font-style: normal; }
-    .logo-text .sub { font-size: 0.58rem; color: var(--muted); font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; }
+    .logo-text .sub { font-size: 0.58rem; color: var(--muted); font-weight: 600; text-transform: uppercase; }
 
     .hdr-btns { display: flex; gap: 8px; }
     .hbtn {
@@ -82,7 +82,7 @@
     .step-tab {
       padding: 14px 28px; font-size: 0.77rem; font-weight: 700;
       color: var(--muted); cursor: pointer; border-bottom: 3px solid transparent;
-      margin-bottom: -2px; transition: all .2s; letter-spacing: 0.06em; text-transform: uppercase;
+      margin-bottom: -2px; transition: all .2s; text-transform: uppercase;
       display: flex; align-items: center; gap: 8px;
     }
     .step-tab:hover { color: var(--green); }
@@ -116,7 +116,7 @@
     }
     .panel-lbl {
       font-size: 0.7rem; font-weight: 800; text-transform: uppercase;
-      letter-spacing: 0.13em; color: var(--green); margin-bottom: 14px; align-self: flex-start;
+      color: var(--green); margin-bottom: 14px; align-self: flex-start;
       display: flex; align-items: center; gap: 6px;
     }
     .panel-lbl::before { content: ''; display: inline-block; width: 3px; height: 14px; background: var(--yellow); border-radius: 2px; }
@@ -127,7 +127,7 @@
     }
     .chart-location-row label {
       font-size: 0.62rem; font-weight: 700; color: var(--muted); text-transform: uppercase;
-      letter-spacing: 0.08em; white-space: nowrap;
+      white-space: nowrap;
     }
     .chart-location-row select {
       flex: 1; background: var(--bg); border: 1.5px solid var(--border); border-radius: 5px;
@@ -167,7 +167,7 @@
       border-radius: 12px; padding: 16px 18px; margin-bottom: 14px; color: #fff;
       box-shadow: 0 4px 16px rgba(58,92,26,0.18);
     }
-    .build-lbl { font-size: 0.64rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; opacity: 0.65; margin-bottom: 3px; }
+    .build-lbl { font-size: 0.64rem; font-weight: 700; text-transform: uppercase; opacity: 0.65; margin-bottom: 3px; }
     .build-val { font-weight: 900; font-size: 1.4rem; color: var(--yellow); transition: all 0.4s; }
     .tier-bar { width: 100%; height: 7px; background: rgba(255,255,255,0.18); border-radius: 4px; margin-top: 10px; overflow: hidden; }
     .tier-fill { height: 100%; background: linear-gradient(90deg, var(--yellow), #82C820); border-radius: 4px; transition: width 0.6s cubic-bezier(.4,0,.2,1); }
@@ -238,11 +238,11 @@
     .comp-card.done .comp-icon { background: var(--green); border-color: var(--green); }
     .comp-icon img { width: 100%; height: 100%; object-fit: cover; border-radius: 8px; }
     .comp-info { flex: 1; }
-    .comp-type { font-size: 0.62rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.13em; color: var(--yellow-d); margin-bottom: 3px; }
+    .comp-type { font-size: 0.62rem; font-weight: 800; text-transform: uppercase; color: var(--yellow-d); margin-bottom: 3px; }
     .comp-name { font-size: 0.85rem; font-weight: 700; color: var(--text); line-height: 1.35; }
     .comp-tag {
       font-size: 0.67rem; font-weight: 700; padding: 4px 10px; border-radius: 20px;
-      letter-spacing: 0.04em; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px;
+      white-space: nowrap; display: inline-flex; align-items: center; gap: 4px;
     }
     .tag-g { background: var(--green-l); color: var(--green); border: 1px solid #C5DCA0; }
     .tag-w { background: #FFF5E0; color: #9A6A00; border: 1px solid #EDD080; }
@@ -335,7 +335,7 @@
     .periph-card:hover { border-color: var(--yellow); transform: translateY(-2px); }
     .periph-card.done { border-color: var(--green); border-left: 4px solid var(--green); background: var(--green-l); }
     .periph-icon { font-size: 2rem; margin-bottom: 10px; }
-    .periph-type { font-size: 0.62rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.13em; color: var(--yellow-d); margin-bottom: 5px; }
+    .periph-type { font-size: 0.62rem; font-weight: 800; text-transform: uppercase;  color: var(--yellow-d); margin-bottom: 5px; }
     .periph-name { font-size: 0.8rem; font-weight: 600; color: var(--text); line-height: 1.35; }
     .periph-price { font-size: 0.78rem; font-weight: 800; color: var(--green); margin-top: 8px; }
     .periph-check { display: none; font-size: 1rem; color: var(--green); font-weight: 900; margin-top: 6px; }
@@ -349,7 +349,7 @@
     .summary-sub { font-size: 0.78rem; color: var(--muted); margin-bottom: 28px; }
     .summary-section { margin-bottom: 24px; }
     .summary-section-title {
-      font-size: 0.68rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.13em;
+      font-size: 0.68rem; font-weight: 800; text-transform: uppercase; 
       color: var(--muted); margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1.5px solid var(--border);
     }
     .summary-item {
@@ -368,13 +368,13 @@
       display: flex; justify-content: space-between; align-items: center;
       padding: 14px 18px; background: var(--green); border-radius: 10px; margin-top: 14px;
     }
-    .summary-total-lbl { color: rgba(255,255,255,0.75); font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; }
+    .summary-total-lbl { color: rgba(255,255,255,0.75); font-size: 0.8rem; font-weight: 700; text-transform: uppercase; }
     .summary-total-val { color: var(--yellow); font-size: 1.6rem; font-weight: 900; }
     .summary-cta { margin-top: 24px; display: flex; gap: 12px; }
     .cta-primary {
       flex: 1; background: var(--yellow); border: none; color: var(--green-d);
       font-family: 'Montserrat', sans-serif; font-weight: 900; font-size: 0.85rem;
-      letter-spacing: 0.08em; text-transform: uppercase;
+       text-transform: uppercase;
       padding: 15px 28px; border-radius: 8px; cursor: pointer;
       transition: all .2s; box-shadow: 0 4px 14px rgba(0,0,0,0.15);
     }
@@ -398,12 +398,12 @@
     .ship strong { color: #fff; }
     .ship a { color: var(--yellow); font-size: 0.71rem; text-decoration: none; display: block; margin-top: 2px; }
     .total-block { text-align: right; }
-    .total-lbl { font-size: 0.64rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(255,255,255,0.55); }
+    .total-lbl { font-size: 0.64rem; font-weight: 700; text-transform: uppercase; color: rgba(255,255,255,0.55); }
     .total-val { font-size: 1.5rem; font-weight: 900; color: var(--yellow); transition: all 0.4s; }
     .cart-btn {
       background: var(--yellow); border: none; color: var(--green-d);
       font-family: 'Montserrat', sans-serif; font-weight: 900; font-size: 0.83rem;
-      letter-spacing: 0.09em; text-transform: uppercase;
+      text-transform: uppercase;
       padding: 13px 28px; border-radius: 8px; cursor: pointer;
       display: flex; align-items: center; gap: 8px; white-space: nowrap;
       transition: all .2s; box-shadow: 0 4px 14px rgba(0,0,0,0.18);
@@ -439,7 +439,7 @@
       min-height: calc(100vh - 200px); padding: 40px 20px;
     }
     .calc-box {
-      background: #fff; border: 3px solid var(--yellow); border-radius: 20px;
+      background: #fff; border-radius: 20px;
       padding: 50px 40px 40px; max-width: 680px; width: 100%; text-align: center;
       box-shadow: 0 8px 40px rgba(255,193,7,0.12);
       position: relative;
@@ -496,7 +496,7 @@
     .calc-btn {
       background: var(--yellow); border: none; color: var(--green-d);
       font-family: 'Montserrat', sans-serif; font-weight: 900; font-size: 0.9rem;
-      letter-spacing: 0.08em; text-transform: uppercase;
+       text-transform: uppercase;
       padding: 14px 40px; border-radius: 30px; cursor: pointer;
       transition: all .2s; box-shadow: 0 4px 14px rgba(255,193,7,0.3);
     }
@@ -526,7 +526,7 @@
     .calc-proceed-btn {
       background: var(--green); border: none; color: #fff;
       font-family: 'Montserrat', sans-serif; font-weight: 900; font-size: 0.88rem;
-      letter-spacing: 0.06em; text-transform: uppercase;
+       text-transform: uppercase;
       padding: 15px 36px; border-radius: 10px; cursor: pointer;
       transition: all .2s; box-shadow: 0 4px 14px rgba(58,92,26,0.2);
       display: inline-flex; align-items: center; gap: 8px;
@@ -543,7 +543,7 @@
     }
     .calc-recommendation.show { display: block; }
     .calc-recommendation .rec-title {
-      font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em;
+      font-size: 0.72rem; font-weight: 800; text-transform: uppercase;
       color: var(--green); margin-bottom: 6px;
     }
     .calc-recommendation .rec-item {
@@ -752,7 +752,7 @@
     .rec-bar-item { margin-bottom: 9px; }
     .rec-bar-item:last-child { margin-bottom: 0; }
     .rec-bar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px; }
-    .rec-bar-lbl { font-size: 0.61rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .rec-bar-lbl { font-size: 0.61rem; font-weight: 700; color: var(--muted); text-transform: uppercase;  }
     .rec-bar-val { font-size: 0.61rem; font-weight: 800; color: var(--green); }
     .rec-bar-track { width: 100%; height: 7px; background: rgba(0,0,0,0.10); border-radius: 4px; overflow: hidden; }
     .rec-bar-fill { height: 100%; border-radius: 4px; transition: width 0.55s cubic-bezier(.4,0,.2,1), background 0.35s; }
@@ -916,7 +916,7 @@
 
       <!-- Monthly Savings Preview Chart -->
       <div id="calcChartSection" style="display:none; margin-top:22px; text-align:left;">
-        <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; letter-spacing:0.1em; color:var(--green); margin-bottom:8px;">
+        <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--green); margin-bottom:8px;">
            Estimated Monthly Savings
         </div>
         <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:center; margin-bottom:12px; font-size:0.55rem; font-weight:700; color:var(--muted);">
@@ -985,7 +985,7 @@
 
     <!-- Bill Info (shown when calculator was used) -->
     <div id="billInfoBox" style="display:none; width:100%; background:var(--yellow-l); border:1.5px solid var(--yellow); border-radius:10px; padding:12px 15px; margin-bottom:14px;">
-      <div style="font-size:0.64rem; font-weight:700; text-transform:uppercase; letter-spacing:0.12em; color:var(--yellow-d); margin-bottom:4px;"> Your Monthly Bill</div>
+      <div style="font-size:0.64rem; font-weight:700; text-transform:uppercase; color:var(--yellow-d); margin-bottom:4px;"> Your Monthly Bill</div>
       <div style="font-weight:900; font-size:1.1rem; color:var(--green);" id="billInfoVal">₱ 0</div>
       <div style="font-size:0.65rem; color:var(--muted); margin-top:6px;"> <strong>Recommended System</strong></div>
       <div style="font-size:0.65rem; color:var(--muted); margin-top:3px;"> Total Required: <strong id="billInfoKw">–</strong></div>
@@ -1018,22 +1018,7 @@
           <div class="rec-bar-track"><div class="rec-bar-fill bar-none" id="barBatteryFill" style="width:0%"></div></div>
           <div class="rec-bar-status s-none" id="barBatteryStatus">Not selected</div>
         </div>
-        <div class="rec-bar-item">
-          <div class="rec-bar-header">
-            <span class="rec-bar-lbl"> Mounting System</span>
-            <span class="rec-bar-val" id="barMountingVal">–</span>
-          </div>
-          <div class="rec-bar-track"><div class="rec-bar-fill bar-none" id="barMountingFill" style="width:0%"></div></div>
-          <div class="rec-bar-status s-none" id="barMountingStatus">Not selected</div>
-        </div>
-        <div class="rec-bar-item">
-          <div class="rec-bar-header">
-            <span class="rec-bar-lbl">🔌 Wiring &amp; Protection</span>
-            <span class="rec-bar-val" id="barWiringVal">–</span>
-          </div>
-          <div class="rec-bar-track"><div class="rec-bar-fill bar-none" id="barWiringFill" style="width:0%"></div></div>
-          <div class="rec-bar-status s-none" id="barWiringStatus">Not selected</div>
-        </div>
+
       </div>
     </div>
 
@@ -1081,23 +1066,7 @@
         <span class="comp-tag tag-a" id="tag-battery">+ Select</span>
       </div>
 
-      <div class="comp-card" id="card-mounting" onclick="openSelector('mounting')">
-        <div class="comp-icon" id="icon-mounting"><img src="includes/mounting.png" alt="mounting"></div>
-        <div class="comp-info">
-          <div class="comp-type">Mounting System</div>
-          <div class="comp-name" id="name-mounting">Select item</div>
-        </div>
-        <span class="comp-tag tag-a" id="tag-mounting">+ Select</span>
-      </div>
 
-      <div class="comp-card" id="card-wiring" onclick="openSelector('wiring')">
-        <div class="comp-icon" id="icon-wiring"><img src="includes/wiring-protection.png" alt="wiring"></div>
-        <div class="comp-info">
-          <div class="comp-type">Wiring & Protection</div>
-          <div class="comp-name" id="name-wiring">Select item</div>
-        </div>
-        <span class="comp-tag tag-a" id="tag-wiring">+ Select</span>
-      </div>
 
     </div>
 
@@ -1147,7 +1116,7 @@
   <div class="summary-wrap">
     <div class="summary-title" style="display:flex;align-items:center;gap:16px;margin-bottom:18px;">
       <img src="/SolarPower-Energy-Corporation/assets/img/logo_no_background.png" alt="Solarpower LOGO" style="height:48px;width:auto;border-radius:8px;box-shadow:0 2px 12px rgba(58,92,26,0.09);background:#fff;padding:4px;">
-      <span style="font-size:1.35rem;font-weight:900;color:var(--green);letter-spacing:0.04em;">SolarPower Energy Corporation</span>
+      <span style="font-size:1.35rem;font-weight:900;color:var(--green);">SolarPower Energy Corporation</span>
     </div>
     <div class="summary-sub">Review your solar system configuration before adding to cart.</div>
 
@@ -1179,7 +1148,7 @@
 
     <!-- Savings comparison (shown when calculator was used) -->
     <div id="summarySavingsSection" style="display:none; margin-top:18px; background:var(--yellow-l); border:2px solid var(--yellow); border-radius:12px; padding:18px 20px;">
-      <div style="font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.13em; color:var(--yellow-d); margin-bottom:12px;"> Savings Estimate (based on your ₱<span id="summaryBillAmt">0</span>/mo bill)</div>
+      <div style="font-size:0.68rem; font-weight:800; text-transform:uppercase;  color:var(--yellow-d); margin-bottom:12px;"> Savings Estimate (based on your ₱<span id="summaryBillAmt">0</span>/mo bill)</div>
       <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px;">
         <div style="text-align:center;">
           <div style="font-size:1.2rem; font-weight:900; color:var(--green);" id="summaryMonthlySave">₱0</div>
@@ -1256,8 +1225,6 @@ const CATEGORY_META = {
   panels: { title: 'Solar Panels', filterLabels: ['Brand', 'Type'], filterKeys: ['brand', 'spec_type'] },
   inverter: { title: 'Inverter', filterLabels: ['Brand', 'Type'], filterKeys: ['brand', 'spec_type'] },
   battery: { title: 'Battery Storage', filterLabels: ['Brand', 'Type'], filterKeys: ['brand', 'spec_type'] },
-  mounting: { title: 'Mounting System', filterLabels: ['Brand', 'Type'], filterKeys: ['brand', 'spec_type'] },
-  wiring: { title: 'Wiring & Protection', filterLabels: ['Brand', 'Type'], filterKeys: ['brand', 'spec_type'] },
   monitoring: { title: 'Monitoring System', filterLabels: ['Brand', 'Type'], filterKeys: ['brand', 'spec_type'] }
 };
 
@@ -1266,8 +1233,6 @@ const PRODUCTS = {
   panels: { ...CATEGORY_META.panels, items: [], loaded: false },
   inverter: { ...CATEGORY_META.inverter, items: [], loaded: false },
   battery: { ...CATEGORY_META.battery, items: [], loaded: false },
-  mounting: { ...CATEGORY_META.mounting, items: [], loaded: false },
-  wiring: { ...CATEGORY_META.wiring, items: [], loaded: false },
   monitoring: { ...CATEGORY_META.monitoring, items: [], loaded: false }
 };
 
@@ -1388,51 +1353,6 @@ function parseProductSpecs(category, product) {
       break;
     }
     
-    case 'mounting': {
-      // Extract max panels: "Up to 15 Panels", "Up to 25 Panels", "Up to 40 Panels"
-      const panelMatch = combined.match(/(?:up\s*to\s*)?(\d+)\s*panel/i);
-      specs.max_panels = panelMatch ? parseInt(panelMatch[1]) : 0;
-      
-      // Mount type
-      if (combined.includes('ground')) specs.mount_type = 'Ground Mount';
-      else if (combined.includes('flat roof') || combined.includes('ballast')) specs.mount_type = 'Flat Roof';
-      else if (combined.includes('carport')) specs.mount_type = 'Carport';
-      else if (combined.includes('roof')) specs.mount_type = 'Roof Mount';
-      else specs.mount_type = 'Universal';
-      
-      // Material
-      if (combined.includes('aluminum') || combined.includes('aluminium')) specs.material = 'Aluminum';
-      else if (combined.includes('galvanized steel') || combined.includes('steel')) specs.material = 'Galvanized Steel';
-      else specs.material = 'Aluminum';
-      
-      // Wind rating (Philippine typhoon standard)
-      const windMatch = desc.match(/(\d+)\s*km\/h/i);
-      specs.wind_rating_kmh = windMatch ? parseInt(windMatch[1]) : 150; // Default PH standard
-      break;
-    }
-    
-    case 'wiring': {
-      // Extract max system kW: "Up to 5kW", "Up to 10kW", "Up to 15kW", "20kW+"
-      const kwMatch = combined.match(/(?:up\s*to\s*)?(\d+)\s*kw/i);
-      specs.max_kw = kwMatch ? parseInt(kwMatch[1]) : 0;
-      
-      // Cable size from description
-      const cableMatch = desc.match(/(\d+)\s*mm/i);
-      specs.cable_mm2 = cableMatch ? parseInt(cableMatch[1]) : 4;
-      
-      // Protection level
-      if (combined.includes('industrial') || combined.includes('heavy')) specs.grade = 'Industrial';
-      else if (combined.includes('premium')) specs.grade = 'Premium';
-      else if (combined.includes('standard') || combined.includes('professional')) specs.grade = 'Standard';
-      else specs.grade = 'Basic';
-      
-      // SPD type
-      if (combined.includes('type i+ii') || combined.includes('type i &')) specs.spd = 'Type I+II';
-      else if (combined.includes('type ii')) specs.spd = 'Type II';
-      else specs.spd = 'Type II';
-      break;
-    }
-    
     case 'monitoring': {
       // Connectivity
       if (combined.includes('ethernet') && combined.includes('wifi')) specs.connectivity = 'WiFi + Ethernet';
@@ -1522,7 +1442,7 @@ async function fetchProducts(category) {
 
 // ─── STATE ────────────────────────────────────────────────────────────────────
 
-const selected = { panels: [], inverter: [], battery: [], mounting: [], wiring: [], monitoring: [] };
+const selected = { panels: [], inverter: [], battery: [], monitoring: [] };
 const selectedPeriphs = new Set();
 let activeCategory = null;
 
@@ -2154,8 +2074,6 @@ function getIcon(cat) {
     panels: '<img src="includes/solar_svg.png" alt="Solar Panels" style="width:100%;height:100%;object-fit:cover;border-radius:6px;">',
     inverter: '<img src="includes/inverter.png" alt="Inverter" style="width:100%;height:100%;object-fit:cover;border-radius:6px;">',
     battery: '<img src="includes/battery.png" alt="Battery" style="width:100%;height:100%;object-fit:cover;border-radius:6px;">',
-    mounting: '<img src="includes/mounting.png" alt="Mounting" style="width:100%;height:100%;object-fit:cover;border-radius:6px;">',
-    wiring: '<img src="includes/wiring-protection.png" alt="Wiring" style="width:100%;height:100%;object-fit:cover;border-radius:6px;">',
     monitoring: '📡'
   };
   return icons[cat] || '⚙️';
@@ -2170,8 +2088,6 @@ function applySummaryFallback(el, cat) {
     panels: '<img src="includes/solar_svg.png" alt="Solar Panels" style="width:28px;height:28px;object-fit:cover;border-radius:4px;">',
     inverter: '<img src="includes/inverter.png" alt="Inverter" style="width:28px;height:28px;object-fit:cover;border-radius:4px;">',
     battery: '<img src="includes/battery.png" alt="Battery" style="width:28px;height:28px;object-fit:cover;border-radius:4px;">',
-    mounting: '<img src="includes/mounting.png" alt="Mounting" style="width:28px;height:28px;object-fit:cover;border-radius:4px;">',
-    wiring: '<img src="includes/wiring-protection.png" alt="Wiring" style="width:28px;height:28px;object-fit:cover;border-radius:4px;">',
     monitoring: '📡'
   };
   el.innerHTML = icons[cat] || '⚙️';
@@ -2212,7 +2128,7 @@ function selectProduct(cat, itemId) {
   updateStats();
   renderProducts(PRODUCTS[cat].items);
 
-  if (['panels','inverter','battery','mounting','wiring'].includes(cat)) updateRecommendationBars();
+  if (['panels','inverter','battery'].includes(cat)) updateRecommendationBars();
 }
 
 function changeQty(cat, itemId, delta) {
@@ -2222,7 +2138,7 @@ function changeQty(cat, itemId, delta) {
   updateCompCard(cat);
   updateStats();
   renderProducts(PRODUCTS[cat].items);
-  if (['panels','inverter','battery','mounting','wiring'].includes(cat)) updateRecommendationBars();
+  if (['panels','inverter','battery'].includes(cat)) updateRecommendationBars();
 }
 
 function removeItem(cat, itemId) {
@@ -2231,7 +2147,7 @@ function removeItem(cat, itemId) {
   updateCompCard(cat);
   updateStats();
   renderProducts(PRODUCTS[cat].items);
-  if (['panels','inverter','battery','mounting','wiring'].includes(cat)) updateRecommendationBars();
+  if (['panels','inverter','battery'].includes(cat)) updateRecommendationBars();
   showToast(`🗑️ Item removed.`);
 }
 
@@ -2239,8 +2155,8 @@ function removeItem(cat, itemId) {
 
 function clearAll() {
   Object.keys(selected).forEach(cat => {
-    selected[cat] = null;
-    updateCompCard(cat, null);
+    selected[cat] = [];
+    updateCompCard(cat);
   });
   selectedPeriphs.clear();
   resetMismatchPopupState();
@@ -2287,8 +2203,6 @@ function renderSummary() {
     { key: 'panels', label: 'Solar Panels', icon: '<img src="includes/solar_svg.png" alt="Solar Panels" style="width:28px;height:28px;object-fit:cover;border-radius:4px;">' },
     { key: 'inverter', label: 'Inverter', icon: '<img src="includes/inverter.png" alt="Inverter" style="width:28px;height:28px;object-fit:cover;border-radius:4px;">' },
     { key: 'battery', label: 'Battery Storage', icon: '<img src="includes/battery.png" alt="Battery" style="width:28px;height:28px;object-fit:cover;border-radius:4px;">' },
-    { key: 'mounting', label: 'Mounting System', icon: '<img src="includes/mounting.png" alt="Mounting" style="width:28px;height:28px;object-fit:cover;border-radius:4px;">' },
-    { key: 'wiring', label: 'Wiring & Protection', icon: '<img src="includes/wiring-protection.png" alt="Wiring" style="width:28px;height:28px;object-fit:cover;border-radius:4px;">' },
     
   ];
 
@@ -2430,27 +2344,27 @@ function renderSummaryStats() {
     statsDiv.innerHTML = `
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
         <div class="summary-item" style="flex-direction:column;align-items:flex-start;padding:10px 14px;">
-          <div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;color:var(--muted);letter-spacing:0.08em;">System Capacity</div>
+          <div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;color:var(--muted);">System Capacity</div>
           <div style="font-size:1rem;font-weight:800;color:var(--green);">${systemKW.toFixed(1)} kWp</div>
         </div>
         <div class="summary-item" style="flex-direction:column;align-items:flex-start;padding:10px 14px;">
-          <div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;color:var(--muted);letter-spacing:0.08em;">Daily Output</div>
+          <div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;color:var(--muted);">Daily Output</div>
           <div style="font-size:1rem;font-weight:800;color:var(--green);">${dailyKWH.toFixed(1)} kWh</div>
         </div>
         <div class="summary-item" style="flex-direction:column;align-items:flex-start;padding:10px 14px;">
-          <div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;color:var(--muted);letter-spacing:0.08em;">Est. Daily Savings</div>
+          <div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;color:var(--muted);">Est. Daily Savings</div>
           <div style="font-size:1rem;font-weight:800;color:var(--green);">₱${Math.round(dailySavings).toLocaleString()}</div>
         </div>
         <div class="summary-item" style="flex-direction:column;align-items:flex-start;padding:10px 14px;">
-          <div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;color:var(--muted);letter-spacing:0.08em;">ROI Period</div>
+          <div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;color:var(--muted);">ROI Period</div>
           <div style="font-size:1rem;font-weight:800;color:var(--green);">${roiYears > 0 ? roiYears.toFixed(1) + ' yrs' : '–'}</div>
         </div>
         <div class="summary-item" style="flex-direction:column;align-items:flex-start;padding:10px 14px;">
-          <div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;color:var(--muted);letter-spacing:0.08em;">CO₂ Reduced</div>
+          <div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;color:var(--muted);">CO₂ Reduced</div>
           <div style="font-size:1rem;font-weight:800;color:var(--green);">${co2.toFixed(1)} t/yr</div>
         </div>
         <div class="summary-item" style="flex-direction:column;align-items:flex-start;padding:10px 14px;">
-          <div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;color:var(--muted);letter-spacing:0.08em;">Annual Savings</div>
+          <div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;color:var(--muted);">Annual Savings</div>
           <div style="font-size:1rem;font-weight:800;color:var(--green);">₱${Math.round(annualSavings).toLocaleString()}</div>
         </div>
       </div>
@@ -2469,26 +2383,12 @@ function getCompatibilityWarnings() {
   const p    = selFirst('panels');
   const inv  = selFirst('inverter');
   const batt = selFirst('battery');
-  const wir = selFirst('wiring');
-  const mnt = selFirst('mounting');
-
   const panelW = p?.parsedSpecs?.watts || 0;
   const invKW = inv?.parsedSpecs?.kw || 0;
   const battKWH = batt?.parsedSpecs?.kwh || 0;
   const battVClass = batt?.parsedSpecs?.voltage_class || '';
-  const wireMaxKW = wir?.parsedSpecs?.max_kw || 0;
-  const mountMaxPanels = mnt?.parsedSpecs?.max_panels || 0;
   const invType = inv?.parsedSpecs?.type || '';
 
-  if (inv && wir && wireMaxKW > 0 && invKW > wireMaxKW) {
-    warnings.push({ cats: ['wiring','inverter'], severity: 'error', msg: `Wiring kit rated for ${wireMaxKW}kW but inverter is ${invKW}kW — risk of overload. Upgrade wiring to ${invKW}kW+ kit.` });
-  }
-  if (p && inv && mnt && mountMaxPanels > 0 && panelW > 0 && invKW > 0) {
-    const panelsNeeded = Math.ceil((invKW * 1000 * 1.1) / panelW);
-    if (panelsNeeded > mountMaxPanels) {
-      warnings.push({ cats: ['mounting'], severity: 'error', msg: `A ${invKW}kW system needs ~${panelsNeeded}× ${panelW}W panels, but mount only supports ${mountMaxPanels}.` });
-    }
-  }
   if (inv && batt && battVClass) {
     const invVoltage = inv.parsedSpecs?.battery_voltage || 48;
     if (battVClass === 'HV' && invVoltage <= 60) {
@@ -2503,14 +2403,6 @@ function getCompatibilityWarnings() {
   }
   if (inv && batt && invType === 'Grid-Tie') {
     warnings.push({ cats: ['battery','inverter'], severity: 'info', msg: `Grid-Tie inverters don't use batteries. Switch to Hybrid if you want battery storage.` });
-  }
-  if (inv && wir && wireMaxKW > 0 && invKW > 0 && invKW <= wireMaxKW && invKW > wireMaxKW * 0.8) {
-    warnings.push({ cats: ['wiring'], severity: 'info', msg: `Wiring kit (${wireMaxKW}kW) is tight for ${invKW}kW inverter. Consider higher-rated kit for future expansion.` });
-  }
-  if (p && mnt && panelW >= 700) {
-    if (mnt.parsedSpecs?.mount_type === 'Flat Roof') {
-      warnings.push({ cats: ['panels','mounting'], severity: 'warn', msg: `${panelW}W panels are large/heavy. Verify flat roof mount can handle the extra weight.` });
-    }
   }
   return warnings;
 }
@@ -2540,21 +2432,6 @@ function updateRecommendationBars() {
   setRecBar('barBattery', selBatKwh, recBatKwh,
     selBatKwh > 0 ? selBatKwh + ' kWh' : '–', recBatKwh + ' kWh required');
 
-  // Mounting bar: mount max_panels vs required panel count from calculator
-  const reqPanels = calcData.panels || 0;
-  const mntItem = selected.mounting.length > 0 ? selected.mounting[0].item : null;
-  const mntMaxPanels = mntItem ? (mntItem.parsedSpecs?.max_panels || 0) : 0;
-  setRecBarCapable('barMounting', mntMaxPanels, reqPanels,
-    mntMaxPanels > 0 ? mntMaxPanels + ' panels supported' : '–',
-    reqPanels + ' panels required');
-
-  // Wiring bar: wire max_kw vs recommended inverter kW
-  const recWireKw = calcData.recInverterKw || 0;
-  const wirItem = selected.wiring.length > 0 ? selected.wiring[0].item : null;
-  const wirMaxKw = wirItem ? (wirItem.parsedSpecs?.max_kw || 0) : 0;
-  setRecBarCapable('barWiring', wirMaxKw, recWireKw,
-    wirMaxKw > 0 ? wirMaxKw + ' kW rated' : '–',
-    recWireKw + ' kW required');
 }
 
 function setRecBar(id, current, target, currentLabel, targetLabel) {
@@ -2591,7 +2468,7 @@ function setRecBar(id, current, target, currentLabel, targetLabel) {
   }
 }
 
-// Capable/not-capable bar variant (used for mounting & wiring)
+// Capable/not-capable bar variant
 // current >= target means capable; partial coverage shown if below
 function setRecBarCapable(id, current, target, currentLabel, targetLabel) {
   const fill   = document.getElementById(id + 'Fill');
@@ -2833,7 +2710,7 @@ function selectProductDrawer(cat, itemId) {
   updateCompCard(cat);
   updateStats();
   renderDrawerProducts(PRODUCTS[cat].items);
-  if (['panels','inverter','battery','mounting','wiring'].includes(cat)) updateRecommendationBars();
+  if (['panels','inverter','battery'].includes(cat)) updateRecommendationBars();
 }
 
 function changeQtyDrawer(cat, itemId, delta) {
@@ -2843,7 +2720,7 @@ function changeQtyDrawer(cat, itemId, delta) {
   updateCompCard(cat);
   updateStats();
   renderDrawerProducts(PRODUCTS[cat].items);
-  if (['panels','inverter','battery','mounting','wiring'].includes(cat)) updateRecommendationBars();
+  if (['panels','inverter','battery'].includes(cat)) updateRecommendationBars();
 }
 
 function removeItemDrawer(cat, itemId) {
@@ -2852,7 +2729,7 @@ function removeItemDrawer(cat, itemId) {
   updateCompCard(cat);
   updateStats();
   renderDrawerProducts(PRODUCTS[cat].items);
-  if (['panels','inverter','battery','mounting','wiring'].includes(cat)) updateRecommendationBars();
+  if (['panels','inverter','battery'].includes(cat)) updateRecommendationBars();
   showToast(`🗑️ Item removed.`);
 }
 
@@ -3126,7 +3003,7 @@ function printBuildPDF() {
         .summary-sub { font-size: 0.78rem; color: #6B7C52; margin-bottom: 28px; }
         .summary-section { margin-bottom: 24px; }
         .summary-section-title {
-          font-size: 0.68rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.13em;
+          font-size: 0.68rem; font-weight: 800; text-transform: uppercase; 
           color: #6B7C52; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1.5px solid #DDE3D4;
         }
         .summary-item {
@@ -3145,7 +3022,7 @@ function printBuildPDF() {
           display: flex; justify-content: space-between; align-items: center;
           padding: 14px 18px; background: #3A5C1A; border-radius: 10px; margin-top: 14px;
         }
-        .summary-total-lbl { color: rgba(255,255,255,0.75); font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; }
+        .summary-total-lbl { color: rgba(255,255,255,0.75); font-size: 0.8rem; font-weight: 700; text-transform: uppercase;  }
         .summary-total-val { color: #ffc107; font-size: 1.6rem; font-weight: 900; }
         .print-footer { margin-top: 30px; text-align: center; font-size: 0.7rem; color: #6B7C52; border-top: 1px solid #DDE3D4; padding-top: 15px; }
         @media print {
