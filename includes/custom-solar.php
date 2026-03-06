@@ -365,7 +365,8 @@
     .summary-item-price { font-size: 0.9rem; font-weight: 800; color: var(--green); }
     .summary-item.empty { opacity: 0.4; border-style: dashed; }
     .summary-total-row {
-      display: flex; justify-content: space-between; align-items: center;
+      display: none;
+      justify-content: space-between; align-items: center;
       padding: 14px 18px; background: var(--green); border-radius: 10px; margin-top: 14px;
     }
     .summary-total-lbl { color: rgba(255,255,255,0.75); font-size: 0.8rem; font-weight: 700; text-transform: uppercase; }
@@ -397,7 +398,7 @@
     .ship { color: rgba(255,255,255,0.8); font-size: 0.77rem; }
     .ship strong { color: #fff; }
     .ship a { color: var(--yellow); font-size: 0.71rem; text-decoration: none; display: block; margin-top: 2px; }
-    .total-block { text-align: right; }
+    .total-block { display: none; text-align: right; }
     .total-lbl { font-size: 0.64rem; font-weight: 700; text-transform: uppercase; color: rgba(255,255,255,0.55); }
     .total-val { font-size: 1.5rem; font-weight: 900; color: var(--yellow); transition: all 0.4s; }
     .cart-btn {
@@ -1167,10 +1168,6 @@
 
     <div class="summary-cta">
       <button class="cta-secondary" onclick="solarGoToStep(1)">← Edit Build</button>
-      <button class="cta-primary" onclick="printBuildPDF()" style="display:flex; align-items:center; gap:10px; font-size:1rem;justify-content:center; font-weight:700;">
-        <img src="assets/img/pdf.png" alt="PDF" style="width:50px; height:50px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));">
-        Print to PDF
-      </button>
     </div>
   </div>
 </div>
@@ -1411,7 +1408,6 @@ async function fetchProducts(category) {
           id: String(p.id),
           name: p.name,
           spec: p.spec_summary || p.description?.substring(0, 80) || `${p.brand} · ${p.warranty || 'Standard warranty'}`,
-          price: p.price,
           brand: p.brand,
           spec_type: p.specs?.inverter_type || p.specs?.chemistry || p.specs?.mount_type || p.specs?.kit_type || p.specs?.connectivity || p.specs?.cell_type || 'Standard',
           image: p.image,
@@ -1976,15 +1972,7 @@ function updateBuildCategory() {
 }
 
 function getSubtotal() {
-  let t = 0;
-  Object.entries(selected).forEach(([cat, entries]) => {
-    entries.forEach(e => { t += e.qty * e.item.price; });
-  });
-  selectedPeriphs.forEach(id => {
-    const p = PERIPHERALS.find(x => x.id === id);
-    if (p) t += p.price;
-  });
-  return t;
+  return 0;
 }
 
 function updateTotal() {
@@ -2020,6 +2008,7 @@ function updateCompCard(cat) {
       iconEl.style.background = 'var(--green)';
     } else {
       iconEl.style.background = 'var(--green)';
+      
     }
   } else {
     nameEl.textContent = 'Select item';
@@ -2062,7 +2051,6 @@ function renderProducts(items) {
         <div class="prod-inf">
           <div class="prod-name">${item.name}</div>
           <div class="prod-spec">${item.spec}</div>
-          <div class="prod-price"><span>₱</span> ${item.price.toLocaleString()} ${saleTag}</div>
           ${qtyControls}
         </div>
       </div>`;
@@ -2177,7 +2165,6 @@ function renderPeripherals() {
         <div class="periph-type">${p.type}</div>
         <div class="periph-name">${p.name}</div>
         <div style="font-size:0.67rem; color:var(--muted); margin-top:4px;">${p.desc}</div>
-        <div class="periph-price">₱ ${p.price.toLocaleString()}</div>
         <div class="periph-check">✓ Added</div>
         <div class="periph-toggle">${active ? '✕ Remove' : '+ Add to Build'}</div>
       </div>`;
@@ -2210,7 +2197,6 @@ function renderSummary() {
     const entries = selected[key];
     if (entries.length > 0) {
       return entries.map(({ item, qty }) => {
-        const lineTotal = qty * item.price;
         const imgHtml = item.image
           ? `<img src="/SolarPower-Energy-Corporation/${item.image}" alt="${item.name}" onerror="applySummaryFallback(this.parentElement, '${key}')">`
           : icon;
@@ -2222,7 +2208,6 @@ function renderSummary() {
               <div class="summary-item-spec">${item.spec}</div>
             </div>
           </div>
-          <div class="summary-item-price">₱ ${lineTotal.toLocaleString()}</div>
         </div>`;
       }).join('');
     } else {
@@ -2231,7 +2216,6 @@ function renderSummary() {
           <div class="summary-item-icon">${icon}</div>
           <div class="summary-item-name" style="color:var(--muted)">${label} — not selected</div>
         </div>
-        <div class="summary-item-price" style="color:var(--muted)">—</div>
       </div>`;
     }
   }).join('');
@@ -2249,7 +2233,6 @@ function renderSummary() {
             <div class="summary-item-spec">${p.desc}</div>
           </div>
         </div>
-        <div class="summary-item-price">₱ ${p.price.toLocaleString()}</div>
       </div>`;
     }).join('');
     document.getElementById('summaryPeripherals').innerHTML = periphHtml;
@@ -2688,7 +2671,6 @@ function renderDrawerProducts(items) {
       <div class="prod-inf">
         <div class="prod-name">${item.name}</div>
         <div class="prod-spec">${item.spec}</div>
-        <div class="prod-price"><span>₱</span> ${item.price.toLocaleString()} ${saleTag}</div>
         ${qtyControls}
       </div>
     </div>`;
@@ -2984,68 +2966,6 @@ document.getElementById('calcBillInput').addEventListener('keypress', function(e
   if (e.key === 'Enter') runCalculator();
 });
 
-// ─── PRINT TO PDF ─────────────────────────────────────────────────────────────
-
-function printBuildPDF() {
-  const summaryEl = document.querySelector('.summary-wrap');
-  if (!summaryEl) return;
-
-  const printWindow = window.open('', '_blank');
-  printWindow.document.write(`
-    <html>
-    <head>
-      <title>Solar Build Summary - SolarPower Energy Corporation</title>
-      <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
-      <style>
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Montserrat', sans-serif; background: #fff; color: #1A2308; padding: 40px; }
-        .summary-title { font-size: 1.3rem; font-weight: 900; color: #3A5C1A; margin-bottom: 6px; }
-        .summary-sub { font-size: 0.78rem; color: #6B7C52; margin-bottom: 28px; }
-        .summary-section { margin-bottom: 24px; }
-        .summary-section-title {
-          font-size: 0.68rem; font-weight: 800; text-transform: uppercase; 
-          color: #6B7C52; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1.5px solid #DDE3D4;
-        }
-        .summary-item {
-          display: flex; justify-content: space-between; align-items: center;
-          padding: 11px 14px; background: #fff; border-radius: 8px; margin-bottom: 6px;
-          border: 1.5px solid #DDE3D4;
-        }
-        .summary-item-left { display: flex; align-items: center; gap: 10px; }
-        .summary-item-icon { font-size: 1.2rem; width: 44px; height: 44px; min-width: 44px; border-radius: 8px; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #F7F9F4; border: 1px solid #DDE3D4; }
-        .summary-item-icon img { width: 100%; height: 100%; object-fit: cover; }
-        .summary-item-name { font-size: 0.82rem; font-weight: 600; }
-        .summary-item-spec { font-size: 0.67rem; color: #6B7C52; }
-        .summary-item-price { font-size: 0.9rem; font-weight: 800; color: #3A5C1A; }
-        .summary-item.empty { opacity: 0.4; border-style: dashed; }
-        .summary-total-row {
-          display: flex; justify-content: space-between; align-items: center;
-          padding: 14px 18px; background: #3A5C1A; border-radius: 10px; margin-top: 14px;
-        }
-        .summary-total-lbl { color: rgba(255,255,255,0.75); font-size: 0.8rem; font-weight: 700; text-transform: uppercase;  }
-        .summary-total-val { color: #ffc107; font-size: 1.6rem; font-weight: 900; }
-        .print-footer { margin-top: 30px; text-align: center; font-size: 0.7rem; color: #6B7C52; border-top: 1px solid #DDE3D4; padding-top: 15px; }
-        @media print {
-          body { padding: 20px; }
-          .no-print { display: none; }
-        }
-      </style>
-    </head>
-    <body>
-      ${summaryEl.innerHTML}
-      <div class="print-footer">
-        <p>Generated on ${new Date().toLocaleDateString('en-PH', { year:'numeric', month:'long', day:'numeric' })} — SolarPower Energy Corporation</p>
-      </div>
-      <script>
-        // Remove CTA buttons from print
-        document.querySelectorAll('.summary-cta').forEach(el => el.remove());
-        window.onload = function() { window.print(); };
-      <\/script>
-    </body>
-    </html>
-  `);
-  printWindow.document.close();
-}
 </script>
 </body>
 </html>
