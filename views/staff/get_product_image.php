@@ -3,7 +3,7 @@
 header('Content-Type: application/json');
 
 // Include your database connection
-require_once '../config/dbconn.php'; 
+require_once '../../config/dbconn.php'; 
 
 // Get product ID from query parameter
 $product_id = isset($_GET['product_id']) ? intval($_GET['product_id']) : 0;
@@ -29,8 +29,8 @@ try {
         $row = $result->fetch_assoc();
         
         // The image_path from database is like: uploads/products/58/img_695860d3965e1.webp
-        // Check if file exists
-        $full_path = '../' . $row['image_path'];
+        // Check if file exists (go up 2 levels from views/staff/ to project root)
+        $full_path = '../../' . $row['image_path'];
         
         if (file_exists($full_path)) {
             echo json_encode([

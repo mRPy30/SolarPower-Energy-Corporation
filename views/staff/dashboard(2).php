@@ -718,6 +718,89 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
     $conn->close();
     exit;
 }
+
+// ── PRG: Handle add_product POST before any HTML output ──
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['action'] === 'add_product') {
+    $conn_post = mysqli_connect($servername, $username, $password, $dbname);
+    if ($conn_post->connect_error) {
+        $_SESSION['add_product_msg'] = 'Connection failed: ' . $conn_post->connect_error;
+        $_SESSION['add_product_msg_type'] = 'error';
+    } else {
+        $category = $conn_post->real_escape_string($_POST['category'] ?? '');
+        $brand = $conn_post->real_escape_string($_POST['brand'] ?? '');
+        $productName = $conn_post->real_escape_string($_POST['product-name'] ?? '');
+        $warranty = $conn_post->real_escape_string($_POST['warranty'] ?? '');
+        $price = (float)($_POST['price'] ?? 0);
+        $stockQuantity = (int)($_POST['stock-quantity'] ?? 0);
+        $description = $conn_post->real_escape_string($_POST['description'] ?? '');
+        $imagePath = 'path/to/uploaded/image.jpg';
+
+        if (empty($category) || empty($brand) || empty($productName) || $price <= 0 || $stockQuantity < 0) {
+            $_SESSION['add_product_msg'] = 'Please fill all required fields correctly.';
+            $_SESSION['add_product_msg_type'] = 'error';
+        } else {
+            $stmt = $conn_post->prepare("INSERT INTO product (displayName, brandName, price, category, stockQuantity, warranty, description, imagePath, postedByStaffId) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            if (!$stmt) {
+                $_SESSION['add_product_msg'] = 'Database error: ' . $conn_post->error;
+                $_SESSION['add_product_msg_type'] = 'error';
+            } else {
+                $stmt->bind_param("ssdsisssi", $productName, $brand, $price, $category, $stockQuantity, $warranty, $description, $imagePath, $user_id);
+
+                if ($stmt->execute()) {
+                    $product_id = $stmt->insert_id;
+
+                    // ===== IMAGE UPLOAD =====
+                    $uploadDir = "../../uploads/products/$product_id/";
+                    if (!is_dir($uploadDir)) {
+                        mkdir($uploadDir, 0777, true);
+                    }
+
+                    $allowedTypes = ['jpg', 'jpeg', 'png', 'webp'];
+                    $maxImages = 15;
+                    $count = 0;
+
+                    if (!empty($_FILES['product-images']['name'][0])) {
+                        foreach ($_FILES['product-images']['tmp_name'] as $key => $tmpName) {
+                            if ($count >= $maxImages) break;
+                            if ($_FILES['product-images']['error'][$key] !== 0) continue;
+
+                            $ext = strtolower(pathinfo($_FILES['product-images']['name'][$key], PATHINFO_EXTENSION));
+                            if (!in_array($ext, $allowedTypes)) continue;
+
+                            $newName = uniqid("img_") . "." . $ext;
+                            $targetPath = $uploadDir . $newName;
+
+                            if (move_uploaded_file($tmpName, $targetPath)) {
+                                $relativePath = "uploads/products/$product_id/$newName";
+
+                                $imgStmt = $conn_post->prepare("
+                                    INSERT INTO product_images (product_id, image_path)
+                                    VALUES (?, ?)
+                                ");
+                                $imgStmt->bind_param("is", $product_id, $relativePath);
+                                $imgStmt->execute();
+                                $imgStmt->close();
+
+                                $count++;
+                            }
+                        }
+                    }
+
+                    $_SESSION['add_product_msg'] = "Product '{$productName}' added successfully with {$count} image(s)!";
+                    $_SESSION['add_product_msg_type'] = 'success';
+                } else {
+                    $_SESSION['add_product_msg'] = 'Error adding product: ' . $stmt->error;
+                    $_SESSION['add_product_msg_type'] = 'error';
+                }
+                $stmt->close();
+            }
+        }
+        $conn_post->close();
+    }
+    // PRG redirect — converts POST to GET, prevents duplicate on reload
+    header("Location: dashboard(2).php");
+    exit;
+}
 ?>
 
 <!DOCTYPE html>
@@ -1276,7 +1359,7 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
                         $image_folder = "../../uploads/products/{$product_id}/";
                         
                         // Default placeholder
-                        $image_src = '../assets/img/product-placeholder.png';
+                        $image_src = '../../assets/img/product-placeholder.png';
                         
                         // Check if the folder exists and get the first image
                         if (is_dir($image_folder)) {
@@ -1297,7 +1380,7 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
                                 <img 
                                     src="<?php echo $image_src; ?>" 
                                     alt="<?php echo htmlspecialchars($product['displayName']); ?>"
-                                    onerror="this.src='../assets/img/product-placeholder.png'">
+                                    onerror="this.src='../../assets/img/product-placeholder.png'">
                             </div>
                         
                             <div class="product-content">
@@ -1336,9 +1419,29 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
                     <div class="form-section">
                         <h3><i class="fas fa-images"></i> Product Images</h3>
                         
-                        <!-- Current Images Display -->
-                        <div id="currentImagesContainer" class="current-images-grid">
-                            <!-- Images will be loaded here via JavaScript -->
+                        <!-- Image Carousel -->
+                        <div class="edit-product-carousel" id="editProductCarousel">
+                            <div class="carousel-main">
+                                <div id="carouselImageContainer" class="carousel-image-container">
+                                    <!-- Main image will be loaded here -->
+                                    <div class="no-images-placeholder">
+                                        <i class="fas fa-image"></i>
+                                        <p>No images uploaded yet</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="carousel-counter" id="carouselCounter"></div>
+                            <div class="carousel-thumbnails-wrapper">
+                                <button type="button" class="carousel-nav carousel-prev" id="carouselPrevBtn" onclick="carouselPrev()" style="display: none;">
+                                    <i class="fas fa-chevron-left"></i>
+                                </button>
+                                <div id="carouselThumbnails" class="carousel-thumbnails">
+                                    <!-- Thumbnails will be loaded here -->
+                                </div>
+                                <button type="button" class="carousel-nav carousel-next" id="carouselNextBtn" onclick="carouselNext()" style="display: none;">
+                                    <i class="fas fa-chevron-right"></i>
+                                </button>
+                            </div>
                         </div>
                         
                         <!-- Add New Images -->
@@ -1346,6 +1449,7 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
                             <label><i class="fas fa-plus-circle"></i> Add New Images</label>
                             <input type="file" name="new_images[]" id="newImagesInput" accept="image/*" multiple>
                             <small>You can select multiple images at once</small>
+                            <div id="newImagesPreview" class="new-images-preview-grid"></div>
                         </div>
                     </div>
         
@@ -1814,93 +1918,19 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
         <!-- Other page sections remain the same -->
 
         <div id="add-product" class="page-content add-product-page">
-            <?php
-            $addProductMsg = '';
-            if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['action'] === 'add_product') {
-                $conn_post = mysqli_connect($servername, $username, $password, $dbname);
-                if ($conn_post->connect_error) {
-                     $addProductMsg = "<div class='alert error'>Connection failed: " . $conn_post->connect_error . "</div>";
-                } else {
-                    $category = $conn_post->real_escape_string($_POST['category'] ?? '');
-                    $brand = $conn_post->real_escape_string($_POST['brand'] ?? '');
-                    $productName = $conn_post->real_escape_string($_POST['product-name'] ?? '');
-                    $warranty = $conn_post->real_escape_string($_POST['warranty'] ?? '');
-                    $price = (float)($_POST['price'] ?? 0);
-                    $stockQuantity = (int)($_POST['stock-quantity'] ?? 0);
-                    $description = $conn_post->real_escape_string($_POST['description'] ?? '');
-                    $moq = max(1, intval($_POST['moq'] ?? 1));
-                    $imagePath = 'path/to/uploaded/image.jpg';
-                    
-                    if (empty($category) || empty($brand) || empty($productName) || $price <= 0 || $stockQuantity < 0) {
-                        $addProductMsg = "<div class='alert error'>Please fill all required fields correctly.</div>";
-                    } else {
-                        $stmt = $conn_post->prepare("INSERT INTO product (displayName, brandName, price, category, stockQuantity, warranty, description, imagePath, moq, postedByStaffId) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-                        $stmt->bind_param("ssdsisssii", $productName, $brand, $price, $category, $stockQuantity, $warranty, $description, $imagePath, $moq, $user_id);
-                        
-                        if ($stmt->execute()) {
-
-                    $product_id = $stmt->insert_id;
-                                        
-                    // ===== IMAGE UPLOAD =====
-                    $uploadDir = "../../uploads/products/$product_id/";
-                    if (!is_dir($uploadDir)) {
-                        mkdir($uploadDir, 0777, true);
-                    }
-                
-                    $allowedTypes = ['jpg', 'jpeg', 'png', 'webp'];
-                    $maxImages = 15;
-                    $count = 0;
-                
-                    if (!empty($_FILES['product-images']['name'][0])) {
-                    
-                        foreach ($_FILES['product-images']['tmp_name'] as $key => $tmpName) {
-                        
-                            if ($count >= $maxImages) break;
-                            if ($_FILES['product-images']['error'][$key] !== 0) continue;
-                        
-                            $ext = strtolower(pathinfo($_FILES['product-images']['name'][$key], PATHINFO_EXTENSION));
-                            if (!in_array($ext, $allowedTypes)) continue;
-                        
-                            $newName = uniqid("img_") . "." . $ext;
-                            $targetPath = $uploadDir . $newName;
-                        
-                            if (move_uploaded_file($tmpName, $targetPath)) {
-                            
-                                $relativePath = "uploads/products/$product_id/$newName";
-                            
-                                $imgStmt = $conn_post->prepare("
-                                    INSERT INTO product_images (product_id, image_path)
-                                    VALUES (?, ?)
-                                ");
-                                $imgStmt->bind_param("is", $product_id, $relativePath);
-                                $imgStmt->execute();
-                                $imgStmt->close();
-                            
-                                $count++;
-                            }
-                        }
-                    }
-                
-                    $addProductMsg = "<div class='alert success'>
-                        Product '{$productName}' added successfully with {$count} image(s)!
-                    </div>";
-                }
-                 else {
-                            $addProductMsg = "<div class='alert error'>Error adding product: " . $stmt->error . "</div>";
-                        }
-                        $stmt->close();
-                    }
-                    $conn_post->close();
-                }
-            }
-            ?>
             <style>
                 .alert { padding: 10px; margin-bottom: 20px; border-radius: 5px; }
                 .alert.error { background-color: #fdd; color: #a00; border: 1px solid #f99; }
                 .alert.success { background-color: #dfd; color: #0a0; border: 1px solid #9f9; }
             </style>
             
-            <?php echo $addProductMsg; ?>
+            <?php
+            if (isset($_SESSION['add_product_msg'])) {
+                $msgType = $_SESSION['add_product_msg_type'] ?? 'success';
+                echo "<div class='alert {$msgType}'>" . htmlspecialchars($_SESSION['add_product_msg']) . "</div>";
+                unset($_SESSION['add_product_msg'], $_SESSION['add_product_msg_type']);
+            }
+            ?>
 
             <form method="POST" action="" enctype="multipart/form-data">
                 <input type="hidden" name="action" value="add_product">
@@ -5586,7 +5616,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Load first image for each product
-    loadProductImages();
+    loadProductCardImages();
 
     // Filter button click handler
     filterButtons.forEach(button => {
@@ -5767,30 +5797,161 @@ async function openEditModal(productId) {
     }
 }
 
-// Load product images into the modal
+// Carousel state
+let carouselImages = [];
+let currentCarouselIndex = 0;
+
+// Load product images into the carousel
 function loadProductImages(images) {
-    const container = document.getElementById('currentImagesContainer');
-    container.innerHTML = '';
+    const mainContainer = document.getElementById('carouselImageContainer');
+    const thumbnailsContainer = document.getElementById('carouselThumbnails');
+    const counterContainer = document.getElementById('carouselCounter');
+    const prevBtn = document.getElementById('carouselPrevBtn');
+    const nextBtn = document.getElementById('carouselNextBtn');
     
+    carouselImages = images || [];
+    currentCarouselIndex = 0;
+
+    // Clear containers
+    mainContainer.innerHTML = '';
+    thumbnailsContainer.innerHTML = '';
+    counterContainer.innerHTML = '';
+
     if (!images || images.length === 0) {
-        container.innerHTML = '<p style="color: #999; text-align: center; padding: 20px;">No images uploaded yet</p>';
+        // Show no images placeholder
+        mainContainer.innerHTML = `
+            <div class="no-images-placeholder">
+                <i class="fas fa-image"></i>
+                <p>No images uploaded yet</p>
+            </div>
+        `;
+        // Hide navigation buttons
+        if (prevBtn) prevBtn.style.display = 'none';
+        if (nextBtn) nextBtn.style.display = 'none';
         return;
     }
-    
-    images.forEach(image => {
-        const imageItem = document.createElement('div');
-        imageItem.className = 'image-item';
-        imageItem.dataset.imageId = image.id;
-        
-        imageItem.innerHTML = `
-            <img src="../../${image.image_path}" alt="Product image">
-            <button type="button" class="delete-image-btn" onclick="markImageForDeletion(${image.id}, this)">
-                <i class="fas fa-times"></i>
-            </button>
+
+    // Show navigation buttons if more than 1 image
+    if (prevBtn) prevBtn.style.display = images.length > 1 ? 'flex' : 'none';
+    if (nextBtn) nextBtn.style.display = images.length > 1 ? 'flex' : 'none';
+
+    // Create main carousel image display
+    const mainImageWrapper = document.createElement('div');
+    mainImageWrapper.className = 'carousel-slide-wrapper';
+    mainImageWrapper.innerHTML = `
+        <img id="carouselMainImage" src="../../${images[0].image_path}" alt="Product image" onerror="this.src='../../assets/img/product-placeholder.png'">
+        <button type="button" class="carousel-delete-btn" id="carouselDeleteBtn" onclick="markCarouselImageForDeletion()">
+            <i class="fas fa-trash"></i> Delete This Image
+        </button>
+    `;
+    mainContainer.appendChild(mainImageWrapper);
+
+    // Create thumbnails
+    images.forEach((image, index) => {
+        const thumb = document.createElement('div');
+        thumb.className = 'carousel-thumbnail' + (index === 0 ? ' active' : '');
+        thumb.dataset.imageId = image.id;
+        thumb.dataset.index = index;
+        thumb.innerHTML = `
+            <img src="../../${image.image_path}" alt="Thumbnail ${index + 1}" onerror="this.src='../../assets/img/product-placeholder.png'">
+            ${imagesToDelete.includes(image.id) ? '<span class="thumb-deleted-badge"><i class="fas fa-trash"></i></span>' : ''}
         `;
-        
-        container.appendChild(imageItem);
+        thumb.onclick = () => goToCarouselSlide(index);
+        thumbnailsContainer.appendChild(thumb);
     });
+
+    // Update counter
+    updateCarouselCounter();
+}
+
+// Go to specific carousel slide
+function goToCarouselSlide(index) {
+    if (carouselImages.length === 0) return;
+    
+    currentCarouselIndex = index;
+    if (currentCarouselIndex < 0) currentCarouselIndex = carouselImages.length - 1;
+    if (currentCarouselIndex >= carouselImages.length) currentCarouselIndex = 0;
+
+    const mainImage = document.getElementById('carouselMainImage');
+    const deleteBtn = document.getElementById('carouselDeleteBtn');
+    
+    if (mainImage) {
+        mainImage.src = '../../' + carouselImages[currentCarouselIndex].image_path;
+    }
+
+    // Update thumbnail active state
+    document.querySelectorAll('.carousel-thumbnail').forEach((thumb, i) => {
+        thumb.classList.toggle('active', i === currentCarouselIndex);
+    });
+
+    // Update delete button state
+    const currentImageId = carouselImages[currentCarouselIndex].id;
+    if (deleteBtn) {
+        if (imagesToDelete.includes(currentImageId)) {
+            deleteBtn.innerHTML = '<i class="fas fa-undo"></i> Undo Delete';
+            deleteBtn.classList.add('marked-delete');
+        } else {
+            deleteBtn.innerHTML = '<i class="fas fa-trash"></i> Delete This Image';
+            deleteBtn.classList.remove('marked-delete');
+        }
+    }
+
+    updateCarouselCounter();
+}
+
+// Carousel navigation
+function carouselNext() {
+    goToCarouselSlide(currentCarouselIndex + 1);
+}
+
+function carouselPrev() {
+    goToCarouselSlide(currentCarouselIndex - 1);
+}
+
+// Update carousel counter
+function updateCarouselCounter() {
+    const counter = document.getElementById('carouselCounter');
+    if (counter && carouselImages.length > 0) {
+        counter.innerHTML = `<span>${currentCarouselIndex + 1}</span> / <span>${carouselImages.length}</span>`;
+    }
+}
+
+// Mark current carousel image for deletion
+function markCarouselImageForDeletion() {
+    if (carouselImages.length === 0) return;
+    
+    const currentImageId = carouselImages[currentCarouselIndex].id;
+    const deleteBtn = document.getElementById('carouselDeleteBtn');
+    const thumbnail = document.querySelector(`.carousel-thumbnail[data-index="${currentCarouselIndex}"]`);
+
+    if (imagesToDelete.includes(currentImageId)) {
+        // Unmark for deletion
+        imagesToDelete = imagesToDelete.filter(id => id !== currentImageId);
+        if (deleteBtn) {
+            deleteBtn.innerHTML = '<i class="fas fa-trash"></i> Delete This Image';
+            deleteBtn.classList.remove('marked-delete');
+        }
+        if (thumbnail) {
+            const badge = thumbnail.querySelector('.thumb-deleted-badge');
+            if (badge) badge.remove();
+        }
+    } else {
+        // Mark for deletion
+        imagesToDelete.push(currentImageId);
+        if (deleteBtn) {
+            deleteBtn.innerHTML = '<i class="fas fa-undo"></i> Undo Delete';
+            deleteBtn.classList.add('marked-delete');
+        }
+        if (thumbnail) {
+            const badge = document.createElement('span');
+            badge.className = 'thumb-deleted-badge';
+            badge.innerHTML = '<i class="fas fa-trash"></i>';
+            thumbnail.appendChild(badge);
+        }
+    }
+
+    // Update hidden input
+    document.getElementById('deleteImagesInput').value = imagesToDelete.join(',');
 }
 
 // Mark image for deletion
@@ -5816,6 +5977,13 @@ function markImageForDeletion(imageId, button) {
 // Close edit modal
 function closeEditModal() {
     document.getElementById('editProductModal').style.display = 'none';
+    
+    // Clear new images input and preview
+    const newImagesInput = document.getElementById('newImagesInput');
+    const newImagesPreview = document.getElementById('newImagesPreview');
+    
+    if (newImagesInput) newImagesInput.value = '';
+    if (newImagesPreview) newImagesPreview.innerHTML = '';
 }
 
 // Close modal when clicking outside
@@ -5857,8 +6025,8 @@ if (editForm) {
 }
 
 // Load first image for each product from product_images table
-async function loadProductImages() {
-    productCards.forEach(async (card) => {
+async function loadProductCardImages() {
+    document.querySelectorAll('.product-card').forEach(async (card) => {
         const productId = card.getAttribute('data-product-id');
         const imageElement = card.querySelector('.product-image img');
         
@@ -5869,14 +6037,14 @@ async function loadProductImages() {
                 const data = await response.json();
                 
                 if (data.success && data.image_path) {
-                    imageElement.src = '../' + data.image_path;
+                    imageElement.src = '../../' + data.image_path;
                 } else {
                     // Keep the placeholder if no image found
-                    imageElement.src = '../assets/img/product-placeholder.png';
+                    imageElement.src = '../../assets/img/product-placeholder.png';
                 }
             } catch (error) {
                 console.error('Error loading image for product ' + productId, error);
-                imageElement.src = '../assets/img/product-placeholder.png';
+                imageElement.src = '../../assets/img/product-placeholder.png';
             }
         }
     });
@@ -5945,28 +6113,94 @@ function undoImageDeletion(imageFilename, button) {
     button.onclick = () => markImageForDeletion(imageFilename, button);
 }
 
-// Handle new images preview
+// Handle new images - upload immediately via AJAX and refresh carousel
 document.addEventListener('DOMContentLoaded', function() {
-    const newImagesInput = document.getElementById('editNewImages');
+    const newImagesInput = document.getElementById('newImagesInput');
     if (newImagesInput) {
-        newImagesInput.addEventListener('change', function(e) {
-            const previewDiv = document.getElementById('editNewImagesPreview');
-            previewDiv.innerHTML = '';
+        newImagesInput.addEventListener('change', async function(e) {
+            const previewDiv = document.getElementById('newImagesPreview');
+            if (!previewDiv) return;
             
+            previewDiv.innerHTML = '';
+
             const files = e.target.files;
-            for (let i = 0; i < files.length; i++) {
-                const file = files[i];
-                const reader = new FileReader();
-                
-                reader.onload = function(e) {
-                    const preview = document.createElement('div');
-                    preview.className = 'new-image-preview';
-                    preview.innerHTML = `<img src="${e.target.result}" alt="New ${i + 1}">`;
-                    previewDiv.appendChild(preview);
-                };
-                
-                reader.readAsDataURL(file);
+            if (files.length === 0) return;
+
+            const productId = document.getElementById('editProductId').value;
+            if (!productId) {
+                alert('Product ID is missing. Please try again.');
+                return;
             }
+
+            // Show uploading indicator
+            const statusMsg = document.createElement('div');
+            statusMsg.style.cssText = 'grid-column: 1/-1; text-align: center; padding: 10px; background: #fff3cd; color: #856404; border-radius: 6px; font-weight: 600; margin-bottom: 8px;';
+            statusMsg.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading ' + files.length + ' image(s)...';
+            previewDiv.appendChild(statusMsg);
+
+            // Build FormData and upload via AJAX
+            const formData = new FormData();
+            formData.append('product_id', productId);
+            for (let i = 0; i < files.length; i++) {
+                if (files[i].type.startsWith('image/')) {
+                    formData.append('new_images[]', files[i]);
+                }
+            }
+
+            try {
+                const response = await fetch('ajax_upload_images.php', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+
+                previewDiv.innerHTML = '';
+
+                if (data.success && data.images && data.images.length > 0) {
+                    // Show success message
+                    const successMsg = document.createElement('div');
+                    successMsg.style.cssText = 'grid-column: 1/-1; text-align: center; padding: 10px; background: #e6f7f1; color: #217346; border-radius: 6px; font-weight: 600; margin-bottom: 8px;';
+                    successMsg.innerHTML = '<i class="fas fa-check-circle"></i> ' + data.message;
+                    previewDiv.appendChild(successMsg);
+
+                    // Show preview thumbnails of newly uploaded images
+                    data.images.forEach((img, i) => {
+                        const preview = document.createElement('div');
+                        preview.className = 'new-image-preview-item';
+                        preview.innerHTML = 
+                            '<img src="../../' + img.image_path + '" alt="New image ' + (i + 1) + '">' +
+                            '<div class="new-image-badge"><i class="fas fa-plus-circle"></i> New</div>';
+                        previewDiv.appendChild(preview);
+                    });
+
+                    // Append new images to the carousel array
+                    data.images.forEach(img => {
+                        carouselImages.push({ id: img.id, image_path: img.image_path });
+                    });
+
+                    // Refresh the carousel to show all images including new ones
+                    loadProductImages(carouselImages);
+
+                    // Navigate to the first newly added image
+                    const firstNewIndex = carouselImages.length - data.images.length;
+                    goToCarouselSlide(firstNewIndex);
+                } else {
+                    const errorMsg = document.createElement('div');
+                    errorMsg.style.cssText = 'grid-column: 1/-1; text-align: center; padding: 10px; background: #f8d7da; color: #721c24; border-radius: 6px; font-weight: 600; margin-bottom: 8px;';
+                    errorMsg.innerHTML = '<i class="fas fa-exclamation-circle"></i> ' + (data.message || 'Upload failed');
+                    previewDiv.appendChild(errorMsg);
+                }
+            } catch (error) {
+                console.error('Upload error:', error);
+                previewDiv.innerHTML = '';
+                const errorMsg = document.createElement('div');
+                errorMsg.style.cssText = 'grid-column: 1/-1; text-align: center; padding: 10px; background: #f8d7da; color: #721c24; border-radius: 6px; font-weight: 600; margin-bottom: 8px;';
+                errorMsg.innerHTML = '<i class="fas fa-exclamation-circle"></i> Failed to upload images. Please try again.';
+                previewDiv.appendChild(errorMsg);
+            }
+
+            // Reset the file input so the same files can be re-selected if needed
+            newImagesInput.value = '';
         });
     }
 });
@@ -6957,21 +7191,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Form Submit Handler with Animation
 document.addEventListener('DOMContentLoaded', function() {
-    const productForm = document.querySelector('form[enctype="multipart/form-data"]');
-    
-    if (productForm) {
-        productForm.addEventListener('submit', function(e) {
-            // Check if this is the add product form
-            const actionInput = this.querySelector('input[name="action"]');
-            if (actionInput && actionInput.value === 'add_product') {
-                // Start the upload animation
-                UploadAnimation.start();
-                
-                // Let the form submit naturally
-                // The animation will play while PHP processes the upload
-            }
-        });
-    }
+    // Note: ProductFormHandler already handles form submission via AJAX
+    // No need to start UploadAnimation here as it conflicts with the AJAX handler
     
     // Check if there's a success message from PHP
     const alertSuccess = document.querySelector('.alert.success');
