@@ -1,0 +1,99 @@
+[09-Jan-2026 02:38:06 UTC] PHP Warning:  include(config/dbconn.php): Failed to open stream: No such file or directory in /home/i4ia387yanzg/public_html/solarpower.com.ph/controllers/ordering/create-cod-order.php on line 6
+[09-Jan-2026 02:38:06 UTC] PHP Warning:  include(): Failed opening 'config/dbconn.php' for inclusion (include_path='.:/opt/alt/php82/usr/share/pear:/opt/alt/php82/usr/share/php:/usr/share/pear:/usr/share/php') in /home/i4ia387yanzg/public_html/solarpower.com.ph/controllers/ordering/create-cod-order.php on line 6
+[09-Jan-2026 02:38:06 UTC] PHP Warning:  Undefined variable $conn in /home/i4ia387yanzg/public_html/solarpower.com.ph/controllers/ordering/create-cod-order.php on line 51
+[09-Jan-2026 02:38:06 UTC] PHP Fatal error:  Uncaught Error: Call to a member function begin_transaction() on null in /home/i4ia387yanzg/public_html/solarpower.com.ph/controllers/ordering/create-cod-order.php:51
+Stack trace:
+#0 {main}
+  thrown in /home/i4ia387yanzg/public_html/solarpower.com.ph/controllers/ordering/create-cod-order.php on line 51
+[09-Jan-2026 02:41:52 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'reference_no' in 'INSERT INTO' in /home/i4ia387yanzg/public_html/solarpower.com.ph/controllers/ordering/create-maya-checkout.php:43
+Stack trace:
+#0 /home/i4ia387yanzg/public_html/solarpower.com.ph/controllers/ordering/create-maya-checkout.php(43): mysqli->prepare()
+#1 {main}
+  thrown in /home/i4ia387yanzg/public_html/solarpower.com.ph/controllers/ordering/create-maya-checkout.php on line 43
+[09-Jan-2026 02:45:13 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'reference_no' in 'INSERT INTO' in /home/i4ia387yanzg/public_html/solarpower.com.ph/controllers/ordering/create-maya-checkout.php:43
+Stack trace:
+#0 /home/i4ia387yanzg/public_html/solarpower.com.ph/controllers/ordering/create-maya-checkout.php(43): mysqli->prepare()
+#1 {main}
+  thrown in /home/i4ia387yanzg/public_html/solarpower.com.ph/controllers/ordering/create-maya-checkout.php on line 43
+[09-Jan-2026 02:48:42 UTC] PHP Warning:  Undefined array key "name" in /home/i4ia387yanzg/public_html/solarpower.com.ph/controllers/ordering/create-maya-checkout.php on line 38
+[09-Jan-2026 02:49:09 UTC] PHP Warning:  Undefined array key "name" in /home/i4ia387yanzg/public_html/solarpower.com.ph/controllers/ordering/create-maya-checkout.php on line 38
+[09-Jan-2026 02:49:14 UTC] PHP Warning:  Undefined array key "name" in /home/i4ia387yanzg/public_html/solarpower.com.ph/controllers/ordering/create-maya-checkout.php on line 38
+[09-Jan-2026 02:49:20 UTC] PHP Warning:  Undefined array key "name" in /home/i4ia387yanzg/public_html/solarpower.com.ph/controllers/ordering/create-maya-checkout.php on line 38
+[09-Jan-2026 06:33:12 UTC] PHP Warning:  Undefined array key "name" in /home/i4ia387yanzg/public_html/solarpower.com.ph/controllers/ordering/create-maya-checkout.php on line 38
+[09-Jan-2026 06:59:31 UTC] PHP Warning:  require_once(../../config/database.php): Failed to open stream: No such file or directory in /home/i4ia387yanzg/public_html/solarpower.com.ph/controllers/ordering/create-maya-checkout.php on line 6
+[09-Jan-2026 06:59:31 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '../../config/database.php' (include_path='.:/opt/alt/php82/usr/share/pear:/opt/alt/php82/usr/share/php:/usr/share/pear:/usr/share/php') in /home/i4ia387yanzg/public_html/solarpower.com.ph/controllers/ordering/create-maya-checkout.php:6
+Stack trace:
+#0 {main}
+  thrown in /home/i4ia387yanzg/public_html/solarpower.com.ph/controllers/ordering/create-maya-checkout.php on line 6
+[09-Jan-2026 07:01:08 UTC] PHP Warning:  require_once(../../config/database.php): Failed to open stream: No such file or directory in /home/i4ia387yanzg/public_html/solarpower.com.ph/controllers/ordering/create-maya-checkout.php on line 6
+[09-Jan-2026 07:01:08 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '../../config/database.php' (include_path='.:/opt/alt/php82/usr/share/pear:/opt/alt/php82/usr/share/php:/usr/share/pear:/usr/share/php') in /home/i4ia387yanzg/public_html/solarpower.com.ph/controllers/ordering/create-maya-checkout.php:6
+Stack trace:
+#0 {main}
+  thrown in /home/i4ia387yanzg/public_html/solarpower.com.ph/controllers/ordering/create-maya-checkout.php on line 6
+[09-Jan-2026 07:10:50 UTC] PHP Warning:  require_once(../../config/database.php): Failed to open stream: No such file or directory in /home/i4ia387yanzg/public_html/solarpower.com.ph/controllers/ordering/create-maya-checkout.php on line 6
+[09-Jan-2026 07:10:50 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '../../config/database.php' (include_path='.:/opt/alt/php82/usr/share/pear:/opt/alt/php82/usr/share/php:/usr/share/pear:/usr/share/php') in /home/i4ia387yanzg/public_html/solarpower.com.ph/controllers/ordering/create-maya-checkout.php:6
+Stack trace:
+#0 {main}
+  thrown in /home/i4ia387yanzg/public_html/solarpower.com.ph/controllers/ordering/create-maya-checkout.php on line 6
+[09-Jan-2026 07:11:17 UTC] PHP Warning:  require_once(../../config/database.php): Failed to open stream: No such file or directory in /home/i4ia387yanzg/public_html/solarpower.com.ph/controllers/ordering/create-maya-checkout.php on line 6
+[09-Jan-2026 07:11:17 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '../../config/database.php' (include_path='.:/opt/alt/php82/usr/share/pear:/opt/alt/php82/usr/share/php:/usr/share/pear:/usr/share/php') in /home/i4ia387yanzg/public_html/solarpower.com.ph/controllers/ordering/create-maya-checkout.php:6
+Stack trace:
+#0 {main}
+  thrown in /home/i4ia387yanzg/public_html/solarpower.com.ph/controllers/ordering/create-maya-checkout.php on line 6
+[09-Jan-2026 07:23:04 UTC] Maya Checkout Error: Database config not found - {"path":"\/home\/i4ia387yanzg\/public_html\/solarpower.com.ph\/controllers\/ordering\/..\/..\/config\/database.php"}
+[09-Jan-2026 07:24:46 UTC] Maya Checkout Error: Database config not found - {"path":"\/home\/i4ia387yanzg\/public_html\/solarpower.com.ph\/controllers\/ordering\/..\/..\/config\/database.php"}
+[09-Jan-2026 07:26:14 UTC] Maya Checkout Error: Unknown column 'payment_type' in 'INSERT INTO' - {"trace":"#0 \/home\/i4ia387yanzg\/public_html\/solarpower.com.ph\/controllers\/ordering\/create-maya-checkout.php(104): mysqli->prepare()\n#1 {main}"}
+[09-Jan-2026 07:28:09 UTC] Maya Checkout Error: Column count doesn't match value count at row 1 - {"trace":"#0 \/home\/i4ia387yanzg\/public_html\/solarpower.com.ph\/controllers\/ordering\/create-maya-checkout.php(104): mysqli->prepare()\n#1 {main}"}
+[09-Jan-2026 07:29:31 UTC] Maya Checkout Error: Database config not found - {"tried_paths":["\/home\/i4ia387yanzg\/public_html\/solarpower.com.ph\/controllers\/ordering\/..\/..\/config\/database.php","\/home\/i4ia387yanzg\/public_html\/solarpower.com.ph\/controllers\/ordering\/..\/..\/includes\/db.php","\/home\/i4ia387yanzg\/public_html\/solarpower.com.ph\/controllers\/ordering\/..\/..\/db\/database.php","\/home\/i4ia387yanzg\/public_html\/solarpower.com.ph\/config\/database.php","\/home\/i4ia387yanzg\/public_html\/solarpower.com.ph\/config\/database.php"],"current_dir":"\/home\/i4ia387yanzg\/public_html\/solarpower.com.ph\/controllers\/ordering"}
+[09-Jan-2026 07:34:54 UTC] Maya Checkout Error: Unknown column 'product_brand' in 'INSERT INTO' - {"trace":"#0 \/home\/i4ia387yanzg\/public_html\/solarpower.com.ph\/controllers\/ordering\/create-maya-checkout.php(151): mysqli->prepare()\n#1 {main}"}
+[09-Jan-2026 07:36:15 UTC] Maya Checkout Error: Column count doesn't match value count at row 1 - {"trace":"#0 \/home\/i4ia387yanzg\/public_html\/solarpower.com.ph\/controllers\/ordering\/create-maya-checkout.php(151): mysqli->prepare()\n#1 {main}"}
+[09-Jan-2026 07:37:16 UTC] Maya Checkout Error: Column count doesn't match value count at row 1 - {"trace":"#0 \/home\/i4ia387yanzg\/public_html\/solarpower.com.ph\/controllers\/ordering\/create-maya-checkout.php(151): mysqli->prepare()\n#1 {main}"}
+[09-Jan-2026 07:38:22 UTC] Maya Checkout Error: Column count doesn't match value count at row 1 - {"trace":"#0 \/home\/i4ia387yanzg\/public_html\/solarpower.com.ph\/controllers\/ordering\/create-maya-checkout.php(107): mysqli->prepare()\n#1 {main}"}
+[09-Jan-2026 07:39:28 UTC] Maya Checkout Error: Unknown column 'product_brand' in 'INSERT INTO' - {"trace":"#0 \/home\/i4ia387yanzg\/public_html\/solarpower.com.ph\/controllers\/ordering\/create-maya-checkout.php(151): mysqli->prepare()\n#1 {main}"}
+[09-Jan-2026 07:41:36 UTC] Maya Checkout Error: Invalid JSON input - {"input":""}
+[09-Jan-2026 07:44:32 UTC] Maya Checkout Error: Unknown column 'product_brand' in 'INSERT INTO' - {"trace":"#0 \/home\/i4ia387yanzg\/public_html\/solarpower.com.ph\/controllers\/ordering\/create-maya-checkout.php(151): mysqli->prepare()\n#1 {main}"}
+[09-Jan-2026 07:45:49 UTC] Maya Checkout Error: Column count doesn't match value count at row 1 - {"trace":"#0 \/home\/i4ia387yanzg\/public_html\/solarpower.com.ph\/controllers\/ordering\/create-maya-checkout.php(151): mysqli->prepare()\n#1 {main}"}
+[09-Jan-2026 07:47:20 UTC] PHP Warning:  Undefined array key "name" in /home/i4ia387yanzg/public_html/solarpower.com.ph/controllers/ordering/create-maya-checkout.php on line 168
+[09-Jan-2026 07:47:20 UTC] PHP Fatal error:  Uncaught ArgumentCountError: The number of variables must match the number of parameters in the prepared statement in /home/i4ia387yanzg/public_html/solarpower.com.ph/controllers/ordering/create-maya-checkout.php:174
+Stack trace:
+#0 /home/i4ia387yanzg/public_html/solarpower.com.ph/controllers/ordering/create-maya-checkout.php(174): mysqli_stmt->bind_param()
+#1 {main}
+  thrown in /home/i4ia387yanzg/public_html/solarpower.com.ph/controllers/ordering/create-maya-checkout.php on line 174
+[09-Jan-2026 07:47:41 UTC] PHP Warning:  Undefined array key "name" in /home/i4ia387yanzg/public_html/solarpower.com.ph/controllers/ordering/create-maya-checkout.php on line 168
+[09-Jan-2026 07:47:41 UTC] PHP Fatal error:  Uncaught ArgumentCountError: The number of variables must match the number of parameters in the prepared statement in /home/i4ia387yanzg/public_html/solarpower.com.ph/controllers/ordering/create-maya-checkout.php:174
+Stack trace:
+#0 /home/i4ia387yanzg/public_html/solarpower.com.ph/controllers/ordering/create-maya-checkout.php(174): mysqli_stmt->bind_param()
+#1 {main}
+  thrown in /home/i4ia387yanzg/public_html/solarpower.com.ph/controllers/ordering/create-maya-checkout.php on line 174
+[09-Jan-2026 08:23:10 UTC] PHP Warning:  Undefined array key "name" in /home/i4ia387yanzg/public_html/solarpower.com.ph/controllers/ordering/create-maya-checkout.php on line 168
+[09-Jan-2026 08:23:10 UTC] PHP Fatal error:  Uncaught ArgumentCountError: The number of variables must match the number of parameters in the prepared statement in /home/i4ia387yanzg/public_html/solarpower.com.ph/controllers/ordering/create-maya-checkout.php:174
+Stack trace:
+#0 /home/i4ia387yanzg/public_html/solarpower.com.ph/controllers/ordering/create-maya-checkout.php(174): mysqli_stmt->bind_param()
+#1 {main}
+  thrown in /home/i4ia387yanzg/public_html/solarpower.com.ph/controllers/ordering/create-maya-checkout.php on line 174
+[09-Jan-2026 08:24:17 UTC] PHP Warning:  Undefined array key "name" in /home/i4ia387yanzg/public_html/solarpower.com.ph/controllers/ordering/create-maya-checkout.php on line 168
+[09-Jan-2026 08:24:17 UTC] PHP Fatal error:  Uncaught ArgumentCountError: The number of variables must match the number of parameters in the prepared statement in /home/i4ia387yanzg/public_html/solarpower.com.ph/controllers/ordering/create-maya-checkout.php:174
+Stack trace:
+#0 /home/i4ia387yanzg/public_html/solarpower.com.ph/controllers/ordering/create-maya-checkout.php(174): mysqli_stmt->bind_param()
+#1 {main}
+  thrown in /home/i4ia387yanzg/public_html/solarpower.com.ph/controllers/ordering/create-maya-checkout.php on line 174
+[09-Jan-2026 08:25:00 UTC] PHP Warning:  Undefined array key "name" in /home/i4ia387yanzg/public_html/solarpower.com.ph/controllers/ordering/create-maya-checkout.php on line 168
+[09-Jan-2026 08:25:00 UTC] PHP Fatal error:  Uncaught ArgumentCountError: The number of variables must match the number of parameters in the prepared statement in /home/i4ia387yanzg/public_html/solarpower.com.ph/controllers/ordering/create-maya-checkout.php:174
+Stack trace:
+#0 /home/i4ia387yanzg/public_html/solarpower.com.ph/controllers/ordering/create-maya-checkout.php(174): mysqli_stmt->bind_param()
+#1 {main}
+  thrown in /home/i4ia387yanzg/public_html/solarpower.com.ph/controllers/ordering/create-maya-checkout.php on line 174
+[09-Jan-2026 08:26:39 UTC] PHP Warning:  Undefined array key "name" in /home/i4ia387yanzg/public_html/solarpower.com.ph/controllers/ordering/create-maya-checkout.php on line 168
+[09-Jan-2026 08:26:39 UTC] PHP Fatal error:  Uncaught ArgumentCountError: The number of variables must match the number of parameters in the prepared statement in /home/i4ia387yanzg/public_html/solarpower.com.ph/controllers/ordering/create-maya-checkout.php:174
+Stack trace:
+#0 /home/i4ia387yanzg/public_html/solarpower.com.ph/controllers/ordering/create-maya-checkout.php(174): mysqli_stmt->bind_param()
+#1 {main}
+  thrown in /home/i4ia387yanzg/public_html/solarpower.com.ph/controllers/ordering/create-maya-checkout.php on line 174
+[09-Jan-2026 08:29:01 UTC] PHP Warning:  Undefined array key "name" in /home/i4ia387yanzg/public_html/solarpower.com.ph/controllers/ordering/create-maya-checkout.php on line 168
+[09-Jan-2026 08:29:01 UTC] PHP Fatal error:  Uncaught ArgumentCountError: The number of variables must match the number of parameters in the prepared statement in /home/i4ia387yanzg/public_html/solarpower.com.ph/controllers/ordering/create-maya-checkout.php:174
+Stack trace:
+#0 /home/i4ia387yanzg/public_html/solarpower.com.ph/controllers/ordering/create-maya-checkout.php(174): mysqli_stmt->bind_param()
+#1 {main}
+  thrown in /home/i4ia387yanzg/public_html/solarpower.com.ph/controllers/ordering/create-maya-checkout.php on line 174
+[09-Jan-2026 08:30:25 UTC] Maya Checkout Error: Database config not found - {"path":"\/home\/i4ia387yanzg\/public_html\/solarpower.com.ph\/controllers\/..\/..\/config\/dbconn.php","calculated_from":"\/home\/i4ia387yanzg\/public_html\/solarpower.com.ph\/controllers\/ordering"}
+[10-Jan-2026 00:23:00 UTC] Maya Checkout Error: Database config not found - {"path":"\/home\/i4ia387yanzg\/public_html\/solarpower.com.ph\/controllers\/..\/..\/config\/dbconn.php","calculated_from":"\/home\/i4ia387yanzg\/public_html\/solarpower.com.ph\/controllers\/ordering"}

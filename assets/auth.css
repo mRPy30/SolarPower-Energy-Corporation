@@ -1,0 +1,94 @@
+ body {
+     margin: 0;
+     padding: 0;
+}
+/* Update your existing auth.css with these refinements */
+:root {
+     --clr-primary: #ffc107; 
+     --clr-secondary: #0a5c3d; 
+     --clr-dark: #1e272e;
+     --glass-bg: rgba(255, 255, 255, 0.9);
+}
+
+body {
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    background-color: #f8f9fa;
+}
+
+.login-bg {
+     background: linear-gradient(rgba(0,0,0,0.2), rgba(0,0,0,0.2)), 
+                 url('../assets/img/cover.png') no-repeat center center/cover;
+     min-height: 100vh;
+}
+
+.login-card {
+     backdrop-filter: blur(10px);
+     background: var(--glass-bg);
+     border: 1px solid rgba(255, 255, 255, 0.3);
+     padding: 40px !important;
+     box-shadow: 0 15px 35px rgba(0,0,0,0.1) !important;
+     transition: transform 0.3s ease;
+}
+
+.login-card:hover {
+    transform: translateY(-5px);
+}
+
+.login-card h2 {
+     color: var(--clr-secondary);
+     letter-spacing: -0.5px;
+}
+
+/* Solar-themed focus effect */
+.form-control:focus {
+    border-color: var(--clr-primary);
+    box-shadow: 0 0 0 0.25rem rgba(255, 193, 7, 0.25);
+}
+
+/* Custom checkbox color */
+.form-check-input:checked {
+    background-color: var(--clr-secondary);
+    border-color: var(--clr-secondary);
+}
+
+.btn-login {
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border-radius: 8px !important;
+    background-color: var(--clr--secondary);
+    color: #fffff;
+}
+ .admin-login-link {
+     position: fixed;
+     bottom: 20px;
+     right: 20px;
+     z-index: 1000;
+}
+ .admin-login-link a {
+     background: #dc3545;
+     color: white;
+     padding: 10px 20px;
+     border-radius: 25px;
+     text-decoration: none;
+     font-weight: 600;
+     display: flex;
+     align-items: center;
+     gap: 8px;
+     box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);
+     transition: all 0.3s ease;
+}
+ .admin-login-link a:hover {
+     transform: translateY(-2px);
+     box-shadow: 0 6px 20px rgba(220, 53, 69, 0.4);
+ }
+ 
+ .form-check-input:checked {
+    background-color: var(--clr-primary); /* The blue color from your image */
+    border-color: #0d6efd;
+}
+
+.form-check-label {
+    cursor: pointer;
+    user-select: none;
+}

@@ -1,0 +1,8 @@
+[09-Mar-2026 03:27:25 UTC] PHP Warning:  Undefined array key "email" in /home/i4ia387yanzg/public_html/solarpower.com.ph/views/admin/dashboard.php on line 2085
+[09-Mar-2026 03:27:25 UTC] PHP Warning:  Undefined array key "email" in /home/i4ia387yanzg/public_html/solarpower.com.ph/views/admin/dashboard.php on line 2115
+[09-Mar-2026 03:27:25 UTC] PHP Warning:  Undefined array key "email" in /home/i4ia387yanzg/public_html/solarpower.com.ph/views/admin/dashboard.php on line 2175
+[12-Mar-2026 00:27:05 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'username' in 'WHERE' in /home/i4ia387yanzg/public_html/solarpower.com.ph/views/admin/login.php:20
+Stack trace:
+#0 /home/i4ia387yanzg/public_html/solarpower.com.ph/views/admin/login.php(20): mysqli->prepare()
+#1 {main}
+  thrown in /home/i4ia387yanzg/public_html/solarpower.com.ph/views/admin/login.php on line 20

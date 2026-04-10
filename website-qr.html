@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solar Power QR Code</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            text-align: center;
+            border: 1px solid #d1d1d1;
+        }
+        h1 {
+            color: #333;
+        }
+        .url {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 18px;
+        }
+        #qrcode-container {
+            display: inline-block;
+            background: white;
+            border-radius: 10px;
+            position: relative;
+        }
+        #qrcode {
+            display: inline-block;
+        }
+        .logo-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80px;
+            height: 80px;
+            background: white;
+            border-radius: 10px;
+            padding: 5px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        .logo-overlay img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        .download-btn {
+            margin-top: 20px;
+            padding: 12px 30px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .download-btn:hover {
+            background: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>SolarPower Energy Corporation <br>Website</h1>
+        <p class="url">https://solarpower.com.ph/</p>
+        <div id="qrcode-container">
+            <div id="qrcode"></div>
+            <div class="logo-overlay">
+                <img id="logo" src="assets/img/icon.png" alt="Solar Logo">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Generate QR code
+        const qrcode = new QRCode(document.getElementById("qrcode"), {
+            text: "https://solarpower.com.ph/",
+            width: 300,
+            height: 300,
+            colorDark: "#000000",
+            colorLight: "#ffffff",
+            correctLevel: QRCode.CorrectLevel.H
+        });
+    </script>
+</body>
+</html>
