@@ -300,17 +300,17 @@
                                     </div>
                                 </li>
                                 <li class="project-detail-item">
-                                    <div class="detail-icon-wrap"><i class="fas fa-file-invoice-dollar"></i></div>
+                                    <div class="detail-icon-wrap"><i class="fas fa-smog"></i></div>
                                     <div class="detail-text-wrap">
-                                        <span class="detail-value">₱22,000 → ₱11,000</span>
-                                        <span class="detail-label">Monthly Bill</span>
+                                        <span class="detail-value">470.80 t</span>
+                                        <span class="detail-label">CO₂ Emissions Saved</span>
                                     </div>
                                 </li>
                                 <li class="project-detail-item">
-                                    <div class="detail-icon-wrap"><i class="fas fa-piggy-bank"></i></div>
+                                    <div class="detail-icon-wrap"><i class="fas fa-tree"></i></div>
                                     <div class="detail-text-wrap">
-                                        <span class="detail-value">50% Savings</span>
-                                        <span class="detail-label">Results</span>
+                                        <span class="detail-value">14.10 K</span>
+                                        <span class="detail-label">Equivalent Trees Planted</span>
                                     </div>
                                 </li>
                             </ul>
