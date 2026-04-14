@@ -174,6 +174,49 @@
                 min-height: unset;
             }
         }
+
+        /* View More Button Styles */
+        .view-more-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            padding: 12px 35px;
+            background: #fff;
+            border: 2px solid #e0e0e0;
+            border-radius: 50px;
+            color: black; /* Deep blue text like the image */
+            font-weight: 600;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            text-align: center;
+        }
+
+        .view-more-btn-text {
+            line-height: 1.2;
+        }
+
+        .view-more-btn i {
+            font-size: 1.1rem;
+            color: black;
+            transition: transform 0.3s ease, color 0.3s ease;
+        }
+
+        .view-more-btn:hover {
+            background-color: #e7ad00;
+            border-color: #e7ad00;
+            color: #fff;
+        }
+
+        .view-more-btn:hover i {
+            color: #fff;
+        }
+
+        .hidden-project {
+            display: none !important;
+        }
     </style>
 </head>
 
@@ -234,40 +277,40 @@
                 <div class="col-12 col-xl-6" data-aos="fade-up">
                     <div class="project-card">
                         <div class="card-img-panel">
-                            <img src="assets/img/projects1.png" alt="Waltermart Antipolo">
+                            <img src="assets/img/projects1.png" alt="BF Homes Parañaque">
                         </div>
                         <div class="card-info-panel">
                             <div>
-                                <h4 class="card-project-title">WALTERMART ANTIPOLO</h4>
-                                <p class="card-project-subtitle">PROJECT TITLE</p>
+                                <h4 class="card-project-title">BF HOMES PARAÑAQUE</h4>
+                                <p class="card-project-subtitle">RESIDENTIAL INSTALLATION</p>
                             </div>
                             <ul class="project-detail-list">
                                 <li class="project-detail-item">
                                     <div class="detail-icon-wrap"><i class="fas fa-map-marker-alt"></i></div>
                                     <div class="detail-text-wrap">
-                                        <span class="detail-value">Antipolo</span>
+                                        <span class="detail-value">Parañaque City</span>
                                         <span class="detail-label">Location</span>
                                     </div>
                                 </li>
                                 <li class="project-detail-item">
                                     <div class="detail-icon-wrap"><i class="fas fa-solar-panel"></i></div>
                                     <div class="detail-text-wrap">
-                                        <span class="detail-value">1406.9 kWp</span>
+                                        <span class="detail-value">12kW Hybrid</span>
                                         <span class="detail-label">System Size</span>
                                     </div>
                                 </li>
                                 <li class="project-detail-item">
-                                    <div class="detail-icon-wrap"><i class="fas fa-smog"></i></div>
+                                    <div class="detail-icon-wrap"><i class="fas fa-file-invoice-dollar"></i></div>
                                     <div class="detail-text-wrap">
-                                        <span class="detail-value">551.50</span>
-                                        <span class="detail-label">CO₂ Emissions Saved (t)</span>
+                                        <span class="detail-value">₱22,000 → ₱11,000</span>
+                                        <span class="detail-label">Monthly Bill</span>
                                     </div>
                                 </li>
                                 <li class="project-detail-item">
-                                    <div class="detail-icon-wrap"><i class="fas fa-tree"></i></div>
+                                    <div class="detail-icon-wrap"><i class="fas fa-piggy-bank"></i></div>
                                     <div class="detail-text-wrap">
-                                        <span class="detail-value">16.46 K</span>
-                                        <span class="detail-label">Equivalent Trees Planted</span>
+                                        <span class="detail-value">50% Savings</span>
+                                        <span class="detail-label">Results</span>
                                     </div>
                                 </li>
                             </ul>
@@ -278,44 +321,97 @@
                 <div class="col-12 col-xl-6" data-aos="fade-up" data-aos-delay="120">
                     <div class="project-card">
                         <div class="card-img-panel">
-                            <img src="assets/img/projects2.jpg" alt="Waltermart Balanga">
+                            <img src="assets/img/projects2.jpg" alt="Ace Admin Building Center">
                         </div>
                         <div class="card-info-panel">
                             <div>
-                                <h4 class="card-project-title">WALTERMART BALANGA</h4>
-                                <p class="card-project-subtitle">PROJECT TITLE</p>
+                                <h4 class="card-project-title">ACE ADMIN BUILDING</h4>
+                                <p class="card-project-subtitle">COMMERCIAL INSTALLATION</p>
                             </div>
                             <ul class="project-detail-list">
                                 <li class="project-detail-item">
                                     <div class="detail-icon-wrap"><i class="fas fa-map-marker-alt"></i></div>
                                     <div class="detail-text-wrap">
-                                        <span class="detail-value">Balanga</span>
+                                        <span class="detail-value">Sucat, Parañaque City</span>
                                         <span class="detail-label">Location</span>
                                     </div>
                                 </li>
                                 <li class="project-detail-item">
                                     <div class="detail-icon-wrap"><i class="fas fa-solar-panel"></i></div>
                                     <div class="detail-text-wrap">
-                                        <span class="detail-value">1101.05 kWp</span>
+                                        <span class="detail-value">6kW Hybrid</span>
                                         <span class="detail-label">System Size</span>
                                     </div>
                                 </li>
                                 <li class="project-detail-item">
                                     <div class="detail-icon-wrap"><i class="fas fa-smog"></i></div>
                                     <div class="detail-text-wrap">
-                                        <span class="detail-value">431.61</span>
-                                        <span class="detail-label">CO₂ Emissions Saved (t)</span>
+                                        <span class="detail-value">235.40 t</span>
+                                        <span class="detail-label">CO₂ Emissions Saved</span>
                                     </div>
                                 </li>
                                 <li class="project-detail-item">
                                     <div class="detail-icon-wrap"><i class="fas fa-tree"></i></div>
                                     <div class="detail-text-wrap">
-                                        <span class="detail-value">12.88 K</span>
+                                        <span class="detail-value">7.05 K</span>
                                         <span class="detail-label">Equivalent Trees Planted</span>
                                     </div>
                                 </li>
                             </ul>
                         </div>
+                    </div>
+                </div>
+
+                <div class="col-12 col-xl-6 hidden-project project-extra" data-aos="fade-up" data-aos-delay="240">
+                    <div class="project-card">
+                        <div class="card-img-panel">
+                            <img src="assets/img/demo-solar1.webp" alt="Bacoor City Preventive Maintenance">
+                        </div>
+                        <div class="card-info-panel">
+                            <div>
+                                <h4 class="card-project-title">BACOOR RESIDENTIAL</h4>
+                                <p class="card-project-subtitle">MAINTENANCE SERVICE</p>
+                            </div>
+                            <ul class="project-detail-list">
+                                <li class="project-detail-item">
+                                    <div class="detail-icon-wrap"><i class="fas fa-map-marker-alt"></i></div>
+                                    <div class="detail-text-wrap">
+                                        <span class="detail-value">Bacoor City, Cavite</span>
+                                        <span class="detail-label">Location</span>
+                                    </div>
+                                </li>
+                                <li class="project-detail-item">
+                                    <div class="detail-icon-wrap"><i class="fas fa-tools"></i></div>
+                                    <div class="detail-text-wrap">
+                                        <span class="detail-value">Preventive Maintenance</span>
+                                        <span class="detail-label">Service Type</span>
+                                    </div>
+                                </li>
+                                <li class="project-detail-item">
+                                    <div class="detail-icon-wrap"><i class="fas fa-check-circle"></i></div>
+                                    <div class="detail-text-wrap">
+                                        <span class="detail-value">Completed</span>
+                                        <span class="detail-label">Status</span>
+                                    </div>
+                                </li>
+                                <li class="project-detail-item">
+                                    <div class="detail-icon-wrap"><i class="fas fa-bolt"></i></div>
+                                    <div class="detail-text-wrap">
+                                        <span class="detail-value">+15% Efficiency</span>
+                                        <span class="detail-label">Performance Optimized</span>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row mt-5">
+                <div class="col-12 d-flex justify-content-center" data-aos="fade-up">
+                    <div class="view-more-btn" id="viewMoreBtn" onclick="toggleProjects()">
+                        <div class="view-more-btn-text">View More<br>Products</div>
+                        <i class="fas fa-chevron-down" id="viewMoreIcon"></i>
                     </div>
                 </div>
             </div>
@@ -329,6 +425,30 @@
     <script>
         AOS.init({ duration: 1000, once: true });
 
+        function toggleProjects() {
+            var extras = document.querySelectorAll('.project-extra');
+            var btnText = document.querySelector('.view-more-btn-text');
+            var btnIcon = document.getElementById('viewMoreIcon');
+            var isHidden = extras[0].classList.contains('hidden-project');
+
+            extras.forEach(function(el) {
+                if (isHidden) {
+                    el.classList.remove('hidden-project');
+                } else {
+                    el.classList.add('hidden-project');
+                }
+            });
+
+            if (isHidden) {
+                btnText.innerHTML = 'View Less<br>Products';
+                btnIcon.classList.remove('fa-chevron-down');
+                btnIcon.classList.add('fa-chevron-up');
+            } else {
+                btnText.innerHTML = 'View More<br>Products';
+                btnIcon.classList.remove('fa-chevron-up');
+                btnIcon.classList.add('fa-chevron-down');
+            }
+        }
     </script>
 </body>
 
