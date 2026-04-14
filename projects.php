@@ -321,7 +321,7 @@
                 <div class="col-12 col-xl-6" data-aos="fade-up" data-aos-delay="120">
                     <div class="project-card">
                         <div class="card-img-panel">
-                            <img src="assets/img/projects2.jpg" alt="Ace Admin Building Center">
+                            <img src="assets/img/sucat.jpg" alt="Ace Admin Building Center">
                         </div>
                         <div class="card-info-panel">
                             <div>
@@ -365,7 +365,7 @@
                 <div class="col-12 col-xl-6 hidden-project project-extra" data-aos="fade-up" data-aos-delay="240">
                     <div class="project-card">
                         <div class="card-img-panel">
-                            <img src="assets/img/demo-solar1.webp" alt="Bacoor City Preventive Maintenance">
+                            <img src="assets/img/bacoor.jpg" alt="Bacoor City Preventive Maintenance">
                         </div>
                         <div class="card-info-panel">
                             <div>
