@@ -13,6 +13,7 @@ $sql = "SELECT
     p.price,
     p.stockQuantity,
     p.category,
+    COALESCE(p.moq, 1) AS moq,
     pi.image_path
 FROM product p
 LEFT JOIN product_images pi 
