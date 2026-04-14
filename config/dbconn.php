@@ -1,7 +1,7 @@
 <?php
-$servername = "";
-$username = "i10034377_x7ts1";
-$password = "v&ebGvT)Pvr[";
+$servername = "localhost";
+$username = "root";
+$password = "";
 $dbname = "solar_power";
 
 $conn = new mysqli($servername, $username, $password, $dbname);

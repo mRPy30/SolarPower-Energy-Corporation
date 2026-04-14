@@ -113,7 +113,7 @@
         <div class="container py-lg-5">
             <div class="row align-items-center">
                 <div class="col-lg-5 text-center mb-5 mb-lg-0" data-aos="fade-right">
-                    <img src="assets/img/logo_no_background.png" alt="Logo" class="img-fluid" style="max-width: 280px;">
+                    <img src="assets/img/solar-new-logo.png" alt="Logo" class="img-fluid" style="max-width: 280px;">
                 </div>
                 <div class="col-lg-7" data-aos="fade-left">
                     <h2>SolarPower Energy Corporation</h2>
