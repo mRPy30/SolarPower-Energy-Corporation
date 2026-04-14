@@ -1,0 +1,77 @@
+[33m03658d9[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m Revert "UPDATE"
+[33m6466f97[m Revert "4/10/26 NEW UPDATE"
+[33m0fe936b[m Revert "Remove solarpower.zip from tracking"
+[33mcbe6b18[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m Revert "update"
+[33m6d6d1e3[m Revert "Merge branch 'main' of https://github.com/mRPy30/SolarPower-Energy-Corporation"
+[33mcf8c1d9[m Merge branch 'main' of https://github.com/mRPy30/SolarPower-Energy-Corporation
+[33m6339afd[m update
+[33mc4fe4fd[m i update the solar logo on all pages, also change the database connection into local
+[33m3792e83[m Remove solarpower.zip from tracking
+[33m79692a9[m 4/10/26 NEW UPDATE
+[33m4dbccee[m UPDATE
+[33m72a5158[m[33m ([m[1;32mrestore-march-10[m[33m)[m 03/10/26
+[33m36271ab[m 03/10/26
+[33mebe1184[m 03/10/26 updated database
+[33m387b60e[m 03/06/26
+[33mff12631[m 03/06/26
+[33m3967b89[m 03/06/26
+[33m484aeab[m 03/05/26
+[33m3d94a2b[m 03/05/26
+[33m268c01e[m 03/05/26
+[33m7aea0ee[m 03/04/26 - I change the default image in custom-solar.php
+[33m8f7ddcc[m 03/04/26 - add bar for custom solar
+[33mf7c563d[m 03/02/26 -
+[33md49b429[m 03/02/26 -
+[33mb3f15ce[m 02/25/26
+[33mf8a73d5[m Merge branch 'main' of https://github.com/mRPy30/SolarPower-Energy-Corporation
+[33m7dca719[m 02/25/26
+[33m14bbec3[m update
+[33me73289b[m 02/23/26 -  i add include faqChat.php
+[33m8c74f62[m Merge branch 'main' of https://github.com/mRPy30/SolarPower-Energy-Corporation
+[33md8ec5c6[m 02/23/26
+[33m5fe5f0e[m update index 02/23/26
+[33m1929535[m 02/23/26
+[33mf5c7a00[m 02/23/26 - I fix the inline css in chatbot and put all the script in one script tag
+[33m6c07833[m 02/20/26 - i just remove the messenger and link the talk to our agent to messenger
+[33m06db820[m 02/20/26 - I create database folder and inside is the 02/20/26 database
+[33macd815f[m 02/19/26 - I just rename the delete text to archive text
+[33m22defd8[m 02/19/26 -  I ALIGNED ALL THE HERO SECTION TEXT
+[33m7ae01c9[m 02/19/26 - I add chatbot at homepage (index.php)
+[33mce34882[m 02/19/26 - I make the top selling product ACTUAL IMAGES
+[33mffff645[m 02/19/26 - the order page is now retrieving the database data
+[33m6246842[m 02/18/26 - I jsut rename the deleted TEXT into archive TEXT
+[33me4aa962[m 02/18/26 - i only fix the button color at product DELETE BTN to ARCHIVE, also the color
+[33m308310b[m 02/18/26 -  I correct the UI restore button and delete button at ARCHIVE page
+[33m770daba[m 02/18/26 - I correct only one info of recent installations:
+[33m2769aad[m 02/18/26 - I fix the excel. asking first the file location before saving
+[33m1867980[m 02/18/26 - I make the export to pdf like ctrl + P
+[33mbb1609b[m 02/18/26 - i fix all the form with same layout design
+[33mec005ce[m 02/18/26 -  I make the ui form of new quotation like in MY PROFILE
+[33me3ff142[m 02/18/26 - i use color: #d4a700(yellow) on all add. and color: #3498db (blue) for all export to pdf button
+[33m340c095[m 02/18/26 -
+[33m833a114[m 02/16/26 - I make the graph base on actual DATA on database
+[33m904d208[m 0/2/16 - Change button color only
+[33m5f0f38e[m 02/16/26 - I add
+[33m7d4906d[m 02/16/2026 - I add
+[33m2d4118d[m 02/16/26 - I add export-suppliers-pdf.php and update the DASHBOARD
+[33m6dff947[m 02/16/26 - I add graph revenue on dashboard. AND export-clients-pdf.php ,export-orders-pdf.php,
+[33m3b802f8[m 02/16/26 - I add graph revenue on dashboard. AND export-clients-pdf.php ,export-orders-pdf.php,
+[33m390db83[m 02/13/26 - i fix the archive, but theres still error on css because the hover yellow  focus on dashboard only
+[33m2f90f68[m 02/13/26 i add archive page where it is demo only, the css is not standard, for demo only
+[33mcdac043[m 03/13/26 - i add inclue promotional.php
+[33mb6523e8[m test commit
+[33m1d100a7[m 02/12/ update style staff
+[33m3a19201[m 02/11/26 - i add animation on all section on faq
+[33m70db0ba[m 02/11/26 hero section - change the background
+[33mf75bfae[m 02/11/26 i add 4 hidden pages on recent installation sections
+[33me28a53a[m 02/11/26 i add testimonial section
+[33m9ffd7fc[m 02/11/26 fixing footer responsive
+[33m26a124b[m Merge branch 'main' of https://github.com/mRPy30/SolarPower-Energy-Corporation
+[33m694ec17[m 02/11/26 header update
+[33mb715bf3[m Merge branch 'main' of https://github.com/mRPy30/SolarPower-Energy-Corporation
+[33m2e4b227[m 02/11/26 - Delete index ub and paymaya
+[33mec14b38[m 02/11/26 add footer page
+[33m2e45b27[m new update 11/02/26
+[33med0167e[m update
+[33m5b01301[m i add html
+[33m6759586[m solarpower energy corp

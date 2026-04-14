@@ -1,0 +1,309 @@
+<?php
+// ============================================================
+// Real Revenue Data from orders table
+// ============================================================
+$currentYear = date('Y');
+
+// Get monthly sales for current year (all non-archived, non-cancelled orders)
+$monthlySalesQuery = "
+    SELECT MONTH(created_at) AS month_num, IFNULL(SUM(total_amount), 0) AS monthly_total
+    FROM orders
+    WHERE YEAR(created_at) = $currentYear
+      AND order_status NOT IN ('archived', 'cancelled')
+    GROUP BY MONTH(created_at)
+    ORDER BY MONTH(created_at)
+";
+$monthlySalesResult = mysqli_query($conn, $monthlySalesQuery);
+
+// Initialize 12 months with 0
+$monthlySales = array_fill(1, 12, 0);
+while ($row = mysqli_fetch_assoc($monthlySalesResult)) {
+    $monthlySales[(int)$row['month_num']] = (float)$row['monthly_total'];
+}
+
+// Get last year's total for growth rate comparison
+$lastYear = $currentYear - 1;
+$lastYearQuery = "
+    SELECT IFNULL(SUM(total_amount), 0) AS total
+    FROM orders
+    WHERE YEAR(created_at) = $lastYear
+      AND order_status NOT IN ('archived', 'cancelled')
+";
+$lastYearTotal = (float)mysqli_fetch_assoc(mysqli_query($conn, $lastYearQuery))['total'];
+
+// Calculate stats
+$totalSales = array_sum($monthlySales);
+$monthsWithData = count(array_filter($monthlySales, function($v) { return $v > 0; }));
+$avgPerMonth = $monthsWithData > 0 ? $totalSales / $monthsWithData : 0;
+
+// Growth rate vs last year
+if ($lastYearTotal > 0) {
+    $growthRate = round((($totalSales - $lastYearTotal) / $lastYearTotal) * 100);
+} else {
+    $growthRate = $totalSales > 0 ? 100 : 0;
+}
+
+// Best month
+$fullMonthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+$bestMonthTotal = max($monthlySales);
+$bestMonthIndex = array_search($bestMonthTotal, $monthlySales); // 1-based key
+$bestMonthName = $fullMonthNames[$bestMonthIndex - 1];
+
+// Find max value for Y-axis scaling
+$maxVal = max($monthlySales);
+$maxVal = $maxVal > 0 ? $maxVal : 100000; // fallback if no data
+// Round up to nice ceiling
+$yMax = ceil($maxVal / 50000) * 50000;
+if ($yMax < 50000) $yMax = 50000;
+$ySteps = 10;
+$yStepVal = $yMax / $ySteps;
+
+// Format helper
+function formatCurrency($val) {
+    if ($val >= 1000000) return round($val / 1000000, 1) . 'M';
+    if ($val >= 1000) return round($val / 1000) . 'K';
+    return number_format($val, 0);
+}
+
+// Calculate SVG points (viewBox 1000x340)
+$svgWidth = 1000;
+$svgHeight = 340;
+$monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+$points = [];
+for ($i = 1; $i <= 12; $i++) {
+    $x = round(($i - 1) * ($svgWidth / 11));
+    $y = $yMax > 0 ? round($svgHeight - ($monthlySales[$i] / $yMax) * $svgHeight) : $svgHeight;
+    $points[] = ['x' => $x, 'y' => $y, 'val' => $monthlySales[$i], 'month' => $monthNames[$i - 1]];
+}
+
+// Build SVG path strings
+$linePath = '';
+$areaPath = '';
+foreach ($points as $idx => $pt) {
+    $prefix = $idx === 0 ? 'M' : 'L';
+    $linePath .= " $prefix {$pt['x']},{$pt['y']}";
+    $areaPath .= " $prefix {$pt['x']},{$pt['y']}";
+}
+$areaPath .= " L $svgWidth,$svgHeight L 0,$svgHeight Z";
+
+// Dot colors based on quarter
+$dotColors = [];
+for ($i = 0; $i < 12; $i++) {
+    $q = intdiv($i, 3);
+    $colors = ['#667eea', '#48bb78', '#f59e0b', '#e74c3c'];
+    $dotColors[] = $colors[$q];
+}
+?>
+
+<!-- Responsive Styles -->
+<style>
+    .revenue-card-body {
+        padding: 32px 32px 24px 32px;
+    }
+    .revenue-title {
+        text-align: center; color: #222; font-weight: 700;
+        margin-bottom: 32px; font-size: 2rem; letter-spacing: 0.5px;
+    }
+    .revenue-chart-container {
+        position: relative; height: 340px;
+        border-left: 2px solid #e5e7eb; border-bottom: 2px solid #e5e7eb;
+        padding: 16px 16px 32px 56px; background: #fff; border-radius: 12px;
+    }
+    .revenue-yaxis {
+        position: absolute; left: 0; top: 16px; bottom: 32px; width: 56px;
+        display: flex; flex-direction: column; justify-content: space-between;
+        align-items: flex-end; padding-right: 8px;
+    }
+    .revenue-yaxis span {
+        color: #bdbdbd; font-size: 13px; font-weight: 600;
+        font-family: 'Segoe UI', Arial, sans-serif; letter-spacing: 0.2px;
+    }
+    .revenue-gridlines {
+        position: absolute; left: 56px; right: 16px; top: 16px; bottom: 32px;
+    }
+    .revenue-svg {
+        position: absolute; left: 56px; right: 16px; top: 16px; bottom: 32px;
+        width: calc(100% - 72px); height: calc(100% - 48px);
+    }
+    .revenue-xaxis {
+        position: absolute; left: 56px; right: 16px; bottom: 0; height: 36px;
+        display: flex; justify-content: space-between; gap: 8px;
+    }
+    .revenue-xaxis div {
+        flex: 1; text-align: center; color: #1976d2; font-size: 14px;
+        font-weight: 600; font-family: 'Segoe UI', Arial, sans-serif;
+        padding-top: 8px; letter-spacing: 0.2px;
+    }
+    .revenue-stats-grid {
+        display: grid; grid-template-columns: repeat(4, 1fr);
+        gap: 1.25rem; margin-top: 2.5rem;
+    }
+    .revenue-stat-card {
+        background: #fff; border-radius: 12px; border: 1px solid #e5e7eb;
+        padding: 20px 22px; display: flex; align-items: center; gap: 16px;
+    }
+    .revenue-stat-icon {
+        width: 48px; height: 48px; border-radius: 12px;
+        display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .revenue-stat-label {
+        font-size: 13px; color: #6b7280; font-weight: 500; margin-bottom: 4px;
+    }
+    .revenue-stat-value {
+        font-size: 1.5rem; font-weight: 700; color: #111827;
+    }
+
+    /* ===== Tablet (≤992px) ===== */
+    @media (max-width: 992px) {
+        .revenue-card-body { padding: 24px 18px 18px 18px; }
+        .revenue-title { font-size: 1.5rem; margin-bottom: 24px; }
+        .revenue-stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+        .revenue-chart-container { height: 280px; }
+    }
+
+    /* ===== Mobile (≤576px) ===== */
+    @media (max-width: 576px) {
+        .revenue-card-body { padding: 14px 8px 10px 8px; }
+        .revenue-title { font-size: 1.15rem; margin-bottom: 16px; }
+        .revenue-chart-container {
+            height: 220px;
+            padding: 12px 8px 28px 40px;
+        }
+        .revenue-yaxis {
+            width: 40px; padding-right: 4px;
+        }
+        .revenue-yaxis span { font-size: 10px; }
+        .revenue-gridlines { left: 40px; right: 8px; }
+        .revenue-svg {
+            left: 40px; right: 8px;
+            width: calc(100% - 48px); height: calc(100% - 40px);
+        }
+        .revenue-xaxis {
+            left: 40px; right: 8px; height: 28px; gap: 2px;
+        }
+        .revenue-xaxis div { font-size: 9px; padding-top: 4px; }
+        .revenue-stats-grid {
+            grid-template-columns: 1fr;
+            gap: 0.75rem;
+            margin-top: 1.5rem;
+        }
+        .revenue-stat-card { padding: 14px 14px; gap: 12px; }
+        .revenue-stat-icon { width: 40px; height: 40px; }
+        .revenue-stat-icon i { font-size: 16px !important; }
+        .revenue-stat-value { font-size: 1.25rem; }
+    }
+</style>
+
+<!-- Revenue Graph Section (Themed) -->
+<div class="card shadow-sm mt-4" style="border: none; border-radius: 12px; background: #fff;">
+    <div class="card-body revenue-card-body">
+        <!-- Chart Title -->
+        <h2 class="revenue-title">Monthly Revenue <?php echo $currentYear; ?></h2>
+
+        <!-- Chart Container -->
+        <div class="revenue-chart-container">
+            <!-- Y-axis labels -->
+            <div class="revenue-yaxis">
+                <?php for ($i = $ySteps; $i >= 0; $i--): ?>
+                    <span><?php echo formatCurrency($i * $yStepVal); ?></span>
+                <?php endfor; ?>
+            </div>
+            <!-- Grid lines -->
+            <div class="revenue-gridlines">
+                <?php for ($i = 0; $i <= $ySteps; $i++): ?>
+                    <div style="position: absolute; width: 100%; height: 1px; background-color: #f3f4f6; top: <?php echo ($i / $ySteps) * 100; ?>%;"></div>
+                <?php endfor; ?>
+            </div>
+            <!-- SVG Line Graph -->
+            <svg class="revenue-svg" viewBox="0 0 <?php echo $svgWidth; ?> <?php echo $svgHeight; ?>">
+                <defs>
+                    <!-- Blue area fill -->
+                    <linearGradient id="areaFill" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" style="stop-color:#e3f0ff;stop-opacity:0.7" />
+                        <stop offset="100%" style="stop-color:#fffde7;stop-opacity:0.2" />
+                    </linearGradient>
+                    <!-- Soft shadow for line -->
+                    <filter id="shadow">
+                        <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#f9d923" flood-opacity="0.18"/>
+                    </filter>
+                </defs>
+                <!-- Area under the line -->
+                <path d="<?php echo $areaPath; ?>" fill="url(#areaFill)" />
+                <!-- Main line: bold yellow -->
+                <path d="<?php echo $linePath; ?>"
+                      stroke="#ffe600" stroke-width="4" fill="none" filter="url(#shadow)" style="transition: all 0.3s;" />
+                <!-- Data points: yellow with blue border -->
+                <?php foreach ($points as $idx => $pt): ?>
+                <g class="data-point-group" style="cursor: pointer;">
+                    <circle cx="<?php echo $pt['x']; ?>" cy="<?php echo $pt['y']; ?>" r="7" fill="#ffe600" stroke="#1976d2" stroke-width="2.5"
+                        style="transition: all 0.3s;" 
+                        onmouseover="this.setAttribute('r', '11'); this.nextElementSibling.style.display='block';" 
+                        onmouseout="this.setAttribute('r', '7'); this.nextElementSibling.style.display='none';">
+                        <animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="<?php echo 0.2 + ($idx * 0.2); ?>s" fill="freeze" />
+                    </circle>
+                    <!-- Tooltip -->
+                    <g style="display:none;">
+                        <rect x="<?php echo $pt['x'] - 48; ?>" y="<?php echo $pt['y'] - 38; ?>" width="96" height="28" rx="6" fill="#222" opacity="0.95"/>
+                        <text x="<?php echo $pt['x']; ?>" y="<?php echo $pt['y'] - 20; ?>" text-anchor="middle" fill="#ffe600" font-size="13" font-weight="700" font-family="'Segoe UI', Arial, sans-serif">
+                            <?php echo $pt['month']; ?>: ₱<?php echo formatCurrency($pt['val']); ?>
+                        </text>
+                    </g>
+                </g>
+                <?php endforeach; ?>
+            </svg>
+            <!-- X-axis labels -->
+            <div class="revenue-xaxis">
+                <?php foreach ($monthNames as $mn): ?>
+                <div><?php echo $mn; ?></div>
+                <?php endforeach; ?>
+            </div>
+        </div>
+        <!-- Minimal Stats Cards -->
+        <div class="revenue-stats-grid">
+            <!-- Total Sales -->
+            <div class="revenue-stat-card" style="border-left: 4px solid #3b82f6;">
+                <div class="revenue-stat-icon" style="background: #dbeafe;">
+                    <i class="fas fa-coins" style="font-size: 20px; color: #3b82f6;"></i>
+                </div>
+                <div>
+                    <div class="revenue-stat-label">Total Sales</div>
+                    <div class="revenue-stat-value">₱<?php echo formatCurrency($totalSales); ?></div>
+                </div>
+            </div>
+            <!-- Growth Rate -->
+            <div class="revenue-stat-card" style="border-left: 4px solid #8b5cf6;">
+                <div class="revenue-stat-icon" style="background: #ede9fe;">
+                    <i class="fas fa-chart-line" style="font-size: 20px; color: #8b5cf6;"></i>
+                </div>
+                <div>
+                    <div class="revenue-stat-label">Growth Rate vs <?php echo $lastYear; ?></div>
+                    <div class="revenue-stat-value"><?php echo ($growthRate >= 0 ? '+' : '') . $growthRate; ?>%</div>
+                </div>
+            </div>
+            <!-- Best Month -->
+            <div class="revenue-stat-card" style="border-left: 4px solid #f59e0b;">
+                <div class="revenue-stat-icon" style="background: #fef3c7;">
+                    <i class="fas fa-trophy" style="font-size: 20px; color: #f59e0b;"></i>
+                </div>
+                <div>
+                    <div class="revenue-stat-label">Best Month (<?php echo $bestMonthName; ?>)</div>
+                    <div class="revenue-stat-value">₱<?php echo formatCurrency($bestMonthTotal); ?></div>
+                </div>
+            </div>
+            <!-- Avg/Month -->
+            <div class="revenue-stat-card" style="border-left: 4px solid #10b981;">
+                <div class="revenue-stat-icon" style="background: #d1fae5;">
+                    <i class="fas fa-calendar-alt" style="font-size: 20px; color: #10b981;"></i>
+                </div>
+                <div>
+                    <div class="revenue-stat-label">Avg/Month</div>
+                    <div class="revenue-stat-value">₱<?php echo formatCurrency($avgPerMonth); ?></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
