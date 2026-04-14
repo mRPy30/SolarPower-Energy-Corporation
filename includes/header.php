@@ -126,6 +126,7 @@ header.scrolled {
     height: 85px;
     border-radius: var(--border-radius-md);
     transition: all 0.3s ease;
+    object-fit: cover;
 }
 
 header.scrolled .logo img {
@@ -407,7 +408,7 @@ nav a.active::after {
             <div class="logo">
                 <div class="logo-img">
                     <a href="index.php">
-                        <img src="assets/img/logo_no_background.png" alt="Solar Power Logo">
+                        <img src="assets/img/solar-new-logo.png" alt="Solar Power Logo">
                     </a>
                 </div>
             </div>
