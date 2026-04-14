@@ -48,16 +48,17 @@
         /* ── New Horizontal Project Card ── */
         .project-card {
             display: flex;
-            border: 1px solid #2b2b2b;
+            border: 1px solid rgba(10, 92, 61, 0.15); /* subtle green border */
             border-radius: 16px;
             overflow: hidden;
             background: #fff;
-            box-shadow: none;
-            transition: transform 0.25s ease;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+            transition: transform 0.25s ease, box-shadow 0.25s ease;
         }
 
         .project-card:hover {
-            transform: translateY(-3px);
+            transform: translateY(-4px);
+            box-shadow: 0 10px 30px rgba(10, 92, 61, 0.15); /* green tinted shadow */
         }
 
         /* Left image panel */
@@ -91,21 +92,21 @@
         }
 
         .card-project-title {
-            font-size: 1.05rem;
+            font-size: 1.15rem;
             font-weight: 800;
-            color: #1a1a1a;
+            color: #1b262c; /* Theme dark grey-blue */
             letter-spacing: 0.02em;
             text-transform: uppercase;
             margin: 0;
         }
 
         .card-project-subtitle {
-            font-size: 0.62rem;
-            font-weight: 600;
+            font-size: 0.65rem;
+            font-weight: 700;
             letter-spacing: 0.12em;
             text-transform: uppercase;
-            color: #767676;
-            margin-top: 2px;
+            color: var(--clr-primary); /* Yellow accent from logo Sun */
+            margin-top: 4px;
         }
 
         /* Individual detail rows */
@@ -137,7 +138,7 @@
 
         .detail-icon-wrap i {
             font-size: 1.4rem;
-            color: #111;
+            color: var(--clr-secondary); /* Theme Green from logo panel */
         }
 
         .detail-text-wrap {
@@ -146,18 +147,18 @@
         }
 
         .detail-value {
-            font-size: 1.03rem;
+            font-size: 1.05rem;
             font-weight: 700;
-            color: #1a1a1a;
+            color: #1b262c; /* Text matching the title color */
             line-height: 1.2;
         }
 
         .detail-label {
-            font-size: 0.52rem;
+            font-size: 0.55rem;
             font-weight: 600;
             letter-spacing: 0.1em;
             text-transform: uppercase;
-            color: #6f6f6f;
+            color: #6f808a; /* Softened dark blue-grey */
             margin-top: 2px;
         }
 
