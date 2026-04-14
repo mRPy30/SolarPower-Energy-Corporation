@@ -529,7 +529,7 @@
         <div class="row">
             <div class="col-lg-3 col-md-6 mb-4">
                 <div class="footer-logo-social">
-                    <img src="assets/img/solar-new-logo.png" alt="Logo">
+                    <img src="/assets/img/logo_no_background.png" alt="Logo">
                     <div class="social-links">
                         <a href="https://www.facebook.com/p/SolarPower-Energy-Corporation-61578373983187/"><i class="fab fa-facebook-f"></i></a>
                         <a href="https://www.instagram.com/solarpowerenergycorporation?igsh=MWh4YTEyYWpzbDNlNQ=="><i class="fab fa-instagram"></i></a>
