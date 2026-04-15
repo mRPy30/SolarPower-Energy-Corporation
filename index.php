@@ -637,23 +637,7 @@ $conn->close();
                                 </div>
 
                                 <!-- 20% Initial Payment -->
-                                <div class="form-check payment-option mb-3">
-                                    <input class="form-check-input" type="radio" name="paymentMethod"
-                                        id="paymentInitial" value="initial" onchange="updatePaymentDisplay()">
-                                    <label class="form-check-label w-100" for="paymentInitial">
-                                        <div class="d-flex justify-content-between align-items-center">
-                                            <div>
-                                                <strong>
-                                                    <i class="fas fa-hand-holding-usd text-info me-2"></i>
-                                                    20% Initial Payment
-                                                </strong>
-                                                <p class="text-muted mb-0 small">Pay 20% now, 80% before installation
-                                                </p>
-                                            </div>
-                                            <span class="badge bg-info">Flexible</span>
-                                        </div>
-                                    </label>
-                                </div>
+                                <!--currently remove-->
                             </div>
 
                             <!-- Receipt Upload Section -->
