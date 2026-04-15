@@ -802,6 +802,10 @@ $conn->close();
                     <div class="brand-item"><img src="assets/img/jinko.png" alt="Jinko"></div>
                     <div class="brand-item"><img src="assets/img/hyxipower.png" alt="Jinko"></div>
                     <div class="brand-item"><img src="assets/img/Hopewind.jpg" alt="Hopewind"></div>
+                    <div class="brand-item"><img src="assets/img/wechat.png" alt="WeChat"></div>
+                    <div class="brand-item"><img src="assets/img/dahai.png" alt="Dahai"></div>
+                    <div class="brand-item"><img src="assets/img/nuuko.png" alt="Nuuko"></div>
+                    <div class="brand-item"><img src="assets/img/srne.png" alt="SRNE"></div>
                     <!-- Duplicate for seamless loop -->
                     <div class="brand-item"><img src="assets/img/hoymiles.png" alt="Hoymiles"></div>
                     <div class="brand-item"><img src="assets/img/solax.png" alt="Solax"></div>
@@ -812,6 +816,10 @@ $conn->close();
                     <div class="brand-item"><img src="assets/img/jinko.png" alt="Jinko"></div>
                     <div class="brand-item"><img src="assets/img/hyxipower.png" alt="Hyxipower"></div>
                     <div class="brand-item"><img src="assets/img/Hopewind.jpg" alt="Hopewind"></div>
+                    <div class="brand-item"><img src="assets/img/wechat.png" alt="WeChat"></div>
+                    <div class="brand-item"><img src="assets/img/dahai.png" alt="Dahai"></div>
+                    <div class="brand-item"><img src="assets/img/nuuko.png" alt="Nuuko"></div>
+                    <div class="brand-item"><img src="assets/img/srne.png" alt="SRNE"></div>
                 </div>
             </div>
 
@@ -827,6 +835,10 @@ $conn->close();
                     <div class="brand-item"><img src="assets/img/jinko.png" alt="Jinko"></div>
                     <div class="brand-item"><img src="assets/img/hyxipower.png" alt="Jinko"></div>
                     <div class="brand-item"><img src="assets/img/Hopewind.jpg" alt="Hopewind"></div>
+                    <div class="brand-item"><img src="assets/img/wechat.png" alt="WeChat"></div>
+                    <div class="brand-item"><img src="assets/img/dahai.png" alt="Dahai"></div>
+                    <div class="brand-item"><img src="assets/img/nuuko.png" alt="Nuuko"></div>
+                    <div class="brand-item"><img src="assets/img/srne.png" alt="SRNE"></div>
                     <!-- Duplicate for seamless loop -->
                     <div class="brand-item"><img src="assets/img/hoymiles.png" alt="Hoymiles"></div>
                     <div class="brand-item"><img src="assets/img/solax.png" alt="Solax"></div>
@@ -837,6 +849,10 @@ $conn->close();
                     <div class="brand-item"><img src="assets/img/jinko.png" alt="Jinko"></div>
                     <div class="brand-item"><img src="assets/img/hyxipower.png" alt="Hyxipower"></div>
                     <div class="brand-item"><img src="assets/img/Hopewind.jpg" alt="Hopewind"></div>
+                    <div class="brand-item"><img src="assets/img/wechat.png" alt="WeChat"></div>
+                    <div class="brand-item"><img src="assets/img/dahai.png" alt="Dahai"></div>
+                    <div class="brand-item"><img src="assets/img/nuuko.png" alt="Nuuko"></div>
+                    <div class="brand-item"><img src="assets/img/srne.png" alt="SRNE"></div>
                 </div>
             </div>
         </div>
