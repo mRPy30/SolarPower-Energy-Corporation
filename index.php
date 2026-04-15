@@ -928,8 +928,8 @@ $conn->close();
             <!-- Solar System Types Comparison -->
             <div class="solar-systems-wrapper">
 
-                <!-- 01 Grid-Tied -->
-                <div class="solar-system-row" id="system-gridtied">
+                <!-- 01 Grid-Tied — right to left -->
+                <div class="solar-system-row" id="system-gridtied" data-aos="fade-left" data-aos-duration="900">
                     <div class="system-image-col">
                         <div class="system-img-frame">
                             <img src="assets/img/gridtied.png" alt="Grid-Tied Solar System" class="system-img">
@@ -953,8 +953,8 @@ $conn->close();
                     </div>
                 </div>
 
-                <!-- 02 Hybrid -->
-                <div class="solar-system-row solar-system-row--reverse" id="system-hybrid">
+                <!-- 02 Hybrid — left to right -->
+                <div class="solar-system-row solar-system-row--reverse" id="system-hybrid" data-aos="fade-right" data-aos-duration="900">
                     <div class="system-image-col">
                         <div class="system-img-frame">
                             <img src="assets/img/hybrid-solar.png" alt="Hybrid Solar System" class="system-img">
@@ -976,11 +976,10 @@ $conn->close();
                             Works during blackouts using stored battery energy
                         </div>
                     </div>
-
                 </div>
 
-                <!-- 03 Off-Grid -->
-                <div class="solar-system-row" id="system-offgrid">
+                <!-- 03 Off-Grid — right to left -->
+                <div class="solar-system-row" id="system-offgrid" data-aos="fade-left" data-aos-duration="900">
                     <div class="system-image-col">
                         <div class="system-img-frame">
                             <img src="assets/img/offgrid.png" alt="Off-Grid Solar System" class="system-img">
@@ -3970,6 +3969,26 @@ $conn->close();
                 result.innerHTML = `<p class="text-danger small mt-2"><i class="fas fa-exclamation-circle me-1"></i>Connection error. Please try again.</p>`;
             });
     }
+
+    // ── Solar System Row Scroll Animations ──────────────────────────────────
+    (function () {
+        const rows = document.querySelectorAll('.solar-system-row');
+        if (!rows.length) return;
+
+        const observer = new IntersectionObserver(
+            (entries) => {
+                entries.forEach((entry) => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('row-visible');
+                        observer.unobserve(entry.target); // animate once
+                    }
+                });
+            },
+            { threshold: 0.18 }   // trigger when 18% of the row is visible
+        );
+
+        rows.forEach((row) => observer.observe(row));
+    })();
 </script>
 <!-- END FLOATING TRACK ORDER -->
 
