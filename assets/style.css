@@ -2768,7 +2768,7 @@ body {
     font-family: var(--ff-body);
     font-size: clamp(1.6rem, 3vw, 2.1rem);
     font-weight: 800;
-    color: #111827;
+    color: #d39d00;
     line-height: 1.2;
     margin-bottom: 14px;
 }
