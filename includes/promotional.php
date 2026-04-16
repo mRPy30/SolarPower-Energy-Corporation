@@ -55,6 +55,9 @@
             display: block;
         }
 
+<<<<<<< HEAD
+      
+=======
         .promo-card-overlay {
             position: absolute;
             bottom: 0;
@@ -88,6 +91,7 @@
             margin: 0;
             opacity: 0.9;
         }
+>>>>>>> 367e9b3fa04878f4e17e9221a0d6b622abc19955
 
         .promo-right-col {
             gap: 20px;
@@ -97,12 +101,19 @@
             flex: 1;
             min-height: 175px;
             position: relative;
+<<<<<<< HEAD
+=======
             border-radius: 0;
+>>>>>>> 367e9b3fa04878f4e17e9221a0d6b622abc19955
         }
 
         .promo-card-sm img {
             width: 100%;
             height: 100%;
+<<<<<<< HEAD
+            object-fit: cover;
+=======
+>>>>>>> 367e9b3fa04878f4e17e9221a0d6b622abc19955
             display: block;
         }
 
@@ -114,6 +125,9 @@
             font-size: 0.8rem;
         }
 
+<<<<<<< HEAD
+        .promo-card .play-icon {
+=======
         .promo-link-wrap {
             display: block;
             text-decoration: none;
@@ -179,6 +193,32 @@
         <div class="container">
             <div class="row g-4 promo-row">
                 <div class="col-md-6 d-flex">
+<<<<<<< HEAD
+                    <div class="promo-card promo-card-main">
+                        <video autoplay muted loop playsinline>
+                            <source src="assets/img/promo-banner.webm" type="video/webm">
+                            Your browser does not support the video tag.
+                        </video>
+                        <div class="play-icon">
+                            <i class="fas fa-play"></i>
+                        </div>
+                        <div class="promo-card-overlay">
+                            <span class="badge-promo"><i class="fas fa-bolt"></i> FEATURED</span>
+                            <h3>Solar Power Solutions</h3>
+                            <p>Reliable &amp; affordable energy packages for your home</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 promo-right-col">
+                    <div class="promo-card promo-card-sm">
+                        <img src="assets/img/demo-pubmat.jpg" alt="Grid-Tie Packages">
+                       
+                    </div>
+                    <div class="promo-card promo-card-sm">
+                        <img src="assets/img/demo-pubmat2.png" alt="Hybrid Packages">
+                     
+                    </div>
+=======
                     <a href="https://www.facebook.com/share/p/1Lo6QbRZm6/" target="_blank" rel="noopener noreferrer" class="promo-card promo-card-main promo-link-wrap">
                         <img src="assets/img/go-solar.jpg" alt="Solar Power Solutions" class="promo-video-bg">
 
@@ -200,6 +240,7 @@
                         <img src="assets/img/occular.jpg" alt="Hybrid Packages">
                         <div class="fb-hover-badge"><i class="fab fa-facebook"></i> View Post</div>
                     </a>
+>>>>>>> 367e9b3fa04878f4e17e9221a0d6b622abc19955
                 </div>
             </div>
         </div>

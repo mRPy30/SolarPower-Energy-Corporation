@@ -1,6 +1,6 @@
 <style>
-/* Footer */
-.footer {
+  /* Footer */
+  .footer {
     background-color: var(--clr-light);
     color: #1E4940; /* Darker tone, keeping original for contrast */
     padding: 60px 0 var(--spacing-lg);
@@ -614,5 +614,5 @@ function copyToClipboard(text, element) {
     }).catch(err => {
         console.error('Failed to copy: ', err);
     });
-}
+  }
 </script>
