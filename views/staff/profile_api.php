@@ -21,15 +21,15 @@ if ($conn->connect_error) {
 
 $staff_id = $_SESSION['user_id'];
 $input = json_decode(file_get_contents('php://input'), true);
-$action = $input['action'] ?? '';
+$action = $_POST['action'] ?? ($input['action'] ?? '');
 
 switch ($action) {
     case 'update_profile':
-        // Get and validate input
-        $firstName = trim($input['firstName'] ?? '');
-        $lastName = trim($input['lastName'] ?? '');
-        $email = trim($input['email'] ?? '');
-        $contact = trim($input['contact_number'] ?? '');
+        // Get and validate input (from POST or JSON)
+        $firstName = trim($_POST['firstName'] ?? ($input['firstName'] ?? ''));
+        $lastName = trim($_POST['lastName'] ?? ($input['lastName'] ?? ''));
+        $email = trim($_POST['email'] ?? ($input['email'] ?? ''));
+        $contact = trim($_POST['contact_number'] ?? ($input['contact_number'] ?? ''));
         
         // Validate required fields
         if (empty($firstName) || empty($lastName) || empty($email)) {
@@ -56,16 +56,72 @@ switch ($action) {
         }
         $check_stmt->close();
         
-        // Update profile using prepared statement
-        $stmt = $conn->prepare("UPDATE staff SET firstName = ?, lastName = ?, email = ?, contact_number = ? WHERE id = ?");
-        $stmt->bind_param("ssssi", $firstName, $lastName, $email, $contact, $staff_id);
+        // Handle File Upload if a new file was provided
+        $profilePictureFilename = null;
+        if (isset($_FILES['profile_picture']) && $_FILES['profile_picture']['error'] === UPLOAD_ERR_OK) {
+            $file = $_FILES['profile_picture'];
+            $maxSize = 2 * 1024 * 1024; // 2MB
+            
+            // Server-side size validation
+            if ($file['size'] > $maxSize) {
+                echo json_encode(['success' => false, 'message' => 'File exceeds 2MB limit.']);
+                exit;
+            }
+
+            // Server-side type validation
+            $allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+            $finfo = finfo_open(FILEINFO_MIME_TYPE);
+            $mime = finfo_file($finfo, $file['tmp_name']);
+            finfo_close($finfo);
+
+            if (!in_array($mime, $allowedMimes)) {
+                echo json_encode(['success' => false, 'message' => 'Invalid file format.']);
+                exit;
+            }
+
+            // Ensure directory exists
+            $uploadDir = '../../uploads/profiles/';
+            if (!is_dir($uploadDir)) {
+                mkdir($uploadDir, 0755, true);
+            }
+
+            // Standardize file name: staff_{id}_{time}.ext
+            $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
+            $filename = "staff_{$staff_id}_" . time() . ".{$ext}";
+            $destination = $uploadDir . $filename;
+
+            if (move_uploaded_file($file['tmp_name'], $destination)) {
+                $profilePictureFilename = $filename;
+            } else {
+                echo json_encode(['success' => false, 'message' => 'Failed to upload image.']);
+                exit;
+            }
+        }
+        
+        // Determine whether to update profile picture
+        if ($profilePictureFilename) {
+            $query = "UPDATE staff SET firstName = ?, lastName = ?, email = ?, contact_number = ?, profile_picture = ? WHERE id = ?";
+            $stmt = $conn->prepare($query);
+            $stmt->bind_param("sssssi", $firstName, $lastName, $email, $contact, $profilePictureFilename, $staff_id);
+        } else {
+            $query = "UPDATE staff SET firstName = ?, lastName = ?, email = ?, contact_number = ? WHERE id = ?";
+            $stmt = $conn->prepare($query);
+            $stmt->bind_param("ssssi", $firstName, $lastName, $email, $contact, $staff_id);
+        }
         
         if ($stmt->execute()) {
             // Update session variables
             $_SESSION['firstName'] = $firstName;
             $_SESSION['lastName'] = $lastName;
+            if ($profilePictureFilename) {
+                $_SESSION['profile_picture'] = $profilePictureFilename;
+            }
             
             $stmt->close();
+            
+            // Get updated image path for response if it was uploaded, else get current
+            $responsePic = $profilePictureFilename;
+            
             echo json_encode([
                 'success' => true, 
                 'message' => 'Profile updated successfully',
@@ -73,7 +129,8 @@ switch ($action) {
                     'firstName' => $firstName,
                     'lastName' => $lastName,
                     'email' => $email,
-                    'contact_number' => $contact
+                    'contact_number' => $contact,
+                    'profile_picture' => $responsePic
                 ]
             ]);
         } else {

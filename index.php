@@ -1025,59 +1025,61 @@ $conn->close();
 
 
     <!-- Testimonials Section -->
-    <section class="py-5 bg-light">
-        <div class="container py-5">
-            <div class="text-center mb-5" data-aos="fade-up">
-                <h2 class="fw-bold">What Our Clients Say</h2>
-                <p class="text-muted">Real experiences from homeowners and businesses who made the switch.</p>
-            </div>
-            <div class="row g-4">
-                <div class="col-md-4" data-aos="fade-up" data-aos-delay="300">
-                    <div class="feature-box">
-                        <div class="d-flex align-items-center mb-3">
-                            <img src="assets/img/user2.jpg" alt="Samantha Esplana" class="rounded-circle me-3"
-                                style="width: 60px; height: 60px; object-fit: cover;">
-                            <div>
-                                <strong>Samantha Esplana</strong>
-                                <p class="text-muted small mb-0">Alabang, Muntinlupa</p>
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <i class="fas fa-star text-warning"></i>
-                            <i class="fas fa-star text-warning"></i>
-                            <i class="fas fa-star text-warning"></i>
-                            <i class="fas fa-star text-warning"></i>
-                        </div>
-                        <p class="text-muted fst-italic">"Very professional and reliable service. Everything was done on
-                            time and communication was clear throughout the process."</p>
-                    </div>
-                </div>
+<section class="py-5" style="background: var(--bs-light, #f8f9fa);">
+  <div class="container py-5">
+    <div class="text-center mb-5" data-aos="fade-up">
+      <h2 class="fw-bold">What Our Clients Say</h2>
+      <p class="text-muted">Real experiences from homeowners and businesses who made the switch.</p>
+    </div>
+    <div class="row g-4 justify-content-center">
 
-                <div class="col-md-4" data-aos="fade-up" data-aos-delay="200">
-                    <div class="feature-box">
-                        <div class="d-flex align-items-center mb-3">
-                            <img src="assets/img/user2.jpg" alt="Rayne Velasco" class="rounded-circle me-3"
-                                style="width: 60px; height: 60px; object-fit: cover;">
-                            <div>
-                                <strong>Rayne Velasco</strong>
-                                <p class="text-muted small mb-0">Bacoor, Cavite</p>
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <i class="fas fa-star text-warning"></i>
-                            <i class="fas fa-star text-warning"></i>
-                            <i class="fas fa-star text-warning"></i>
-                            <i class="fas fa-star text-warning"></i>
-                        </div>
-                        <p class="text-muted fst-italic">"They are so accommodating and responsive! They answered all my
-                            questions that I needed to know about installing solar, which really helped me decide.
-                            Highly recommended!"</p>
-                    </div>
-                </div>
-
+      <div class="col-md-4" data-aos="fade-up" data-aos-delay="300">
+        <div style="background:#fff; border:1px solid rgba(0,0,0,0.08); border-radius:16px; padding:1.5rem; position:relative;">
+          <span style="position:absolute; top:12px; right:18px; font-size:48px; line-height:1; color:#ddd; font-family:Georgia,serif;">&ldquo;</span>
+          <div class="d-flex align-items-center mb-3">
+            <img src="assets/img/user2.jpg" alt="Samantha Esplana" class="rounded-circle me-3"
+              style="width:50px;height:50px;object-fit:cover;">
+            <div>
+              <strong style="font-size:14px;">Samantha Esplana</strong>
+              <p class="text-muted small mb-0">Alabang, Muntinlupa</p>
             </div>
+          </div>
+          <div class="mb-3">
+            <i class="fas fa-star text-warning"></i>
+            <i class="fas fa-star text-warning"></i>
+            <i class="fas fa-star text-warning"></i>
+            <i class="fas fa-star text-warning"></i>
+            <i class="far fa-star text-warning"></i>
+          </div>
+          <p class="text-muted fst-italic" style="font-size:13px;">"Very professional and reliable service. Everything was done on time and communication was clear throughout the process."</p>
         </div>
-    </section>
+      </div>
+
+      <div class="col-md-4" data-aos="fade-up" data-aos-delay="200">
+        <div style="background:#fff; border:1px solid rgba(0,0,0,0.08); border-radius:16px; padding:1.5rem; position:relative;">
+          <span style="position:absolute; top:12px; right:18px; font-size:48px; line-height:1; color:#ddd; font-family:Georgia,serif;">&ldquo;</span>
+          <div class="d-flex align-items-center mb-3">
+            <img src="assets/img/user2.jpg" alt="Rayne Velasco" class="rounded-circle me-3"
+              style="width:50px;height:50px;object-fit:cover;">
+            <div>
+              <strong style="font-size:14px;">Rayne Velasco</strong>
+              <p class="text-muted small mb-0">Bacoor, Cavite</p>
+            </div>
+          </div>
+          <div class="mb-3">
+            <i class="fas fa-star text-warning"></i>
+            <i class="fas fa-star text-warning"></i>
+            <i class="fas fa-star text-warning"></i>
+            <i class="fas fa-star text-warning"></i>
+            <i class="far fa-star text-warning"></i>
+          </div>
+          <p class="text-muted fst-italic" style="font-size:13px;">"They are so accommodating and responsive! They answered all my questions that I needed to know about installing solar, which really helped me decide. Highly recommended!"</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
 
 
 

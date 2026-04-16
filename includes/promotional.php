@@ -8,8 +8,8 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
     <style>
-        .promo-section {
-            padding-bottom: 60px;
+         .promo-section {
+           padding-bottom: 60px;
             background: white;
         }
 
@@ -121,7 +121,7 @@
             cursor: pointer;
         }
 
-        .fb-hover-badge {
+       .fb-hover-badge {
             position: absolute;
             top: 14px;
             right: 14px;
@@ -151,26 +151,6 @@
                 opacity: 1;
                 transform: translateY(0);
             }
-        }
-
-        .fb-hover-badge {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 60px;
-            height: 60px;
-            background: rgba(255, 255, 255, 0.9);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.4rem;
-            color: #0a5c3d;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
-            opacity: 0;
-            transition: opacity 0.3s ease, transform 0.3s ease;
-            pointer-events: none;
         }
 
         .promo-card:hover .play-icon {
