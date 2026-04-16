@@ -9,7 +9,11 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
     <style>
         .promo-section {
+<<<<<<< HEAD
            padding-bottom: 60px;
+=======
+            padding-bottom: 60px;
+>>>>>>> 367e9b3fa04878f4e17e9221a0d6b622abc19955
             background: white;
         }
 
@@ -55,7 +59,43 @@
             display: block;
         }
 
+<<<<<<< HEAD
       
+=======
+        .promo-card-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 24px;
+            background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
+            color: #fff;
+        }
+
+        .promo-card-overlay .badge-promo {
+            display: inline-block;
+            background: #ffc107;
+            color: #333;
+            font-weight: 600;
+            font-size: 0.75rem;
+            padding: 4px 12px;
+            border-radius: 20px;
+            margin-bottom: 8px;
+            letter-spacing: 0.5px;
+        }
+
+        .promo-card-overlay h3 {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .promo-card-overlay p {
+            font-size: 0.85rem;
+            margin: 0;
+            opacity: 0.9;
+        }
+>>>>>>> 367e9b3fa04878f4e17e9221a0d6b622abc19955
 
         .promo-right-col {
             gap: 20px;
@@ -65,12 +105,19 @@
             flex: 1;
             min-height: 175px;
             position: relative;
+<<<<<<< HEAD
+=======
+            border-radius: 0;
+>>>>>>> 367e9b3fa04878f4e17e9221a0d6b622abc19955
         }
 
         .promo-card-sm img {
             width: 100%;
             height: 100%;
+<<<<<<< HEAD
             object-fit: cover;
+=======
+>>>>>>> 367e9b3fa04878f4e17e9221a0d6b622abc19955
             display: block;
         }
 
@@ -82,7 +129,50 @@
             font-size: 0.8rem;
         }
 
+<<<<<<< HEAD
         .promo-card .play-icon {
+=======
+        .promo-link-wrap {
+            display: block;
+            text-decoration: none;
+            color: inherit;
+            cursor: pointer;
+        }
+
+        .fb-hover-badge {
+            position: absolute;
+            top: 14px;
+            right: 14px;
+            background: #1877f2;
+            color: #fff;
+            font-size: 0.78rem;
+            font-weight: 700;
+            padding: 5px 12px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            opacity: 0;
+            transform: translateY(-6px);
+            transition: opacity 0.25s ease, transform 0.25s ease;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .promo-link-wrap:hover .fb-hover-badge {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        @media (max-width: 767px) {
+            .fb-hover-badge {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fb-hover-badge {
+>>>>>>> 367e9b3fa04878f4e17e9221a0d6b622abc19955
             position: absolute;
             top: 50%;
             left: 50%;
@@ -128,6 +218,7 @@
         <div class="container">
             <div class="row g-4 promo-row">
                 <div class="col-md-6 d-flex">
+<<<<<<< HEAD
                     <div class="promo-card promo-card-main">
                         <video autoplay muted loop playsinline>
                             <source src="assets/img/promo-banner.webm" type="video/webm">
@@ -152,6 +243,29 @@
                         <img src="assets/img/demo-pubmat2.png" alt="Hybrid Packages">
                      
                     </div>
+=======
+                    <a href="https://www.facebook.com/share/p/1Lo6QbRZm6/" target="_blank" rel="noopener noreferrer" class="promo-card promo-card-main promo-link-wrap">
+                        <img src="assets/img/go-solar.jpg" alt="Solar Power Solutions" class="promo-video-bg">
+
+                        <div class="play-icon">
+                            <i class="fas fa-play"></i>
+                        </div>
+                        <div class="promo-card-overlay"></div>
+                        <div class="fb-hover-badge"><i class="fab fa-facebook"></i> View Post</div>
+                    </a>
+                </div>
+                <div class="col-md-6 promo-right-col">
+                    <a href="https://www.facebook.com/permalink.php?story_fbid=pfbid02XrvG3bZ8mQH6f6kPHqPmrmSWxeTDcR6kWmgVgo8NUWkaZ77srag41zQjFqStU4rMl&id=61578373983187"
+                        target="_blank" rel="noopener noreferrer" class="promo-card promo-card-sm promo-link-wrap">
+                        <img src="assets/img/installnow.jpg" alt="Grid-Tie Packages">
+                        <div class="fb-hover-badge"><i class="fab fa-facebook"></i> View Post</div>
+                    </a>
+                    <a href="https://www.facebook.com/photo/?fbid=122169296384945799"
+                        target="_blank" rel="noopener noreferrer" class="promo-card promo-card-sm promo-link-wrap">
+                        <img src="assets/img/occular.jpg" alt="Hybrid Packages">
+                        <div class="fb-hover-badge"><i class="fab fa-facebook"></i> View Post</div>
+                    </a>
+>>>>>>> 367e9b3fa04878f4e17e9221a0d6b622abc19955
                 </div>
             </div>
         </div>
