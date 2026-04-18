@@ -60,6 +60,296 @@ $conn->close();
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
     <link rel="stylesheet" href="assets/style.css">
+    <style>
+        /* ── Contact Us Section (minimal redesign) ── */
+        .contact-us {
+            padding: 80px 0;
+            background: #fff;
+        }
+ 
+        .contact-info h2 {
+            font-size: 28px;
+            color: var(--clr-dark);
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+ 
+        .contact-section-sub {
+            color: var(--clr-text-secondary);
+            font-size: 0.92rem;
+            margin-bottom: 36px;
+            line-height: 1.6;
+        }
+ 
+        /* Visit Us / WhatsApp block */
+        .visit-us-section {
+            margin-bottom: 32px;
+        }
+ 
+        .visit-us-section h3 {
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #999;
+            margin-bottom: 4px;
+        }
+ 
+        .visit-us-section p {
+            color: var(--clr-text-secondary);
+            font-size: 0.88rem;
+            line-height: 1.6;
+            margin-bottom: 14px;
+        }
+ 
+        /* Contact detail rows */
+        .company-info { margin-bottom: 24px; }
+ 
+        .contact-detail {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 18px;
+            gap: 12px;
+        }
+ 
+        .contact-detail .icon-wrap {
+            width: 36px;
+            height: 36px;
+            background: #f0f7f4;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+ 
+        .contact-detail i {
+            color: var(--clr-secondary);
+            font-size: 14px;
+        }
+ 
+        .company-info .phone-number {
+            font-weight: 500;
+            color: var(--clr-dark);
+            cursor: pointer;
+        }
+ 
+        /* Hours Section */
+        .hours-section { margin-top: 20px; }
+ 
+        .hours-toggle {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            padding: 12px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--clr-dark);
+            transition: var(--transition-fast);
+        }
+ 
+        .hours-toggle:hover { background: #f9fafb; }
+ 
+        .hours-toggle strong { color: var(--clr-dark); }
+ 
+        .hours-toggle i {
+            transition: transform 0.3s ease;
+            color: #aaa;
+            font-size: 12px;
+        }
+ 
+        .hours-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.35s ease;
+            margin-top: 4px;
+            background: #fafafa;
+            border-radius: 0 0 8px 8px;
+            border: 1px solid #e5e7eb;
+            border-top: none;
+        }
+ 
+        .hour-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 7px 16px;
+            font-size: 13px;
+            color: #555;
+            border-bottom: 1px solid #f0f0f0;
+        }
+ 
+        .hour-item:last-child { border-bottom: none; }
+ 
+        .hour-item span:first-child {
+            font-weight: 500;
+            color: var(--clr-dark);
+        }
+ 
+        .contact-detail strong {
+            display: block;
+            margin-bottom: 2px;
+            color: #999;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+ 
+        .contact-detail p,
+        .contact-detail span,
+        .contact-detail a {
+            color: var(--clr-dark);
+            line-height: 1.6;
+            margin: 0;
+            font-size: 0.88rem;
+        }
+ 
+        .contact-detail a {
+            text-decoration: none;
+            color: var(--clr-dark);
+        }
+ 
+        .contact-detail a:hover {
+            color: var(--clr-secondary);
+        }
+ 
+        /* Form wrapper — clean, no heavy shadow */
+        .contact-form-wrapper {
+            padding: 0;
+            border: none;
+            background: transparent;
+        }
+ 
+        .contact-form-wrapper h3 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--clr-dark);
+            margin-bottom: 6px;
+        }
+ 
+        .contact-form-sub {
+            font-size: 0.88rem;
+            color: var(--clr-text-secondary);
+            margin-bottom: 28px;
+        }
+ 
+        .contact-form .form-control {
+            padding: 10px 14px;
+            border: 1.5px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            background: #fafafa;
+            transition: border-color 0.2s, background 0.2s;
+            color: var(--clr-dark);
+        }
+ 
+        .contact-form .form-control:focus {
+            border-color: var(--clr-secondary);
+            background: #fff;
+            box-shadow: none;
+            outline: none;
+        }
+ 
+        .contact-form .input-group-text {
+            background: #fafafa;
+            border: 1.5px solid #e5e7eb;
+            border-right: none;
+            border-radius: 8px 0 0 8px;
+            color: var(--clr-secondary);
+            font-weight: 700;
+            font-size: 0.88rem;
+            padding: 10px 12px;
+        }
+ 
+        .contact-form .input-group .form-control {
+            border-left: none;
+            border-radius: 0 8px 8px 0;
+        }
+ 
+        .contact-form .input-group:focus-within .input-group-text {
+            border-color: var(--clr-secondary);
+            background: #fff;
+        }
+ 
+        .contact-form .input-group:focus-within .form-control {
+            border-color: var(--clr-secondary);
+        }
+ 
+        .contact-form textarea.form-control {
+            resize: none;
+        }
+ 
+        .btn-submit {
+            background: var(--clr-secondary);
+            color: #fff;
+            padding: 11px 0;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            width: 100%;
+            transition: background 0.2s;
+            letter-spacing: 0.04em;
+        }
+ 
+        .btn-submit:hover { background: #085231; }
+ 
+        /* Social Links */
+        .contact-social-links { margin-top: 28px; }
+ 
+        .contact-social-label {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #999;
+            margin-bottom: 10px;
+        }
+ 
+        .social-links {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+ 
+        .social-links a {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            background: #f0f0f0;
+            color: var(--clr-dark);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+ 
+        .social-links a:hover {
+            background: var(--clr-secondary);
+            color: #fff;
+        }
+ 
+        /* Section divider */
+        .contact-divider {
+            border: none;
+            border-top: 1px solid #f0f0f0;
+            margin: 24px 0;
+        }
+ 
+        /* Responsive */
+        @media (max-width: 768px) {
+            .whatsapp-btn { width: 100%; justify-content: center; }
+            .contact-us { padding: 48px 0; }
+        }
+    </style>
 
 <body>
 
@@ -1365,29 +1655,26 @@ $conn->close();
                         <!-- Company Information -->
                         <div class="company-info">
                             <div class="contact-detail">
-                                <i class="fas fa-map-marker-alt"></i>
+                                <div class="icon-wrap"><i class="fas fa-map-marker-alt"></i></div>
                                 <div>
                                     <strong>Address</strong>
-                                    <p>4/F PBB Corporate Center, 1906 Finance Drive, Madrigal Business Park 1, Ayala
-                                        Alabang, Muntinlupa City, 1780, Philippines</p>
+                                    <p>4/F PBB Corporate Center, 1906 Finance Drive, Madrigal Business Park 1, Ayala Alabang, Muntinlupa City, 1780, Philippines</p>
                                 </div>
                             </div>
 
                             <div class="contact-detail">
-                                <i class="fas fa-phone"></i>
+                                <div class="icon-wrap"><i class="fas fa-phone"></i></div>
                                 <div>
                                     <strong>Phone</strong>
-                                    <span class="phone-number" id="phone-copy"
-                                        onclick="copyToClipboard('0995-394-7379', this)">+63 995 394 7379</span>
+                                    <span class="phone-number" id="phone-copy" onclick="copyToClipboard('+639953947379', this)">+639953947379</span>
                                 </div>
                             </div>
 
                             <div class="contact-detail">
-                                <i class="fas fa-envelope"></i>
+                                <div class="icon-wrap"><i class="fas fa-envelope"></i></div>
                                 <div>
                                     <strong>Email</strong>
-                                    <a href="mailto:solar@solarpower.com.ph"
-                                        class="contact-link">solar@solarpower.com.ph</a>
+                                    <a href="mailto:solar@solarpower.com.ph" class="contact-link">solar@solarpower.com.ph</a>
                                 </div>
                             </div>
                         </div>
@@ -1429,6 +1716,18 @@ $conn->close();
                                 </div>
                             </div>
                         </div>
+
+                        <!-- Social Links -->
+                        <div class="contact-social-links">
+                            <p class="contact-social-label">Follow Us</p>
+                            <div class="social-links">
+                                <a href="https://www.facebook.com/p/SolarPower-Energy-Corporation-61578373983187/" target="_blank" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+                                <a href="https://www.instagram.com/solarpowerenergycorporation?igsh=MWh4YTEyYWpzbDNlNQ==" target="_blank" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                                <a href="https://www.tiktok.com/@solarpower.energy?_r=1&_t=ZS-92HlpTBUuzF" target="_blank" aria-label="TikTok"><i class="fab fa-tiktok"></i></a>
+                                <a href="https://youtube.com/@solarpowerenergycorporation?si=-kln0fTid4zMZDXq" target="_blank" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
+                                <a href="https://www.linkedin.com/in/solar-power-6792283aa" target="_blank" aria-label="LinkedIn"><i class="fab fa-linkedin-in"></i></a>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -1439,23 +1738,19 @@ $conn->close();
                         <form class="contact-form" id="contactForm" onsubmit="submitContactForm(event)">
                             <div class="row">
                                 <div class="col-md-6 mb-3">
-                                    <input type="text" class="form-control" id="contact_name" name="name"
-                                        placeholder="Full Name *" required>
+                                    <input type="text" class="form-control" id="contact_name" name="name" placeholder="Full Name *" required>
                                 </div>
 
                                 <div class="col-md-6 mb-3">
-                                    <input type="email" class="form-control" id="contact_email" name="email"
-                                        placeholder="Email Address *" required>
+                                    <input type="email" class="form-control" id="contact_email" name="email" placeholder="Email Address *" required>
                                 </div>
 
                                 <div class="col-12 mb-3">
-                                    <input type="tel" class="form-control" id="contact_phone" name="phone"
-                                        placeholder="Phone Number *" required>
+                                    <input type="tel" class="form-control" id="contact_phone" name="phone" placeholder="Phone Number *" required>
                                 </div>
 
                                 <div class="col-12 mb-4">
-                                    <textarea class="form-control" id="contact_message" name="message" rows="6"
-                                        placeholder="Your Message *" required></textarea>
+                                    <textarea class="form-control" id="contact_message" name="message" rows="6" placeholder="Your Message *" required></textarea>
                                 </div>
 
                                 <div class="col-12">
@@ -1480,11 +1775,14 @@ $conn->close();
                 <div class="col-lg-8" data-aos="zoom-in">
                     <div class="subscription-bar">
                         <h3>Subscribe Now!</h3>
-                        <p style="color: rgba(255,255,255,0.9); margin-bottom: 20px;">Get weekly solar tips, updates,
-                            and exclusive offers delivered to your inbox</p>
+                        <p style="color: rgba(255,255,255,0.9); margin-bottom: 20px;">Get weekly solar tips, updates, and exclusive offers delivered to your inbox</p>
                         <form id="subscribe-form" class="d-flex">
-                            <input type="email" name="email" id="subscribe-email" class="form-control"
-                                placeholder="Enter your email address" required>
+                            <input type="email"
+                                name="email"
+                                id="subscribe-email"
+                                class="form-control"
+                                placeholder="Enter your email address"
+                                required>
                             <button type="submit" class="btn btn-subscribe" id="subscribe-btn">
                                 <span class="btn-text">Subscribe!</span>
                                 <span class="btn-spinner d-none">
@@ -1511,7 +1809,8 @@ $conn->close();
                 </div>
                 <div class="modal-body text-center">
                     <div class="mb-3">
-                        <i class="fas fa-solar-panel text-success" style="font-size: 48px;"></i>
+                        <i class="fas fa-solar-panel text-success"
+                            style="font-size: 48px;"></i>
                     </div>
                     <p class="mb-1">
                         Thank you for sending contacts
@@ -1606,10 +1905,12 @@ $conn->close();
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label fw-semibold small text-uppercase">Contact Number</label>
                                     <div class="input-group">
-                                        <span class="input-group-text"><i class="fas fa-phone"></i></span>
-                                        <input type="tel" name="phone" class="form-control" placeholder="0917-000-0000"
-                                            required>
+                                        <span class="input-group-text" style="background:#e8f4ef;border-color:#dee2e6;color:#0a5c3d;font-weight:700;font-size:0.93rem;">+639</span>
+                                        <input type="tel" name="phone" class="form-control" placeholder="XXXXXXXXX"
+                                            required maxlength="9" pattern="[0-9]{9}"
+                                            oninput="this.value=this.value.replace(/[^0-9]/g,'')">
                                     </div>
+                                    <input type="hidden" name="phone_full" class="insp-phone-full">
                                 </div>
 
                                 <div class="col-md-6 mb-3">
@@ -1699,7 +2000,7 @@ $conn->close();
                     <h4 class="fw-bold mb-2">Request Submitted!</h4>
                     <p class="text-muted mb-0">
                         Your inspection request has been received.<br>
-                        <strong class="text-dark">Our team will contact you within 24 hours.</strong>
+                        <strong class="text-dark">Our team will contact you within business hours.</strong>
                     </p>
                 </div>
                 <div class="modal-footer border-0 justify-content-center pb-4">
@@ -1823,12 +2124,12 @@ $conn->close();
     // SOLAR POWER E-COMMERCE - ORGANIZED JAVASCRIPT
     // ============================================
 
-    // ============================================
+// ============================================
     // 1. GLOBAL VARIABLES & INITIALIZATION
     // ============================================
     let cart = [];
 
-    document.addEventListener('DOMContentLoaded', function () {
+    document.addEventListener('DOMContentLoaded', function() {
         console.log('🚀 Solar Power System Initialized');
 
         // Initialize all modules
@@ -2051,7 +2352,7 @@ $conn->close();
                         ₱${item.price.toLocaleString()} × ${item.quantity}
                     </p>
                     <p class="mb-0 fw-bold text-primary">
-                        ₱${itemTotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                        ₱${itemTotal.toLocaleString(undefined, {minimumFractionDigits: 2})}
                     </p>
                     ${(item.moq || 1) > 1 ? `<small style="color:#856404;background:#fff3cd;border-radius:4px;padding:1px 7px;font-size:0.72rem;"><i class="fas fa-layer-group"></i> MOQ: ${item.moq} pcs</small>` : ''}
                 </div>
@@ -2083,7 +2384,7 @@ $conn->close();
         <div class="cart-summary bg-light p-3 rounded mt-3">
             <div class="d-flex justify-content-between mb-2">
                 <span>Subtotal:</span>
-                <span class="fw-bold">₱${subtotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                <span class="fw-bold">₱${subtotal.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
             </div>
             <div class="d-flex justify-content-between mb-2">
                 <span>Delivery Fee:</span>
@@ -2096,7 +2397,7 @@ $conn->close();
             <hr>
             <div class="d-flex justify-content-between" style="font-size: 1.2rem;">
                 <span class="fw-bold">Subtotal:</span>
-                <span class="fw-bold text-primary">₱${subtotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                <span class="fw-bold text-primary">₱${subtotal.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
             </div>
             <small class="text-muted d-block mt-2">*Final total including delivery and installation fees will be shown at checkout</small>
         </div>
@@ -2158,7 +2459,7 @@ $conn->close();
         sel.innerHTML = '<option value="">' + placeholder + '</option>';
         items
             .sort((a, b) => (a[labelKey] || '').localeCompare(b[labelKey] || ''))
-            .forEach(function (item) {
+            .forEach(function(item) {
                 const opt = document.createElement('option');
                 opt.value = item[valueKey];
                 opt.textContent = item[labelKey];
@@ -2168,9 +2469,9 @@ $conn->close();
     }
 
     async function initializeAddressDropdowns() {
-        const provinceEl = document.getElementById('province');
+        const provinceEl     = document.getElementById('province');
         const municipalityEl = document.getElementById('municipality');
-        const barangayEl = document.getElementById('barangay');
+        const barangayEl     = document.getElementById('barangay');
 
         if (!provinceEl) return;
 
@@ -2195,7 +2496,7 @@ $conn->close();
                     populateSelect('barangay', barangays, 'name', 'name', 'Select Barangay');
                     municipalityEl.innerHTML = '<option value="' + cityCode + '">' + provinceEl.options[provinceEl.selectedIndex].text + '</option>';
                     municipalityEl.disabled = false;
-                } catch (e) {
+                } catch(e) {
                     setSelectError('barangay', 'Failed to load barangays. Please refresh.');
                 }
                 return;
@@ -2203,12 +2504,12 @@ $conn->close();
 
             municipalityEl.innerHTML = '<option value="">Loading cities...</option>';
             try {
-                const cities = await psgcFetch(PSGC_BASE + '/provinces/' + code + '/cities/').catch(function () { return []; });
-                const municipalities = await psgcFetch(PSGC_BASE + '/provinces/' + code + '/municipalities/').catch(function () { return []; });
+                const cities = await psgcFetch(PSGC_BASE + '/provinces/' + code + '/cities/').catch(function() { return []; });
+                const municipalities = await psgcFetch(PSGC_BASE + '/provinces/' + code + '/municipalities/').catch(function() { return []; });
                 const combined = cities.concat(municipalities);
                 if (combined.length === 0) throw new Error('No cities found');
                 populateSelect('municipality', combined, 'code', 'name', 'Select City / Municipality');
-            } catch (e) {
+            } catch(e) {
                 console.error('City load error:', e);
                 setSelectError('municipality', 'Failed to load cities. Please refresh.');
             }
@@ -2225,13 +2526,13 @@ $conn->close();
 
             barangayEl.innerHTML = '<option value="">Loading barangays...</option>';
             try {
-                let barangays = await psgcFetch(PSGC_BASE + '/cities/' + code + '/barangays/').catch(function () { return null; });
+                let barangays = await psgcFetch(PSGC_BASE + '/cities/' + code + '/barangays/').catch(function() { return null; });
                 if (!barangays || barangays.length === 0) {
-                    barangays = await psgcFetch(PSGC_BASE + '/municipalities/' + code + '/barangays/').catch(function () { return []; });
+                    barangays = await psgcFetch(PSGC_BASE + '/municipalities/' + code + '/barangays/').catch(function() { return []; });
                 }
                 if (!barangays || barangays.length === 0) throw new Error('No barangays found');
                 populateSelect('barangay', barangays, 'name', 'name', 'Select Barangay');
-            } catch (e) {
+            } catch(e) {
                 console.error('Barangay load error:', e);
                 setSelectError('barangay', 'Failed to load barangays. Please refresh.');
             }
@@ -2246,13 +2547,13 @@ $conn->close();
             populateSelect('province', provinces, 'code', 'name', 'Select Province');
 
             // Append NCR (Metro Manila) highly-urbanized cities as a separate group
-            const ncrCities = await psgcFetch(PSGC_BASE + '/regions/130000000/cities/').catch(function () { return []; });
+            const ncrCities = await psgcFetch(PSGC_BASE + '/regions/130000000/cities/').catch(function() { return []; });
             if (ncrCities && ncrCities.length > 0) {
                 const optgroup = document.createElement('optgroup');
                 optgroup.label = '--- NCR (Metro Manila) ---';
                 ncrCities
-                    .sort(function (a, b) { return a.name.localeCompare(b.name); })
-                    .forEach(function (city) {
+                    .sort(function(a, b) { return a.name.localeCompare(b.name); })
+                    .forEach(function(city) {
                         const opt = document.createElement('option');
                         opt.value = 'NCR_' + city.code;
                         opt.textContent = city.name + ' (NCR)';
@@ -2260,7 +2561,7 @@ $conn->close();
                     });
                 provinceEl.appendChild(optgroup);
             }
-        } catch (e) {
+        } catch(e) {
             console.error('Province load error:', e);
             setSelectError('province', 'Failed to load provinces. Please refresh.');
         }
@@ -2405,7 +2706,7 @@ $conn->close();
                     <p class="mb-1 fw-bold" style="font-size: 0.95rem;">${item.displayName}</p>
                     <small class="text-muted">₱${item.price.toLocaleString()} x ${item.quantity}</small>
                     <p class="mb-0 fw-bold text-primary" style="font-size: 0.9rem;">
-                        ₱${itemTotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                        ₱${itemTotal.toLocaleString(undefined, {minimumFractionDigits: 2})}
                     </p>
                 </div>
                 <div class="d-flex flex-column align-items-end gap-2">
@@ -2571,657 +2872,657 @@ $conn->close();
         });
     }
 
-    // ============================================
-    // 5. INSTAPAY PAYMENT INTEGRATION
-    // ============================================
+// ============================================
+// 5. INSTAPAY PAYMENT INTEGRATION
+// ============================================
 
-    // Delivery fee calculation based on location
-    function calculateDeliveryFee() {
-        const address = document.getElementById('cust_address')?.value.toLowerCase() || '';
-
-        // Metro Manila / Nearby Areas (1-30km)
-        if (address.includes('manila') || address.includes('quezon') || address.includes('caloocan') ||
-            address.includes('pasig') || address.includes('makati') || address.includes('taguig') ||
-            address.includes('pasay') || address.includes('parañaque') || address.includes('muntinlupa') ||
-            address.includes('las piñas') || address.includes('valenzuela') || address.includes('malabon') ||
-            address.includes('navotas') || address.includes('marikina') || address.includes('san juan') ||
-            address.includes('mandaluyong') || address.includes('pateros')) {
-
-            // For now, return mid-range since we can't determine exact distance
-            return 2500; // 6-10km default for Metro Manila
-        }
-
-        // South Luzon
-        if (address.includes('cavite')) return 4200;
-        if (address.includes('laguna')) return 6000;
-        if (address.includes('batangas')) return 8500;
-        if (address.includes('rizal')) return 7000;
-
-        // North Luzon
-        if (address.includes('bulacan')) return 7000;
-        if (address.includes('pampanga')) return 10000;
-        if (address.includes('tarlac')) return 10000;
-
-        // Visayas & Mindanao - varies
-        if (address.includes('cebu') || address.includes('davao') || address.includes('iloilo') ||
-            address.includes('bacolod') || address.includes('cagayan de oro') || address.includes('zamboanga')) {
-            return 0; // Will vary, show "Contact us"
-        }
-
-        // Default - nearby areas
-        return 2000; // 1-5km default
+// Delivery fee calculation based on location
+function calculateDeliveryFee() {
+    const address = document.getElementById('cust_address')?.value.toLowerCase() || '';
+    
+    // Metro Manila / Nearby Areas (1-30km)
+    if (address.includes('manila') || address.includes('quezon') || address.includes('caloocan') || 
+        address.includes('pasig') || address.includes('makati') || address.includes('taguig') || 
+        address.includes('pasay') || address.includes('parañaque') || address.includes('muntinlupa') || 
+        address.includes('las piñas') || address.includes('valenzuela') || address.includes('malabon') || 
+        address.includes('navotas') || address.includes('marikina') || address.includes('san juan') || 
+        address.includes('mandaluyong') || address.includes('pateros')) {
+        
+        // For now, return mid-range since we can't determine exact distance
+        return 2500; // 6-10km default for Metro Manila
     }
-
-    // Check if cart contains Grid-tie or Hybrid products
-    function hasGridTieOrHybridProduct() {
-        if (!cart || cart.length === 0) return false;
-
-        // We need to check the actual product data
-        // For now, we'll check if any product has these keywords in the name
-        return cart.some(item => {
-            const name = (item.displayName || '').toLowerCase();
-            const brand = (item.brandName || '').toLowerCase();
-            return brand.includes('grid-tie') || brand.includes('hybrid') ||
-                name.includes('grid-tie') || name.includes('hybrid');
-        });
+    
+    // South Luzon
+    if (address.includes('cavite')) return 4200;
+    if (address.includes('laguna')) return 6000;
+    if (address.includes('batangas')) return 8500;
+    if (address.includes('rizal')) return 7000;
+    
+    // North Luzon
+    if (address.includes('bulacan')) return 7000;
+    if (address.includes('pampanga')) return 10000;
+    if (address.includes('tarlac')) return 10000;
+    
+    // Visayas & Mindanao - varies
+    if (address.includes('cebu') || address.includes('davao') || address.includes('iloilo') || 
+        address.includes('bacolod') || address.includes('cagayan de oro') || address.includes('zamboanga')) {
+        return 0; // Will vary, show "Contact us"
     }
+    
+    // Default - nearby areas
+    return 2000; // 1-5km default
+}
 
-    function updatePaymentDisplay() {
-        console.log('💳 Updating payment display...');
+// Check if cart contains Grid-tie or Hybrid products
+function hasGridTieOrHybridProduct() {
+    if (!cart || cart.length === 0) return false;
+    
+    // We need to check the actual product data
+    // For now, we'll check if any product has these keywords in the name
+    return cart.some(item => {
+        const name = (item.displayName || '').toLowerCase();
+        const brand = (item.brandName || '').toLowerCase();
+        return brand.includes('grid-tie') || brand.includes('hybrid') || 
+               name.includes('grid-tie') || name.includes('hybrid');
+    });
+}
 
-        const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked')?.value || 'full';
-
-        // Calculate delivery fee
-        const deliveryFee = calculateDeliveryFee();
-        const deliveryFeeDisplay = document.getElementById('deliveryFeeDisplay');
-        if (deliveryFeeDisplay) {
-            if (deliveryFee === 0) {
-                deliveryFeeDisplay.innerHTML = '<span class="text-info">Contact us</span>';
-            } else {
-                deliveryFeeDisplay.textContent = '₱' + deliveryFee.toLocaleString(undefined, { minimumFractionDigits: 2 });
-            }
-        }
-
-        // Calculate installation fee (only for Grid-tie or Hybrid)
-        const installationFee = hasGridTieOrHybridProduct() ? 2000 : 0;
-        const installationFeeDisplay = document.getElementById('installationFeeDisplay');
-        if (installationFeeDisplay) {
-            if (installationFee === 0) {
-                installationFeeDisplay.innerHTML = '<span class="text-success">FREE</span>';
-            } else {
-                installationFeeDisplay.textContent = '₱' + installationFee.toLocaleString(undefined, { minimumFractionDigits: 2 });
-            }
-        }
-
-        // Calculate base total from cart
-        let cartTotal = 0;
-        if (cart && cart.length > 0) {
-            cartTotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-        }
-
-        // Add installation and delivery fees to total
-        const totalAmount = cartTotal + installationFee + deliveryFee;
-        window.currentTotalAmount = totalAmount;
-
-        const amountToPayDisplay = document.getElementById('amountToPay');
-        const paymentNote = document.getElementById('paymentNote');
-        const confirmBtn = document.getElementById('confirmPaymentBtn');
-
-        if (paymentMethod === 'full') {
-            amountToPayDisplay.textContent = '₱' + totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2 });
-            paymentNote.innerHTML = '<i class="fas fa-info-circle"></i> You are paying the <strong>Full Amount (100%)</strong> via InstaPay.';
-            paymentNote.className = 'alert alert-success';
-        } else if (paymentMethod === 'downpayment') {
-            const downpayment = totalAmount * 0.5;
-            amountToPayDisplay.textContent = '₱' + downpayment.toLocaleString(undefined, { minimumFractionDigits: 2 });
-            paymentNote.innerHTML = '<i class="fas fa-info-circle"></i> You are paying <strong>50% Down Payment</strong> via InstaPay. Remaining 50% before delivery.';
-            paymentNote.className = 'alert alert-warning';
-        } else if (paymentMethod === 'initial') {
-            const initialPayment = totalAmount * 0.2;
-            const remaining = totalAmount - initialPayment;
-            amountToPayDisplay.textContent = '₱' + initialPayment.toLocaleString(undefined, { minimumFractionDigits: 2 });
-            paymentNote.innerHTML = `
-            <i class="fas fa-info-circle"></i> 
-            You are paying <strong>20% Initial Payment</strong> (₱${initialPayment.toLocaleString(undefined, { minimumFractionDigits: 2 })}) via InstaPay.<br>
-            <small class="text-muted">Remaining balance: ₱${remaining.toLocaleString(undefined, { minimumFractionDigits: 2 })} (80% - to be paid before installation)</small>
-        `;
-            paymentNote.className = 'alert alert-info';
-        }
-
-        // Update checkout total display
-        const checkoutTotal = document.getElementById('checkoutTotal');
-        if (checkoutTotal) {
-            checkoutTotal.textContent = '₱' + totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2 });
-        }
-    }
-
-    function getCartItems() {
-        const items = [];
-
-        if (cart && cart.length > 0) {
-            cart.forEach(item => {
-                items.push({
-                    name: item.displayName || 'Solar Product',
-                    price: parseFloat(item.price) || 0,
-                    quantity: parseInt(item.quantity) || 1
-                });
-            });
-        }
-
-        return items;
-    }
-
-    function previewReceipt(input) {
-        const container = document.getElementById('receiptPreviewContainer');
-        const previewImg = document.getElementById('receiptPreviewImg');
-        const fileNameEl = document.getElementById('receiptFileName');
-
-        if (input.files && input.files[0]) {
-            const file = input.files[0];
-            fileNameEl.textContent = file.name + ' (' + (file.size / 1024).toFixed(1) + ' KB)';
-
-            if (file.type.startsWith('image/')) {
-                const reader = new FileReader();
-                reader.onload = function (e) {
-                    previewImg.src = e.target.result;
-                    previewImg.style.display = 'block';
-                };
-                reader.readAsDataURL(file);
-            } else {
-                previewImg.style.display = 'none';
-            }
-            container.style.display = 'block';
+function updatePaymentDisplay() {
+    console.log('💳 Updating payment display...');
+    
+    const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked')?.value || 'full';
+    
+    // Calculate delivery fee
+    const deliveryFee = calculateDeliveryFee();
+    const deliveryFeeDisplay = document.getElementById('deliveryFeeDisplay');
+    if (deliveryFeeDisplay) {
+        if (deliveryFee === 0) {
+            deliveryFeeDisplay.innerHTML = '<span class="text-info">Contact us</span>';
         } else {
-            container.style.display = 'none';
+            deliveryFeeDisplay.textContent = '₱' + deliveryFee.toLocaleString(undefined, {minimumFractionDigits: 2});
         }
     }
-
-    function confirmInstapayOrder() {
-        console.log('💵 Confirming InstaPay order...');
-
-        const custName = document.getElementById('cust_name')?.value.trim();
-        const custEmail = document.getElementById('cust_email')?.value.trim();
-        const custPhone = document.getElementById('cust_phone')?.value.trim();
-        const custAddress = document.getElementById('cust_address')?.value.trim();
-        const receiptFile = document.getElementById('receiptUpload')?.files[0];
-
-        if (!custName || !custEmail || !custPhone || !custAddress) {
-            showNotificationModal('error', 'Please complete all required customer details.');
-            return;
+    
+    // Calculate installation fee (only for Grid-tie or Hybrid)
+    const installationFee = hasGridTieOrHybridProduct() ? 2000 : 0;
+    const installationFeeDisplay = document.getElementById('installationFeeDisplay');
+    if (installationFeeDisplay) {
+        if (installationFee === 0) {
+            installationFeeDisplay.innerHTML = '<span class="text-success">FREE</span>';
+        } else {
+            installationFeeDisplay.textContent = '₱' + installationFee.toLocaleString(undefined, {minimumFractionDigits: 2});
         }
+    }
+    
+    // Calculate base total from cart
+    let cartTotal = 0;
+    if (cart && cart.length > 0) {
+        cartTotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    }
+    
+    // Add installation and delivery fees to total
+    const totalAmount = cartTotal + installationFee + deliveryFee;
+    window.currentTotalAmount = totalAmount;
+    
+    const amountToPayDisplay = document.getElementById('amountToPay');
+    const paymentNote = document.getElementById('paymentNote');
+    const confirmBtn = document.getElementById('confirmPaymentBtn');
+    
+    if (paymentMethod === 'full') {
+        amountToPayDisplay.textContent = '₱' + totalAmount.toLocaleString(undefined, {minimumFractionDigits: 2});
+        paymentNote.innerHTML = '<i class="fas fa-info-circle"></i> You are paying the <strong>Full Amount (100%)</strong> via InstaPay.';
+        paymentNote.className = 'alert alert-success';
+    } else if (paymentMethod === 'downpayment') {
+        const downpayment = totalAmount * 0.5;
+        amountToPayDisplay.textContent = '₱' + downpayment.toLocaleString(undefined, {minimumFractionDigits: 2});
+        paymentNote.innerHTML = '<i class="fas fa-info-circle"></i> You are paying <strong>50% Down Payment</strong> via InstaPay. Remaining 50% before delivery.';
+        paymentNote.className = 'alert alert-warning';
+    } else if (paymentMethod === 'initial') {
+        const initialPayment = totalAmount * 0.2;
+        const remaining = totalAmount - initialPayment;
+        amountToPayDisplay.textContent = '₱' + initialPayment.toLocaleString(undefined, {minimumFractionDigits: 2});
+        paymentNote.innerHTML = `
+            <i class="fas fa-info-circle"></i> 
+            You are paying <strong>20% Initial Payment</strong> (₱${initialPayment.toLocaleString(undefined, {minimumFractionDigits: 2})}) via InstaPay.<br>
+            <small class="text-muted">Remaining balance: ₱${remaining.toLocaleString(undefined, {minimumFractionDigits: 2})} (80% - to be paid before installation)</small>
+        `;
+        paymentNote.className = 'alert alert-info';
+    }
+    
+    // Update checkout total display
+    const checkoutTotal = document.getElementById('checkoutTotal');
+    if (checkoutTotal) {
+        checkoutTotal.textContent = '₱' + totalAmount.toLocaleString(undefined, {minimumFractionDigits: 2});
+    }
+}
 
-        if (cart.length === 0) {
-            showNotificationModal('error', 'Your cart is empty.');
-            return;
-        }
-
-        if (!receiptFile) {
-            showNotificationModal('error', 'Please upload your transaction receipt before submitting.');
-            document.getElementById('receiptUpload')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            return;
-        }
-
-        // Validate file size (max 5MB)
-        if (receiptFile.size > 5 * 1024 * 1024) {
-            showNotificationModal('error', 'Receipt file is too large. Maximum size is 5MB.');
-            return;
-        }
-
-        const confirmBtn = document.getElementById('confirmPaymentBtn');
-        confirmBtn.disabled = true;
-        confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Submitting Order...';
-
-        const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked')?.value || 'full';
-        let paymentPercentage = '100%';
-        if (paymentMethod === 'downpayment') paymentPercentage = '50%';
-        if (paymentMethod === 'initial') paymentPercentage = '20%';
-
-        const totalAmount = window.currentTotalAmount || 0;
-        let amountPaid = totalAmount;
-        if (paymentMethod === 'downpayment') amountPaid = totalAmount * 0.5;
-        if (paymentMethod === 'initial') amountPaid = totalAmount * 0.2;
-
-        // Build FormData so we can include the file
-        const formData = new FormData();
-        formData.append('customerName', custName);
-        formData.append('customerEmail', custEmail);
-        formData.append('customerPhone', custPhone);
-        formData.append('customerAddress', custAddress);
-        formData.append('paymentType', paymentMethod);
-        formData.append('paymentMethod', 'instapay');
-        formData.append('amountPaid', amountPaid);
-        formData.append('totalAmount', totalAmount);
-        formData.append('deliveryFee', calculateDeliveryFee());
-        formData.append('installationFee', hasGridTieOrHybridProduct() ? 2000 : 0);
-        formData.append('items', JSON.stringify(getCartItems()));
-        formData.append('receipt', receiptFile);
-
-        fetch('controllers/ordering/create-instapay-order.php', {
-            method: 'POST',
-            body: formData
-        })
-            .then(response => {
-                // Capture raw text first so we can debug if it is not JSON
-                return response.text().then(text => {
-                    console.log('Raw server response:', text);
-                    try {
-                        return JSON.parse(text);
-                    } catch (e) {
-                        // Server returned non-JSON (PHP error page, 404, etc.)
-                        throw new Error('Server returned invalid response: ' + text.substring(0, 300));
-                    }
-                });
-            })
-            .then(data => {
-                confirmBtn.disabled = false;
-                confirmBtn.innerHTML = '<i class="fas fa-check-circle me-2"></i>Confirm &amp; Submit Order';
-
-                if (data.success) {
-                    console.log('InstaPay order saved:', data.orderRef);
-                    const orderRef = data.orderRef || 'ORD-INSTAPAY-' + Date.now();
-                    displayOrderConfirmation(orderRef);
-                    clearCart();
-                    showNotificationModal('success', 'Order submitted successfully! We will verify your payment soon.');
-                } else {
-                    console.error('Order failed:', data.message);
-                    showNotificationModal('error', data.message || 'Failed to submit order. Please try again.');
-                }
-            })
-            .catch(error => {
-                console.error(' InstaPay order error:', error.message);
-                confirmBtn.disabled = false;
-                confirmBtn.innerHTML = '<i class="fas fa-check-circle me-2"></i>Confirm &amp; Submit Order';
-                // Show the actual server error message so it is easy to debug
-                const userMsg = error.message.includes('Server returned')
-                    ? 'Server error — please check browser console (F12) for details.'
-                    : error.message;
-                showNotificationModal('error', userMsg);
+function getCartItems() {
+    const items = [];
+    
+    if (cart && cart.length > 0) {
+        cart.forEach(item => {
+            items.push({
+                name: item.displayName || 'Solar Product',
+                price: parseFloat(item.price) || 0,
+                quantity: parseInt(item.quantity) || 1
             });
-    }
-
-    // Old Maya payment function - now replaced by InstaPay
-    function payWithMaya(paymentType) {
-        console.log(' Processing Maya payment...');
-
-        // Validate customer info
-        const custName = document.getElementById('cust_name')?.value.trim();
-        const custEmail = document.getElementById('cust_email')?.value.trim();
-        const custPhone = document.getElementById('cust_phone')?.value.trim();
-        const custAddress = document.getElementById('cust_address')?.value.trim();
-
-        if (!custName || !custEmail || !custPhone || !custAddress) {
-            showNotificationModal('error', 'Please complete all required fields.');
-            return;
-        }
-
-        if (cart.length === 0) {
-            showNotificationModal('error', 'Your cart is empty.');
-            return;
-        }
-
-        // Show loading
-        const confirmBtn = document.getElementById('confirmPaymentBtn');
-        const originalText = confirmBtn.textContent;
-        confirmBtn.disabled = true;
-        confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
-
-        // Calculate amount
-        const totalAmount = window.currentTotalAmount || 0;
-        let amountToPay = totalAmount;
-
-        if (paymentType === 'downpayment') {
-            amountToPay = totalAmount * 0.5;
-        }
-
-        // Prepare order data
-        const orderData = {
-            customerName: custName,
-            customerEmail: custEmail,
-            customerPhone: custPhone,
-            customerAddress: custAddress,
-            paymentType: paymentType,
-            amountToPay: amountToPay,
-            totalAmount: totalAmount,
-            items: getCartItems()
-        };
-
-        console.log('Sending to Maya API:', orderData);
-
-        // Call backend to create Maya payment
-        fetch('process_payment.php', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(orderData)
-        })
-            .then(response => response.json())
-            .then(data => {
-                confirmBtn.disabled = false;
-                confirmBtn.textContent = originalText;
-
-                if (data.success) {
-                    console.log('✅ Maya payment created:', data.orderRef);
-
-                    // Store order reference
-                    sessionStorage.setItem('currentOrderRef', data.orderRef);
-
-                    // Redirect to Maya payment (amount is LOCKED by API)
-                    console.log('🔗 Redirecting to Maya:', data.paymentUrl);
-                    window.location.href = data.paymentUrl;
-
-                } else {
-                    console.error('❌ Payment creation failed:', data.error);
-                    showNotificationModal('error', data.error || 'Failed to create payment. Please try again.');
-                }
-            })
-            .catch(error => {
-                console.error('❌ Payment error:', error);
-                confirmBtn.disabled = false;
-                confirmBtn.textContent = originalText;
-                showNotificationModal('error', 'An error occurred. Please try again.');
-            });
-    }
-
-    function confirmCODOrder() {
-        console.log('💵 Processing COD order...');
-
-        const custName = document.getElementById('cust_name')?.value.trim();
-        const custEmail = document.getElementById('cust_email')?.value.trim();
-        const custPhone = document.getElementById('cust_phone')?.value.trim();
-        const custAddress = document.getElementById('cust_address')?.value.trim();
-
-        if (!custName || !custEmail || !custPhone || !custAddress) {
-            showNotificationModal('error', 'Please complete all required fields.');
-            return;
-        }
-
-        if (cart.length === 0) {
-            showNotificationModal('error', 'Your cart is empty.');
-            return;
-        }
-
-        const confirmed = confirm('Confirm Cash on Delivery order?\n\nYou will pay when order arrives.');
-        if (!confirmed) return;
-
-        const confirmBtn = document.getElementById('confirmPaymentBtn');
-        confirmBtn.disabled = true;
-        confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
-
-        const totalAmount = window.currentTotalAmount || 0;
-
-        const orderData = {
-            customerName: custName,
-            customerEmail: custEmail,
-            customerPhone: custPhone,
-            customerAddress: custAddress,
-            paymentType: 'cod',
-            amountToPay: 0,
-            totalAmount: totalAmount,
-            items: getCartItems(),
-            paymentMethod: 'cod'
-        };
-
-        fetch('controllers/ordering/create-cod-order.php', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(orderData)
-        })
-            .then(response => response.json())
-            .then(data => {
-                confirmBtn.disabled = false;
-                confirmBtn.textContent = 'Confirm COD Order';
-
-                if (data.success) {
-                    console.log('✅ COD order placed:', data.orderRef);
-                    const orderRef = data.orderRef || 'ORD-COD-' + Date.now();
-                    displayOrderConfirmation(orderRef);
-                    clearCart();
-                    showNotificationModal('success', 'Order placed successfully!');
-                } else {
-                    console.error('❌ COD order failed:', data.message);
-                    showNotificationModal('error', data.message || 'Failed to place order.');
-                }
-            })
-            .catch(error => {
-                console.error('❌ COD error:', error);
-                confirmBtn.disabled = false;
-                confirmBtn.textContent = 'Confirm COD Order';
-                showNotificationModal('error', 'An error occurred. Please try again.');
-            });
-    }
-
-    function displayOrderConfirmation(orderRef) {
-        console.log('🎉 Displaying order confirmation:', orderRef);
-
-        // Update confirmation step details
-        document.getElementById('confOrderRef').textContent = orderRef;
-        document.getElementById('confCustomerName').textContent = document.getElementById('cust_name').value;
-        document.getElementById('confTotalAmount').textContent = '₱' + (window.currentTotalAmount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 });
-
-        // Switch to step 3
-        goToStep(3);
-    }
-
-    function copyOrderRef() {
-        const orderRef = document.getElementById('confOrderRef')?.textContent;
-        if (orderRef) {
-            navigator.clipboard.writeText(orderRef).then(() => {
-                showNotificationModal('success', '✅ Order reference copied to clipboard!');
-            }).catch(() => {
-                // Fallback for older browsers
-                const el = document.createElement('textarea');
-                el.value = orderRef;
-                document.body.appendChild(el);
-                el.select();
-                document.execCommand('copy');
-                document.body.removeChild(el);
-                showNotificationModal('success', '✅ Order reference copied!');
-            });
-        }
-    }
-
-    function copyToClipboard(text, el) {
-        navigator.clipboard.writeText(text).then(() => {
-            const orig = el.textContent;
-            el.textContent = 'Copied!';
-            setTimeout(() => { el.textContent = orig; }, 1500);
-        }).catch(() => {
-            const ta = document.createElement('textarea');
-            ta.value = text;
-            document.body.appendChild(ta);
-            ta.select();
-            document.execCommand('copy');
-            document.body.removeChild(ta);
         });
     }
+    
+    return items;
+}
 
-    // ============================================
-    // 6. SAVINGS CALCULATOR LOGIC
-    // ============================================
-
-    function setupCalculator() {
-        const billInput = document.getElementById('billAmount');
-
-        if (billInput) {
-            billInput.addEventListener('keypress', function (event) {
-                if (event.key === 'Enter') {
-                    calculateSavings();
-                }
-            });
+function previewReceipt(input) {
+    const container = document.getElementById('receiptPreviewContainer');
+    const previewImg = document.getElementById('receiptPreviewImg');
+    const fileNameEl = document.getElementById('receiptFileName');
+    
+    if (input.files && input.files[0]) {
+        const file = input.files[0];
+        fileNameEl.textContent = file.name + ' (' + (file.size / 1024).toFixed(1) + ' KB)';
+        
+        if (file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                previewImg.src = e.target.result;
+                previewImg.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        } else {
+            previewImg.style.display = 'none';
         }
+        container.style.display = 'block';
+    } else {
+        container.style.display = 'none';
     }
+}
 
-    function expandCalculator() {
-        const calculatorBox = document.getElementById('calculatorBox');
-        if (calculatorBox) {
-            calculatorBox.classList.remove('collapsed');
-            calculatorBox.classList.add('expanded');
-        }
+function confirmInstapayOrder() {
+    console.log('💵 Confirming InstaPay order...');
+    
+    const custName = document.getElementById('cust_name')?.value.trim();
+    const custEmail = document.getElementById('cust_email')?.value.trim();
+    const custPhone = document.getElementById('cust_phone')?.value.trim();
+    const custAddress = document.getElementById('cust_address')?.value.trim();
+    const receiptFile = document.getElementById('receiptUpload')?.files[0];
+    
+    if (!custName || !custEmail || !custPhone || !custAddress) {
+        showNotificationModal('error', 'Please complete all required customer details.');
+        return;
     }
-
-    function shrinkCalculatorIfEmpty() {
-        const billInput = document.getElementById('billAmount');
-        const calculatorBox = document.getElementById('calculatorBox');
-        const results = document.getElementById('results');
-
-        if (calculatorBox && billInput && !billInput.value && !results.classList.contains('show')) {
-            setTimeout(() => {
-                calculatorBox.classList.remove('expanded');
-                calculatorBox.classList.add('collapsed');
-            }, 200);
-        }
+    
+    if (cart.length === 0) {
+        showNotificationModal('error', 'Your cart is empty.');
+        return;
     }
-
-    function calculateSavings() {
-        const billAmount = parseFloat(document.getElementById('billAmount').value);
-        const errorMessage = document.getElementById('errorMessage');
-        const results = document.getElementById('results');
-        const calculatorBox = document.getElementById('calculatorBox');
-
-        if (!billAmount || billAmount <= 0) {
-            errorMessage.textContent = 'Please enter a valid electric bill amount';
-            results.classList.remove('show');
-            return;
-        }
-
-        errorMessage.textContent = '';
-
-        if (calculatorBox) {
-            calculatorBox.classList.remove('collapsed');
-            calculatorBox.classList.add('expanded');
-        }
-
-        const avgRate = 14.50;
-        const monthlyConsumption = billAmount / avgRate;
-        const dailyConsumption = monthlyConsumption / 30;
-        const sunHours = 4.5;
-        const systemEfficiency = 0.85;
-        const panelWattage = 610;
-        const savingsPercentage = 0.95;
-
-        const requiredKwp = dailyConsumption / (sunHours * systemEfficiency);
-        const numberOfPanels = Math.ceil((requiredKwp * 1000) / panelWattage);
-        const monthlySavings = billAmount * savingsPercentage;
-        const yearlySavings = monthlySavings * 12;
-
-        setTimeout(() => {
-            document.getElementById('kwpValue').textContent = requiredKwp.toFixed(1);
-            document.getElementById('panelsValue').textContent = numberOfPanels;
-            document.getElementById('monthlySavings').textContent = '₱' + monthlySavings.toLocaleString('en-PH', { maximumFractionDigits: 0 });
-            document.getElementById('yearlySavings').textContent = '₱' + yearlySavings.toLocaleString('en-PH', { maximumFractionDigits: 0 });
-
-            results.classList.add('show');
-        }, 100);
+    
+    if (!receiptFile) {
+        showNotificationModal('error', 'Please upload your transaction receipt before submitting.');
+        document.getElementById('receiptUpload')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
     }
-
-    document.addEventListener('DOMContentLoaded', function () {
-        setupCalculator();
-
-        const calculatorBox = document.getElementById('calculatorBox');
-        if (calculatorBox) {
-            calculatorBox.classList.add('collapsed');
+    
+    // Validate file size (max 5MB)
+    if (receiptFile.size > 5 * 1024 * 1024) {
+        showNotificationModal('error', 'Receipt file is too large. Maximum size is 5MB.');
+        return;
+    }
+    
+    const confirmBtn = document.getElementById('confirmPaymentBtn');
+    confirmBtn.disabled = true;
+    confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Submitting Order...';
+    
+    const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked')?.value || 'full';
+    let paymentPercentage = '100%';
+    if (paymentMethod === 'downpayment') paymentPercentage = '50%';
+    if (paymentMethod === 'initial') paymentPercentage = '20%';
+    
+    const totalAmount = window.currentTotalAmount || 0;
+    let amountPaid = totalAmount;
+    if (paymentMethod === 'downpayment') amountPaid = totalAmount * 0.5;
+    if (paymentMethod === 'initial') amountPaid = totalAmount * 0.2;
+    
+    // Build FormData so we can include the file
+    const formData = new FormData();
+    formData.append('customerName', custName);
+    formData.append('customerEmail', custEmail);
+    formData.append('customerPhone', custPhone);
+    formData.append('customerAddress', custAddress);
+    formData.append('paymentType', paymentMethod);
+    formData.append('paymentMethod', 'instapay');
+    formData.append('amountPaid', amountPaid);
+    formData.append('totalAmount', totalAmount);
+    formData.append('deliveryFee', calculateDeliveryFee());
+    formData.append('installationFee', hasGridTieOrHybridProduct() ? 2000 : 0);
+    formData.append('items', JSON.stringify(getCartItems()));
+    formData.append('receipt', receiptFile);
+    
+    fetch('controllers/ordering/create-instapay-order.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => {
+        // Capture raw text first so we can debug if it is not JSON
+        return response.text().then(text => {
+            console.log('Raw server response:', text);
+            try {
+                return JSON.parse(text);
+            } catch (e) {
+                // Server returned non-JSON (PHP error page, 404, etc.)
+                throw new Error('Server returned invalid response: ' + text.substring(0, 300));
+            }
+        });
+    })
+    .then(data => {
+        confirmBtn.disabled = false;
+        confirmBtn.innerHTML = '<i class="fas fa-check-circle me-2"></i>Confirm &amp; Submit Order';
+        
+        if (data.success) {
+            console.log('InstaPay order saved:', data.orderRef);
+            const orderRef = data.orderRef || 'ORD-INSTAPAY-' + Date.now();
+            displayOrderConfirmation(orderRef);
+            clearCart();
+            showNotificationModal('success', 'Order submitted successfully! We will verify your payment soon.');
+        } else {
+            console.error('Order failed:', data.message);
+            showNotificationModal('error', data.message || 'Failed to submit order. Please try again.');
         }
+    })
+    .catch(error => {
+        console.error(' InstaPay order error:', error.message);
+        confirmBtn.disabled = false;
+        confirmBtn.innerHTML = '<i class="fas fa-check-circle me-2"></i>Confirm &amp; Submit Order';
+        // Show the actual server error message so it is easy to debug
+        const userMsg = error.message.includes('Server returned') 
+            ? 'Server error — please check browser console (F12) for details.' 
+            : error.message;
+        showNotificationModal('error', userMsg);
+    });
+}
 
-        // Add click handler for bulb icon with wiggle animation
-        const bulbIcon = document.querySelector('.savings-icon');
-        if (bulbIcon) {
-            bulbIcon.addEventListener('click', function () {
-                // Trigger wiggle animation
-                this.style.animation = 'none';
-                setTimeout(() => {
-                    this.style.animation = '';
-                }, 10);
+// Old Maya payment function - now replaced by InstaPay
+function payWithMaya(paymentType) {
+    console.log(' Processing Maya payment...');
+    
+    // Validate customer info
+    const custName = document.getElementById('cust_name')?.value.trim();
+    const custEmail = document.getElementById('cust_email')?.value.trim();
+    const custPhone = document.getElementById('cust_phone')?.value.trim();
+    const custAddress = document.getElementById('cust_address')?.value.trim();
+    
+    if (!custName || !custEmail || !custPhone || !custAddress) {
+        showNotificationModal('error', 'Please complete all required fields.');
+        return;
+    }
+    
+    if (cart.length === 0) {
+        showNotificationModal('error', 'Your cart is empty.');
+        return;
+    }
+    
+    // Show loading
+    const confirmBtn = document.getElementById('confirmPaymentBtn');
+    const originalText = confirmBtn.textContent;
+    confirmBtn.disabled = true;
+    confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+    
+    // Calculate amount
+    const totalAmount = window.currentTotalAmount || 0;
+    let amountToPay = totalAmount;
+    
+    if (paymentType === 'downpayment') {
+        amountToPay = totalAmount * 0.5;
+    }
+    
+    // Prepare order data
+    const orderData = {
+        customerName: custName,
+        customerEmail: custEmail,
+        customerPhone: custPhone,
+        customerAddress: custAddress,
+        paymentType: paymentType,
+        amountToPay: amountToPay,
+        totalAmount: totalAmount,
+        items: getCartItems()
+    };
+    
+    console.log('Sending to Maya API:', orderData);
+    
+    // Call backend to create Maya payment
+    fetch('process_payment.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(orderData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        confirmBtn.disabled = false;
+        confirmBtn.textContent = originalText;
+        
+        if (data.success) {
+            console.log('✅ Maya payment created:', data.orderRef);
+            
+            // Store order reference
+            sessionStorage.setItem('currentOrderRef', data.orderRef);
+            
+            // Redirect to Maya payment (amount is LOCKED by API)
+            console.log('🔗 Redirecting to Maya:', data.paymentUrl);
+            window.location.href = data.paymentUrl;
+            
+        } else {
+            console.error('❌ Payment creation failed:', data.error);
+            showNotificationModal('error', data.error || 'Failed to create payment. Please try again.');
+        }
+    })
+    .catch(error => {
+        console.error('❌ Payment error:', error);
+        confirmBtn.disabled = false;
+        confirmBtn.textContent = originalText;
+        showNotificationModal('error', 'An error occurred. Please try again.');
+    });
+}
 
-                // Expand calculator if collapsed
-                const billInput = document.getElementById('billAmount');
-                if (calculatorBox && calculatorBox.classList.contains('collapsed')) {
-                    expandCalculator();
-                    if (billInput) {
-                        setTimeout(() => billInput.focus(), 300);
+function confirmCODOrder() {
+    console.log('💵 Processing COD order...');
+    
+    const custName = document.getElementById('cust_name')?.value.trim();
+    const custEmail = document.getElementById('cust_email')?.value.trim();
+    const custPhone = document.getElementById('cust_phone')?.value.trim();
+    const custAddress = document.getElementById('cust_address')?.value.trim();
+    
+    if (!custName || !custEmail || !custPhone || !custAddress) {
+        showNotificationModal('error', 'Please complete all required fields.');
+        return;
+    }
+    
+    if (cart.length === 0) {
+        showNotificationModal('error', 'Your cart is empty.');
+        return;
+    }
+    
+    const confirmed = confirm('Confirm Cash on Delivery order?\n\nYou will pay when order arrives.');
+    if (!confirmed) return;
+    
+    const confirmBtn = document.getElementById('confirmPaymentBtn');
+    confirmBtn.disabled = true;
+    confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+    
+    const totalAmount = window.currentTotalAmount || 0;
+    
+    const orderData = {
+        customerName: custName,
+        customerEmail: custEmail,
+        customerPhone: custPhone,
+        customerAddress: custAddress,
+        paymentType: 'cod',
+        amountToPay: 0,
+        totalAmount: totalAmount,
+        items: getCartItems(),
+        paymentMethod: 'cod'
+    };
+    
+    fetch('controllers/ordering/create-cod-order.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(orderData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        confirmBtn.disabled = false;
+        confirmBtn.textContent = 'Confirm COD Order';
+        
+        if (data.success) {
+            console.log('✅ COD order placed:', data.orderRef);
+            const orderRef = data.orderRef || 'ORD-COD-' + Date.now();
+            displayOrderConfirmation(orderRef);
+            clearCart();
+            showNotificationModal('success', 'Order placed successfully!');
+        } else {
+            console.error('❌ COD order failed:', data.message);
+            showNotificationModal('error', data.message || 'Failed to place order.');
+        }
+    })
+    .catch(error => {
+        console.error('❌ COD error:', error);
+        confirmBtn.disabled = false;
+        confirmBtn.textContent = 'Confirm COD Order';
+        showNotificationModal('error', 'An error occurred. Please try again.');
+    });
+}
+
+function displayOrderConfirmation(orderRef) {
+    console.log('🎉 Displaying order confirmation:', orderRef);
+    
+    // Update confirmation step details
+    document.getElementById('confOrderRef').textContent = orderRef;
+    document.getElementById('confCustomerName').textContent = document.getElementById('cust_name').value;
+    document.getElementById('confTotalAmount').textContent = '₱' + (window.currentTotalAmount || 0).toLocaleString(undefined, {minimumFractionDigits: 2});
+    
+    // Switch to step 3
+    goToStep(3);
+}
+
+function copyOrderRef() {
+    const orderRef = document.getElementById('confOrderRef')?.textContent;
+    if (orderRef) {
+        navigator.clipboard.writeText(orderRef).then(() => {
+            showNotificationModal('success', '✅ Order reference copied to clipboard!');
+        }).catch(() => {
+            // Fallback for older browsers
+            const el = document.createElement('textarea');
+            el.value = orderRef;
+            document.body.appendChild(el);
+            el.select();
+            document.execCommand('copy');
+            document.body.removeChild(el);
+            showNotificationModal('success', '✅ Order reference copied!');
+        });
+    }
+}
+
+function copyToClipboard(text, el) {
+    navigator.clipboard.writeText(text).then(() => {
+        const orig = el.textContent;
+        el.textContent = 'Copied!';
+        setTimeout(() => { el.textContent = orig; }, 1500);
+    }).catch(() => {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+    });
+}
+
+// ============================================
+// 6. SAVINGS CALCULATOR LOGIC
+// ============================================
+
+function setupCalculator() {
+            const billInput = document.getElementById('billAmount');
+            
+            if (billInput) {
+                billInput.addEventListener('keypress', function(event) {
+                    if (event.key === 'Enter') {
+                        calculateSavings();
                     }
-                }
-            });
+                });
+            }
+        }
+
+        function expandCalculator() {
+            const calculatorBox = document.getElementById('calculatorBox');
+            if (calculatorBox) {
+                calculatorBox.classList.remove('collapsed');
+                calculatorBox.classList.add('expanded');
+            }
+        }
+
+        function shrinkCalculatorIfEmpty() {
+            const billInput = document.getElementById('billAmount');
+            const calculatorBox = document.getElementById('calculatorBox');
+            const results = document.getElementById('results');
+            
+            if (calculatorBox && billInput && !billInput.value && !results.classList.contains('show')) {
+                setTimeout(() => {
+                    calculatorBox.classList.remove('expanded');
+                    calculatorBox.classList.add('collapsed');
+                }, 200);
+            }
+        }
+
+        function calculateSavings() {
+            const billAmount = parseFloat(document.getElementById('billAmount').value);
+            const errorMessage = document.getElementById('errorMessage');
+            const results = document.getElementById('results');
+            const calculatorBox = document.getElementById('calculatorBox');
+            
+            if (!billAmount || billAmount <= 0) {
+                errorMessage.textContent = 'Please enter a valid electric bill amount';
+                results.classList.remove('show');
+                return;
+            }
+            
+            errorMessage.textContent = '';
+            
+            if (calculatorBox) {
+                calculatorBox.classList.remove('collapsed');
+                calculatorBox.classList.add('expanded');
+            }
+            
+            const avgRate = 14.50;
+            const monthlyConsumption = billAmount / avgRate;
+            const dailyConsumption = monthlyConsumption / 30;
+            const sunHours = 4.5;
+            const systemEfficiency = 0.85;
+            const panelWattage = 610;
+            const savingsPercentage = 0.95;
+            
+            const requiredKwp = dailyConsumption / (sunHours * systemEfficiency);
+            const numberOfPanels = Math.ceil((requiredKwp * 1000) / panelWattage);
+            const monthlySavings = billAmount * savingsPercentage;
+            const yearlySavings = monthlySavings * 12;
+            
+            setTimeout(() => {
+                document.getElementById('kwpValue').textContent = requiredKwp.toFixed(1);
+                document.getElementById('panelsValue').textContent = numberOfPanels;
+                document.getElementById('monthlySavings').textContent = '₱' + monthlySavings.toLocaleString('en-PH', {maximumFractionDigits: 0});
+                document.getElementById('yearlySavings').textContent = '₱' + yearlySavings.toLocaleString('en-PH', {maximumFractionDigits: 0});
+                
+                results.classList.add('show');
+            }, 100);
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            setupCalculator();
+            
+            const calculatorBox = document.getElementById('calculatorBox');
+            if (calculatorBox) {
+                calculatorBox.classList.add('collapsed');
+            }
+            
+            // Add click handler for bulb icon with wiggle animation
+            const bulbIcon = document.querySelector('.savings-icon');
+            if (bulbIcon) {
+                bulbIcon.addEventListener('click', function() {
+                    // Trigger wiggle animation
+                    this.style.animation = 'none';
+                    setTimeout(() => {
+                        this.style.animation = '';
+                    }, 10);
+                    
+                    // Expand calculator if collapsed
+                    const billInput = document.getElementById('billAmount');
+                    if (calculatorBox && calculatorBox.classList.contains('collapsed')) {
+                        expandCalculator();
+                        if (billInput) {
+                            setTimeout(() => billInput.focus(), 300);
+                        }
+                    }
+                });
+            }
+        });
+        // ============================================
+// 7. FILTERS & SEARCH
+// ============================================
+function initializeFilters() {
+    const filterButtons = document.querySelectorAll('.filter-btn');
+    
+    filterButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+            filterButtons.forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            const category = this.getAttribute('data-category');
+            filterProducts(category);
+        });
+    });
+}
+
+function filterProducts(category) {
+    const products = document.querySelectorAll('.product-card');
+    
+    products.forEach(product => {
+        const productCategory = product.getAttribute('data-category');
+        
+        if (category === 'all' || productCategory === category) {
+            product.style.display = 'block';
+        } else {
+            product.style.display = 'none';
         }
     });
-    // ============================================
-    // 7. FILTERS & SEARCH
-    // ============================================
-    function initializeFilters() {
-        const filterButtons = document.querySelectorAll('.filter-btn');
+}
 
-        filterButtons.forEach(btn => {
-            btn.addEventListener('click', function () {
-                filterButtons.forEach(b => b.classList.remove('active'));
-                this.classList.add('active');
-                const category = this.getAttribute('data-category');
-                filterProducts(category);
-            });
+function initializeSort() {
+    const sortSelect = document.getElementById('sortSelect');
+    if (sortSelect) {
+        sortSelect.addEventListener('change', function() {
+            sortProducts(this.value);
         });
     }
+}
 
-    function filterProducts(category) {
-        const products = document.querySelectorAll('.product-card');
-
-        products.forEach(product => {
-            const productCategory = product.getAttribute('data-category');
-
-            if (category === 'all' || productCategory === category) {
-                product.style.display = 'block';
-            } else {
-                product.style.display = 'none';
-            }
-        });
-    }
-
-    function initializeSort() {
-        const sortSelect = document.getElementById('sortSelect');
-        if (sortSelect) {
-            sortSelect.addEventListener('change', function () {
-                sortProducts(this.value);
-            });
+function sortProducts(sortType) {
+    const grid = document.getElementById('productsGrid');
+    if (!grid) return;
+    
+    const products = Array.from(document.querySelectorAll('.product-card'));
+    
+    products.sort((a, b) => {
+        switch(sortType) {
+            case 'price-low':
+                return parseFloat(a.getAttribute('data-price')) - parseFloat(b.getAttribute('data-price'));
+            case 'price-high':
+                return parseFloat(b.getAttribute('data-price')) - parseFloat(a.getAttribute('data-price'));
+            case 'name-asc':
+                return a.getAttribute('data-name').localeCompare(b.getAttribute('data-name'));
+            case 'name-desc':
+                return b.getAttribute('data-name').localeCompare(a.getAttribute('data-name'));
+            default:
+                return 0;
         }
+    });
+    
+    products.forEach(product => grid.appendChild(product));
+}
+
+// ============================================
+// 8. UTILS & NOTIFICATIONS
+// ============================================
+
+function showNotificationModal(type, message) {
+    // Check if simple Toast exists, if not, use alert
+    const toastContainer = document.getElementById('toast-container');
+    if (!toastContainer) {
+        alert(message);
+        return;
     }
 
-    function sortProducts(sortType) {
-        const grid = document.getElementById('productsGrid');
-        if (!grid) return;
-
-        const products = Array.from(document.querySelectorAll('.product-card'));
-
-        products.sort((a, b) => {
-            switch (sortType) {
-                case 'price-low':
-                    return parseFloat(a.getAttribute('data-price')) - parseFloat(b.getAttribute('data-price'));
-                case 'price-high':
-                    return parseFloat(b.getAttribute('data-price')) - parseFloat(a.getAttribute('data-price'));
-                case 'name-asc':
-                    return a.getAttribute('data-name').localeCompare(b.getAttribute('data-name'));
-                case 'name-desc':
-                    return b.getAttribute('data-name').localeCompare(a.getAttribute('data-name'));
-                default:
-                    return 0;
-            }
-        });
-
-        products.forEach(product => grid.appendChild(product));
-    }
-
-    // ============================================
-    // 8. UTILS & NOTIFICATIONS
-    // ============================================
-
-    function showNotificationModal(type, message) {
-        // Check if simple Toast exists, if not, use alert
-        const toastContainer = document.getElementById('toast-container');
-        if (!toastContainer) {
-            alert(message);
-            return;
-        }
-
-        const toastHtml = `
+    const toastHtml = `
         <div class="toast align-items-center text-white bg-${type === 'success' ? 'success' : 'danger'} border-0 show" role="alert">
             <div class="d-flex">
                 <div class="toast-body">
@@ -3231,364 +3532,372 @@ $conn->close();
             </div>
         </div>
     `;
+    
+    toastContainer.innerHTML = toastHtml;
+    setTimeout(() => {
+        toastContainer.innerHTML = '';
+    }, 4000);
+}
 
-        toastContainer.innerHTML = toastHtml;
-        setTimeout(() => {
-            toastContainer.innerHTML = '';
-        }, 4000);
-    }
+function initializeSubscription() {
+    const form = document.getElementById('subscribeForm');
+    if (!form) return;
 
-    function initializeSubscription() {
-        const form = document.getElementById('subscribeForm');
-        if (!form) return;
-
-        form.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const email = form.querySelector('input[type="email"]').value;
-            showNotificationModal('success', `Salamat! ${email} has been subscribed to our newsletter.`);
-            form.reset();
-        });
-    }
-
-    function initializeContactForm() {
-        // handled by submitContactForm() called via onsubmit on the form
-    }
-
-    async function submitContactForm(event) {
-        event.preventDefault();
-
-        const form = document.getElementById('contactForm');
-        const submitBtn = document.getElementById('contactSubmitBtn');
-        const btnText = submitBtn.querySelector('.btn-text');
-        const btnSpinner = submitBtn.querySelector('.btn-spinner');
-
-        // Show loading state
-        btnText.classList.add('d-none');
-        btnSpinner.classList.remove('d-none');
-        submitBtn.disabled = true;
-
-        try {
-            const formData = new FormData(form);
-
-            const response = await fetch('controllers/submit_contact.php', {
-                method: 'POST',
-                body: formData
-            });
-
-            const result = await response.json();
-
-            if (result.success) {
-                form.reset();
-                // Show success modal if it exists, otherwise fallback notification
-                const successModal = document.getElementById('contactSuccessModal');
-                if (successModal) {
-                    const modal = new bootstrap.Modal(successModal);
-                    modal.show();
-                } else {
-                    showNotificationModal('success', 'Message sent! We will get back to you soon.');
-                }
-            } else {
-                showNotificationModal('error', result.message || 'Failed to send message. Please try again.');
-            }
-        } catch (err) {
-            console.error('Contact form error:', err);
-            showNotificationModal('error', 'There was an error submitting your message. Please try again or contact us directly at solar@solarpower.com.ph');
-        } finally {
-            // Restore button state
-            btnText.classList.remove('d-none');
-            btnSpinner.classList.add('d-none');
-            submitBtn.disabled = false;
-        }
-    }
-
-    document.getElementById('roofTypeSelect').addEventListener('change', function () {
-        const other = document.getElementById('roofOtherInput');
-        if (this.value === 'Other') {
-            other.classList.remove('d-none');
-            other.setAttribute('required', 'required');
-        } else {
-            other.classList.add('d-none');
-            other.removeAttribute('required');
-            other.value = '';
-        }
+    form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const email = form.querySelector('input[type="email"]').value;
+        showNotificationModal('success', `Salamat! ${email} has been subscribed to our newsletter.`);
+        form.reset();
     });
+}
 
+function initializeContactForm() {
+    // handled by submitContactForm() called via onsubmit on the form
+}
 
-    function initializeInspectionForm() {
-        const inspectionForm = document.getElementById('inspectionForm');
+async function submitContactForm(event) {
+    event.preventDefault();
 
-        if (!inspectionForm) return;
+    const form        = document.getElementById('contactForm');
+    const submitBtn   = document.getElementById('contactSubmitBtn');
+    const btnText     = submitBtn.querySelector('.btn-text');
+    const btnSpinner  = submitBtn.querySelector('.btn-spinner');
 
-        inspectionForm.addEventListener('submit', async function (e) {
-            e.preventDefault();
-
-            const submitBtn = document.getElementById('inspectionBtn');
-            const btnText = submitBtn.querySelector('.btn-text');
-            const spinner = submitBtn.querySelector('.spinner-border');
-
-            // Show loading state
-            btnText.classList.add('d-none');
-            spinner.classList.remove('d-none');
-            submitBtn.disabled = true;
-
-            try {
-                const formData = new FormData(inspectionForm);
-
-                // STEP 1: Try PHP handler first (beautiful custom email)
-                console.log('📧 Attempting to send via PHP...');
-
-                const phpResponse = await fetch('send-inspection-email.php', {
-                    method: 'POST',
-                    body: formData
-                });
-
-                const phpResult = await phpResponse.json();
-
-                if (phpResult.success) {
-                    // ✅ SUCCESS - PHP worked!
-                    console.log('✅ Email sent successfully via PHP');
-                    showSuccessAndReset();
-                    return;
-                } else {
-                    throw new Error('PHP handler failed');
-                }
-
-            } catch (phpError) {
-                // STEP 2: PHP failed, try FormSubmit backup
-                console.warn('⚠️ PHP failed, trying FormSubmit backup...', phpError);
-
-                try {
-                    const formData = new FormData(inspectionForm);
-
-                    // Add FormSubmit config
-                    formData.append('_subject', '🌞 New Solar Inspection Request');
-                    formData.append('_captcha', 'false');
-                    formData.append('_template', 'box');
-
-                    const formsubmitResponse = await fetch('https://formsubmit.co/solar@solarpower.com.ph', {
-                        method: 'POST',
-                        body: formData,
-                        headers: {
-                            'Accept': 'application/json'
-                        }
-                    });
-
-                    if (formsubmitResponse.ok) {
-                        // ✅ SUCCESS - FormSubmit worked!
-                        console.log('✅ Email sent successfully via FormSubmit');
-                        showSuccessAndReset();
-                    } else {
-                        throw new Error('FormSubmit also failed');
-                    }
-
-                } catch (formsubmitError) {
-                    // Both methods failed
-                    console.error('❌ Both PHP and FormSubmit failed', formsubmitError);
-
-                    // Reset button
-                    btnText.classList.remove('d-none');
-                    spinner.classList.add('d-none');
-                    submitBtn.disabled = false;
-
-                    alert('There was an error submitting your request. Please try again or contact us directly at solar@solarpower.com.ph');
-                }
-            }
-        });
+    // Combine +639 prefix with phone digits
+    const phoneInput = document.getElementById('contact_phone');
+    const phoneFullInput = document.getElementById('contact_phone_full');
+    if (phoneFullInput && phoneInput) {
+        phoneFullInput.value = '+639' + phoneInput.value;
+        phoneInput.name = '';
     }
 
-    function showSuccessAndReset() {
-        const inspectionForm = document.getElementById('inspectionForm');
+    // Show loading state
+    btnText.classList.add('d-none');
+    btnSpinner.classList.remove('d-none');
+    submitBtn.disabled = true;
+
+    try {
+        const formData = new FormData(form);
+
+        const response = await fetch('controllers/contact_submit.php', {
+            method: 'POST',
+            body: formData
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            form.reset();
+            // Show success modal if it exists, otherwise fallback notification
+            const successModal = document.getElementById('contactSuccessModal');
+            if (successModal) {
+                const modal = new bootstrap.Modal(successModal);
+                modal.show();
+            } else {
+                showNotificationModal('success', 'Message sent! We will get back to you soon.');
+            }
+        } else {
+            showNotificationModal('error', result.message || 'Failed to send message. Please try again.');
+        }
+    } catch (err) {
+        console.error('Contact form error:', err);
+        showNotificationModal('error', 'There was an error submitting your message. Please try again or contact us directly at solar@solarpower.com.ph');
+    } finally {
+        // Restore button state
+        btnText.classList.remove('d-none');
+        btnSpinner.classList.add('d-none');
+        submitBtn.disabled = false;
+    }
+}
+
+document.getElementById('roofTypeSelect').addEventListener('change', function () {
+    const other = document.getElementById('roofOtherInput');
+    if (this.value === 'Other') {
+        other.classList.remove('d-none');
+        other.setAttribute('required', 'required');
+    } else {
+        other.classList.add('d-none');
+        other.removeAttribute('required');
+        other.value = '';
+    }
+});
+
+
+function initializeInspectionForm() {
+    const inspectionForm = document.getElementById('inspectionForm');
+    
+    if (!inspectionForm) return;
+    
+    inspectionForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
         const submitBtn = document.getElementById('inspectionBtn');
         const btnText = submitBtn.querySelector('.btn-text');
         const spinner = submitBtn.querySelector('.spinner-border');
-
-        // Reset button
-        btnText.classList.remove('d-none');
-        spinner.classList.add('d-none');
-        submitBtn.disabled = false;
-
-        // Reset form
-        inspectionForm.reset();
-
-        // Close inspection modal
-        const inspectionModal = bootstrap.Modal.getInstance(document.getElementById('inspectionModal'));
-        if (inspectionModal) {
-            inspectionModal.hide();
-        }
-
-        // Show success modal
-        const successModal = new bootstrap.Modal(document.getElementById('inspectionSuccessModal'));
-        successModal.show();
-    }
-
-    // Initialize when page loads
-    document.addEventListener('DOMContentLoaded', function () {
-        initializeInspectionForm();
-    });
-
-    // ===========================
-    // UTILITIES
-    // ===========================
-    function toggleHours() {
-        const hoursContent = document.getElementById('hours-content');
-        const hoursIcon = document.getElementById('hours-icon');
-
-        if (hoursContent.style.maxHeight) {
-            hoursContent.style.maxHeight = null;
-            hoursIcon.style.transform = 'rotate(0deg)';
-        } else {
-            hoursContent.style.maxHeight = hoursContent.scrollHeight + 'px';
-            hoursIcon.style.transform = 'rotate(180deg)';
-        }
-    }
-
-    // ============================================
-    // 13. RENT TO OWN FORM
-    // ============================================
-    function initializeRentToOwnForm() {
-        const rtoForm = document.getElementById('rentToOwnForm');
-
-        if (!rtoForm) return;
-
-        rtoForm.addEventListener('submit', async function (e) {
-            e.preventDefault();
-
-            const submitBtn = rtoForm.querySelector('.btn-submit-rto');
-            const btnText = submitBtn.querySelector('.btn-text');
-            const spinner = submitBtn.querySelector('.spinner-border');
-
-            // Show loading state
-            btnText.classList.add('d-none');
-            spinner.classList.remove('d-none');
-            submitBtn.disabled = true;
-
+        
+        // Show loading state
+        btnText.classList.add('d-none');
+        spinner.classList.remove('d-none');
+        submitBtn.disabled = true;
+        
+        try {
+            const formData = new FormData(inspectionForm);
+            
+            // STEP 1: Try PHP handler first (beautiful custom email)
+            console.log('📧 Attempting to send via PHP...');
+            
+            const phpResponse = await fetch('send-inspection-email.php', {
+                method: 'POST',
+                body: formData
+            });
+            
+            const phpResult = await phpResponse.json();
+            
+            if (phpResult.success) {
+                // ✅ SUCCESS - PHP worked!
+                console.log('✅ Email sent successfully via PHP');
+                showSuccessAndReset();
+                return;
+            } else {
+                throw new Error('PHP handler failed');
+            }
+            
+        } catch (phpError) {
+            // STEP 2: PHP failed, try FormSubmit backup
+            console.warn('⚠️ PHP failed, trying FormSubmit backup...', phpError);
+            
             try {
-                const formData = new FormData(rtoForm);
-
+                const formData = new FormData(inspectionForm);
+                
                 // Add FormSubmit config
-                formData.append('_subject', '🏭 New Rent-to-Own Application (Industrial/Commercial)');
+                formData.append('_subject', '🌞 New Solar Inspection Request');
                 formData.append('_captcha', 'false');
                 formData.append('_template', 'box');
-
-                const response = await fetch('https://formsubmit.co/solar@solarpower.com.ph', {
+                
+                const formsubmitResponse = await fetch('https://formsubmit.co/solar@solarpower.com.ph', {
                     method: 'POST',
                     body: formData,
                     headers: {
                         'Accept': 'application/json'
                     }
                 });
-
-                if (response.ok) {
-                    // Success
-                    showNotificationModal('success', 'Application submitted successfully! We will contact you soon.');
-                    rtoForm.reset();
+                
+                if (formsubmitResponse.ok) {
+                    // ✅ SUCCESS - FormSubmit worked!
+                    console.log('✅ Email sent successfully via FormSubmit');
+                    showSuccessAndReset();
                 } else {
-                    throw new Error('Submission failed');
+                    throw new Error('FormSubmit also failed');
                 }
-
-            } catch (error) {
-                console.error('Error submitting form:', error);
-                showNotificationModal('error', 'There was an error submitting your application. Please try again or contact us directly.');
-            } finally {
-                // Reset button state
+                
+            } catch (formsubmitError) {
+                // Both methods failed
+                console.error('❌ Both PHP and FormSubmit failed', formsubmitError);
+                
+                // Reset button
                 btnText.classList.remove('d-none');
                 spinner.classList.add('d-none');
                 submitBtn.disabled = false;
+                
+                alert('There was an error submitting your request. Please try again or contact us directly at solar@solarpower.com.ph');
             }
-        });
-    }
-
-    // Initialize Rent to Own form when page loads
-    document.addEventListener('DOMContentLoaded', function () {
-        initializeRentToOwnForm();
+        }
     });
+}
 
-    // ========== MOBILE-OPTIMIZED VIEW MORE FUNCTIONALITY ==========
+function showSuccessAndReset() {
+    const inspectionForm = document.getElementById('inspectionForm');
+    const submitBtn = document.getElementById('inspectionBtn');
+    const btnText = submitBtn.querySelector('.btn-text');
+    const spinner = submitBtn.querySelector('.spinner-border');
+    
+    // Reset button
+    btnText.classList.remove('d-none');
+    spinner.classList.add('d-none');
+    submitBtn.disabled = false;
+    
+    // Reset form
+    inspectionForm.reset();
+    
+    // Close inspection modal
+    const inspectionModal = bootstrap.Modal.getInstance(document.getElementById('inspectionModal'));
+    if (inspectionModal) {
+        inspectionModal.hide();
+    }
+    
+    // Show success modal
+    const successModal = new bootstrap.Modal(document.getElementById('inspectionSuccessModal'));
+    successModal.show();
+}
 
-    /**
-     * Enhanced toggle function for View More button
-     * Shows first 4 products on load, then toggles all products
-     */
-    function toggleViewMore() {
-        const productsGrid = document.getElementById('productsGrid');
-        const viewMoreBtn = document.getElementById('viewMoreBtn');
-        const btnIcon = viewMoreBtn.querySelector('i');
-        const btnText = viewMoreBtn.childNodes[viewMoreBtn.childNodes.length - 1];
+// Initialize when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    initializeInspectionForm();
+});
 
-        // Toggle the show-all class
-        productsGrid.classList.toggle('show-all');
+// ===========================
+// UTILITIES
+// ===========================
+function toggleHours() {
+    const hoursContent = document.getElementById('hours-content');
+    const hoursIcon = document.getElementById('hours-icon');
+    
+    if (hoursContent.style.maxHeight) {
+        hoursContent.style.maxHeight = null;
+        hoursIcon.style.transform = 'rotate(0deg)';
+    } else {
+        hoursContent.style.maxHeight = hoursContent.scrollHeight + 'px';
+        hoursIcon.style.transform = 'rotate(180deg)';
+    }
+}
 
-        // Update button appearance and text
-        if (productsGrid.classList.contains('show-all')) {
-            viewMoreBtn.classList.add('expanded');
-            btnText.textContent = ' View Less';
-
-            // Scroll smoothly to show newly revealed products
-            setTimeout(() => {
-                const firstHiddenProduct = document.querySelector('.hidden-product');
-                if (firstHiddenProduct) {
-                    firstHiddenProduct.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'nearest'
-                    });
+// ============================================
+// 13. RENT TO OWN FORM
+// ============================================
+function initializeRentToOwnForm() {
+    const rtoForm = document.getElementById('rentToOwnForm');
+    
+    if (!rtoForm) return;
+    
+    rtoForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const submitBtn = rtoForm.querySelector('.btn-submit-rto');
+        const btnText = submitBtn.querySelector('.btn-text');
+        const spinner = submitBtn.querySelector('.spinner-border');
+        
+        // Show loading state
+        btnText.classList.add('d-none');
+        spinner.classList.remove('d-none');
+        submitBtn.disabled = true;
+        
+        try {
+            const formData = new FormData(rtoForm);
+            
+            // Add FormSubmit config
+            formData.append('_subject', '🏭 New Rent-to-Own Application (Industrial/Commercial)');
+            formData.append('_captcha', 'false');
+            formData.append('_template', 'box');
+            
+            const response = await fetch('https://formsubmit.co/solar@solarpower.com.ph', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'Accept': 'application/json'
                 }
-            }, 100);
-        } else {
-            viewMoreBtn.classList.remove('expanded');
-            btnText.textContent = ' View More';
+            });
+            
+            if (response.ok) {
+                // Success
+                showNotificationModal('success', 'Application submitted successfully! We will contact you soon.');
+                rtoForm.reset();
+            } else {
+                throw new Error('Submission failed');
+            }
+            
+        } catch (error) {
+            console.error('Error submitting form:', error);
+            showNotificationModal('error', 'There was an error submitting your application. Please try again or contact us directly.');
+        } finally {
+            // Reset button state
+            btnText.classList.remove('d-none');
+            spinner.classList.add('d-none');
+            submitBtn.disabled = false;
+        }
+    });
+}
 
-            // Scroll back to the beginning of the grid
-            const catalogSection = document.querySelector('.catalogs-section');
-            if (catalogSection) {
-                catalogSection.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'start'
+// Initialize Rent to Own form when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    initializeRentToOwnForm();
+});
+
+// ========== MOBILE-OPTIMIZED VIEW MORE FUNCTIONALITY ==========
+
+/**
+ * Enhanced toggle function for View More button
+ * Shows first 4 products on load, then toggles all products
+ */
+function toggleViewMore() {
+    const productsGrid = document.getElementById('productsGrid');
+    const viewMoreBtn = document.getElementById('viewMoreBtn');
+    const btnIcon = viewMoreBtn.querySelector('i');
+    const btnText = viewMoreBtn.childNodes[viewMoreBtn.childNodes.length - 1];
+    
+    // Toggle the show-all class
+    productsGrid.classList.toggle('show-all');
+    
+    // Update button appearance and text
+    if (productsGrid.classList.contains('show-all')) {
+        viewMoreBtn.classList.add('expanded');
+        btnText.textContent = ' View Less';
+        
+        // Scroll smoothly to show newly revealed products
+        setTimeout(() => {
+            const firstHiddenProduct = document.querySelector('.hidden-product');
+            if (firstHiddenProduct) {
+                firstHiddenProduct.scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'nearest' 
                 });
             }
+        }, 100);
+    } else {
+        viewMoreBtn.classList.remove('expanded');
+        btnText.textContent = ' View More';
+        
+        // Scroll back to the beginning of the grid
+        const catalogSection = document.querySelector('.catalogs-section');
+        if (catalogSection) {
+            catalogSection.scrollIntoView({ 
+                behavior: 'smooth', 
+                block: 'start' 
+            });
         }
     }
+}
 
-    /**
-     * Initialize the view more functionality on page load
-     */
-    document.addEventListener('DOMContentLoaded', function () {
-        const productsGrid = document.getElementById('productsGrid');
-        const viewMoreContainer = document.getElementById('viewMoreContainer');
-        const allProducts = document.querySelectorAll('.product-card');
-
-        // Count visible vs hidden products
-        const hiddenProducts = document.querySelectorAll('.hidden-product');
-
-        // Hide the "View More" button if there are 4 or fewer products total
-        if (allProducts.length <= 4) {
-            if (viewMoreContainer) {
-                viewMoreContainer.style.display = 'none';
-            }
-        } else {
-            if (viewMoreContainer) {
-                viewMoreContainer.style.display = 'block';
-            }
+/**
+ * Initialize the view more functionality on page load
+ */
+document.addEventListener('DOMContentLoaded', function() {
+    const productsGrid = document.getElementById('productsGrid');
+    const viewMoreContainer = document.getElementById('viewMoreContainer');
+    const allProducts = document.querySelectorAll('.product-card');
+    
+    // Count visible vs hidden products
+    const hiddenProducts = document.querySelectorAll('.hidden-product');
+    
+    // Hide the "View More" button if there are 4 or fewer products total
+    if (allProducts.length <= 4) {
+        if (viewMoreContainer) {
+            viewMoreContainer.style.display = 'none';
         }
+    } else {
+        if (viewMoreContainer) {
+            viewMoreContainer.style.display = 'block';
+        }
+    }
+    
+    // Log for debugging
+    console.log(`Total products: ${allProducts.length}`);
+    console.log(`Hidden products: ${hiddenProducts.length}`);
+});
 
-        // Log for debugging
-        console.log(`Total products: ${allProducts.length}`);
-        console.log(`Hidden products: ${hiddenProducts.length}`);
+
+
+/**
+ * Optional: Smooth fade-in animation for products when they appear
+ */
+function animateProductReveal() {
+    const hiddenProducts = document.querySelectorAll('.products-grid.show-all .hidden-product');
+    
+    hiddenProducts.forEach((product, index) => {
+        setTimeout(() => {
+            product.style.animationDelay = `${index * 0.1}s`;
+        }, index * 50);
     });
-
-
-
-    /**
-     * Optional: Smooth fade-in animation for products when they appear
-     */
-    function animateProductReveal() {
-        const hiddenProducts = document.querySelectorAll('.products-grid.show-all .hidden-product');
-
-        hiddenProducts.forEach((product, index) => {
-            setTimeout(() => {
-                product.style.animationDelay = `${index * 0.1}s`;
-            }, index * 50);
-        });
-    }
+}
 </script>
 
 <!-- Toast Notification Container -->
@@ -3600,273 +3909,184 @@ $conn->close();
      ==================================================== -->
 
 <style>
-    /* ── Floating Button ── */
-    .float-track-btn {
-        position: fixed;
-        bottom: 150px;
-        /* taas ng ibang floating btn — i-adjust kung kailangan */
-        right: 20px;
-        z-index: 9990;
-        width: 54px;
-        height: 54px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, #f39c12, #e67e22);
-        color: white;
-        border: none;
-        box-shadow: 0 4px 15px rgba(243, 156, 18, 0.5);
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 20px;
-        transition: transform 0.2s, box-shadow 0.2s;
-    }
+/* ── Floating Button ── */
+.float-track-btn {
+    position: fixed;
+    bottom: 150px; /* taas ng ibang floating btn — i-adjust kung kailangan */
+    right: 20px;
+    z-index: 9990;
+    width: 54px;
+    height: 54px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #f39c12, #e67e22);
+    color: white;
+    border: none;
+    box-shadow: 0 4px 15px rgba(243,156,18,0.5);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+.float-track-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 20px rgba(243,156,18,0.65);
+}
+.float-track-btn .track-tooltip {
+    position: absolute;
+    right: 62px;
+    background: #2c3e50;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 5px 10px;
+    border-radius: 6px;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+}
+.float-track-btn:hover .track-tooltip { opacity: 1; }
 
-    .float-track-btn:hover {
-        transform: scale(1.1);
-        box-shadow: 0 6px 20px rgba(243, 156, 18, 0.65);
-    }
+/* ── Slide-up Panel ── */
+.track-panel {
+    position: fixed;
+    bottom: 215px; /* taas ng button */
+    right: 20px;
+    width: 370px;
+    max-width: calc(100vw - 30px);
+    background: #fff;
+    border-radius: 18px;
+    box-shadow: 0 15px 50px rgba(0,0,0,0.18);
+    z-index: 9991;
+    overflow: hidden;
+    transform: translateY(20px) scale(0.97);
+    opacity: 0;
+    pointer-events: none;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+}
+.track-panel.open {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+    pointer-events: all;
+}
 
-    .float-track-btn .track-tooltip {
-        position: absolute;
-        right: 62px;
-        background: #2c3e50;
-        color: #fff;
-        font-size: 12px;
-        font-weight: 600;
-        padding: 5px 10px;
-        border-radius: 6px;
-        white-space: nowrap;
-        opacity: 0;
-        pointer-events: none;
-        transition: opacity 0.2s;
-    }
+/* Panel Header */
+.track-panel-header {
+    background: linear-gradient(135deg, #2d5016, #3d6b1e);
+    color: white;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.track-panel-header h6 {
+    margin: 0;
+    font-weight: 700;
+    font-size: 15px;
+}
+.track-panel-header .close-panel {
+    background: rgba(255,255,255,0.2);
+    border: none;
+    color: white;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    transition: background 0.2s;
+}
+.track-panel-header .close-panel:hover { background: rgba(255,255,255,0.35); }
 
-    .float-track-btn:hover .track-tooltip {
-        opacity: 1;
-    }
+/* Panel Body */
+.track-panel-body { padding: 20px; }
 
-    /* ── Slide-up Panel ── */
-    .track-panel {
-        position: fixed;
-        bottom: 215px;
-        /* taas ng button */
-        right: 20px;
-        width: 370px;
-        max-width: calc(100vw - 30px);
-        background: #fff;
-        border-radius: 18px;
-        box-shadow: 0 15px 50px rgba(0, 0, 0, 0.18);
-        z-index: 9991;
-        overflow: hidden;
-        transform: translateY(20px) scale(0.97);
-        opacity: 0;
-        pointer-events: none;
-        transition: transform 0.3s ease, opacity 0.3s ease;
-    }
+/* Search Input */
+.track-input-wrap { position: relative; margin-bottom: 12px; }
+.track-input-wrap i {
+    position: absolute;
+    left: 13px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #aaa;
+    font-size: 14px;
+}
+.track-input-wrap input {
+    width: 100%;
+    padding: 11px 12px 11px 36px;
+    border: 2px solid #eee;
+    border-radius: 10px;
+    font-size: 14px;
+    outline: none;
+    transition: border 0.2s;
+}
+.track-input-wrap input:focus { border-color: #f39c12; }
 
-    .track-panel.open {
-        transform: translateY(0) scale(1);
-        opacity: 1;
-        pointer-events: all;
-    }
+/* Search Button */
+.track-search-btn {
+    width: 100%;
+    padding: 11px;
+    background: linear-gradient(135deg, #f39c12, #e67e22);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+.track-search-btn:hover { opacity: 0.9; }
+.track-search-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
-    /* Panel Header */
-    .track-panel-header {
-        background: linear-gradient(135deg, #2d5016, #3d6b1e);
-        color: white;
-        padding: 16px 20px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-    }
+/* Results */
+.track-results { margin-top: 14px; max-height: 260px; overflow-y: auto; }
+.track-results::-webkit-scrollbar { width: 4px; }
+.track-results::-webkit-scrollbar-thumb { background: #ddd; border-radius: 4px; }
 
-    .track-panel-header h6 {
-        margin: 0;
-        font-weight: 700;
-        font-size: 15px;
-    }
+/* Order Row */
+.track-order-row {
+    border: 1px solid #f0f0f0;
+    border-radius: 12px;
+    padding: 14px;
+    margin-bottom: 10px;
+    transition: box-shadow 0.2s;
+}
+.track-order-row:hover { box-shadow: 0 3px 12px rgba(0,0,0,0.08); }
+.track-order-ref { font-size: 11px; color: #999; font-weight: 600; }
+.track-order-items { font-size: 13px; font-weight: 700; color: #2c3e50; margin: 4px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.track-order-location { font-size: 12px; color: #888; }
+.track-status-badge {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    background: rgba(243,156,18,0.12);
+    color: #e67e22;
+    padding: 3px 9px;
+    border-radius: 20px;
+}
+.track-order-amount { font-size: 13px; font-weight: 700; color: #27ae60; }
 
-    .track-panel-header .close-panel {
-        background: rgba(255, 255, 255, 0.2);
-        border: none;
-        color: white;
-        width: 28px;
-        height: 28px;
-        border-radius: 50%;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 14px;
-        transition: background 0.2s;
-    }
+/* States */
+.track-empty { text-align: center; padding: 20px 0; }
+.track-empty img { width: 55px; opacity: 0.4; margin-bottom: 8px; }
+.track-empty p { color: #bbb; font-size: 13px; margin: 0; }
+.track-loading { text-align: center; padding: 20px; color: #f39c12; }
 
-    .track-panel-header .close-panel:hover {
-        background: rgba(255, 255, 255, 0.35);
-    }
-
-    /* Panel Body */
-    .track-panel-body {
-        padding: 20px;
-    }
-
-    /* Search Input */
-    .track-input-wrap {
-        position: relative;
-        margin-bottom: 12px;
-    }
-
-    .track-input-wrap i {
-        position: absolute;
-        left: 13px;
-        top: 50%;
-        transform: translateY(-50%);
-        color: #aaa;
-        font-size: 14px;
-    }
-
-    .track-input-wrap input {
-        width: 100%;
-        padding: 11px 12px 11px 36px;
-        border: 2px solid #eee;
-        border-radius: 10px;
-        font-size: 14px;
-        outline: none;
-        transition: border 0.2s;
-    }
-
-    .track-input-wrap input:focus {
-        border-color: #f39c12;
-    }
-
-    /* Search Button */
-    .track-search-btn {
-        width: 100%;
-        padding: 11px;
-        background: linear-gradient(135deg, #f39c12, #e67e22);
-        color: white;
-        border: none;
-        border-radius: 10px;
-        font-weight: 700;
-        font-size: 14px;
-        cursor: pointer;
-        transition: opacity 0.2s;
-    }
-
-    .track-search-btn:hover {
-        opacity: 0.9;
-    }
-
-    .track-search-btn:disabled {
-        opacity: 0.6;
-        cursor: not-allowed;
-    }
-
-    /* Results */
-    .track-results {
-        margin-top: 14px;
-        max-height: 260px;
-        overflow-y: auto;
-    }
-
-    .track-results::-webkit-scrollbar {
-        width: 4px;
-    }
-
-    .track-results::-webkit-scrollbar-thumb {
-        background: #ddd;
-        border-radius: 4px;
-    }
-
-    /* Order Row */
-    .track-order-row {
-        border: 1px solid #f0f0f0;
-        border-radius: 12px;
-        padding: 14px;
-        margin-bottom: 10px;
-        transition: box-shadow 0.2s;
-    }
-
-    .track-order-row:hover {
-        box-shadow: 0 3px 12px rgba(0, 0, 0, 0.08);
-    }
-
-    .track-order-ref {
-        font-size: 11px;
-        color: #999;
-        font-weight: 600;
-    }
-
-    .track-order-items {
-        font-size: 13px;
-        font-weight: 700;
-        color: #2c3e50;
-        margin: 4px 0;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    .track-order-location {
-        font-size: 12px;
-        color: #888;
-    }
-
-    .track-status-badge {
-        font-size: 10px;
-        font-weight: 700;
-        text-transform: uppercase;
-        background: rgba(243, 156, 18, 0.12);
-        color: #e67e22;
-        padding: 3px 9px;
-        border-radius: 20px;
-    }
-
-    .track-order-amount {
-        font-size: 13px;
-        font-weight: 700;
-        color: #27ae60;
-    }
-
-    /* States */
-    .track-empty {
-        text-align: center;
-        padding: 20px 0;
-    }
-
-    .track-empty img {
-        width: 55px;
-        opacity: 0.4;
-        margin-bottom: 8px;
-    }
-
-    .track-empty p {
-        color: #bbb;
-        font-size: 13px;
-        margin: 0;
-    }
-
-    .track-loading {
-        text-align: center;
-        padding: 20px;
-        color: #f39c12;
-    }
-
-    /* Full details link */
-    .track-full-link {
-        display: block;
-        text-align: center;
-        margin-top: 10px;
-        font-size: 12px;
-        color: #f39c12;
-        text-decoration: none;
-        font-weight: 600;
-    }
-
-    .track-full-link:hover {
-        text-decoration: underline;
-    }
+/* Full details link */
+.track-full-link {
+    display: block;
+    text-align: center;
+    margin-top: 10px;
+    font-size: 12px;
+    color: #f39c12;
+    text-decoration: none;
+    font-weight: 600;
+}
+.track-full-link:hover { text-decoration: underline; }
 </style>
 
 <!-- Floating Button -->
@@ -3884,8 +4104,8 @@ $conn->close();
     <div class="track-panel-body">
         <div class="track-input-wrap">
             <i class="fas fa-phone"></i>
-            <input type="tel" id="floatTrackPhone" placeholder="e.g. +639805926760"
-                onkeydown="if(event.key==='Enter') doFloatTrack()">
+            <input type="tel" id="floatTrackPhone" placeholder="e.g. +639805926760" 
+                   onkeydown="if(event.key==='Enter') doFloatTrack()">
         </div>
         <button class="track-search-btn" id="floatTrackBtn" onclick="doFloatTrack()">
             <i class="fas fa-search me-1"></i> TRACK ORDERS
@@ -3895,71 +4115,71 @@ $conn->close();
 </div>
 
 <script>
-    // ── Toggle panel open/close ──────────────────────────────────────────────────
-    function toggleTrackPanel() {
-        const panel = document.getElementById('trackPanel');
-        panel.classList.toggle('open');
-        if (panel.classList.contains('open')) {
-            setTimeout(() => document.getElementById('floatTrackPhone').focus(), 200);
-        }
+// ── Toggle panel open/close ──────────────────────────────────────────────────
+function toggleTrackPanel() {
+    const panel = document.getElementById('trackPanel');
+    panel.classList.toggle('open');
+    if (panel.classList.contains('open')) {
+        setTimeout(() => document.getElementById('floatTrackPhone').focus(), 200);
+    }
+}
+
+// Close panel when clicking outside
+document.addEventListener('click', function(e) {
+    const panel  = document.getElementById('trackPanel');
+    const btn    = document.querySelector('.float-track-btn');
+    if (!panel.contains(e.target) && !btn.contains(e.target)) {
+        panel.classList.remove('open');
+    }
+});
+
+// ── Status label map (same as track-order.php) ──────────────────────────────
+function getStatusLabel(status) {
+    const map = {
+        'maya_initial' : 'Initial Payment',
+        'maya_full'    : 'Full Payment',
+        'down_payment' : 'Down Payment',
+        'pending'      : 'Pending',
+        'confirmed'    : 'To Ship',
+        'in_transit'   : 'To Receive',
+        'delivered'    : 'Completed',
+    };
+    if (!status) return 'Pending';
+    return map[status] || status.charAt(0).toUpperCase() + status.slice(1);
+}
+
+// ── Fetch orders ─────────────────────────────────────────────────────────────
+function doFloatTrack() {
+    const phone  = document.getElementById('floatTrackPhone').value.trim();
+    const btn    = document.getElementById('floatTrackBtn');
+    const result = document.getElementById('floatTrackResults');
+
+    if (!phone) {
+        result.innerHTML = `<p class="text-danger small mt-2"><i class="fas fa-exclamation-circle me-1"></i>Please enter your cellphone number.</p>`;
+        return;
     }
 
-    // Close panel when clicking outside
-    document.addEventListener('click', function (e) {
-        const panel = document.getElementById('trackPanel');
-        const btn = document.querySelector('.float-track-btn');
-        if (!panel.contains(e.target) && !btn.contains(e.target)) {
-            panel.classList.remove('open');
-        }
-    });
+    // Loading state
+    btn.disabled = true;
+    btn.innerHTML = `<i class="fas fa-spinner fa-spin me-1"></i> Searching...`;
+    result.innerHTML = `<div class="track-loading"><i class="fas fa-spinner fa-spin fa-lg"></i></div>`;
 
-    // ── Status label map (same as track-order.php) ──────────────────────────────
-    function getStatusLabel(status) {
-        const map = {
-            'maya_initial': 'Initial Payment',
-            'maya_full': 'Full Payment',
-            'down_payment': 'Down Payment',
-            'pending': 'Pending',
-            'confirmed': 'To Ship',
-            'in_transit': 'To Receive',
-            'delivered': 'Completed',
-        };
-        if (!status) return 'Pending';
-        return map[status] || status.charAt(0).toUpperCase() + status.slice(1);
-    }
+    fetch(`controllers/customer_track_order.php?phone=${encodeURIComponent(phone)}`)
+        .then(res => res.json())
+        .then(data => {
+            btn.disabled = false;
+            btn.innerHTML = `<i class="fas fa-search me-1"></i> TRACK ORDERS`;
 
-    // ── Fetch orders ─────────────────────────────────────────────────────────────
-    function doFloatTrack() {
-        const phone = document.getElementById('floatTrackPhone').value.trim();
-        const btn = document.getElementById('floatTrackBtn');
-        const result = document.getElementById('floatTrackResults');
-
-        if (!phone) {
-            result.innerHTML = `<p class="text-danger small mt-2"><i class="fas fa-exclamation-circle me-1"></i>Please enter your cellphone number.</p>`;
-            return;
-        }
-
-        // Loading state
-        btn.disabled = true;
-        btn.innerHTML = `<i class="fas fa-spinner fa-spin me-1"></i> Searching...`;
-        result.innerHTML = `<div class="track-loading"><i class="fas fa-spinner fa-spin fa-lg"></i></div>`;
-
-        fetch(`controllers/customer_track_order.php?phone=${encodeURIComponent(phone)}`)
-            .then(res => res.json())
-            .then(data => {
-                btn.disabled = false;
-                btn.innerHTML = `<i class="fas fa-search me-1"></i> TRACK ORDERS`;
-
-                if (!data.success) {
-                    result.innerHTML = `
+            if (!data.success) {
+                result.innerHTML = `
                     <div class="track-empty">
                         <img src="https://cdn-icons-png.flaticon.com/512/4076/4076432.png" alt="">
                         <p>${data.message || 'No orders found.'}</p>
                     </div>`;
-                    return;
-                }
+                return;
+            }
 
-                const rows = data.orders.map(order => `
+            const rows = data.orders.map(order => `
                 <div class="track-order-row">
                     <div class="d-flex justify-content-between align-items-center mb-1">
                         <span class="track-order-ref">${order.order_reference}</span>
@@ -3975,38 +4195,18 @@ $conn->close();
                 </div>
             `).join('');
 
-                result.innerHTML = `
+            result.innerHTML = `
                 <div class="track-results">${rows}</div>
                 <a href="track-order.php" class="track-full-link">
                     <i class="fas fa-external-link-alt me-1"></i> View full order details
                 </a>`;
-            })
-            .catch(() => {
-                btn.disabled = false;
-                btn.innerHTML = `<i class="fas fa-search me-1"></i> TRACK ORDERS`;
-                result.innerHTML = `<p class="text-danger small mt-2"><i class="fas fa-exclamation-circle me-1"></i>Connection error. Please try again.</p>`;
-            });
-    }
-
-    // ── Solar System Row Scroll Animations ──────────────────────────────────
-    (function () {
-        const rows = document.querySelectorAll('.solar-system-row');
-        if (!rows.length) return;
-
-        const observer = new IntersectionObserver(
-            (entries) => {
-                entries.forEach((entry) => {
-                    if (entry.isIntersecting) {
-                        entry.target.classList.add('row-visible');
-                        observer.unobserve(entry.target); // animate once
-                    }
-                });
-            },
-            { threshold: 0.18 }   // trigger when 18% of the row is visible
-        );
-
-        rows.forEach((row) => observer.observe(row));
-    })();
+        })
+        .catch(() => {
+            btn.disabled = false;
+            btn.innerHTML = `<i class="fas fa-search me-1"></i> TRACK ORDERS`;
+            result.innerHTML = `<p class="text-danger small mt-2"><i class="fas fa-exclamation-circle me-1"></i>Connection error. Please try again.</p>`;
+        });
+}
 </script>
 <!-- END FLOATING TRACK ORDER -->
 

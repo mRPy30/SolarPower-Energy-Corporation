@@ -41,224 +41,317 @@
             text-align: center;
         }
 
-        /* Contact Us Section */
+ /* ── Contact Us Section (minimal redesign) ── */
         .contact-us {
             padding: 80px 0;
-            background: var(--clr-light-alt);
+            background: #fff;
         }
-
+ 
         .contact-info h2 {
-            font-size: 32px;
-            margin-bottom: var(--spacing-xl);
+            font-size: 28px;
             color: var(--clr-dark);
             font-weight: 700;
+            margin-bottom: 6px;
         }
-
-        /* Visit Us Section */
+ 
+        .contact-section-sub {
+            color: var(--clr-text-secondary);
+            font-size: 0.92rem;
+            margin-bottom: 36px;
+            line-height: 1.6;
+        }
+ 
+        /* Visit Us / WhatsApp block */
         .visit-us-section {
-            background: #f8f9fa;
-            padding: var(--spacing-lg);
-            border-radius: var(--border-radius-md);
-            margin-bottom: var(--spacing-xl);
+            margin-bottom: 32px;
         }
-
+ 
         .visit-us-section h3 {
-            font-size: 20px;
+            font-size: 13px;
             font-weight: 700;
-            color: var(--clr-dark);
-            margin-bottom: var(--spacing-md);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #999;
+            margin-bottom: 4px;
         }
-
+ 
         .visit-us-section p {
             color: var(--clr-text-secondary);
+            font-size: 0.88rem;
             line-height: 1.6;
-            margin-bottom: var(--spacing-lg);
+            margin-bottom: 14px;
         }
-
+ 
         /* WhatsApp Button */
         .whatsapp-btn {
             display: inline-flex;
             align-items: center;
-            gap: var(--spacing-sm);
-            background: #2a5b3c;
-            color: white;
-            padding: 12px 24px;
-            border-radius: var(--border-radius-md);
+            gap: 8px;
+            background: #25D366;
+            color: #fff;
+            padding: 9px 20px;
+            border-radius: 6px;
             text-decoration: none;
             font-weight: 600;
+            font-size: 0.88rem;
             transition: var(--transition-fast);
         }
-
+ 
         .whatsapp-btn:hover {
-            background: #128c26;
-            color: white;
-            transform: translateY(-2px);
+            background: #1ebe5d;
+            color: #fff;
         }
-
-        .whatsapp-btn i {
-            font-size: 20px;
+ 
+        .whatsapp-btn i { font-size: 16px; }
+ 
+        /* Contact detail rows */
+        .company-info { margin-bottom: 24px; }
+ 
+        .contact-detail {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 18px;
+            gap: 12px;
         }
-
-        /* Company Info */
-        .company-info {
-            margin-bottom: var(--spacing-xl);
+ 
+        .contact-detail .icon-wrap {
+            width: 36px;
+            height: 36px;
+            background: #f0f7f4;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
         }
-
-        .company-info strong {
-            display: block;
-            margin-bottom: var(--spacing-sm);
-            color: var(--clr-dark);
-            font-size: 18px;
+ 
+        .contact-detail i {
+            color: var(--clr-secondary);
+            font-size: 14px;
         }
-
-        .company-info p {
-            color: var(--clr-text-secondary);
-            line-height: 1.6;
-            margin: 0 0 var(--spacing-sm) 0;
-        }
-
+ 
         .company-info .phone-number {
-            font-weight: 600;
+            font-weight: 500;
             color: var(--clr-dark);
+            cursor: pointer;
         }
-
+ 
         /* Hours Section */
-        .hours-section {
-            margin-top: var(--spacing-xl);
-        }
-
+        .hours-section { margin-top: 20px; }
+ 
         .hours-toggle {
             width: 100%;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: white;
-            border: 1px solid #e0e0e0;
-            padding: var(--spacing-md);
-            border-radius: var(--border-radius-md);
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            padding: 12px 16px;
+            border-radius: 8px;
             cursor: pointer;
-            font-size: 16px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--clr-dark);
             transition: var(--transition-fast);
         }
-
-        .hours-toggle:hover {
-            background: #f8f9fa;
-        }
-
+ 
+        .hours-toggle:hover { background: #f9fafb; }
+ 
+        .hours-toggle strong { color: var(--clr-dark); }
+ 
         .hours-toggle i {
             transition: transform 0.3s ease;
+            color: #aaa;
+            font-size: 12px;
         }
-
+ 
         .hours-content {
             max-height: 0;
             overflow: hidden;
             transition: max-height 0.35s ease;
-            margin-top: 10px;
+            margin-top: 4px;
+            background: #fafafa;
+            border-radius: 0 0 8px 8px;
+            border: 1px solid #e5e7eb;
+            border-top: none;
         }
-
+ 
         .hour-item {
             display: flex;
             justify-content: space-between;
-            padding: 6px 0;
-            font-size: 14px;
-            color: #333;
+            padding: 7px 16px;
+            font-size: 13px;
+            color: #555;
+            border-bottom: 1px solid #f0f0f0;
         }
-
-        .hours-toggle {
-            width: 100%;
-            background: #fff;
-            border: 1px solid #ccc;
-            padding: 12px 16px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            cursor: pointer;
-            border-radius: 6px;
+ 
+        .hour-item:last-child { border-bottom: none; }
+ 
+        .hour-item span:first-child {
+            font-weight: 500;
+            color: var(--clr-dark);
         }
-
-
-        .contact-detail {
-            display: flex;
-            align-items: flex-start;
-            margin-bottom: var(--spacing-lg);
-            gap: var(--spacing-md);
-        }
-
-        .contact-detail i {
-            color: var(--clr-primary);
-            font-size: var(--spacing-lg);
-            margin-top: 3px;
-            min-width: var(--spacing-lg);
-        }
-
+ 
         .contact-detail strong {
             display: block;
-            margin-bottom: var(--spacing-xs);
-            color: var(--clr-dark);
-            font-size: 16px;
+            margin-bottom: 2px;
+            color: #999;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
         }
-
+ 
         .contact-detail p,
-        .contact-detail span {
-            color: var(--clr-text-secondary);
+        .contact-detail span,
+        .contact-detail a {
+            color: var(--clr-dark);
             line-height: 1.6;
             margin: 0;
+            font-size: 0.88rem;
         }
-
+ 
+        .contact-detail a {
+            text-decoration: none;
+            color: var(--clr-dark);
+        }
+ 
+        .contact-detail a:hover {
+            color: var(--clr-secondary);
+        }
+ 
+        /* Form wrapper — clean, no heavy shadow */
         .contact-form-wrapper {
-            padding: 40px;
-            border: 1px solid #d7d7d7;
+            padding: 0;
+            border: none;
+            background: transparent;
         }
-
+ 
+        .contact-form-wrapper h3 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--clr-dark);
+            margin-bottom: 6px;
+        }
+ 
+        .contact-form-sub {
+            font-size: 0.88rem;
+            color: var(--clr-text-secondary);
+            margin-bottom: 28px;
+        }
+ 
         .contact-form .form-control {
-            padding: var(--spacing-md);
-            border: 1px solid #e0e0e0;
-            border-radius: var(--border-radius-md);
-            font-size: var(--fs-base);
-            transition: border-color 0.3s;
+            padding: 10px 14px;
+            border: 1.5px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            background: #fafafa;
+            transition: border-color 0.2s, background 0.2s;
+            color: var(--clr-dark);
         }
-
+ 
         .contact-form .form-control:focus {
-            border-color: var(--clr-primary);
+            border-color: var(--clr-secondary);
+            background: #fff;
             box-shadow: none;
+            outline: none;
         }
-
+ 
+        .contact-form .input-group-text {
+            background: #fafafa;
+            border: 1.5px solid #e5e7eb;
+            border-right: none;
+            border-radius: 8px 0 0 8px;
+            color: var(--clr-secondary);
+            font-weight: 700;
+            font-size: 0.88rem;
+            padding: 10px 12px;
+        }
+ 
+        .contact-form .input-group .form-control {
+            border-left: none;
+            border-radius: 0 8px 8px 0;
+        }
+ 
+        .contact-form .input-group:focus-within .input-group-text {
+            border-color: var(--clr-secondary);
+            background: #fff;
+        }
+ 
+        .contact-form .input-group:focus-within .form-control {
+            border-color: var(--clr-secondary);
+        }
+ 
         .contact-form textarea.form-control {
-            resize: vertical;
+            resize: none;
         }
-
+ 
         .btn-submit {
             background: var(--clr-secondary);
-            color: var(--clr-light);
-            padding: var(--spacing-md) 40px;
+            color: #fff;
+            padding: 11px 0;
             border: none;
-            border-radius: var(--border-radius-md);
+            border-radius: 8px;
             cursor: pointer;
-            font-size: 16px;
-            font-weight: 700;
+            font-size: 14px;
+            font-weight: 600;
             width: 100%;
-            transition: var(--transition-fast);
+            transition: background 0.2s;
+            letter-spacing: 0.04em;
+        }
+ 
+        .btn-submit:hover { background: #085231; }
+ 
+        /* Social Links */
+        .contact-social-links { margin-top: 28px; }
+ 
+        .contact-social-label {
+            font-size: 11px;
+            font-weight: 700;
             text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #999;
+            margin-bottom: 10px;
         }
-
-        .btn-submit:hover {
-            background: #085231;
-            transform: translateY(-2px);
+ 
+        .social-links {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
         }
-
+ 
+        .social-links a {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            background: #f0f0f0;
+            color: var(--clr-dark);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+ 
+        .social-links a:hover {
+            background: var(--clr-secondary);
+            color: #fff;
+        }
+ 
+        /* Section divider */
+        .contact-divider {
+            border: none;
+            border-top: 1px solid #f0f0f0;
+            margin: 24px 0;
+        }
+ 
         /* Responsive */
         @media (max-width: 768px) {
-            .visit-us-section {
-                padding: var(--spacing-md);
-            }
-
-            .whatsapp-btn {
-                width: 100%;
-                justify-content: center;
-            }
+            .whatsapp-btn { width: 100%; justify-content: center; }
+            .contact-us { padding: 48px 0; }
         }
-
-
+        
         /* ============================================
    BOOK SITE INSPECTION SECTION  (redesigned)
    ============================================ */
@@ -591,7 +684,7 @@
                         <!-- Company Information -->
                         <div class="company-info">
                             <div class="contact-detail">
-                                <i class="fas fa-map-marker-alt"></i>
+                                <div class="icon-wrap"><i class="fas fa-map-marker-alt"></i></div>
                                 <div>
                                     <strong>Address</strong>
                                     <p>4/F PBB Corporate Center, 1906 Finance Drive, Madrigal Business Park 1, Ayala
@@ -600,16 +693,16 @@
                             </div>
 
                             <div class="contact-detail">
-                                <i class="fas fa-phone"></i>
+                                <div class="icon-wrap"><i class="fas fa-phone"></i></div>
                                 <div>
                                     <strong>Phone</strong>
                                     <span class="phone-number" id="phone-copy"
-                                        onclick="copyToClipboard('0995-394-7379', this)">+63 995 394 7379</span>
+                                        onclick="copyToClipboard('+639953947379', this)">+639953947379</span>
                                 </div>
                             </div>
 
                             <div class="contact-detail">
-                                <i class="fas fa-envelope"></i>
+                                <div class="icon-wrap"><i class="fas fa-envelope"></i></div>
                                 <div>
                                     <strong>Email</strong>
                                     <a href="mailto:solar@solarpower.com.ph"
@@ -655,6 +748,18 @@
                                 </div>
                             </div>
                         </div>
+
+                        <!-- Social Links -->
+                        <div class="contact-social-links">
+                            <p class="contact-social-label">Follow Us</p>
+                            <div class="social-links">
+                                <a href="https://www.facebook.com/p/SolarPower-Energy-Corporation-61578373983187/" target="_blank" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+                                <a href="https://www.instagram.com/solarpowerenergycorporation?igsh=MWh4YTEyYWpzbDNlNQ==" target="_blank" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                                <a href="https://www.tiktok.com/@solarpower.energy?_r=1&_t=ZS-92HlpTBUuzF" target="_blank" aria-label="TikTok"><i class="fab fa-tiktok"></i></a>
+                                <a href="https://youtube.com/@solarpowerenergycorporation?si=-kln0fTid4zMZDXq" target="_blank" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
+                                <a href="https://www.linkedin.com/in/solar-power-6792283aa" target="_blank" aria-label="LinkedIn"><i class="fab fa-linkedin-in"></i></a>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -675,8 +780,7 @@
                                 </div>
 
                                 <div class="col-12 mb-3">
-                                    <input type="tel" class="form-control" id="contact_phone" name="phone"
-                                        placeholder="Phone Number *" required>
+                                    <input type="tel" class="form-control" id="contact_phone" name="phone" placeholder="Phone Number *" required>
                                 </div>
 
                                 <div class="col-12 mb-4">
@@ -779,8 +883,10 @@
                             <div class="col-sm-6">
                                 <label class="form-label">Phone *</label>
                                 <div class="input-group">
-                                    <input type="tel" name="phone" class="form-control" placeholder="Enter Phone Number"
-                                        required>
+                                    <span class="input-group-text">+639</span>
+                                    <input type="tel" name="phone" class="form-control" placeholder="XXXXXXXXX"
+                                        required maxlength="9" pattern="[0-9]{9}"
+                                        oninput="this.value=this.value.replace(/[^0-9]/g,'')">
                                 </div>
                             </div>
 
@@ -852,7 +958,7 @@
 
                     <div class="book-info-group">
                         <h4>Contact</h4>
-                        <p>Phone : <a href="tel:+639953947379">+63 995 394 7379</a></p>
+                        <p>Phone : <a href="tel:+639953947379">+639953947379</a></p>
                         <p>Email : <a href="mailto:solar@solarpower.com.ph">solar@solarpower.com.ph</a></p>
                     </div>
 
@@ -869,16 +975,12 @@
                     <div class="book-info-group">
                         <h4>Stay Connected</h4>
                         <div class="book-socials">
-                            <a href="#" class="book-social-btn" aria-label="Facebook"><i
-                                    class="fab fa-facebook-f"></i></a>
-                            <a href="#" class="book-social-btn" aria-label="Twitter/X"><i
-                                    class="fab fa-x-twitter"></i></a>
-                            <a href="#" class="book-social-btn" aria-label="Pinterest"><i
-                                    class="fab fa-pinterest-p"></i></a>
-                            <a href="#" class="book-social-btn" aria-label="Instagram"><i
-                                    class="fab fa-instagram"></i></a>
-                            <a href="https://wa.me/639953947379" class="book-social-btn" aria-label="WhatsApp"
-                                target="_blank"><i class="fab fa-whatsapp"></i></a>
+                            <a href="https://www.facebook.com/p/SolarPower-Energy-Corporation-61578373983187/" class="book-social-btn" aria-label="Facebook" target="_blank"><i class="fab fa-facebook-f"></i></a>
+                            <a href="https://www.instagram.com/solarpowerenergycorporation?igsh=MWh4YTEyYWpzbDNlNQ==" class="book-social-btn" aria-label="Instagram" target="_blank"><i class="fab fa-instagram"></i></a>
+                            <a href="https://www.tiktok.com/@solarpower.energy?_r=1&_t=ZS-92HlpTBUuzF" class="book-social-btn" aria-label="TikTok" target="_blank"><i class="fab fa-tiktok"></i></a>
+                            <a href="https://youtube.com/@solarpowerenergycorporation?si=-kln0fTid4zMZDXq" class="book-social-btn" aria-label="YouTube" target="_blank"><i class="fab fa-youtube"></i></a>
+                            <a href="https://www.linkedin.com/in/solar-power-6792283aa" class="book-social-btn" aria-label="LinkedIn" target="_blank"><i class="fab fa-linkedin-in"></i></a>
+                            <a href="https://wa.me/639953947379" class="book-social-btn" aria-label="WhatsApp" target="_blank"><i class="fab fa-whatsapp"></i></a>
                         </div>
                     </div>
 
@@ -891,8 +993,8 @@
             <!-- Google Maps embed -->
             <div class="book-map">
                 <iframe
-                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3862.4553838016!2d121.0208!3d14.4199!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3397d13a4f3a3c9b%3A0x1b46c9bcf0b37b9!2sMadrigal+Business+Park!5e0!3m2!1sen!2sph!4v1713172000000"
-                    allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"
+                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d4794.844711893684!2d121.0255494!3d14.424215400000001!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3397d1c8f273cdb3%3A0x5b521465fc864fe3!2sSolarPower%20Energy%20Corporation!5e1!3m2!1sen!2sph!4v1776402313760!5m2!1sen!2sph" width="600" height="450" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"
+                
                     title="SolarPower Energy Corporation — Madrigal Business Park location">
                 </iframe>
             </div>
@@ -922,6 +1024,35 @@
         </div>
     </div>
 
+<!-- Contact Success Modal -->
+    <div class="modal fade" id="contactSuccessModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title">
+                        <i class="fas fa-check-circle text-success me-2"></i>
+                        Message Sent
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-solar-panel text-success"
+                            style="font-size: 48px;"></i>
+                    </div>
+                    <p class="mb-1">
+                        Thank you for sending contacts
+                    </p>
+                    <strong>Enjoy browsing our website!</strong>
+                </div>
+                <div class="modal-footer border-0 justify-content-center">
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">
+                        OK
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <?php include "includes/footer.php" ?>
 
@@ -1128,49 +1259,64 @@
             calculatorBox.classList.add('collapsed');
         }
     });
-    function submitContactForm(e) {
-        e.preventDefault();
+    function initializeContactForm() {
+    // handled by submitContactForm() called via onsubmit on the form
+}
 
-        const form = e.target;
-        const btn = document.getElementById('contactSubmitBtn');
-        const text = btn.querySelector('.btn-text');
-        const spinner = btn.querySelector('.btn-spinner');
+async function submitContactForm(event) {
+    event.preventDefault();
 
-        // Loading state
-        btn.disabled = true;
-        text.classList.add('d-none');
-        spinner.classList.remove('d-none');
+    const form        = document.getElementById('contactForm');
+    const submitBtn   = document.getElementById('contactSubmitBtn');
+    const btnText     = submitBtn.querySelector('.btn-text');
+    const btnSpinner  = submitBtn.querySelector('.btn-spinner');
 
-        fetch("controllers/contact_submit.php", {
-            method: "POST",
-            body: new FormData(form)
-        })
-            .then(res => res.json())
-            .then(data => {
-                btn.disabled = false;
-                text.classList.remove('d-none');
-                spinner.classList.add('d-none');
-
-                if (data.success) {
-                    // Success feedback
-                    form.reset();
-                    btn.style.background = '#27ae60';
-                    text.textContent = '✓ Message Sent!';
-                    setTimeout(() => {
-                        btn.style.background = '';
-                        text.textContent = 'Send Message';
-                    }, 3000);
-                } else {
-                    alert(data.message || 'Something went wrong. Please try again.');
-                }
-            })
-            .catch(() => {
-                btn.disabled = false;
-                text.classList.remove('d-none');
-                spinner.classList.add('d-none');
-                alert('Connection error. Please try again.');
-            });
+    // Combine +639 prefix with phone digits
+    const phoneInput = document.getElementById('contact_phone');
+    const phoneFullInput = document.getElementById('contact_phone_full');
+    if (phoneFullInput && phoneInput) {
+        phoneFullInput.value = '+639' + phoneInput.value;
+        phoneInput.name = '';
     }
+
+    // Show loading state
+    btnText.classList.add('d-none');
+    btnSpinner.classList.remove('d-none');
+    submitBtn.disabled = true;
+
+    try {
+        const formData = new FormData(form);
+
+        const response = await fetch('controllers/contact_submit.php', {
+            method: 'POST',
+            body: formData
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            form.reset();
+            // Show success modal if it exists, otherwise fallback notification
+            const successModal = document.getElementById('contactSuccessModal');
+            if (successModal) {
+                const modal = new bootstrap.Modal(successModal);
+                modal.show();
+            } else {
+                showNotificationModal('success', 'Message sent! We will get back to you soon.');
+            }
+        } else {
+            showNotificationModal('error', result.message || 'Failed to send message. Please try again.');
+        }
+    } catch (err) {
+        console.error('Contact form error:', err);
+        showNotificationModal('error', 'There was an error submitting your message. Please try again or contact us directly at solar@solarpower.com.ph');
+    } finally {
+        // Restore button state
+        btnText.classList.remove('d-none');
+        btnSpinner.classList.add('d-none');
+        submitBtn.disabled = false;
+    }
+}
 
     /* ── Roof type "Other" reveal ── */
     document.addEventListener('DOMContentLoaded', function () {
@@ -1271,6 +1417,22 @@
     document.addEventListener('DOMContentLoaded', function () {
         initializeInspectionForm();
     });
+    
+    // ===========================
+// UTILITIES
+// ===========================
+function toggleHours() {
+    const hoursContent = document.getElementById('hours-content');
+    const hoursIcon = document.getElementById('hours-icon');
+    
+    if (hoursContent.style.maxHeight) {
+        hoursContent.style.maxHeight = null;
+        hoursIcon.style.transform = 'rotate(0deg)';
+    } else {
+        hoursContent.style.maxHeight = hoursContent.scrollHeight + 'px';
+        hoursIcon.style.transform = 'rotate(180deg)';
+    }
+}
 </script>
 
 </body>

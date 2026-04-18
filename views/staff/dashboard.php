@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 session_start();
 
 if (!isset($_SESSION['user_id']) || empty($_SESSION['user_id'])) {
@@ -135,18 +135,10 @@ function get_best_seller($conn)
     $sql = "
         SELECT 
             oi.product_name,
-            COALESCE(
-                NULLIF(oi.product_id, 0),
-                (SELECT p.id FROM product p WHERE p.displayName = oi.product_name LIMIT 1)
-            ) AS product_id,
             SUM(oi.quantity) AS total_qty,
-            COUNT(DISTINCT oi.order_id) AS order_frequency,
-            COALESCE(
-                (SELECT pi.image_path FROM product_images pi WHERE pi.product_id = oi.product_id AND oi.product_id > 0 ORDER BY pi.id ASC LIMIT 1),
-                (SELECT pi.image_path FROM product_images pi JOIN product p ON pi.product_id = p.id WHERE p.displayName = oi.product_name ORDER BY pi.id ASC LIMIT 1)
-            ) as image_path
+            COUNT(DISTINCT oi.order_id) AS order_frequency
         FROM order_items oi
-        GROUP BY oi.product_id, oi.product_name
+        GROUP BY oi.product_id
         ORDER BY total_qty DESC
         LIMIT 1
     ";
@@ -156,9 +148,9 @@ function get_best_seller($conn)
 }
 
 $stats = [
-    'clients'   => $conn->query("SELECT COUNT(*) FROM client")->fetch_row()[0],
-    'products'  => $conn->query("SELECT COUNT(*) FROM product")->fetch_row()[0],
-    'orders'    => $conn->query("SELECT COUNT(*) FROM orders")->fetch_row()[0],
+    'clients' => $conn->query("SELECT COUNT(*) FROM client")->fetch_row()[0],
+    'products' => $conn->query("SELECT COUNT(*) FROM product")->fetch_row()[0],
+    'orders' => $conn->query("SELECT COUNT(*) FROM orders")->fetch_row()[0],
     'suppliers' => $conn->query("SELECT COUNT(*) FROM supplier")->fetch_row()[0]
 ];
 
@@ -300,8 +292,10 @@ function get_all_products($conn)
 
     if ($result && $result->num_rows > 0) {
         while ($row = $result->fetch_assoc()) {
-            if (!isset($row['staffFName'])) $row['staffFName'] = '';
-            if (!isset($row['staffLName'])) $row['staffLName'] = '';
+            if (!isset($row['staffFName']))
+                $row['staffFName'] = '';
+            if (!isset($row['staffLName']))
+                $row['staffLName'] = '';
             $products[] = $row;
         }
         $result->close();
@@ -327,10 +321,19 @@ function get_all_suppliers($conn)
 }
 
 
+// Fetch archived products
+include_once __DIR__ . "/../../controllers/includes/fetch_archived_products.php";
+
+// Fetch archived quotations
+include_once __DIR__ . "/../../controllers/includes/fetch_archived_quotations.php";
+
+// Fetch archived suppliers
+include_once __DIR__ . "/../../controllers/includes/fetch_archived_suppliers.php";
+
 
 // Fetch data
 $dashboard_analytics = get_dashboard_analytics($conn);
-$lowStock   = $dashboard_analytics['low_stock'];
+$lowStock = $dashboard_analytics['low_stock'];
 $outOfStock = $dashboard_analytics['out_of_stock'];
 $solar_stats = get_solar_metrics($conn);
 $order_status = get_order_status($conn);
@@ -342,16 +345,8 @@ $all_products = get_all_products($conn);
 $all_suppliers = get_all_suppliers($conn);
 $product_count = count($all_products);
 
-// Fetch archived products
-include_once __DIR__ . "/../../controllers/includes/fetch_archived_products.php";
-
-// Fetch archived quotations
-include_once __DIR__ . "/../../controllers/includes/fetch_archived_quotations.php";
-
-// Fetch archived suppliers
-include_once __DIR__ . "/../../controllers/includes/fetch_archived_suppliers.php";
-
-// Keep $conn open — needed by included files (graph-revenue.php, archive-products.php)
+// Close connection before HTML output starts
+$conn->close();
 
 $user_id = $_SESSION['user_id'];
 $firstName = $_SESSION['firstName'] ?? 'User';
@@ -440,20 +435,22 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
                 break;
 
             case 'fetch_orders':
-                $search  = isset($_GET['search'])  ? trim($_GET['search'])  : '';
-                $status  = isset($_GET['status'])  ? trim($_GET['status'])  : '';
+                $search = isset($_GET['search']) ? trim($_GET['search']) : '';
+                $status = isset($_GET['status']) ? trim($_GET['status']) : '';
                 $payment = isset($_GET['payment']) ? trim($_GET['payment']) : '';
 
                 $orderQuery = "SELECT id, order_reference, customer_name, customer_email,
                                total_amount, created_at, payment_method, payment_status, order_status
                                FROM orders WHERE order_status != 'archived'";
                 $params = [];
-                $types  = '';
+                $types = '';
 
                 if ($search !== '') {
                     $orderQuery .= " AND (customer_name LIKE ? OR order_reference LIKE ? OR customer_email LIKE ?)";
                     $sp = '%' . $search . '%';
-                    $params[] = $sp; $params[] = $sp; $params[] = $sp;
+                    $params[] = $sp;
+                    $params[] = $sp;
+                    $params[] = $sp;
                     $types .= 'sss';
                 }
                 if ($status !== '') {
@@ -652,7 +649,7 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
                 $lName = $_POST['lastName'];
                 $email = $_POST['email'];
                 $phone = $_POST['contact'];
-                $sId   = $_SESSION['staff_id'];
+                $sId = $_SESSION['staff_id'];
 
                 $update = $conn->prepare("UPDATE staff SET firstName=?, lastName=?, email=?, contact_number=? WHERE id=?");
                 $update->bind_param("ssssi", $fName, $lName, $email, $phone, $sId);
@@ -748,8 +745,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
         $brand = $conn_post->real_escape_string($_POST['brand'] ?? '');
         $productName = $conn_post->real_escape_string($_POST['product-name'] ?? '');
         $warranty = $conn_post->real_escape_string($_POST['warranty'] ?? '');
-        $price = (float)($_POST['price'] ?? 0);
-        $stockQuantity = (int)($_POST['stock-quantity'] ?? 0);
+        $price = (float) ($_POST['price'] ?? 0);
+        $stockQuantity = (int) ($_POST['stock-quantity'] ?? 0);
         $description = $conn_post->real_escape_string($_POST['description'] ?? '');
         $imagePath = 'path/to/uploaded/image.jpg';
 
@@ -758,55 +755,68 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
             $_SESSION['add_product_msg_type'] = 'error';
         } else {
             $stmt = $conn_post->prepare("INSERT INTO product (displayName, brandName, price, category, stockQuantity, warranty, description, imagePath, postedByStaffId) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
-            $stmt->bind_param("ssdsisssi", $productName, $brand, $price, $category, $stockQuantity, $warranty, $description, $imagePath, $user_id);
+            if (!$stmt) {
+                $_SESSION['add_product_msg'] = 'Database error: ' . $conn_post->error;
+                $_SESSION['add_product_msg_type'] = 'error';
+            } else {
+                $stmt->bind_param("ssdsisssi", $productName, $brand, $price, $category, $stockQuantity, $warranty, $description, $imagePath, $user_id);
 
-            if ($stmt->execute()) {
-                $product_id = $stmt->insert_id;
+                if ($stmt->execute()) {
+                    $product_id = $stmt->insert_id;
 
-                // ===== IMAGE UPLOAD =====
-                $uploadDir = "../../uploads/products/$product_id/";
-                if (!is_dir($uploadDir)) {
-                    mkdir($uploadDir, 0777, true);
-                }
+                    // ===== IMAGE UPLOAD =====
+                    $uploadDir = "../../uploads/products/$product_id/";
+                    if (!is_dir($uploadDir)) {
+                        mkdir($uploadDir, 0777, true);
+                    }
 
-                $allowedTypes = ['jpg', 'jpeg', 'png', 'webp'];
-                $maxImages = 15;
-                $count = 0;
+                    $allowedTypes = ['jpg', 'jpeg', 'png', 'webp'];
+                    $maxImages = 15;
+                    $count = 0;
 
-                if (!empty($_FILES['product-images']['name'][0])) {
-                    foreach ($_FILES['product-images']['tmp_name'] as $key => $tmpName) {
-                        if ($count >= $maxImages) break;
-                        if ($_FILES['product-images']['error'][$key] !== 0) continue;
+                    if (!empty($_FILES['product-images']['name'][0])) {
+                        foreach ($_FILES['product-images']['tmp_name'] as $key => $tmpName) {
+                            if ($count >= $maxImages)
+                                break;
+                            if ($_FILES['product-images']['error'][$key] !== 0)
+                                continue;
 
-                        $ext = strtolower(pathinfo($_FILES['product-images']['name'][$key], PATHINFO_EXTENSION));
-                        if (!in_array($ext, $allowedTypes)) continue;
+                            $ext = strtolower(pathinfo($_FILES['product-images']['name'][$key], PATHINFO_EXTENSION));
+                            if (!in_array($ext, $allowedTypes))
+                                continue;
 
-                        $newName = uniqid("img_") . "." . $ext;
-                        $targetPath = $uploadDir . $newName;
+                            $newName = uniqid("img_") . "." . $ext;
+                            $targetPath = $uploadDir . $newName;
 
-                        if (move_uploaded_file($tmpName, $targetPath)) {
-                            $relativePath = "uploads/products/$product_id/$newName";
-                            $imgStmt = $conn_post->prepare("INSERT INTO product_images (product_id, image_path) VALUES (?, ?)");
-                            $imgStmt->bind_param("is", $product_id, $relativePath);
-                            $imgStmt->execute();
-                            $imgStmt->close();
-                            $count++;
+                            if (move_uploaded_file($tmpName, $targetPath)) {
+                                $relativePath = "uploads/products/$product_id/$newName";
+
+                                $imgStmt = $conn_post->prepare("
+                                    INSERT INTO product_images (product_id, image_path)
+                                    VALUES (?, ?)
+                                ");
+                                $imgStmt->bind_param("is", $product_id, $relativePath);
+                                $imgStmt->execute();
+                                $imgStmt->close();
+
+                                $count++;
+                            }
                         }
                     }
-                }
 
-                $_SESSION['add_product_msg'] = "Product '{$productName}' added successfully with {$count} image(s)!";
-                $_SESSION['add_product_msg_type'] = 'success';
-            } else {
-                $_SESSION['add_product_msg'] = 'Error adding product: ' . $stmt->error;
-                $_SESSION['add_product_msg_type'] = 'error';
+                    $_SESSION['add_product_msg'] = "Product '{$productName}' added successfully with {$count} image(s)!";
+                    $_SESSION['add_product_msg_type'] = 'success';
+                } else {
+                    $_SESSION['add_product_msg'] = 'Error adding product: ' . $stmt->error;
+                    $_SESSION['add_product_msg_type'] = 'error';
+                }
+                $stmt->close();
             }
-            $stmt->close();
         }
         $conn_post->close();
     }
     // PRG redirect — converts POST to GET, prevents duplicate on reload
-    header("Location: dashboard.php");
+    header("Location: dashboard(2).php");
     exit;
 }
 ?>
@@ -821,6 +831,523 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
     <title>SolarPower - Staff</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* ======= INQUIRIES PAGE STYLES ======= */
+        .inq-wrap {
+            padding: 28px 24px
+        }
+
+        .inq-topbar {
+            margin-bottom: 22px
+        }
+
+        .inq-topbar h2 {
+            font-size: 22px;
+            font-weight: 700;
+            color: #1a1a2e;
+            margin: 0 0 4px
+        }
+
+        .inq-topbar h2 i {
+            color: #FFC107;
+            margin-right: 8px
+        }
+
+        .inq-topbar p {
+            color: #888;
+            font-size: 13px;
+            margin: 0
+        }
+
+        /* Stats */
+        .inq-stats {
+            display: flex;
+            gap: 14px;
+            margin-bottom: 22px;
+            flex-wrap: wrap
+        }
+
+        .inq-stat {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: #fff;
+            border-radius: 12px;
+            padding: 14px 20px;
+            flex: 1;
+            min-width: 130px;
+            box-shadow: 0 1px 5px rgba(0, 0, 0, .06);
+            border: 1px solid #f0f0f0
+        }
+
+        .inq-stat i {
+            font-size: 22px
+        }
+
+        .inq-stat-num {
+            display: block;
+            font-size: 26px;
+            font-weight: 700;
+            line-height: 1.1
+        }
+
+        .inq-stat-lbl {
+            display: block;
+            font-size: 11px;
+            color: #999;
+            margin-top: 2px;
+            text-transform: uppercase;
+            letter-spacing: .4px
+        }
+
+        .inq-s-total {
+            border-left: 4px solid #6c757d
+        }
+
+        .inq-s-total i {
+            color: #6c757d
+        }
+
+        .inq-s-new {
+            border-left: 4px solid #FFC107
+        }
+
+        .inq-s-new i {
+            color: #FFC107
+        }
+
+        .inq-s-read {
+            border-left: 4px solid #17a2b8
+        }
+
+        .inq-s-read i {
+            color: #17a2b8
+        }
+
+        .inq-s-replied {
+            border-left: 4px solid #28a745
+        }
+
+        .inq-s-replied i {
+            color: #28a745
+        }
+
+        /* Toolbar */
+        .inq-toolbar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 16px;
+            flex-wrap: wrap
+        }
+
+        .inq-search {
+            flex: 1;
+            min-width: 200px;
+            padding: 9px 14px 9px 36px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 13px;
+            outline: none;
+            background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E") no-repeat 11px center
+        }
+
+        .inq-search:focus {
+            border-color: #FFC107;
+            box-shadow: 0 0 0 3px rgba(255, 193, 7, .15)
+        }
+
+        .inq-filter-sel {
+            padding: 9px 14px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 13px;
+            outline: none;
+            background: #fff;
+            cursor: pointer
+        }
+
+        .inq-filter-sel:focus {
+            border-color: #FFC107
+        }
+
+        /* Table */
+        .inq-table-wrap {
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 1px 6px rgba(0, 0, 0, .06);
+            border: 1px solid #f0f0f0;
+            overflow: hidden
+        }
+
+        .inq-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px
+        }
+
+        .inq-table thead tr {
+            background: #2a7a5b;
+        }
+
+        .inq-table th {
+            padding: 12px 16px;
+            text-align: left;
+            font-weight: 700;
+            color: #ffffff;
+            font-size: 11px;
+            letter-spacing: .5px;
+            border-bottom: 2px solid #eee;
+            white-space: nowrap
+        }
+
+        .inq-table td {
+            padding: 13px 16px;
+            border-bottom: 1px solid #f5f5f5;
+            vertical-align: middle
+        }
+
+        .inq-table tbody tr:hover {
+            background: #fffdf0
+        }
+
+        .inq-table tbody tr:last-child td {
+            border-bottom: none
+        }
+
+        .inq-td-num {
+            color: #bbb;
+            font-weight: 600;
+            font-size: 12px;
+            width: 40px
+        }
+
+        .inq-empty-row td {
+            text-align: center;
+            padding: 52px 20px;
+            color: #bbb
+        }
+
+        .inq-empty-row i {
+            font-size: 40px;
+            display: block;
+            margin-bottom: 10px
+        }
+
+        /* Avatar */
+        .inq-name-cell {
+            display: flex;
+            align-items: center;
+            gap: 10px
+        }
+
+        .inq-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #FFC107, #FF9800);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 15px;
+            flex-shrink: 0
+        }
+
+        .inq-fullname {
+            font-weight: 600;
+            color: #1a1a2e;
+            font-size: 13px
+        }
+
+        .inq-new-pill {
+            display: inline-block;
+            background: #FFC107;
+            color: #333;
+            font-size: 9px;
+            font-weight: 800;
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-top: 3px;
+            letter-spacing: .5px
+        }
+
+        /* Contact cell */
+        .inq-contact-cell {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            font-size: 12px;
+            color: #555
+        }
+
+        .inq-contact-cell span i {
+            color: #FFC107;
+            margin-right: 5px;
+            width: 12px
+        }
+
+        /* Message preview */
+        .inq-msg-preview {
+            max-width: 240px;
+            font-size: 12px;
+            color: #666;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            cursor: pointer
+        }
+
+        .inq-msg-preview:hover {
+            color: #FFC107
+        }
+
+        /* Date */
+        .inq-date-cell {
+            font-size: 12px;
+            color: #666;
+            white-space: nowrap
+        }
+
+        .inq-date-cell small {
+            display: block;
+            color: #aaa
+        }
+
+        /* Status badges */
+        .inq-badge {
+            display: inline-block;
+            padding: 4px 11px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            white-space: nowrap
+        }
+
+        .inq-badge-new {
+            background: #fff3cd;
+            color: #856404
+        }
+
+        .inq-badge-read {
+            background: #d1ecf1;
+            color: #0c5460
+        }
+
+        .inq-badge-replied {
+            background: #d4edda;
+            color: #155724
+        }
+
+        /* Action buttons */
+        .inq-actions {
+            display: flex;
+            gap: 5px
+        }
+
+        .inq-btn {
+            width: 30px;
+            height: 30px;
+            border-radius: 7px;
+            border: none;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            transition: all .15s;
+            flex-shrink: 0
+        }
+
+        .inq-btn-view {
+            background: #e3f2fd;
+            color: #1565c0
+        }
+
+        .inq-btn-view:hover {
+            background: #1565c0;
+            color: #fff
+        }
+
+        .inq-btn-read {
+            background: #fff3cd;
+            color: #856404
+        }
+
+        .inq-btn-read:hover {
+            background: #e6ac00;
+            color: #fff
+        }
+
+        .inq-btn-reply {
+            background: #d4edda;
+            color: #155724
+        }
+
+        .inq-btn-reply:hover {
+            background: #155724;
+            color: #fff
+        }
+
+        /* Modal overlay */
+        .inq-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            background: rgba(0, 0, 0, .55);
+            align-items: center;
+            justify-content: center
+        }
+
+        .inq-modal-box {
+            background: #fff;
+            border-radius: 16px;
+            width: 95%;
+            max-width: 560px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, .25)
+        }
+
+        .inq-modal-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 18px 22px;
+            border-bottom: 1px solid #eee;
+            background: #f8f9fa;
+            border-radius: 16px 16px 0 0
+        }
+
+        .inq-modal-head h3 {
+            margin: 0;
+            font-size: 16px;
+            color: #1a1a2e
+        }
+
+        .inq-modal-head h3 i {
+            color: #FFC107;
+            margin-right: 8px
+        }
+
+        .inq-modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #aaa;
+            line-height: 1;
+            padding: 0
+        }
+
+        .inq-modal-close:hover {
+            color: #333
+        }
+
+        .inq-modal-body {
+            padding: 24px
+        }
+
+        .inq-modal-info {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 14px 16px;
+            margin-bottom: 14px
+        }
+
+        .inq-modal-info span {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: #444;
+            padding: 4px 0
+        }
+
+        .inq-modal-info span i {
+            color: #FFC107;
+            width: 16px;
+            text-align: center
+        }
+
+        .inq-modal-msg {
+            background: #fffbf0;
+            border: 1px solid #ffe082;
+            border-radius: 10px;
+            padding: 16px;
+            margin-bottom: 18px
+        }
+
+        .inq-modal-msg label {
+            font-size: 11px;
+            font-weight: 700;
+            color: #aaa;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+            display: block;
+            margin-bottom: 8px
+        }
+
+        .inq-modal-msg p {
+            margin: 0;
+            font-size: 14px;
+            line-height: 1.7;
+            color: #333
+        }
+
+        .inq-modal-footer {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap
+        }
+
+        .inq-modal-act {
+            padding: 8px 18px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all .15s
+        }
+
+        .inq-modal-act-read {
+            background: #fff3cd;
+            color: #856404
+        }
+
+        .inq-modal-act-read:hover {
+            background: #e6ac00;
+            color: #fff
+        }
+
+        .inq-modal-act-reply {
+            background: #d4edda;
+            color: #155724
+        }
+
+        .inq-modal-act-reply:hover {
+            background: #155724;
+            color: #fff
+        }
+
+        @media(max-width:768px) {
+
+            .inq-table th:nth-child(4),
+            .inq-table td:nth-child(4) {
+                display: none
+            }
+
+            .inq-stats {
+                gap: 8px
+            }
+        }
+    </style>
 </head>
 
 <body>
@@ -833,7 +1360,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
             </button>
             <div class="logo">
                 <a href="dashboard.php">
-                    <img src="../../assets/img/logo_no_background.png" alt="Solar Power Logo">
+                    <img src="../../assets/img/new_logo.png" alt="Solar Power Logo">
                 </a>
             </div>
 
@@ -841,7 +1368,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 <i class="fas fa-chart-line"></i>
                 <span>Dashboard</span>
             </div>
-
 
             <div class="menu-label">CUSTOMER OPERATIONS</div>
             <div class="menu-item" onclick="showPage('inquiries', 'Inquiries')" data-tooltip="Inquiries">
@@ -855,10 +1381,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
             </div>
 
             <div class="menu-label">PRODUCT MANAGEMENT</div>
+            <div class="menu-item" onclick="showPage('brands', 'Brands')" data-tooltip="Brands">
+                <i class="fas fa-trademark"></i>
+                <span>Brands</span>
+            </div>
             <div class="menu-item" onclick="showPage('product', 'Product')" data-tooltip="Product">
                 <i class="fas fa-box"></i>
                 <span>Product</span>
             </div>
+
 
             <div class="menu-label">SALES & TRANSACTIONS</div>
             <div class="menu-item" onclick="showPage('tracking', 'Tracking')" data-tooltip="Tracking">
@@ -876,16 +1407,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 <span>Quotation</span>
             </div>
 
+            <div class="menu-label">ARCHIVE</div>
+            <div class="menu-item" onclick="showPage('archive', 'Archive')" data-tooltip="Archive">
+                <i class="fas fa-map-marker-alt"></i>
+                <span>Archived</span>
+            </div>
+
             <div class="menu-label">SUPPLY MANAGEMENT</div>
             <div class="menu-item" onclick="showPage('suppliers', 'Suppliers')" data-tooltip="Suppliers">
                 <i class="fas fa-truck"></i>
                 <span>Suppliers</span>
-            </div>
-
-            <div class="menu-label">ARCHIVE</div>
-            <div class="menu-item" onclick="showPage('archive', 'Archive')" data-tooltip="Archive">
-                <i class="fas fa-archive"></i>
-                <span>Archive</span>
             </div>
 
             <div class="menu-label">ACCOUNT</div>
@@ -907,14 +1438,20 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 </div>
 
                 <div class="user-menu">
-                    <div class="user-avatar">
-                        <span><?php echo $initials; ?></span>
+                    <div class="user-avatar staff-header-avatar staff-header-avatar-small">
+                        <?php if (!empty($current_staff['profile_picture']) && file_exists('../../uploads/profiles/' . $current_staff['profile_picture'])): ?>
+                            <img src="../../uploads/profiles/<?= htmlspecialchars($current_staff['profile_picture']) ?>" alt="Profile" class="staff-avatar-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                            <span class="staff-avatar-initials" style="display:none;"><?php echo $initials; ?></span>
+                        <?php else: ?>
+                            <span class="staff-avatar-initials"><?php echo $initials; ?></span>
+                        <?php endif; ?>
                     </div>
 
                     <div class="dropdown-menu" id="userDropdown">
                         <div class="dropdown-header"><?php echo htmlspecialchars($fullName); ?></div>
                         <ul>
-                            <li><a href="../../controllers/logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+                            <li><a href="../../controllers/logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
+                            </li>
                         </ul>
                     </div>
                 </div>
@@ -959,15 +1496,18 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 </div>
 
 
-                <div class="dashboard-details-container" style="display: flex; gap: 20px; margin-top: 25px; flex-wrap: wrap;">
+                <div class="dashboard-details-container"
+                    style="display: flex; gap: 20px; margin-top: 25px; flex-wrap: wrap;">
 
-                    <div class="details-card" style="flex: 2; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+                    <div class="details-card"
+                        style="flex: 2; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
                         <h3 style="margin-bottom: 20px; color: #333; display: flex; align-items: center; gap: 10px;">
                             <i class="fas fa-clock" style="color: #ffc107;"></i> Recent Orders
                         </h3>
                         <table style="width: 100%; border-collapse: collapse;">
                             <thead>
-                                <tr style="text-align: left; border-bottom: 2px solid #f4f4f4; color: #888; font-size: 13px;">
+                                <tr
+                                    style="text-align: left; border-bottom: 2px solid #f4f4f4; color: #888; font-size: 13px;">
                                     <th style="padding: 12px;">ID</th>
                                     <th>Customer</th>
                                     <th>Total</th>
@@ -982,7 +1522,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                                             <td><?php echo htmlspecialchars($order['customer_name']); ?></td>
                                             <td>₱<?php echo number_format($order['total_amount'], 2); ?></td>
                                             <td>
-                                                <span class="status-badge" style="background: #e3f2fd; color: #1976d2; padding: 4px 10px; border-radius: 20px; font-size: 11px; text-transform: uppercase; font-weight: 600;">
+                                                <span class="status-badge"
+                                                    style="background: #e3f2fd; color: #1976d2; padding: 4px 10px; border-radius: 20px; font-size: 11px; text-transform: uppercase; font-weight: 600;">
                                                     <?php echo $order['order_status']; ?>
                                                 </span>
                                             </td>
@@ -997,7 +1538,37 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                         </table>
                     </div>
 
-                    <?php include '../../includes/top_seller_widget.php'; ?>
+                    <div class="details-card"
+                        style="flex: 1; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); text-align: center; min-width: 300px;">
+                        <h3 style="margin-bottom: 20px; color: #333;">Top Selling Product</h3>
+                        <?php if ($best_seller): ?>
+                            <div style="padding: 20px; border: 2px dashed #f1f1f1; border-radius: 10px;">
+                                <div
+                                    style="background: #fff9db; width: 60px; height: 60px; line-height: 60px; border-radius: 50%; margin: 0 auto 15px;">
+                                    <i class="fas fa-medal" style="font-size: 28px; color: #f1c40f;"></i>
+                                </div>
+                                <h2 style="font-size: 22px; margin-bottom: 10px; color: #2c3e50;">
+                                    <?php echo htmlspecialchars($best_seller['product_name']); ?>
+                                </h2>
+                                <div style="display: flex; justify-content: space-around; margin-top: 20px;">
+                                    <div>
+                                        <p style="font-size: 20px; font-weight: bold; color: #27ae60;">
+                                            <?php echo $best_seller['total_qty']; ?>
+                                        </p>
+                                        <p style="font-size: 12px; color: #999; text-transform: uppercase;">Sold</p>
+                                    </div>
+                                    <div>
+                                        <p style="font-size: 20px; font-weight: bold; color: #3498db;">
+                                            <?php echo $best_seller['order_frequency']; ?>
+                                        </p>
+                                        <p style="font-size: 12px; color: #999; text-transform: uppercase;">Orders</p>
+                                    </div>
+                                </div>
+                            </div>
+                        <?php else: ?>
+                            <p style="color: #999; margin-top: 30px;">No sales data available.</p>
+                        <?php endif; ?>
+                    </div>
 
                     <div class="details-card" style="flex:1; min-width:300px;">
                         <h3><i class="fas fa-solar-panel"></i> Solar Metrics</h3>
@@ -1038,291 +1609,171 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
 
                     <div class="details-card sales-location-card" style="grid-column: span 3;">
                         <h3><i class="fas fa-map-marker-alt"></i> Sales by Location (Live)</h3>
-                        <div id="freeMap" style="width: 100%; height: 450px; border-radius: 12px; margin-top: 15px; border: 1px solid #ddd;"></div>
+                        <div id="freeMap"
+                            style="width: 100%; height: 450px; border-radius: 12px; margin-top: 15px; border: 1px solid #ddd;">
+                        </div>
                     </div>
-                </div>
 
-                <div class="dashboard-graph-sales">
-                    <?php include "includes/graph-revenue.php"; ?>
                 </div>
             </div>
-
-
             <div id="inquiries" class="page-content">
-                <style>
-                /* --- Inquiries Table Modern UI --- */
-                .tracking-stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px;}
-                .tracking-stat-card{background:#fff;border-radius:12px;padding:18px;display:flex;align-items:center;gap:16px;box-shadow:0 2px 8px rgba(0,0,0,.06);border-left:4px solid transparent;}
-                .stat-all{border-left-color:#3498db;}
-                .stat-transit{border-left-color:#f39c12;}
-                .stat-delivered{border-left-color:#27ae60;}
-                .stat-delivery{border-left-color:#3b82f6;}
-                .stat-icon-wrapper{width:52px;height:52px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;}
-                .stat-all .stat-icon-wrapper{background:#e3f2fd;color:#3498db;}
-                .stat-transit .stat-icon-wrapper{background:#fff3e0;color:#f39c12;}
-                .stat-delivered .stat-icon-wrapper{background:#e8f5e9;color:#27ae60;}
-                .stat-delivery .stat-icon-wrapper{background:#eff6ff;color:#3b82f6;}
-                .stat-details{display:flex;flex-direction:column;}
-                .stat-label{font-size:12px;color:#7f8c8d;font-weight:500;margin-bottom:3px;}
-                .stat-value{font-size:28px;font-weight:700;color:#2c3e50;line-height:1;}
-                .inq-search-bar{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;}
-                .inq-search-wrapper{position:relative;flex:1;min-width:220px;}
-                .inq-search-wrapper i{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#aaa;font-size:14px;pointer-events:none;}
-                .inq-search-input{width:100%;padding:10px 14px 10px 38px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:14px;font-family:inherit;transition:border-color .2s;box-sizing:border-box;}
-                .inq-search-input:focus{outline:none;border-color:#2a7a5b;box-shadow:0 0 0 3px rgba(42,122,91,.1);}
-                .inq-filter-select{padding:10px 14px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:13px;font-family:inherit;background:#fff;cursor:pointer;transition:border-color .2s;}
-                .inq-filter-select:focus{outline:none;border-color:#2a7a5b;}
-                .inq-count-badge{display:inline-block;background:#f0faf5;color:#2a7a5b;border:1px solid #b7e4ce;padding:4px 14px;border-radius:20px;font-size:13px;font-weight:600;margin-bottom:12px;}
-                .inq-bulk-bar{display:none;background:#2a7a5b;color:#fff;padding:12px 20px;border-radius:10px;margin-bottom:12px;align-items:center;justify-content:space-between;gap:10px;font-size:14px;font-weight:600;}
-                .inq-bulk-bar.visible{display:flex;}
-                .inq-bulk-btn{padding:7px 16px;border:none;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:6px;}
-                .inq-bulk-btn-mark{background:#fff;color:#2a7a5b;}
-                .inq-bulk-btn-mark:hover{background:#e6f4ef;}
-                .inq-bulk-btn-clear{background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.4);}
-                .inq-bulk-btn-clear:hover{background:rgba(255,255,255,.3);}
-                .inquiries-table-wrapper{overflow-x:auto;background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.07);}
-                .inquiries-table{width:100%;border-collapse:collapse;font-size:13.5px;min-width:750px;}
-                .inquiries-table thead tr{background:#2a7a5b;}
-                .inquiries-table thead th{padding:13px 14px;text-align:left;font-weight:600;color:#fff;font-size:13px;letter-spacing:.3px;border:none;white-space:nowrap;}
-                .inquiries-table thead th:first-child{border-radius:12px 0 0 0;width:46px;text-align:center;}
-                .inquiries-table thead th:last-child{border-radius:0 12px 0 0;}
-                .inquiries-table tbody tr{border-bottom:1px solid #f0f0f0;transition:background .15s;}
-                .inquiries-table tbody tr:last-child{border-bottom:none;}
-                .inquiries-table tbody tr:hover{background:#f7faf9;}
-                .inquiries-table tbody td{padding:12px 14px;color:#3a3a3a;vertical-align:middle;border:none;}
-                .inquiries-table tbody td:first-child{text-align:center;width:46px;}
-                .inq-checkbox{width:16px;height:16px;accent-color:#2a7a5b;cursor:pointer;}
-                .inq-message-preview{max-width:240px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#666;font-style:italic;font-size:12px;}
-                .inq-status{display:inline-block;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;letter-spacing:.3px;text-transform:capitalize;}
-                .inq-status.new{background:#fff3cd;color:#856404;}
-                .inq-status.read{background:#d1fae5;color:#065f46;}
-                .inq-status.replied{background:#dbeafe;color:#1e3a8a;}
-                .inq-actions{display:flex;gap:6px;align-items:center;}
-                .inq-btn{padding:5px 12px;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:4px;white-space:nowrap;}
-                .inq-btn-read{background:#2a7a5b;color:#fff;}
-                .inq-btn-read:hover{background:#1e5c43;transform:translateY(-1px);}
-                .inq-btn-replied{background:#3b82f6;color:#fff;}
-                .inq-btn-replied:hover{background:#2563eb;transform:translateY(-1px);}
-                .inq-btn-view{background:#f3f4f6;color:#374151;border:1px solid #e5e7eb;}
-                .inq-btn-view:hover{background:#e5e7eb;transform:translateY(-1px);}
-                </style>
 
-                <h2 style="color:#2d3748;margin-bottom:20px;font-size:26px;">
-                    <i class="fas fa-envelope-open-text" style="color:#2a7a5b;margin-right:10px;"></i>Inquiries
-                </h2>
 
-                <!-- Stats -->
-                <div class="tracking-stats-grid">
-                    <div class="tracking-stat-card stat-all">
-                        <div class="stat-icon-wrapper"><i class="fas fa-envelope-open-text"></i></div>
-                        <div class="stat-details"><span class="stat-label">Total Inquiries</span><span class="stat-value" id="totalCount"></span></div>
-                    </div>
-                    <div class="tracking-stat-card stat-transit">
-                        <div class="stat-icon-wrapper"><i class="fas fa-envelope"></i></div>
-                        <div class="stat-details"><span class="stat-label">New / Unread</span><span class="stat-value" id="newCount"></span></div>
-                    </div>
-                    <div class="tracking-stat-card stat-delivered">
-                        <div class="stat-icon-wrapper"><i class="fas fa-check-circle"></i></div>
-                        <div class="stat-details"><span class="stat-label">Read</span><span class="stat-value" id="readCount"></span></div>
-                    </div>
-                    <div class="tracking-stat-card stat-delivery">
-                        <div class="stat-icon-wrapper"><i class="fas fa-reply"></i></div>
-                        <div class="stat-details"><span class="stat-label">Replied</span><span class="stat-value" id="repliedCount"></span></div>
-                    </div>
-                </div>
+                <div class="inq-wrap">
 
-                <!-- Search + Filter -->
-                <div class="inq-search-bar">
-                    <div class="inq-search-wrapper">
-                        <i class="fas fa-search"></i>
-                        <input type="text" class="inq-search-input" id="inqSearch" placeholder="Search by name, email, or phone…">
-                    </div>
-                    <select class="inq-filter-select" id="inqStatusFilter">
-                        <option value="">All Status</option>
-                        <option value="new">New</option>
-                        <option value="read">Read</option>
-                        <option value="replied">Replied</option>
-                    </select>
-                </div>
-
-                <div class="inq-count-badge" id="inqCountBadge"></div>
-
-                <!-- Bulk Bar -->
-                <div class="inq-bulk-bar" id="inqBulkBar">
-                    <span id="inqBulkCount">0 selected</span>
-                    <div style="display:flex;gap:8px;">
-                        <button class="inq-bulk-btn inq-bulk-btn-mark" onclick="InqModule.bulkMarkRead()">
-                            <i class="fas fa-check-double"></i> Mark as Read
-                        </button>
-                        <button class="inq-bulk-btn inq-bulk-btn-clear" onclick="InqModule.clearSelection()">
-                            <i class="fas fa-times"></i> Deselect All
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Table -->
-                <div class="inquiries-table-wrapper">
-                    <table class="inquiries-table">
-                        <thead>
-                            <tr>
-                                <th><input type="checkbox" class="inq-checkbox" id="inqSelectAll"></th>
-                                <th>Name</th>
-                                <th>Email</th>
-                                <th>Phone</th>
-                                <th>Message</th>
-                                <th>Status</th>
-                                <th>Date</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="inqTableBody"></tbody>
-                    </table>
-                </div>
-
-                <!-- Message Viewer Modal -->
-                <div id="inqViewModal" class="staffModal">
-                    <div class="staffModal-content">
-                        <div class="staffModal-header">
-                            <h3><i class="fas fa-envelope-open-text"></i> <span id="inqModalSenderName"></span></h3>
-                            <button class="close" onclick="document.getElementById('inqViewModal').classList.remove('show')">&times;</button>
+                    <!-- Stats -->
+                    <div class="inq-stats">
+                        <div class="inq-stat inq-s-total">
+                            <i class="fas fa-inbox"></i>
+                            <div><span class="inq-stat-num"><?php echo $total_inquiries; ?></span><span
+                                    class="inq-stat-lbl">Total</span></div>
                         </div>
-                        <div class="staffModal-body">
-                            <div style="background:#f9fafb;border-radius:10px;padding:14px;margin-bottom:14px;">
-                                <p style="font-size:11px;color:#888;margin-bottom:3px;text-transform:uppercase;letter-spacing:.5px;">From</p>
-                                <p style="font-weight:600;color:#2d3748;" id="inqModalSenderEmail"></p>
-                            </div>
-                            <div style="background:#f9fafb;border-radius:10px;padding:16px;line-height:1.75;color:#374151;font-size:14px;" id="inqModalBody"></div>
+                        <div class="inq-stat inq-s-new">
+                            <i class="fas fa-star"></i>
+                            <div><span
+                                    class="inq-stat-num"><?php echo count(array_filter($all_inquiries, fn($i) => $i['status'] === 'new')); ?></span><span
+                                    class="inq-stat-lbl">New</span></div>
                         </div>
-                        <div class="staffModal-footer">
-                            <button class="staffModal-btn-secondary" onclick="document.getElementById('inqViewModal').classList.remove('show')">
-                                <i class="fas fa-times"></i> Close
-                            </button>
+                        <div class="inq-stat inq-s-read">
+                            <i class="fas fa-eye"></i>
+                            <div><span
+                                    class="inq-stat-num"><?php echo count(array_filter($all_inquiries, fn($i) => $i['status'] === 'read')); ?></span><span
+                                    class="inq-stat-lbl">Read</span></div>
+                        </div>
+                        <div class="inq-stat inq-s-replied">
+                            <i class="fas fa-reply"></i>
+                            <div><span
+                                    class="inq-stat-num"><?php echo count(array_filter($all_inquiries, fn($i) => $i['status'] === 'replied')); ?></span><span
+                                    class="inq-stat-lbl">Replied</span></div>
                         </div>
                     </div>
+
+                    <!-- Search & Filter -->
+                    <div class="inq-toolbar">
+                        <input type="text" id="inqSearch" class="inq-search"
+                            placeholder="Search by name, email or phone…">
+                        <select id="inqStatusFilter" class="inq-filter-sel">
+                            <option value="">All Status</option>
+                            <option value="new">New</option>
+                            <option value="read">Read</option>
+                            <option value="replied">Replied</option>
+                        </select>
+                    </div>
+
+                    <!-- Table -->
+                    <div class="inq-table-wrap">
+                        <table class="inq-table">
+                            <thead>
+                                <tr>
+                                    <th class="inq-td-num">#</th>
+                                    <th>Customer</th>
+                                    <th>Contact Info</th>
+                                    <th>Message Preview</th>
+                                    <th>Date Submitted</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="inqBody">
+                                <?php if (empty($all_inquiries)): ?>
+                                    <tr class="inq-empty-row">
+                                        <td colspan="7">
+                                            <i class="fas fa-inbox"></i>
+                                            No inquiries yet. Messages from the contact form will appear here.
+                                        </td>
+                                    </tr>
+                                <?php else: ?>
+                                    <?php foreach ($all_inquiries as $idx => $msg): ?>
+                                        <?php
+                                        $safeMsg = htmlspecialchars($msg['message'], ENT_QUOTES);
+                                        $safeName = htmlspecialchars($msg['name'], ENT_QUOTES);
+                                        $safeEmail = htmlspecialchars($msg['email'], ENT_QUOTES);
+                                        $safePhone = htmlspecialchars($msg['phone'] ?? '', ENT_QUOTES);
+                                        $dt = new DateTime($msg['created_at']);
+                                        $shortMsg = mb_strlen($msg['message']) > 70 ? mb_substr($msg['message'], 0, 70) . '…' : $msg['message'];
+                                        $jsonData = htmlspecialchars(json_encode($msg), ENT_QUOTES);
+                                        ?>
+                                        <tr class="inq-row" data-name="<?php echo strtolower($safeName); ?>"
+                                            data-email="<?php echo strtolower($safeEmail); ?>"
+                                            data-phone="<?php echo strtolower($safePhone); ?>"
+                                            data-status="<?php echo $msg['status']; ?>">
+                                            <td class="inq-td-num"><?php echo $idx + 1; ?></td>
+                                            <td>
+                                                <div class="inq-name-cell">
+                                                    <div class="inq-avatar">
+                                                        <?php echo strtoupper(substr($msg['name'], 0, 1)); ?>
+                                                    </div>
+                                                    <div>
+                                                        <div class="inq-fullname"><?php echo $safeName; ?></div>
+                                                        <?php if ($msg['status'] === 'new'): ?><span
+                                                                class="inq-new-pill">NEW</span><?php endif; ?>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="inq-contact-cell">
+                                                    <span><i class="fas fa-envelope"></i><?php echo $safeEmail; ?></span>
+                                                    <?php if (!empty($msg['phone'])): ?><span><i
+                                                                class="fas fa-phone"></i><?php echo $safePhone; ?></span><?php endif; ?>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="inq-msg-preview" title="<?php echo $safeMsg; ?>"
+                                                    onclick="inqOpen(<?php echo $jsonData; ?>)">
+                                                    <?php echo htmlspecialchars($shortMsg); ?>
+                                                </div>
+                                            </td>
+                                            <td class="inq-date-cell">
+                                                <?php echo $dt->format('M j, Y'); ?><small><?php echo $dt->format('g:i A'); ?></small>
+                                            </td>
+                                            <td>
+                                                <span class="inq-badge inq-badge-<?php echo $msg['status']; ?>"
+                                                    id="inqBadge<?php echo $msg['id']; ?>">
+                                                    <?php echo ucfirst($msg['status']); ?>
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <div class="inq-actions">
+                                                    <button class="inq-btn inq-btn-view"
+                                                        onclick="inqOpen(<?php echo $jsonData; ?>)" title="View message">
+                                                        <i class="fas fa-eye"></i>
+                                                    </button>
+                                                    <?php if ($msg['status'] === 'new'): ?>
+                                                        <button class="inq-btn inq-btn-read"
+                                                            id="inqReadBtn<?php echo $msg['id']; ?>"
+                                                            onclick="inqSetStatus(<?php echo $msg['id']; ?>, 'read')"
+                                                            title="Mark as Read">
+                                                            <i class="fas fa-check"></i>
+                                                        </button>
+                                                    <?php endif; ?>
+                                                    <?php if ($msg['status'] !== 'replied'): ?>
+                                                        <button class="inq-btn inq-btn-reply"
+                                                            id="inqReplyBtn<?php echo $msg['id']; ?>"
+                                                            onclick="inqSetStatus(<?php echo $msg['id']; ?>, 'replied')"
+                                                            title="Mark as Replied">
+                                                            <i class="fas fa-reply"></i>
+                                                        </button>
+                                                    <?php endif; ?>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
 
-                <div class="toast-container" id="toastContainer"></div>
-
-                <script>
-                // Convert PHP $all_inquiries to JS array
-                let allInquiries = <?php echo json_encode($all_inquiries); ?>;
-                let filteredData = [...allInquiries];
-
-                function esc(str) { const d=document.createElement('div'); d.textContent=str; return d.innerHTML; }
-                function cap(str) { return str.charAt(0).toUpperCase()+str.slice(1); }
-
-                function renderTable(data) {
-                    const tbody = document.getElementById('inqTableBody');
-                    document.getElementById('inqCountBadge').textContent = `${data.length} inquir${data.length !== 1 ? 'ies' : 'y'}`;
-
-                    // Update stats
-                    document.getElementById('totalCount').textContent   = allInquiries.length;
-                    document.getElementById('newCount').textContent     = allInquiries.filter(r => r.status === 'new').length;
-                    document.getElementById('readCount').textContent    = allInquiries.filter(r => r.status === 'read').length;
-                    document.getElementById('repliedCount').textContent = allInquiries.filter(r => r.status === 'replied').length;
-
-                    if (!data.length) {
-                        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:50px 20px;color:#aaa;">
-                            <i class="fas fa-inbox" style="font-size:36px;display:block;margin-bottom:10px;color:#ddd;"></i>
-                            No inquiries found.</td></tr>`;
-                        return;
-                    }
-
-                    tbody.innerHTML = data.map(row => `
-                        <tr class="inq-row" data-id="${row.id}" data-status="${row.status}"
-                            data-name="${row.name ? row.name.toLowerCase() : ''}"
-                            data-email="${row.email ? row.email.toLowerCase() : ''}"
-                            data-phone="${row.phone ? row.phone : ''}">
-                            <td><input type="checkbox" class="inq-checkbox inq-row-check" data-id="${row.id}" onchange="InqModule.onRowCheck()"></td>
-                            <td style="font-weight:600;color:#2d3748;white-space:nowrap;">${esc(row.name || '')}</td>
-                            <td style="color:#3b82f6;">${esc(row.email || '')}</td>
-                            <td style="white-space:nowrap;">${esc(row.phone || '')}</td>
-                            <td><div class="inq-message-preview" title="${esc(row.message || '')}">${esc(row.message || '')}</div></td>
-                            <td><span class="inq-status ${row.status}">${cap(row.status)}</span></td>
-                            <td style="color:#888;white-space:nowrap;font-size:12px;">${row.created_at || ''}</td>
-                            <td>
-                                <div class="inq-actions">
-                                    ${row.status === 'new' ? `<button class="inq-btn inq-btn-read" onclick="InqModule.markStatus(${row.id},'read',this)"><i class="fas fa-check"></i> Read</button>` : ''}
-                                    ${row.status !== 'replied' ? `<button class="inq-btn inq-btn-replied" onclick="InqModule.markStatus(${row.id},'replied',this)"><i class="fas fa-reply"></i> Replied</button>` : ''}
-                                    <button class="inq-btn inq-btn-view" onclick="InqModule.viewMessage(${row.id},'${esc(row.name || '')}','${(row.message || '').replace(/'/g,"\\'")}','${esc(row.email || '')}')">
-                                        <i class="fas fa-eye"></i>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                    `).join('');
-                }
-
-                const InqModule = {
-                    filter() {
-                        const term   = document.getElementById('inqSearch').value.toLowerCase();
-                        const status = document.getElementById('inqStatusFilter').value;
-                        filteredData = allInquiries.filter(r => {
-                            const matchSearch = !term || (r.name && r.name.toLowerCase().includes(term)) || (r.email && r.email.toLowerCase().includes(term)) || (r.phone && r.phone.includes(term));
-                            const matchStatus = !status || r.status === status;
-                            return matchSearch && matchStatus;
-                        });
-                        renderTable(filteredData);
-                    },
-                    toggleSelectAll() {
-                        const cb = document.getElementById('inqSelectAll');
-                        document.querySelectorAll('.inq-row-check').forEach(c => c.checked = cb.checked);
-                        this.onRowCheck();
-                    },
-                    onRowCheck() {
-                        const checked = document.querySelectorAll('.inq-row-check:checked');
-                        document.getElementById('inqBulkCount').textContent = `${checked.length} selected`;
-                        document.getElementById('inqBulkBar').classList.toggle('visible', checked.length > 0);
-                    },
-                    clearSelection() {
-                        document.querySelectorAll('.inq-row-check, #inqSelectAll').forEach(c => c.checked = false);
-                        document.getElementById('inqBulkBar').classList.remove('visible');
-                    },
-                    bulkMarkRead() {
-                        const checked = document.querySelectorAll('.inq-row-check:checked');
-                        let count = 0;
-                        checked.forEach(cb => {
-                            const id = parseInt(cb.dataset.id);
-                            const rec = allInquiries.find(r => r.id === id);
-                            if (rec && rec.status === 'new') { rec.status = 'read'; count++; }
-                        });
-                        this.clearSelection();
-                        this.filter();
-                        showToast(`${count} inquir${count !== 1 ? 'ies' : 'y'} marked as read.`, 'success');
-                    },
-                    markStatus(id, status, btn) {
-                        btn.disabled = true;
-                        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-                        setTimeout(() => {
-                            const rec = allInquiries.find(r => r.id === id);
-                            if (rec) rec.status = status;
-                            this.filter();
-                            showToast(`Marked as ${status}!`, 'success');
-                        }, 600);
-                    },
-                    viewMessage(id, name, message, email) {
-                        document.getElementById('inqModalSenderName').textContent = name;
-                        document.getElementById('inqModalSenderEmail').textContent = email;
-                        document.getElementById('inqModalBody').textContent = message;
-                        document.getElementById('inqViewModal').classList.add('show');
-                    }
-                };
-
-                function showToast(msg, type='success') {
-                    const c = document.getElementById('toastContainer');
-                    const t = document.createElement('div');
-                    t.className = `toast${type==='error'?' error':''}`;
-                    t.innerHTML = `<i class="fas fa-${type==='success'?'check-circle':'exclamation-circle'}" style="color:${type==='success'?'#27ae60':'#e74c3c'};font-size:18px;"></i><span class="toast-msg">${msg}</span><button class="toast-close" onclick="this.parentElement.remove()">×</button>`;
-                    c.appendChild(t);
-                    setTimeout(() => { t.style.animation='toastIn .3s ease reverse'; setTimeout(()=>t.remove(),300); }, 3000);
-                }
-
-                document.getElementById('inqSearch').addEventListener('input', () => InqModule.filter());
-                document.getElementById('inqStatusFilter').addEventListener('change', () => InqModule.filter());
-                document.getElementById('inqSelectAll').addEventListener('change', function() { InqModule.toggleSelectAll(); });
-
-                renderTable(allInquiries);
-                </script>
+                <!-- Inquiry Detail Modal -->
+                <div class="inq-overlay" id="inqOverlay">
+                    <div class="inq-modal-box">
+                        <div class="inq-modal-head">
+                            <h3><i class="fas fa-envelope-open-text"></i>Inquiry Details</h3>
+                            <button class="inq-modal-close" onclick="inqClose()">&times;</button>
+                        </div>
+                        <div class="inq-modal-body" id="inqModalBody"></div>
+                    </div>
+                </div>
             </div>
 
 
@@ -1339,7 +1790,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                         </button>
 
                         <button class="btn-bulk-delete" id="bulkDeleteBtn">
-                            <i class="fas fa-trash"></i> Archive Selected
+                            <i class="fas fa-trash"></i> Archived
                         </button>
                         <button class="btn-deselect" id="deselectAllBtn">
                             <i class="fas fa-times"></i> Deselect All
@@ -1402,7 +1853,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                             $image_folder = "../../uploads/products/{$product_id}/";
 
                             // Default placeholder
-                            $image_src = '../assets/img/product-placeholder.png';
+                            $image_src = '../../assets/img/product-placeholder.png';
 
                             // Check if the folder exists and get the first image
                             if (is_dir($image_folder)) {
@@ -1413,17 +1864,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                                     $image_src = $images[0];
                                 }
                             }
-                        ?>
+                            ?>
                             <div class="product-card" data-product-id="<?php echo $product['id']; ?>">
                                 <div class="product-select">
-                                    <input type="checkbox" class="product-checkbox-input" data-product-id="<?php echo $product['id']; ?>">
+                                    <input type="checkbox" class="product-checkbox-input"
+                                        data-product-id="<?php echo $product['id']; ?>">
                                 </div>
 
                                 <div class="product-image">
-                                    <img
-                                        src="<?php echo $image_src; ?>"
+                                    <img src="<?php echo $image_src; ?>"
                                         alt="<?php echo htmlspecialchars($product['displayName']); ?>"
-                                        onerror="this.src='../assets/img/product-placeholder.png'">
+                                        onerror="this.src='../../assets/img/product-placeholder.png'">
                                 </div>
 
                                 <div class="product-content">
@@ -1431,7 +1882,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                                     <p class="product-brand"><?php echo htmlspecialchars($product['brandName']); ?></p>
 
                                     <div class="product-meta">
-                                        <span class="product-category"><?php echo htmlspecialchars($product['category']); ?></span>
+                                        <span
+                                            class="product-category"><?php echo htmlspecialchars($product['category']); ?></span>
                                     </div>
 
                                     <div class="product-footer">
@@ -1444,7 +1896,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                             </div>
                         <?php endforeach; ?>
                     <?php else: ?>
-                        <p class="empty-state" style="text-align: center; padding: 20px;">No products found in the database.</p>
+                        <p class="empty-state" style="text-align: center; padding: 20px;">No products found in the database.
+                        </p>
                     <?php endif; ?>
                 </div>
             </div>
@@ -1475,13 +1928,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                                 </div>
                                 <div class="carousel-counter" id="carouselCounter"></div>
                                 <div class="carousel-thumbnails-wrapper">
-                                    <button type="button" class="carousel-nav carousel-prev" id="carouselPrevBtn" onclick="carouselPrev()" style="display: none;">
+                                    <button type="button" class="carousel-nav carousel-prev" id="carouselPrevBtn"
+                                        onclick="carouselPrev()" style="display: none;">
                                         <i class="fas fa-chevron-left"></i>
                                     </button>
                                     <div id="carouselThumbnails" class="carousel-thumbnails">
                                         <!-- Thumbnails will be loaded here -->
                                     </div>
-                                    <button type="button" class="carousel-nav carousel-next" id="carouselNextBtn" onclick="carouselNext()" style="display: none;">
+                                    <button type="button" class="carousel-nav carousel-next" id="carouselNextBtn"
+                                        onclick="carouselNext()" style="display: none;">
                                         <i class="fas fa-chevron-right"></i>
                                     </button>
                                 </div>
@@ -1540,6 +1995,20 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                                 </div>
                             </div>
 
+                            <div class="form-row" id="editMoqWrapper" style="display:none;">
+                                <div class="form-group">
+                                    <label>
+                                        <i class="fas fa-layer-group"></i> Min. Order Qty (MOQ)
+                                        <span
+                                            title="Minimum units a customer must order. Applies to Solar Panels and Mounting &amp; Accessories."
+                                            style="cursor:help; color:#888;">&#9432;</span>
+                                    </label>
+                                    <input type="number" name="moq" id="editMoq" min="1" value="1">
+                                    <small id="editMoqHint" style="color:#888;">Solar Panels: recommended MOQ ≥
+                                        2</small>
+                                </div>
+                            </div>
+
                             <div class="form-group">
                                 <label><i class="fas fa-align-left"></i> Description</label>
                                 <textarea name="description" id="editDescription" rows="5" required></textarea>
@@ -1565,8 +2034,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
             <div id="deleteProductModal" class="modal">
                 <div class="modal-content">
                     <span class="close" onclick="closeDeleteModal()">&times;</span>
-                    <h2>Confirm Archive</h2>
-                    <p>Are you sure you want to archive this product?</p>
+                    <h2>Confirm Deletion</h2>
+                    <p>Are you sure you want to delete this product?</p>
                     <p class="warning-text">This action cannot be undone.</p>
                     <form id="deleteProductForm" method="POST" action="delete_product.php">
                         <input type="hidden" name="product_id" id="deleteProductId">
@@ -1582,106 +2051,98 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
             <div id="bulkDeleteModal" class="modal">
                 <div class="modal-content">
                     <span class="close" onclick="closeBulkDeleteModal()">&times;</span>
-                    <h2>Confirm Bulk Deletion</h2>
+                    <h2>Confirm Bulk Archived</h2>
                     <p>Are you sure you want to archive <strong id="bulkDeleteCount">0</strong> selected product(s)?</p>
-                    <p class="warning-text">This action cannot be undone.</p>
                     <form id="bulkDeleteForm" method="POST" action="bulk_delete_products.php">
                         <input type="hidden" name="product_ids" id="bulkDeleteProductIds">
                         <div class="modal-actions">
                             <button type="button" onclick="closeBulkDeleteModal()" class="btn-cancel">Cancel</button>
-                            <button type="submit" class="btn-confirm-delete">Yes, Archive All</button>
+                            <button type="submit" class="btn-confirm-delete">Yes, Archived All</button>
                         </div>
                     </form>
                 </div>
             </div>
 
             <!-- Quotation Modal -->
-            <div id="quotationModal" class="staffModal">
-                <div class="staffModal-content">
-                    <div class="staffModal-header">
-                        <h3>
-                            <i class="fas fa-file-invoice"></i>
-                            <span id="quotationModalTitle">New Quotation</span>
-                        </h3>
-                        <span class="close" onclick="closeQuotationModal()">&times;</span>
-                    </div>
+            <div id="quotationModal" class="modal">
+                <div class="modal-quotation modal-medium">
+                    <span class="close" onclick="closeQuotationModal()">&times;</span>
+                    <h2 id="quotationModalTitle"><i class="fas fa-file-invoice"></i> New Quotation</h2>
 
-                    <form id="quotationForm" onsubmit="QuotationModule.saveQuotation(); return false;">
+                    <form id="quotationForm">
                         <input type="hidden" id="quotationId">
 
-                        <div class="staffModal-body">
-                            <div class="staffModal-group">
-                                <label><i class="fas fa-user"></i> Client Name *</label>
-                                <input type="text" id="clientName" required>
+                        <div class="form-group">
+                            <label><i class="fas fa-user"></i> Client Name *</label>
+                            <input type="text" id="clientName" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label><i class="fa-solid fa-envelope"></i> Email *</label>
+                            <input type="text" id="email" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label><i class="fas fa-address-book"></i> Contact Number *</label>
+                            <input type="text" id="contact" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label><i class="fas fa-map-marker-alt"></i> Location</label>
+                            <input type="text" id="location" placeholder="City, Province">
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label><i class="fas fa-solar-panel"></i> System Type *</label>
+                                <select id="systemType" required>
+                                    <option value="">Select System</option>
+                                    <option value="HYBRID">Hybrid</option>
+                                    <option value="SUPPLY-ONLY">Supply Only</option>
+                                    <option value="GRID-TIE-HYBRID">Grid Tie Hybrid</option>
+                                </select>
                             </div>
 
-                            <div class="staffModal-group">
-                                <label><i class="fa-solid fa-envelope"></i> Email *</label>
-                                <input type="text" id="email" required>
-                            </div>
-
-                            <div class="staffModal-group">
-                                <label><i class="fas fa-address-book"></i> Contact Number *</label>
-                                <input type="text" id="contact" required>
-                            </div>
-
-                            <div class="staffModal-group">
-                                <label><i class="fas fa-map-marker-alt"></i> Location</label>
-                                <input type="text" id="location" placeholder="City, Province">
-                            </div>
-
-                            <div class="staffModal-row">
-                                <div class="staffModal-group">
-                                    <label><i class="fas fa-solar-panel"></i> System Type *</label>
-                                    <select id="systemType" required>
-                                        <option value="">Select System</option>
-                                        <option value="HYBRID">Hybrid</option>
-                                        <option value="SUPPLY-ONLY">Supply Only</option>
-                                        <option value="GRID-TIE-HYBRID">Grid Tie Hybrid</option>
-                                    </select>
-                                </div>
-
-                                <div class="staffModal-group">
-                                    <label><i class="fas fa-bolt"></i> kW</label>
-                                    <input type="number" id="kw" min="0" step="0.01" placeholder="0">
-                                </div>
-                            </div>
-
-                            <div class="staffModal-row">
-                                <div class="staffModal-group">
-                                    <label><i class="fas fa-user-tie"></i> Officer *</label>
-                                    <select id="officer" required>
-                                        <option value="">Select Officer</option>
-                                        <option value="PRINCESS">Princess</option>
-                                        <option value="ANNE">Anne</option>
-                                        <option value="GAB">Gab</option>
-                                        <option value="JOY">Joy</option>
-                                    </select>
-                                </div>
-
-                                <div class="staffModal-group">
-                                    <label><i class="fas fa-flag"></i> Status *</label>
-                                    <select id="status" required>
-                                        <option value="SENT">Sent</option>
-                                        <option value="ONGOING">On Going</option>
-                                        <option value="APPROVED">Approved</option>
-                                        <option value="CLOSED">Closed</option>
-                                        <option value="LOSS">Loss</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div class="staffModal-group">
-                                <label><i class="fas fa-comment"></i> Remarks</label>
-                                <textarea id="remarks" rows="3" placeholder="Additional notes..."></textarea>
+                            <div class="form-group">
+                                <label><i class="fas fa-bolt"></i> kW</label>
+                                <input type="number" id="kw" min="0" step="0.01" placeholder="0">
                             </div>
                         </div>
 
-                        <div class="staffModal-footer">
-                            <button type="button" onclick="closeQuotationModal()" class="staffModal-btn-secondary">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label><i class="fas fa-user-tie"></i> Officer *</label>
+                                <select id="officer" required>
+                                    <option value="">Select Officer</option>
+                                    <option value="PRINCESS">Princess</option>
+                                    <option value="ANNE">Anne</option>
+                                    <option value="GAB">Gab</option>
+                                    <option value="JOY">Joy</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label><i class="fas fa-flag"></i> Status *</label>
+                                <select id="status" required>
+                                    <option value="SENT">Sent</option>
+                                    <option value="ONGOING">On Going</option>
+                                    <option value="APPROVED">Approved</option>
+                                    <option value="CLOSED">Closed</option>
+                                    <option value="LOSS">Loss</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label><i class="fas fa-comment"></i> Remarks</label>
+                            <textarea id="remarks" rows="3" placeholder="Additional notes..."></textarea>
+                        </div>
+
+                        <div class="modal-actions">
+                            <button type="button" onclick="closeQuotationModal()" class="btn-cancel">
                                 <i class="fas fa-times"></i> Cancel
                             </button>
-                            <button type="submit" class="staffModal-btn-primary">
+                            <button type="submit" class="btn-save">
                                 <i class="fas fa-save"></i> Save Quotation
                             </button>
                         </div>
@@ -1698,23 +2159,546 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                     <p class="warning-text">This action cannot be undone.</p>
                     <div class="modal-actions">
                         <button type="button" onclick="closeDeleteQuotationModal()" class="btn-cancel">Cancel</button>
-                        <button type="button" onclick="confirmDeleteQuotation()" class="btn-confirm-delete">Yes, Delete</button>
+                        <button type="button" onclick="confirmDeleteQuotation()" class="btn-confirm-delete">Yes,
+                            Delete</button>
                     </div>
                 </div>
             </div>
 
+
+            <!-- ═══════════════ BRANDS PAGE ═══════════════ -->
+            <div id="brands" class="page-content">
+                <style>
+                    /* ── Brands page ── */
+                    .brands-wrap {
+                        padding: 24px;
+                    }
+
+                    .brands-stats {
+                        display: flex;
+                        gap: 14px;
+                        margin-bottom: 22px;
+                        flex-wrap: wrap;
+                    }
+
+                    .brands-stat-box {
+                        background: #fff;
+                        border-radius: 12px;
+                        padding: 18px 24px;
+                        flex: 1;
+                        min-width: 150px;
+                        text-align: center;
+                        box-shadow: 0 2px 8px rgba(0, 0, 0, .06);
+                        border-top: 4px solid #f59e0b;
+                    }
+
+                    .brands-stat-box h4 {
+                        font-size: 11px;
+                        color: #888;
+                        letter-spacing: .6px;
+                        margin-bottom: 6px;
+                    }
+
+                    .brands-stat-box .value {
+                        font-size: 30px;
+                        font-weight: 800;
+                        color: #1e293b;
+                    }
+
+                    .brands-layout {
+                        display: grid;
+                        grid-template-columns: 320px 1fr;
+                        gap: 22px;
+                    }
+
+                    @media(max-width:800px) {
+                        .brands-layout {
+                            grid-template-columns: 1fr;
+                        }
+                    }
+
+                    .brands-card {
+                        background: #fff;
+                        border-radius: 14px;
+                        box-shadow: 0 2px 10px rgba(0, 0, 0, .06);
+                        overflow: hidden;
+                    }
+
+                    .brands-card-head {
+                        padding: 16px 20px;
+                        border-bottom: 1px solid #f0f3fa;
+                        display: flex;
+                        align-items: center;
+                        gap: 10px;
+                    }
+
+                    .brands-card-head h2 {
+                        font-size: 15px;
+                        font-weight: 700;
+                        flex: 1;
+                        color: #1e293b;
+                    }
+
+                    .brands-card-body {
+                        padding: 20px;
+                    }
+
+                    /* form */
+                    .bfg {
+                        margin-bottom: 14px;
+                    }
+
+                    .bfg label {
+                        display: block;
+                        font-size: 12px;
+                        font-weight: 600;
+                        color: #555;
+                        margin-bottom: 5px;
+                    }
+
+                    .bfg input,
+                    .bfg select {
+                        width: 100%;
+                        padding: 9px 13px;
+                        border: 1.5px solid #e2e8f0;
+                        border-radius: 8px;
+                        font-size: 14px;
+                        background: #fafbff;
+                        transition: border .2s;
+                    }
+
+                    .bfg input:focus,
+                    .bfg select:focus {
+                        outline: none;
+                        border-color: #f59e0b;
+                        background: #fff;
+                    }
+
+                    .btn-brand-add {
+                        width: 100%;
+                        padding: 10px;
+                        border: none;
+                        border-radius: 8px;
+                        cursor: pointer;
+                        background: linear-gradient(135deg, #f59e0b, #ffc107);
+                        color: #fff;
+                        font-size: 14px;
+                        font-weight: 600;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        gap: 8px;
+                        transition: opacity .2s;
+                    }
+
+                    .btn-brand-add:hover {
+                        opacity: .88;
+                    }
+
+                    /* toolbar */
+                    .brands-toolbar {
+                        display: flex;
+                        gap: 10px;
+                        flex-wrap: wrap;
+                        margin-bottom: 14px;
+                    }
+
+                    .brands-toolbar input,
+                    .brands-toolbar select {
+                        flex: 1;
+                        min-width: 150px;
+                        padding: 8px 13px;
+                        border: 1.5px solid #e2e8f0;
+                        border-radius: 8px;
+                        font-size: 13px;
+                        background: #fafbff;
+                    }
+
+                    .brands-toolbar input:focus,
+                    .brands-toolbar select:focus {
+                        outline: none;
+                        border-color: #f59e0b;
+                    }
+
+                    /* table */
+                    .brands-table {
+                        width: 100%;
+                        border-collapse: collapse;
+                        font-size: 14px;
+                    }
+
+                    .brands-table thead th {
+                        text-align: left;
+                        padding: 10px 13px;
+                        background: #f8fafc;
+                        color: #64748b;
+                        font-size: 11px;
+                        font-weight: 700;
+                        text-transform: uppercase;
+                        letter-spacing: .5px;
+                        border-bottom: 2px solid #e9ecf3;
+                    }
+
+                    .brands-table tbody tr {
+                        border-bottom: 1px solid #f1f3fa;
+                        transition: background .15s;
+                    }
+
+                    .brands-table tbody tr:hover {
+                        background: #f8fafd;
+                    }
+
+                    .brands-table td {
+                        padding: 11px 13px;
+                    }
+
+                    .cat-badge {
+                        display: inline-block;
+                        padding: 3px 10px;
+                        border-radius: 20px;
+                        font-size: 11px;
+                        font-weight: 600;
+                        background: #e0f2fe;
+                        color: #0369a1;
+                    }
+
+                    .cat-badge.panel {
+                        background: #d1fae5;
+                        color: #065f46;
+                    }
+
+                    .cat-badge.inverter {
+                        background: #ede9fe;
+                        color: #5b21b6;
+                    }
+
+                    .cat-badge.battery {
+                        background: #fef9c3;
+                        color: #92400e;
+                    }
+
+                    .cat-badge.mount {
+                        background: #fee2e2;
+                        color: #991b1b;
+                    }
+
+                    .cat-badge.package {
+                        background: #f0fdf4;
+                        color: #15803d;
+                    }
+
+                    .cat-badge.protect {
+                        background: #fce7f3;
+                        color: #9d174d;
+                    }
+
+                    .brand-action-btns {
+                        display: flex;
+                        gap: 6px;
+                    }
+
+                    .btn-brand-edit,
+                    .btn-brand-del {
+                        border: none;
+                        cursor: pointer;
+                        border-radius: 7px;
+                        padding: 5px 10px;
+                        font-size: 12px;
+                        font-weight: 600;
+                        transition: background .2s;
+                    }
+
+                    .btn-brand-edit {
+                        background: #e0f2fe;
+                        color: #0369a1;
+                    }
+
+                    .btn-brand-edit:hover {
+                        background: #bae6fd;
+                    }
+
+                    .btn-brand-del {
+                        background: #fee2e2;
+                        color: #b91c1c;
+                    }
+
+                    .btn-brand-del:hover {
+                        background: #fecaca;
+                    }
+
+                    .brands-empty td {
+                        text-align: center;
+                        padding: 32px;
+                        color: #aaa;
+                    }
+
+                    /* modals */
+                    .brand-overlay {
+                        display: none;
+                        position: fixed;
+                        inset: 0;
+                        background: rgba(0, 0, 0, .45);
+                        z-index: 1000;
+                        align-items: center;
+                        justify-content: center;
+                    }
+
+                    .brand-overlay.open {
+                        display: flex;
+                    }
+
+                    .brand-modal {
+                        background: #fff;
+                        border-radius: 14px;
+                        padding: 26px;
+                        width: 420px;
+                        max-width: 94vw;
+                        box-shadow: 0 20px 50px rgba(0, 0, 0, .2);
+                        animation: bpopIn .2s ease;
+                    }
+
+                    @keyframes bpopIn {
+                        from {
+                            transform: scale(.9);
+                            opacity: 0
+                        }
+
+                        to {
+                            transform: scale(1);
+                            opacity: 1
+                        }
+                    }
+
+                    .brand-modal h3 {
+                        font-size: 17px;
+                        font-weight: 700;
+                        margin-bottom: 18px;
+                    }
+
+                    .brand-modal-actions {
+                        display: flex;
+                        gap: 10px;
+                        justify-content: flex-end;
+                        margin-top: 18px;
+                    }
+
+                    .btn-bcancel {
+                        padding: 8px 18px;
+                        border: 1.5px solid #e2e8f0;
+                        border-radius: 8px;
+                        background: #fff;
+                        cursor: pointer;
+                        font-size: 13px;
+                    }
+
+                    .btn-bsave {
+                        padding: 8px 18px;
+                        border: none;
+                        border-radius: 8px;
+                        cursor: pointer;
+                        background: linear-gradient(135deg, #f59e0b, #ef4444);
+                        color: #fff;
+                        font-size: 13px;
+                        font-weight: 600;
+                    }
+
+                    .btn-bdelete {
+                        padding: 8px 18px;
+                        border: none;
+                        border-radius: 8px;
+                        cursor: pointer;
+                        background: #dc2626;
+                        color: #fff;
+                        font-size: 13px;
+                        font-weight: 600;
+                    }
+
+                    .confirm-center {
+                        text-align: center;
+                    }
+
+                    .confirm-center p {
+                        color: #555;
+                        margin: 10px 0 4px;
+                    }
+
+                    .confirm-center .warn-txt {
+                        color: #ef4444;
+                        font-size: 12px;
+                    }
+
+                    /* toast */
+                    .brand-toast {
+                        position: fixed;
+                        bottom: 22px;
+                        right: 22px;
+                        z-index: 9999;
+                        padding: 12px 18px;
+                        border-radius: 10px;
+                        font-size: 13px;
+                        font-weight: 600;
+                        color: #fff;
+                        box-shadow: 0 6px 20px rgba(0, 0, 0, .15);
+                        transform: translateY(80px);
+                        opacity: 0;
+                        transition: transform .3s, opacity .3s;
+                        pointer-events: none;
+                    }
+
+                    .brand-toast.show {
+                        transform: translateY(0);
+                        opacity: 1;
+                    }
+
+                    .brand-toast.success {
+                        background: #16a34a;
+                    }
+
+                    .brand-toast.error {
+                        background: #dc2626;
+                    }
+                </style>
+
+                <div class="brands-wrap">
+
+                    <!-- Stats -->
+                    <div class="brands-stats">
+                        <div class="brands-stat-box">
+                            <h4>TOTAL BRANDS</h4>
+                            <div class="value" id="brandStatTotal">–</div>
+                        </div>
+                        <div class="brands-stat-box" style="border-color:#3b82f6;">
+                            <h4>CATEGORIES</h4>
+                            <div class="value" id="brandStatCats">–</div>
+                        </div>
+                    </div>
+
+                    <div class="brands-layout">
+
+                        <!-- LEFT: Add brand form -->
+                        <div>
+                            <div class="brands-card">
+                                <div class="brands-card-head">
+                                    <i class="fas fa-plus-circle" style="color:#f59e0b;font-size:17px;"></i>
+                                    <h2>Add New Brand</h2>
+                                </div>
+                                <div class="brands-card-body">
+                                    <div class="bfg">
+                                        <label><i class="fas fa-trademark"></i> Brand Name *</label>
+                                        <input type="text" id="bNewName" placeholder="e.g. Jinko Solar">
+                                    </div>
+                                    <div class="bfg">
+                                        <label><i class="fas fa-tag"></i> Category *</label>
+                                        <select id="bNewCategory">
+                                            <option value="">— Select Category —</option>
+                                        </select>
+                                    </div>
+                                    <button class="btn-brand-add" onclick="BrandsModule.addBrand()">
+                                        <i class="fas fa-plus"></i> Add Brand
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Tip card -->
+                            <div class="brands-card" style="margin-top:18px;">
+                                <div class="brands-card-head">
+                                    <i class="fas fa-lightbulb" style="color:#f59e0b;font-size:17px;"></i>
+                                    <h2>How it works</h2>
+                                </div>
+                                <div class="brands-card-body" style="font-size:13px;color:#666;line-height:1.9;">
+                                    <p>Brands added here appear dynamically in the <strong>Add Product</strong> form
+                                        when that category is selected.</p>
+                                    <br>
+                                    <p><i class="fas fa-check" style="color:#16a34a;"></i> Add brand → pick category →
+                                        save</p>
+                                    <p><i class="fas fa-check" style="color:#16a34a;"></i> Edit or remove brands anytime
+                                    </p>
+                                    <p><i class="fas fa-check" style="color:#16a34a;"></i> Product form updates
+                                        immediately</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- RIGHT: Brand table -->
+                        <div class="brands-card">
+                            <div class="brands-card-head">
+                                <i class="fas fa-list" style="color:#2563eb;font-size:17px;"></i>
+                                <h2>All Brands</h2>
+                            </div>
+                            <div class="brands-card-body">
+                                <div class="brands-toolbar">
+                                    <input type="text" id="bSearchInput" placeholder="🔍 Search brand…"
+                                        oninput="BrandsModule.applyFilters()">
+                                    <select id="bCatFilter" onchange="BrandsModule.applyFilters()">
+                                        <option value="">All Categories</option>
+                                    </select>
+                                </div>
+                                <table class="brands-table">
+                                    <thead>
+                                        <tr>
+                                            <th>#</th>
+                                            <th>Brand Name</th>
+                                            <th>Category</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="brandsTableBody">
+                                        <tr class="brands-empty">
+                                            <td colspan="4"><i class="fas fa-spinner fa-spin"></i> Loading…</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                    </div><!-- end brands-layout -->
+                </div><!-- end brands-wrap -->
+
+                <!-- Edit Modal -->
+                <div class="brand-overlay" id="bEditOverlay">
+                    <div class="brand-modal">
+                        <h3><i class="fas fa-edit" style="color:#f59e0b;"></i> Edit Brand</h3>
+                        <input type="hidden" id="bEditId">
+                        <div class="bfg">
+                            <label>Brand Name *</label>
+                            <input type="text" id="bEditName" placeholder="Brand name">
+                        </div>
+                        <div class="bfg">
+                            <label>Category *</label>
+                            <select id="bEditCategory"></select>
+                        </div>
+                        <div class="brand-modal-actions">
+                            <button class="btn-bcancel" onclick="BrandsModule.closeEditModal()">Cancel</button>
+                            <button class="btn-bsave" onclick="BrandsModule.saveEdit()"><i class="fas fa-save"></i>
+                                Save</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Delete Confirm Modal -->
+                <div class="brand-overlay" id="bDeleteOverlay">
+                    <div class="brand-modal confirm-center">
+                        <h3 style="color:#dc2626;"><i class="fas fa-trash"></i> Delete Brand</h3>
+                        <input type="hidden" id="bDeleteId">
+                        <p id="bDeleteMsg">Are you sure?</p>
+                        <p class="warn-txt">This action cannot be undone.</p>
+                        <div class="brand-modal-actions" style="justify-content:center;">
+                            <button class="btn-bcancel" onclick="BrandsModule.closeDeleteModal()">Cancel</button>
+                            <button class="btn-bdelete" onclick="BrandsModule.confirmDelete()"><i
+                                    class="fas fa-trash"></i> Yes, Delete</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Toast -->
+                <div class="brand-toast" id="brandToast"></div>
+
+            </div><!-- end #brands page-content -->
+            <!-- ═══════════════ END BRANDS PAGE ═══════════════ -->
+
             <!-- Other page sections remain the same -->
+
             <div id="add-product" class="page-content add-product-page">
-                <?php
-                // Display add product message from PRG redirect (session flash)
-                $addProductMsg = '';
-                if (isset($_SESSION['add_product_msg'])) {
-                    $type = $_SESSION['add_product_msg_type'] ?? 'success';
-                    $msg = htmlspecialchars($_SESSION['add_product_msg'], ENT_QUOTES, 'UTF-8');
-                    $addProductMsg = "<div class='alert {$type}'>{$msg}</div>";
-                    unset($_SESSION['add_product_msg'], $_SESSION['add_product_msg_type']);
-                }
-                ?>
                 <style>
                     .alert {
                         padding: 10px;
@@ -1735,7 +2719,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                     }
                 </style>
 
-                <?php echo $addProductMsg; ?>
+                <?php
+                if (isset($_SESSION['add_product_msg'])) {
+                    $msgType = $_SESSION['add_product_msg_type'] ?? 'success';
+                    echo "<div class='alert {$msgType}'>" . htmlspecialchars($_SESSION['add_product_msg']) . "</div>";
+                    unset($_SESSION['add_product_msg'], $_SESSION['add_product_msg_type']);
+                }
+                ?>
 
                 <form method="POST" action="" enctype="multipart/form-data">
                     <input type="hidden" name="action" value="add_product">
@@ -1773,7 +2763,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                                         <i class="fas fa-cube"></i>
                                         Product Name <span class="required">*</span>
                                     </label>
-                                    <input type="text" id="product-name-input" name="product-name" placeholder="Enter product name" required>
+                                    <input type="text" id="product-name-input" name="product-name"
+                                        placeholder="Enter product name" required>
                                 </div>
 
                                 <div class="form-group">
@@ -1781,7 +2772,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                                         <i class="fas fa-shield-alt"></i>
                                         Warranty <span class="required">*</span>
                                     </label>
-                                    <input type="text" id="warranty" name="warranty" placeholder="e.g., 5 years" value="5 years" required>
+                                    <input type="text" id="warranty" name="warranty" placeholder="e.g., 5 years"
+                                        value="5 years" required>
                                 </div>
 
                                 <div class="form-row-group">
@@ -1791,7 +2783,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                                             Price <span class="required">*</span>
                                         </label>
                                         <div class="input-wrapper">
-                                            <input type="number" id="price-input" name="price" placeholder="0.00" step="0.01" required>
+                                            <input type="number" id="price-input" name="price" placeholder="0.00"
+                                                step="0.01" required>
                                             <span class="input-icon">PHP</span>
                                         </div>
                                     </div>
@@ -1801,7 +2794,24 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                                             <i class="fas fa-boxes"></i>
                                             Stock Quantity <span class="required">*</span>
                                         </label>
-                                        <input type="number" id="stock-quantity-input" name="stock-quantity" placeholder="0" min="0" required>
+                                        <input type="number" id="stock-quantity-input" name="stock-quantity"
+                                            placeholder="0" min="0" required>
+                                    </div>
+                                </div>
+
+                                <div class="form-row-group" id="moq-field-wrapper" style="display:none;">
+                                    <div class="form-group">
+                                        <label for="moq-input">
+                                            <i class="fas fa-layer-group"></i>
+                                            Min. Order Qty (MOQ)
+                                            <span
+                                                title="Minimum units a customer must order. Applies to Solar Panels and Mounting &amp; Accessories."
+                                                style="cursor:help; color:#888;">&#9432;</span>
+                                        </label>
+                                        <input type="number" id="moq-input" name="moq" placeholder="1" min="1"
+                                            value="1">
+                                        <small id="moq-hint-text" style="color:#888;">Solar Panels default to MOQ of
+                                            2</small>
                                     </div>
                                 </div>
 
@@ -1810,7 +2820,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                                         <i class="fas fa-align-left"></i>
                                         Description <span class="required">*</span>
                                     </label>
-                                    <textarea id="description-input" name="description" placeholder="Describe your product features, specifications, and benefits..." required></textarea>
+                                    <textarea id="description-input" name="description"
+                                        placeholder="Describe your product features, specifications, and benefits..."
+                                        required></textarea>
                                 </div>
 
                                 <div class="form-group">
@@ -1820,13 +2832,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                                     </label>
 
                                     <div class="file-upload-box">
-                                        <input
-                                            type="file"
-                                            id="product-images"
-                                            name="product-images[]"
-                                            accept="image/*"
-                                            multiple
-                                            max="15">
+                                        <input type="file" id="product-images" name="product-images[]" accept="image/*"
+                                            multiple max="15">
                                         <div class="file-upload-content">
                                             <i class="fas fa-cloud-upload-alt"></i>
                                             <p>Upload up to 15 images</p>
@@ -1934,8 +2941,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                     <div class="tracking-controls">
                         <div class="tracking-search-box">
                             <i class="fas fa-search"></i>
-                            <input type="text"
-                                id="trackingSearchInput"
+                            <input type="text" id="trackingSearchInput"
                                 placeholder="Search by Order ID, Customer, or Tracking Number...">
                         </div>
 
@@ -2021,7 +3027,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                                         <option value="">Select Location</option>
                                         <option value="Main Warehouse - Alabang">Main Warehouse - Alabang</option>
                                         <option value="Distribution Hub - Makati">Distribution Hub - Makati</option>
-                                        <option value="Distribution Hub - Quezon City">Distribution Hub - Quezon City</option>
+                                        <option value="Distribution Hub - Quezon City">Distribution Hub - Quezon City
+                                        </option>
                                         <option value="Distribution Hub - Cavite">Distribution Hub - Cavite</option>
                                         <option value="Distribution Hub - Laguna">Distribution Hub - Laguna</option>
                                         <option value="In Transit">In Transit</option>
@@ -2029,14 +3036,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                                         <option value="Delivered">Delivered</option>
                                     </select>
                                     <input type="text" id="trackingCustomLocation"
-                                        placeholder="Or type custom location..."
-                                        class="mt-2">
+                                        placeholder="Or type custom location..." class="mt-2">
                                 </div>
 
                                 <div class="form-group">
                                     <label><i class="fas fa-truck"></i> Tracking Number</label>
-                                    <input type="text" id="trackingNumber"
-                                        placeholder="e.g., TRK-2025-001234">
+                                    <input type="text" id="trackingNumber" placeholder="e.g., TRK-2025-001234">
                                 </div>
 
                                 <div class="form-group">
@@ -2049,9 +3054,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                             <div class="tracking-form-right">
                                 <div class="form-group">
                                     <label><i class="fas fa-sticky-note"></i> Update Description *</label>
-                                    <textarea id="trackingDescription"
-                                        rows="4"
-                                        required
+                                    <textarea id="trackingDescription" rows="4" required
                                         placeholder="Describe this update for the customer...&#10;&#10;Example: Your order has been dispatched from our warehouse and is on its way to you."></textarea>
                                 </div>
 
@@ -2065,9 +3068,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                         </div>
 
                         <div class="modal-actions">
-                            <button type="button"
-                                onclick="TrackingModule.closeUpdateModal()"
-                                class="btn-cancel">
+                            <button type="button" onclick="TrackingModule.closeUpdateModal()" class="btn-cancel">
                                 <i class="fas fa-times"></i> Cancel
                             </button>
                             <button type="submit" class="btn-save">
@@ -2137,17 +3138,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                     </div>
 
                     <div class="quotation-header">
-                        <div style="display: flex; gap: 10px;">
-                            <button class="btn-primary" style="background-color: #3498db;" onclick="exportQuotationsPDF()">
-                                <i class="fas fa-file-pdf"></i> Export to PDF
-                            </button>
-                            <button class="btn-primary" style="background-color: #217346;" onclick="exportQuotationsExcel()">
-                                <i class="fas fa-file-excel"></i> Export to Excel
-                            </button>
-                            <button class="btn-primary" onclick="openQuotationModal()">
-                                <i class="fas fa-plus"></i> New Quotation
-                            </button>
-                        </div>
+                        <button class="btn-primary" onclick="openQuotationModal()">
+                            <i class="fas fa-plus"></i> New Quotation
+                        </button>
                     </div>
 
                     <div class="quotation-table-wrapper">
@@ -2175,7 +3168,169 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 </div>
             </div>
 
-            <?php include 'includes/orders_page.php'; ?>
+            <div id="orders" class="page-content">
+                <div class="orders-container">
+
+                    <!-- HEADER -->
+                    <div class="orders-header">
+                        <div class="orders-title">
+                            <h3><i class="fas fa-shopping-cart"></i> Order Check</h3>
+                        </div>
+
+                        <div style="display: flex; gap: 10px;">
+                            <button class="btn-primary" style="background-color: #217346;"
+                                onclick="exportOrdersExcel()">
+                                <i class="fas fa-file-excel"></i> Export to Excel
+                            </button>
+                            <button class="btn-refresh" onclick="OrdersModule.loadOrders()">
+                                <i class="fas fa-sync-alt"></i> Refresh
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- SUMMARY STATS -->
+                    <div id="ordersSummary"
+                        style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:20px;">
+                        <div
+                            style="background:#fff;border-radius:10px;padding:14px 18px;box-shadow:0 1px 6px rgba(0,0,0,.08);border-left:4px solid #007bff;">
+                            <div style="font-size:11px;color:#888;font-weight:700;text-transform:uppercase;">Total
+                                Orders</div>
+                            <div id="statTotal" style="font-size:26px;font-weight:800;color:#007bff;">—</div>
+                        </div>
+                        <div
+                            style="background:#fff;border-radius:10px;padding:14px 18px;box-shadow:0 1px 6px rgba(0,0,0,.08);border-left:4px solid #ffc107;">
+                            <div style="font-size:11px;color:#888;font-weight:700;text-transform:uppercase;">Pending
+                            </div>
+                            <div id="statPending" style="font-size:26px;font-weight:800;color:#ffc107;">—</div>
+                        </div>
+                        <div style="background:#fff;border-radius:10px;padding:14px 18px;box-shadow:0 1px 6px rgba(0,0,0,.08);border-left:4px solid #6f42c1;cursor:pointer;"
+                            onclick="OrdersModule.filterByStatus('pending_verification')">
+                            <div style="font-size:11px;color:#888;font-weight:700;text-transform:uppercase;">Needs
+                                Verification</div>
+                            <div id="statVerify" style="font-size:26px;font-weight:800;color:#6f42c1;">—</div>
+                        </div>
+                        <div
+                            style="background:#fff;border-radius:10px;padding:14px 18px;box-shadow:0 1px 6px rgba(0,0,0,.08);border-left:4px solid #28a745;">
+                            <div style="font-size:11px;color:#888;font-weight:700;text-transform:uppercase;">Paid</div>
+                            <div id="statPaid" style="font-size:26px;font-weight:800;color:#28a745;">—</div>
+                        </div>
+                        <div
+                            style="background:#fff;border-radius:10px;padding:14px 18px;box-shadow:0 1px 6px rgba(0,0,0,.08);border-left:4px solid #17a2b8;">
+                            <div style="font-size:11px;color:#888;font-weight:700;text-transform:uppercase;">Total
+                                Revenue</div>
+                            <div id="statRevenue" style="font-size:20px;font-weight:800;color:#17a2b8;">—</div>
+                        </div>
+                    </div>
+
+                    <!-- FILTERS -->
+                    <div class="orders-filters">
+                        <div class="orders-filter-group">
+                            <label>Search</label>
+                            <input type="text" id="orderSearch" placeholder="Name, email, order ID…">
+                        </div>
+                        <div class="orders-filter-group">
+                            <label>Payment Status</label>
+                            <select id="orderStatusFilter">
+                                <option value="">All Status</option>
+                                <option value="paid">Paid</option>
+                                <option value="pending">Pending</option>
+                                <option value="pending_verification">Needs Verification</option>
+                                <option value="failed">Failed</option>
+                                <option value="cancelled">Cancelled</option>
+                            </select>
+                        </div>
+                        <div class="orders-filter-group">
+                            <label>Payment Method</label>
+                            <select id="paymentFilter">
+                                <option value="">All Methods</option>
+                                <option value="instapay">InstaPay</option>
+                                <option value="gcash">GCash</option>
+                                <option value="maya">Maya</option>
+                                <option value="cash">Cash</option>
+                            </select>
+                        </div>
+                        <div class="orders-filter-group">
+                            <label>Receipt</label>
+                            <select id="receiptFilter">
+                                <option value="">All</option>
+                                <option value="has_receipt">Has Receipt</option>
+                                <option value="no_receipt">No Receipt</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- TABLE -->
+                    <div class="orders-table-wrapper">
+                        <div id="ordersLoadingState" style="text-align:center;padding:40px;display:none;">
+                            <i class="fas fa-spinner fa-spin" style="font-size:28px;color:#999;"></i>
+                            <p style="color:#999;margin-top:10px;">Loading orders…</p>
+                        </div>
+                        <div id="ordersEmptyState" style="text-align:center;padding:40px;display:none;">
+                            <i class="fas fa-inbox" style="font-size:40px;color:#ccc;"></i>
+                            <p style="color:#aaa;margin-top:10px;">No orders found.</p>
+                        </div>
+                        <table class="orders-table" id="ordersTable">
+                            <thead>
+                                <tr>
+                                    <th>Order ID</th>
+                                    <th>Customer</th>
+                                    <th>Amount</th>
+                                    <th>Date</th>
+                                    <th>Payment Method</th>
+                                    <th>Payment Status</th>
+                                    <th>Order Status</th>
+                                    <th style="text-align:center;">Receipt</th>
+                                    <th style="text-align:center;">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ordersTableBody">
+                            </tbody>
+                        </table>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- ===== RECEIPT VIEWER MODAL ===== -->
+            <div id="receiptModal"
+                style="display:none;position:fixed;z-index:9999;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.85);align-items:center;justify-content:center;flex-direction:column;">
+                <div
+                    style="background:#fff;border-radius:14px;max-width:720px;width:95%;max-height:92vh;overflow:auto;position:relative;">
+                    <div
+                        style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid #eee;background:#f8f9fa;border-radius:14px 14px 0 0;">
+                        <div>
+                            <h3 style="margin:0;font-size:16px;"><i class="fas fa-receipt"
+                                    style="color:#28a745;margin-right:8px;"></i>Payment Receipt</h3>
+                            <small id="receiptOrderRef" style="color:#666;font-size:12px;"></small>
+                        </div>
+                        <div style="display:flex;gap:8px;align-items:center;">
+                            <a id="receiptDownloadBtn" href="#" download target="_blank"
+                                style="padding:6px 14px;background:#007bff;color:#fff;border-radius:6px;text-decoration:none;font-size:13px;">
+                                <i class="fas fa-download"></i> Download
+                            </a>
+                            <button onclick="closeReceiptModal()"
+                                style="background:none;border:none;font-size:24px;cursor:pointer;color:#aaa;line-height:1;padding:0 4px;">&times;</button>
+                        </div>
+                    </div>
+                    <div style="padding:24px;text-align:center;" id="receiptModalBody"></div>
+                </div>
+            </div>
+
+            <!-- ===== ORDER DETAIL + VERIFY MODAL ===== -->
+            <div id="orderDetailModal"
+                style="display:none;position:fixed;z-index:9998;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.6);align-items:center;justify-content:center;">
+                <div
+                    style="background:#fff;border-radius:14px;max-width:660px;width:95%;max-height:92vh;overflow:auto;position:relative;">
+                    <div
+                        style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid #eee;background:#f8f9fa;border-radius:14px 14px 0 0;">
+                        <h3 style="margin:0;font-size:16px;"><i class="fas fa-file-invoice"
+                                style="color:#007bff;margin-right:8px;"></i>Order Details</h3>
+                        <button onclick="closeOrderDetailModal()"
+                            style="background:none;border:none;font-size:24px;cursor:pointer;color:#aaa;line-height:1;padding:0 4px;">&times;</button>
+                    </div>
+                    <div style="padding:24px;" id="orderDetailBody"></div>
+                </div>
+            </div>
 
             <!-- Suppliers -->
             <div id="suppliers" class="page-content">
@@ -2226,10 +3381,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                     <!-- HEADER ACTION -->
                     <div class="suppliers-header">
                         <div style="display: flex; gap: 10px;">
-                            <button class="btn-primary" style="background-color: #3498db;" onclick="exportSuppliersPDF()">
-                                <i class="fas fa-file-pdf"></i> Export to PDF
-                            </button>
-                            <button class="btn-primary" style="background-color: #217346;" onclick="exportSuppliersExcel()">
+                            <button class="btn-primary" style="background-color: #217346;"
+                                onclick="exportSuppliersExcel()">
                                 <i class="fas fa-file-excel"></i> Export to Excel
                             </button>
                             <button class="btn-primary" onclick="openSupplierModal()">
@@ -2263,17 +3416,22 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
             </div>
 
             <!-- ARCHIVE -->
-            <div id="archive" class="page-content" style="display: none;">
+            <div id="archive" class="page-content">
 
                 <!-- Archive Product Details Section -->
-                <div style="background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08); padding: 30px; margin-top: 10px;">
-                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 2px solid #e9ecef;">
+                <div
+                    style="background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08); padding: 30px; margin-top: 10px;">
+                    <div
+                        style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 2px solid #e9ecef;">
                         <div style="display: flex; align-items: center;">
                             <i class="bi bi-archive" style="color: #e74c3c; font-size: 24px; margin-right: 12px;"></i>
-                            <h4 style="margin: 0; color: #2c3e50; font-weight: 600; font-size: 20px;">Archive Product Details</h4>
+                            <h4 style="margin: 0; color: #2c3e50; font-weight: 600; font-size: 20px;">Archive Product
+                                Details</h4>
                         </div>
-                        <span style="background-color: #ffeaea; color: #e74c3c; padding: 4px 14px; border-radius: 20px; font-size: 13px; font-weight: 600;">
-                            <?php echo $archived_product_count; ?> archived product<?php echo $archived_product_count != 1 ? 's' : ''; ?>
+                        <span
+                            style="background-color: #ffeaea; color: #e74c3c; padding: 4px 14px; border-radius: 20px; font-size: 13px; font-weight: 600;">
+                            <?php echo $archived_product_count; ?> archived
+                            product<?php echo $archived_product_count != 1 ? 's' : ''; ?>
                         </span>
                     </div>
 
@@ -2281,35 +3439,71 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                         <table style="width: 100%; border-collapse: collapse;">
                             <thead>
                                 <tr style="background-color: #f8f9fa;">
-                                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #6c757d; font-size: 14px; border-bottom: 2px solid #dee2e6;">#</th>
-                                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #6c757d; font-size: 14px; border-bottom: 2px solid #dee2e6;">Product Name</th>
-                                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #6c757d; font-size: 14px; border-bottom: 2px solid #dee2e6;">Brand</th>
-                                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #6c757d; font-size: 14px; border-bottom: 2px solid #dee2e6;">Price</th>
-                                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #6c757d; font-size: 14px; border-bottom: 2px solid #dee2e6;">Category</th>
-                                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #6c757d; font-size: 14px; border-bottom: 2px solid #dee2e6;">Qty</th>
-                                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #6c757d; font-size: 14px; border-bottom: 2px solid #dee2e6;">Warranty</th>
-                                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #6c757d; font-size: 14px; border-bottom: 2px solid #dee2e6;">Date Archived</th>
-                                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #6c757d; font-size: 14px; border-bottom: 2px solid #dee2e6;">Actions</th>
+                                    <th
+                                        style="padding: 12px; text-align: left; font-weight: 600; color: #6c757d; font-size: 14px; border-bottom: 2px solid #dee2e6;">
+                                        #</th>
+                                    <th
+                                        style="padding: 12px; text-align: left; font-weight: 600; color: #6c757d; font-size: 14px; border-bottom: 2px solid #dee2e6;">
+                                        Product Name</th>
+                                    <th
+                                        style="padding: 12px; text-align: left; font-weight: 600; color: #6c757d; font-size: 14px; border-bottom: 2px solid #dee2e6;">
+                                        Brand</th>
+                                    <th
+                                        style="padding: 12px; text-align: left; font-weight: 600; color: #6c757d; font-size: 14px; border-bottom: 2px solid #dee2e6;">
+                                        Price</th>
+                                    <th
+                                        style="padding: 12px; text-align: left; font-weight: 600; color: #6c757d; font-size: 14px; border-bottom: 2px solid #dee2e6;">
+                                        Category</th>
+                                    <th
+                                        style="padding: 12px; text-align: left; font-weight: 600; color: #6c757d; font-size: 14px; border-bottom: 2px solid #dee2e6;">
+                                        Qty</th>
+                                    <th
+                                        style="padding: 12px; text-align: left; font-weight: 600; color: #6c757d; font-size: 14px; border-bottom: 2px solid #dee2e6;">
+                                        Warranty</th>
+                                    <th
+                                        style="padding: 12px; text-align: left; font-weight: 600; color: #6c757d; font-size: 14px; border-bottom: 2px solid #dee2e6;">
+                                        Date Archived</th>
+                                    <th
+                                        style="padding: 12px; text-align: left; font-weight: 600; color: #6c757d; font-size: 14px; border-bottom: 2px solid #dee2e6;">
+                                        Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <?php if (!empty($archived_products)): ?>
                                     <?php foreach ($archived_products as $index => $ap): ?>
-                                        <tr style="border-bottom: 1px solid #dee2e6;" id="archive-row-<?php echo $ap['archive_id']; ?>">
-                                            <td style="padding: 12px; font-size: 14px; color: #2c3e50;"><?php echo $index + 1; ?></td>
-                                            <td style="padding: 12px; font-size: 14px; color: #2c3e50; font-weight: 500;"><?php echo htmlspecialchars($ap['displayName']); ?></td>
-                                            <td style="padding: 12px; font-size: 14px; color: #2c3e50;"><?php echo htmlspecialchars($ap['brandName']); ?></td>
-                                            <td style="padding: 12px; font-size: 14px; color: #2c3e50;">&#8369;<?php echo number_format($ap['price'], 2); ?></td>
-                                            <td style="padding: 12px; font-size: 14px;"><span style="background-color: #eaf4fe; color: #3498db; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 500;"><?php echo htmlspecialchars($ap['category']); ?></span></td>
-                                            <td style="padding: 12px; font-size: 14px; color: #2c3e50;"><?php echo $ap['stockQuantity']; ?></td>
-                                            <td style="padding: 12px; font-size: 14px; color: #2c3e50;"><?php echo htmlspecialchars($ap['warranty'] ?? 'N/A'); ?></td>
-                                            <td style="padding: 12px; font-size: 14px; color: #2c3e50;"><?php echo date('M d, Y h:i A', strtotime($ap['deleted_at'])); ?></td>
+                                        <tr style="border-bottom: 1px solid #dee2e6;"
+                                            id="archive-row-<?php echo $ap['archive_id']; ?>">
+                                            <td style="padding: 12px; font-size: 14px; color: #2c3e50;">
+                                                <?php echo $index + 1; ?>
+                                            </td>
+                                            <td style="padding: 12px; font-size: 14px; color: #2c3e50; font-weight: 500;">
+                                                <?php echo htmlspecialchars($ap['displayName']); ?>
+                                            </td>
+                                            <td style="padding: 12px; font-size: 14px; color: #2c3e50;">
+                                                <?php echo htmlspecialchars($ap['brandName']); ?>
+                                            </td>
+                                            <td style="padding: 12px; font-size: 14px; color: #2c3e50;">
+                                                &#8369;<?php echo number_format($ap['price'], 2); ?></td>
+                                            <td style="padding: 12px; font-size: 14px;"><span
+                                                    style="background-color: #eaf4fe; color: #3498db; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 500;"><?php echo htmlspecialchars($ap['category']); ?></span>
+                                            </td>
+                                            <td style="padding: 12px; font-size: 14px; color: #2c3e50;">
+                                                <?php echo $ap['stockQuantity']; ?>
+                                            </td>
+                                            <td style="padding: 12px; font-size: 14px; color: #2c3e50;">
+                                                <?php echo htmlspecialchars($ap['warranty'] ?? 'N/A'); ?>
+                                            </td>
+                                            <td style="padding: 12px; font-size: 14px; color: #2c3e50;">
+                                                <?php echo date('M d, Y h:i A', strtotime($ap['deleted_at'])); ?>
+                                            </td>
                                             <td style="padding: 12px;">
                                                 <div style="display: flex; gap: 4px;">
-                                                    <button onclick="restoreArchivedProduct(<?php echo $ap['archive_id']; ?>)" class="green-action-btn" title="Restore Product">
+                                                    <button onclick="restoreArchivedProduct(<?php echo $ap['archive_id']; ?>)"
+                                                        class="green-action-btn" title="Restore Product">
                                                         <i class="fas fa-undo"></i>
                                                     </button>
-                                                    <button onclick="permanentDeleteProduct(<?php echo $ap['archive_id']; ?>)" class="red-action-btn" title="Delete Permanently">
+                                                    <button onclick="permanentDeleteProduct(<?php echo $ap['archive_id']; ?>)"
+                                                        class="red-action-btn" title="Delete Permanently">
                                                         <i class="fas fa-trash"></i>
                                                     </button>
                                                 </div>
@@ -2318,8 +3512,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                                     <?php endforeach; ?>
                                 <?php else: ?>
                                     <tr>
-                                        <td colspan="9" style="padding: 30px; text-align: center; color: #6c757d; font-size: 14px;">
-                                            <i class="bi bi-inbox" style="font-size: 36px; display: block; margin-bottom: 10px; color: #dee2e6;"></i>
+                                        <td colspan="9"
+                                            style="padding: 30px; text-align: center; color: #6c757d; font-size: 14px;">
+                                            <i class="bi bi-inbox"
+                                                style="font-size: 36px; display: block; margin-bottom: 10px; color: #dee2e6;"></i>
                                             No archived products found.
                                         </td>
                                     </tr>
@@ -2331,14 +3527,19 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
 
 
                 <!-- Archive Quotation Details Section -->
-                <div style="background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08); padding: 30px; margin-top: 30px;">
-                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 2px solid #e9ecef;">
+                <div
+                    style="background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08); padding: 30px; margin-top: 30px;">
+                    <div
+                        style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 2px solid #e9ecef;">
                         <div style="display: flex; align-items: center;">
                             <i class="bi bi-file-text" style="color: #f39c12; font-size: 24px; margin-right: 12px;"></i>
-                            <h4 style="margin: 0; color: #2c3e50; font-weight: 600; font-size: 20px;">Archived Quotation Details</h4>
+                            <h4 style="margin: 0; color: #2c3e50; font-weight: 600; font-size: 20px;">Archived Quotation
+                                Details</h4>
                         </div>
-                        <span style="background-color: #fff3e0; color: #f39c12; padding: 4px 14px; border-radius: 20px; font-size: 13px; font-weight: 600;">
-                            <?php echo $archived_quotation_count; ?> archived quotation<?php echo $archived_quotation_count != 1 ? 's' : ''; ?>
+                        <span
+                            style="background-color: #fff3e0; color: #f39c12; padding: 4px 14px; border-radius: 20px; font-size: 13px; font-weight: 600;">
+                            <?php echo $archived_quotation_count; ?> archived
+                            quotation<?php echo $archived_quotation_count != 1 ? 's' : ''; ?>
                         </span>
                     </div>
 
@@ -2346,61 +3547,107 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                         <table style="width: 100%; border-collapse: collapse;">
                             <thead>
                                 <tr style="background-color: #f8f9fa;">
-                                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #6c757d; font-size: 14px; border-bottom: 2px solid #dee2e6;">#</th>
-                                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #6c757d; font-size: 14px; border-bottom: 2px solid #dee2e6;">Quotation No.</th>
-                                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #6c757d; font-size: 14px; border-bottom: 2px solid #dee2e6;">Client Name</th>
-                                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #6c757d; font-size: 14px; border-bottom: 2px solid #dee2e6;">Email</th>
-                                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #6c757d; font-size: 14px; border-bottom: 2px solid #dee2e6;">Contact</th>
-                                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #6c757d; font-size: 14px; border-bottom: 2px solid #dee2e6;">Location</th>
-                                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #6c757d; font-size: 14px; border-bottom: 2px solid #dee2e6;">System</th>
-                                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #6c757d; font-size: 14px; border-bottom: 2px solid #dee2e6;">kW</th>
-                                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #6c757d; font-size: 14px; border-bottom: 2px solid #dee2e6;">Officer</th>
-                                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #6c757d; font-size: 14px; border-bottom: 2px solid #dee2e6;">Status</th>
-                                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #6c757d; font-size: 14px; border-bottom: 2px solid #dee2e6;">Date Archived</th>
-                                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #6c757d; font-size: 14px; border-bottom: 2px solid #dee2e6;">Actions</th>
+                                    <th
+                                        style="padding: 12px; text-align: left; font-weight: 600; color: #6c757d; font-size: 14px; border-bottom: 2px solid #dee2e6;">
+                                        #</th>
+                                    <th
+                                        style="padding: 12px; text-align: left; font-weight: 600; color: #6c757d; font-size: 14px; border-bottom: 2px solid #dee2e6;">
+                                        Quotation No.</th>
+                                    <th
+                                        style="padding: 12px; text-align: left; font-weight: 600; color: #6c757d; font-size: 14px; border-bottom: 2px solid #dee2e6;">
+                                        Client Name</th>
+                                    <th
+                                        style="padding: 12px; text-align: left; font-weight: 600; color: #6c757d; font-size: 14px; border-bottom: 2px solid #dee2e6;">
+                                        Email</th>
+                                    <th
+                                        style="padding: 12px; text-align: left; font-weight: 600; color: #6c757d; font-size: 14px; border-bottom: 2px solid #dee2e6;">
+                                        Contact</th>
+                                    <th
+                                        style="padding: 12px; text-align: left; font-weight: 600; color: #6c757d; font-size: 14px; border-bottom: 2px solid #dee2e6;">
+                                        Location</th>
+                                    <th
+                                        style="padding: 12px; text-align: left; font-weight: 600; color: #6c757d; font-size: 14px; border-bottom: 2px solid #dee2e6;">
+                                        System</th>
+                                    <th
+                                        style="padding: 12px; text-align: left; font-weight: 600; color: #6c757d; font-size: 14px; border-bottom: 2px solid #dee2e6;">
+                                        kW</th>
+                                    <th
+                                        style="padding: 12px; text-align: left; font-weight: 600; color: #6c757d; font-size: 14px; border-bottom: 2px solid #dee2e6;">
+                                        Officer</th>
+                                    <th
+                                        style="padding: 12px; text-align: left; font-weight: 600; color: #6c757d; font-size: 14px; border-bottom: 2px solid #dee2e6;">
+                                        Status</th>
+                                    <th
+                                        style="padding: 12px; text-align: left; font-weight: 600; color: #6c757d; font-size: 14px; border-bottom: 2px solid #dee2e6;">
+                                        Date Archived</th>
+                                    <th
+                                        style="padding: 12px; text-align: left; font-weight: 600; color: #6c757d; font-size: 14px; border-bottom: 2px solid #dee2e6;">
+                                        Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <?php if (!empty($archived_quotations)): ?>
                                     <?php foreach ($archived_quotations as $qi => $aq): ?>
-                                        <tr style="border-bottom: 1px solid #dee2e6;" id="archive-quotation-row-<?php echo $aq['archive_id']; ?>">
-                                            <td style="padding: 12px; font-size: 14px; color: #2c3e50;"><?php echo $qi + 1; ?></td>
-                                            <td style="padding: 12px; font-size: 14px; color: #2c3e50; font-weight: 500;"><?php echo htmlspecialchars($aq['quotation_number'] ?? 'N/A'); ?></td>
-                                            <td style="padding: 12px; font-size: 14px; color: #2c3e50;"><?php echo htmlspecialchars($aq['client_name']); ?></td>
-                                            <td style="padding: 12px; font-size: 14px; color: #2c3e50;"><?php echo htmlspecialchars($aq['email']); ?></td>
-                                            <td style="padding: 12px; font-size: 14px; color: #2c3e50;"><?php echo htmlspecialchars($aq['contact'] ?? 'N/A'); ?></td>
-                                            <td style="padding: 12px; font-size: 14px; color: #2c3e50;"><?php echo htmlspecialchars($aq['location'] ?? 'N/A'); ?></td>
+                                        <tr style="border-bottom: 1px solid #dee2e6;"
+                                            id="archive-quotation-row-<?php echo $aq['archive_id']; ?>">
+                                            <td style="padding: 12px; font-size: 14px; color: #2c3e50;"><?php echo $qi + 1; ?>
+                                            </td>
+                                            <td style="padding: 12px; font-size: 14px; color: #2c3e50; font-weight: 500;">
+                                                <?php echo htmlspecialchars($aq['quotation_number'] ?? 'N/A'); ?>
+                                            </td>
+                                            <td style="padding: 12px; font-size: 14px; color: #2c3e50;">
+                                                <?php echo htmlspecialchars($aq['client_name']); ?>
+                                            </td>
+                                            <td style="padding: 12px; font-size: 14px; color: #2c3e50;">
+                                                <?php echo htmlspecialchars($aq['email']); ?>
+                                            </td>
+                                            <td style="padding: 12px; font-size: 14px; color: #2c3e50;">
+                                                <?php echo htmlspecialchars($aq['contact'] ?? 'N/A'); ?>
+                                            </td>
+                                            <td style="padding: 12px; font-size: 14px; color: #2c3e50;">
+                                                <?php echo htmlspecialchars($aq['location'] ?? 'N/A'); ?>
+                                            </td>
                                             <td style="padding: 12px; font-size: 14px;">
-                                                <span style="background-color: #e8f5e9; color: #2e7d32; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 500;">
+                                                <span
+                                                    style="background-color: #e8f5e9; color: #2e7d32; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 500;">
                                                     <?php echo htmlspecialchars($aq['system_type'] ?? 'N/A'); ?>
                                                 </span>
                                             </td>
-                                            <td style="padding: 12px; font-size: 14px; color: #2c3e50;"><?php echo $aq['kw'] !== null ? number_format($aq['kw'], 2) : 'N/A'; ?></td>
-                                            <td style="padding: 12px; font-size: 14px; color: #2c3e50;"><?php echo htmlspecialchars($aq['officer'] ?? 'N/A'); ?></td>
+                                            <td style="padding: 12px; font-size: 14px; color: #2c3e50;">
+                                                <?php echo $aq['kw'] !== null ? number_format($aq['kw'], 2) : 'N/A'; ?>
+                                            </td>
+                                            <td style="padding: 12px; font-size: 14px; color: #2c3e50;">
+                                                <?php echo htmlspecialchars($aq['officer'] ?? 'N/A'); ?>
+                                            </td>
                                             <td style="padding: 12px; font-size: 14px;">
                                                 <?php
-                                                    $statusColors = [
-                                                        'SENT' => ['bg' => '#e3f2fd', 'text' => '#1565c0'],
-                                                        'ONGOING' => ['bg' => '#fff3e0', 'text' => '#e65100'],
-                                                        'APPROVED' => ['bg' => '#e8f5e9', 'text' => '#2e7d32'],
-                                                        'CLOSED' => ['bg' => '#f3e5f5', 'text' => '#7b1fa2'],
-                                                        'LOSS' => ['bg' => '#ffeaea', 'text' => '#c62828'],
-                                                    ];
-                                                    $st = strtoupper($aq['status'] ?? '');
-                                                    $bg = $statusColors[$st]['bg'] ?? '#f5f5f5';
-                                                    $tc = $statusColors[$st]['text'] ?? '#616161';
+                                                $statusColors = [
+                                                    'SENT' => ['bg' => '#e3f2fd', 'text' => '#1565c0'],
+                                                    'ONGOING' => ['bg' => '#fff3e0', 'text' => '#e65100'],
+                                                    'APPROVED' => ['bg' => '#e8f5e9', 'text' => '#2e7d32'],
+                                                    'CLOSED' => ['bg' => '#f3e5f5', 'text' => '#7b1fa2'],
+                                                    'LOSS' => ['bg' => '#ffeaea', 'text' => '#c62828'],
+                                                ];
+                                                $st = strtoupper($aq['status'] ?? '');
+                                                $bg = $statusColors[$st]['bg'] ?? '#f5f5f5';
+                                                $tc = $statusColors[$st]['text'] ?? '#616161';
                                                 ?>
-                                                <span style="background-color: <?php echo $bg; ?>; color: <?php echo $tc; ?>; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 500;">
+                                                <span
+                                                    style="background-color: <?php echo $bg; ?>; color: <?php echo $tc; ?>; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 500;">
                                                     <?php echo htmlspecialchars($aq['status'] ?? 'N/A'); ?>
                                                 </span>
                                             </td>
-                                            <td style="padding: 12px; font-size: 14px; color: #2c3e50;"><?php echo date('M d, Y h:i A', strtotime($aq['deleted_at'])); ?></td>
+                                            <td style="padding: 12px; font-size: 14px; color: #2c3e50;">
+                                                <?php echo date('M d, Y h:i A', strtotime($aq['deleted_at'])); ?>
+                                            </td>
                                             <td style="padding: 12px;">
                                                 <div style="display: flex; gap: 4px;">
-                                                    <button onclick="restoreArchivedQuotation(<?php echo $aq['archive_id']; ?>)" class="green-action-btn" title="Restore Quotation">
+                                                    <button onclick="restoreArchivedQuotation(<?php echo $aq['archive_id']; ?>)"
+                                                        class="green-action-btn" title="Restore Quotation">
                                                         <i class="fas fa-undo"></i>
                                                     </button>
-                                                    <button onclick="permanentDeleteQuotation(<?php echo $aq['archive_id']; ?>)" class="red-action-btn" title="Delete Permanently">
+                                                    <button onclick="permanentDeleteQuotation(<?php echo $aq['archive_id']; ?>)"
+                                                        class="red-action-btn" title="Delete Permanently">
                                                         <i class="fas fa-trash"></i>
                                                     </button>
                                                 </div>
@@ -2409,8 +3656,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                                     <?php endforeach; ?>
                                 <?php else: ?>
                                     <tr>
-                                        <td colspan="12" style="padding: 30px; text-align: center; color: #6c757d; font-size: 14px;">
-                                            <i class="bi bi-inbox" style="font-size: 36px; display: block; margin-bottom: 10px; color: #dee2e6;"></i>
+                                        <td colspan="12"
+                                            style="padding: 30px; text-align: center; color: #6c757d; font-size: 14px;">
+                                            <i class="bi bi-inbox"
+                                                style="font-size: 36px; display: block; margin-bottom: 10px; color: #dee2e6;"></i>
                                             No archived quotations found.
                                         </td>
                                     </tr>
@@ -2422,8 +3671,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
 
 
                 <!-- Archive Suppliers Section -->
-                <div style="background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08); padding: 30px; margin-top: 30px;">
-                    <div style="display: flex; align-items: center; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 2px solid #e9ecef;">
+                <div
+                    style="background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08); padding: 30px; margin-top: 30px;">
+                    <div
+                        style="display: flex; align-items: center; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 2px solid #e9ecef;">
                         <i class="bi bi-archive" style="color: #f39c12; font-size: 24px; margin-right: 12px;"></i>
                         <h4 style="margin: 0; color: #2c3e50; font-weight: 600; font-size: 20px;">Archive Suppliers</h4>
                     </div>
@@ -2432,44 +3683,83 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                         <table style="width: 100%; border-collapse: collapse;">
                             <thead>
                                 <tr style="background-color: #f8f9fa;">
-                                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #6c757d; font-size: 14px; border-bottom: 2px solid #dee2e6;">#</th>
-                                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #6c757d; font-size: 14px; border-bottom: 2px solid #dee2e6;">Supplier Name</th>
-                                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #6c757d; font-size: 14px; border-bottom: 2px solid #dee2e6;">Contact Person</th>
-                                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #6c757d; font-size: 14px; border-bottom: 2px solid #dee2e6;">Email</th>
-                                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #6c757d; font-size: 14px; border-bottom: 2px solid #dee2e6;">Phone</th>
-                                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #6c757d; font-size: 14px; border-bottom: 2px solid #dee2e6;">Location</th>
-                                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #6c757d; font-size: 14px; border-bottom: 2px solid #dee2e6;">Registered</th>
-                                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #6c757d; font-size: 14px; border-bottom: 2px solid #dee2e6;">Date Archived</th>
-                                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #6c757d; font-size: 14px; border-bottom: 2px solid #dee2e6;">Actions</th>
+                                    <th
+                                        style="padding: 12px; text-align: left; font-weight: 600; color: #6c757d; font-size: 14px; border-bottom: 2px solid #dee2e6;">
+                                        #</th>
+                                    <th
+                                        style="padding: 12px; text-align: left; font-weight: 600; color: #6c757d; font-size: 14px; border-bottom: 2px solid #dee2e6;">
+                                        Supplier Name</th>
+                                    <th
+                                        style="padding: 12px; text-align: left; font-weight: 600; color: #6c757d; font-size: 14px; border-bottom: 2px solid #dee2e6;">
+                                        Contact Person</th>
+                                    <th
+                                        style="padding: 12px; text-align: left; font-weight: 600; color: #6c757d; font-size: 14px; border-bottom: 2px solid #dee2e6;">
+                                        Email</th>
+                                    <th
+                                        style="padding: 12px; text-align: left; font-weight: 600; color: #6c757d; font-size: 14px; border-bottom: 2px solid #dee2e6;">
+                                        Phone</th>
+                                    <th
+                                        style="padding: 12px; text-align: left; font-weight: 600; color: #6c757d; font-size: 14px; border-bottom: 2px solid #dee2e6;">
+                                        Location</th>
+                                    <th
+                                        style="padding: 12px; text-align: left; font-weight: 600; color: #6c757d; font-size: 14px; border-bottom: 2px solid #dee2e6;">
+                                        Registered</th>
+                                    <th
+                                        style="padding: 12px; text-align: left; font-weight: 600; color: #6c757d; font-size: 14px; border-bottom: 2px solid #dee2e6;">
+                                        Date Archived</th>
+                                    <th
+                                        style="padding: 12px; text-align: left; font-weight: 600; color: #6c757d; font-size: 14px; border-bottom: 2px solid #dee2e6;">
+                                        Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <?php if (!empty($archived_suppliers)): ?>
-                                    <?php $sup_counter = 1; foreach ($archived_suppliers as $asup): ?>
-                                    <tr id="archive-supplier-row-<?= $asup['archive_id'] ?>" style="border-bottom: 1px solid #dee2e6;">
-                                        <td style="padding: 12px; font-size: 14px; color: #2c3e50;"><?= $sup_counter++ ?></td>
-                                        <td style="padding: 12px; font-size: 14px; color: #2c3e50;"><?= htmlspecialchars($asup['supplierName']) ?></td>
-                                        <td style="padding: 12px; font-size: 14px; color: #2c3e50;"><?= htmlspecialchars($asup['contactPerson'] ?? '—') ?></td>
-                                        <td style="padding: 12px; font-size: 14px; color: #2c3e50;"><?= htmlspecialchars($asup['email'] ?? '—') ?></td>
-                                        <td style="padding: 12px; font-size: 14px; color: #2c3e50;"><?= htmlspecialchars($asup['phone'] ?? '—') ?></td>
-                                        <td style="padding: 12px; font-size: 14px; color: #2c3e50;"><?= htmlspecialchars(($asup['city'] ?? '') . ', ' . ($asup['country'] ?? '')) ?></td>
-                                        <td style="padding: 12px; font-size: 14px; color: #2c3e50;"><?= $asup['registrationDate'] ? date('M d, Y', strtotime($asup['registrationDate'])) : '—' ?></td>
-                                        <td style="padding: 12px; font-size: 14px; color: #2c3e50;"><?= date('M d, Y h:i A', strtotime($asup['deleted_at'])) ?></td>
-                                        <td style="padding: 12px;">
-                                            <div style="display: flex; gap: 4px;">
-                                                <button onclick="restoreArchivedSupplier(<?= $asup['archive_id'] ?>)" class="green-action-btn" title="Restore">
-                                                    <i class="fas fa-undo"></i>
-                                                </button>
-                                                <button onclick="permanentDeleteSupplier(<?= $asup['archive_id'] ?>)" class="red-action-btn" title="Delete Permanently">
-                                                    <i class="fas fa-trash"></i>
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
+                                    <?php $sup_counter = 1;
+                                    foreach ($archived_suppliers as $asup): ?>
+                                        <tr id="archive-supplier-row-<?= $asup['archive_id'] ?>"
+                                            style="border-bottom: 1px solid #dee2e6;">
+                                            <td style="padding: 12px; font-size: 14px; color: #2c3e50;"><?= $sup_counter++ ?>
+                                            </td>
+                                            <td style="padding: 12px; font-size: 14px; color: #2c3e50;">
+                                                <?= htmlspecialchars($asup['supplierName']) ?>
+                                            </td>
+                                            <td style="padding: 12px; font-size: 14px; color: #2c3e50;">
+                                                <?= htmlspecialchars($asup['contactPerson'] ?? '—') ?>
+                                            </td>
+                                            <td style="padding: 12px; font-size: 14px; color: #2c3e50;">
+                                                <?= htmlspecialchars($asup['email'] ?? '—') ?>
+                                            </td>
+                                            <td style="padding: 12px; font-size: 14px; color: #2c3e50;">
+                                                <?= htmlspecialchars($asup['phone'] ?? '—') ?>
+                                            </td>
+                                            <td style="padding: 12px; font-size: 14px; color: #2c3e50;">
+                                                <?= htmlspecialchars(($asup['city'] ?? '') . ', ' . ($asup['country'] ?? '')) ?>
+                                            </td>
+                                            <td style="padding: 12px; font-size: 14px; color: #2c3e50;">
+                                                <?= $asup['registrationDate'] ? date('M d, Y', strtotime($asup['registrationDate'])) : '—' ?>
+                                            </td>
+                                            <td style="padding: 12px; font-size: 14px; color: #2c3e50;">
+                                                <?= date('M d, Y h:i A', strtotime($asup['deleted_at'])) ?>
+                                            </td>
+                                            <td style="padding: 12px;">
+                                                <div style="display: flex; gap: 4px;">
+                                                    <button onclick="restoreArchivedSupplier(<?= $asup['archive_id'] ?>)"
+                                                        class="green-action-btn" title="Restore">
+                                                        <i class="fas fa-undo"></i>
+                                                    </button>
+                                                    <button onclick="permanentDeleteSupplier(<?= $asup['archive_id'] ?>)"
+                                                        class="red-action-btn" title="Delete Permanently">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
                                     <?php endforeach; ?>
                                 <?php else: ?>
                                     <tr>
-                                        <td colspan="9" style="padding: 30px; text-align: center; color: #6c757d; font-size: 14px;">No archived suppliers found.</td>
+                                        <td colspan="9"
+                                            style="padding: 30px; text-align: center; color: #6c757d; font-size: 14px;">No
+                                            archived suppliers found.</td>
                                     </tr>
                                 <?php endif; ?>
                             </tbody>
@@ -2582,12 +3872,134 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                             <p>View registered clients and their order history</p>
                         </div>
                         <div style="display: flex; gap: 10px;">
-                            <button class="btn-primary" style="background-color: #3498db;" onclick="exportClientsPDF()">
-                                <i class="fas fa-file-pdf"></i> Export to PDF
-                            </button>
-                            <button class="btn-primary" style="background-color: #217346;" onclick="exportClientsExcel()">
+                            <button class="btn-primary" style="background-color: #217346;"
+                                onclick="exportClientsExcel()">
                                 <i class="fas fa-file-excel"></i> Export to Excel
                             </button>
+                        </div>
+                    </div>
+
+                    <!-- FILTERS -->
+                    <div class="clients-filters">
+                        <div class="clients-filter-group">
+                            <label>Search</label>
+                            <input type="text" id="clientSearch" placeholder="Search by name or email">
+                        </div>
+                    </div>
+
+                    <!-- TABLE -->
+                    <div class="clients-table-wrapper">
+                        <table class="clients-table">
+                            <thead>
+                                <tr>
+                                    <th>Full Name</th>
+                                    <th>Email Address</th>
+                                    <th>Contact Number</th>
+                                    <th>Full Delivery Address</th>
+                                    <th>Total Orders</th>
+                                </tr>
+                            </thead>
+                            <tbody id="clientsTableBody">
+                                <!-- data display only -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                </div>
+            </div>
+
+
+            <!-- Add/Edit Supplier Modal -->
+            <div id="supplierModal" class="modal">
+                <div class="modal-content">
+                    <h2 id="supplierModalTitle">
+                        <span><i class="fas fa-truck"></i> Add New Supplier</span>
+                        <span class="close" onclick="closeSupplierModal()">&times;</span>
+                    </h2>
+
+                    <form id="supplierForm" onsubmit="handleSubmit(event)">
+                        <div class="modal-body">
+                            <input type="hidden" id="supplierId">
+
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label><i class="fas fa-building"></i> Supplier Name *</label>
+                                    <input type="text" id="supplierName" required>
+                                </div>
+
+                                <div class="form-group">
+                                    <label><i class="fas fa-user"></i> Contact Person</label>
+                                    <input type="text" id="contactPerson">
+                                </div>
+
+                                <div class="form-group">
+                                    <label><i class="fas fa-envelope"></i> Email</label>
+                                    <input type="email" id="email">
+                                </div>
+
+                                <div class="form-group">
+                                    <label><i class="fas fa-phone"></i> Phone</label>
+                                    <input type="text" id="phone">
+                                </div>
+
+                                <div class="form-group full-width">
+                                    <label><i class="fas fa-map-marker-alt"></i> Address</label>
+                                    <textarea id="address" rows="2"></textarea>
+                                </div>
+
+                                <div class="form-group">
+                                    <label><i class="fas fa-city"></i> City</label>
+                                    <input type="text" id="city">
+                                </div>
+
+                                <div class="form-group">
+                                    <label><i class="fas fa-flag"></i> Country</label>
+                                    <input type="text" id="country">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="modal-actions">
+                            <button type="button" onclick="closeSupplierModal()" class="btn-cancel">
+                                <i class="fas fa-times"></i> Cancel
+                            </button>
+                            <button type="submit" class="btn-save">
+                                <i class="fas fa-save"></i> Save Supplier
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Delete Supplier Modal -->
+            <div id="deleteSupplierModal" class="modal">
+                <div class="modal-content" style="max-width: 500px;">
+                    <h2>
+                        <span><i class="fas fa-exclamation-triangle"></i> Confirm Deletion</span>
+                        <span class="close" onclick="closeDeleteSupplierModal()">&times;</span>
+                    </h2>
+                    <div class="modal-body">
+                        <p>Are you sure you want to delete this supplier?</p>
+                        <p class="warning-text">This action cannot be undone.</p>
+                        <input type="hidden" id="deleteSupplierId">
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" onclick="closeDeleteSupplierModal()" class="btn-cancel">Cancel</button>
+                        <button type="button" onclick="confirmDeleteSupplier()" class="btn-confirm-delete">
+                            <i class="fas fa-trash"></i> Yes, Delete
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="clients" class="page-content">
+                <div class="clients-container">
+
+                    <!-- HEADER -->
+                    <div class="clients-header">
+                        <div class="clients-title">
+                            <h3><i class="fas fa-users"></i> Clients</h3>
+                            <p>View registered clients and their order history</p>
                         </div>
                     </div>
 
@@ -2624,8 +4036,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 <!-- Profile Header -->
                 <div class="profile-header">
                     <div class="profile-header-content">
-                        <div class="profile-avatar-large">
-                            <?php echo $initials; ?>
+                        <div class="staff-header-avatar profile-avatar-large">
+                            <?php if (!empty($current_staff['profile_picture']) && file_exists('../../uploads/profiles/' . $current_staff['profile_picture'])): ?>
+                                <img src="../../uploads/profiles/<?= htmlspecialchars($current_staff['profile_picture']) ?>" alt="" class="staff-avatar-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                <div class="staff-avatar-initials" style="display:none;">
+                                    <?php echo $initials; ?>
+                                </div>
+                            <?php else: ?>
+                                <div class="staff-avatar-initials">
+                                    <?php echo $initials; ?>
+                                </div>
+                            <?php endif; ?>
                         </div>
                         <div class="profile-info">
                             <h1 class="profile-name"><?php echo htmlspecialchars($fullName); ?></h1>
@@ -2640,7 +4061,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                                 </div>
                                 <div class="meta-item">
                                     <i class="fas fa-envelope"></i>
-                                    <span id="headerEmail"><?php echo htmlspecialchars($current_staff['email']); ?></span>
+                                    <span
+                                        id="headerEmail"><?php echo htmlspecialchars($current_staff['email']); ?></span>
                                 </div>
                             </div>
                         </div>
@@ -2664,19 +4086,27 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                         <div class="card-body">
                             <div class="info-row">
                                 <div class="info-label">First Name</div>
-                                <div class="info-value" id="displayFirstName"><?php echo htmlspecialchars($current_staff['firstName']); ?></div>
+                                <div class="info-value" id="displayFirstName">
+                                    <?php echo htmlspecialchars($current_staff['firstName']); ?>
+                                </div>
                             </div>
                             <div class="info-row">
                                 <div class="info-label">Last Name</div>
-                                <div class="info-value" id="displayLastName"><?php echo htmlspecialchars($current_staff['lastName']); ?></div>
+                                <div class="info-value" id="displayLastName">
+                                    <?php echo htmlspecialchars($current_staff['lastName']); ?>
+                                </div>
                             </div>
                             <div class="info-row">
                                 <div class="info-label">Email</div>
-                                <div class="info-value" id="displayEmail"><?php echo htmlspecialchars($current_staff['email']); ?></div>
+                                <div class="info-value" id="displayEmail">
+                                    <?php echo htmlspecialchars($current_staff['email']); ?>
+                                </div>
                             </div>
                             <div class="info-row">
                                 <div class="info-label">Contact Number</div>
-                                <div class="info-value" id="displayContact"><?php echo htmlspecialchars($current_staff['contact_number'] ?: 'Not set'); ?></div>
+                                <div class="info-value" id="displayContact">
+                                    <?php echo htmlspecialchars($current_staff['contact_number'] ?: 'Not set'); ?>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -2696,7 +4126,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                             </div>
                             <div class="info-row">
                                 <div class="info-label">Account Created</div>
-                                <div class="info-value"><?php echo date('F d, Y', strtotime($current_staff['created_at'])); ?></div>
+                                <div class="info-value">
+                                    <?php echo date('F d, Y', strtotime($current_staff['created_at'])); ?>
+                                </div>
                             </div>
                             <div class="security-actions">
                                 <div class="security-btn" onclick="openChangePasswordModal()">
@@ -2724,23 +4156,56 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                         </h3>
                         <span class="close" onclick="closeEditProfileModal()">&times;</span>
                     </div>
-                    <form id="editProfileForm" onsubmit="handleUpdateProfile(event)">
+                    <form id="editProfileForm" class="staffModal-form" enctype="multipart/form-data" onsubmit="handleUpdateProfile(event)">
                         <div class="staffModal-body">
+                            <div class="staffModal-profile-upload">
+                                <!-- Clicking this container triggers the hidden file input -->
+                                <div class="staffModal-avatar-container" onclick="document.getElementById('profile_picture_input').click()">
+                                    <?php if (!empty($current_staff['profile_picture']) && file_exists('../../uploads/profiles/' . $current_staff['profile_picture'])): ?>
+                                        <img id="profile_preview" src="../../uploads/profiles/<?= htmlspecialchars($current_staff['profile_picture']) ?>" alt="" class="staff-avatar-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                        <!-- Initials fallback hidden if image exists -->
+                                        <div id="profile_initials" class="staffModal-avatar-initials" style="display: none;">
+                                            <?= htmlspecialchars(strtoupper(substr($current_staff['firstName'], 0, 1) . substr($current_staff['lastName'], 0, 1))) ?>
+                                        </div>
+                                    <?php else: ?>
+                                        <img id="profile_preview" style="display:none;" alt="" class="staff-avatar-img">
+                                        <div id="profile_initials" class="staffModal-avatar-initials">
+                                            <?= htmlspecialchars(strtoupper(substr($current_staff['firstName'], 0, 1) . substr($current_staff['lastName'], 0, 1))) ?>
+                                        </div>
+                                    <?php endif; ?>
+                                    <div class="staffModal-avatar-overlay">
+                                        <span>Upload</span>
+                                    </div>
+                                </div>
+                                
+                                <!-- Hidden file input -->
+                                <input type="file" 
+                                    id="profile_picture_input" 
+                                    name="profile_picture" 
+                                    accept="image/jpeg, image/png, image/gif, image/webp" 
+                                    style="display: none;" 
+                                    onchange="previewProfilePic(this)">
+                            </div>
+                            
                             <div class="staffModal-group">
                                 <label><i class="fas fa-user"></i> First Name</label>
-                                <input type="text" id="profileFirstName" value="<?php echo htmlspecialchars($current_staff['firstName']); ?>" required>
+                                <input type="text" id="profileFirstName"
+                                    value="<?php echo htmlspecialchars($current_staff['firstName']); ?>" required>
                             </div>
                             <div class="staffModal-group">
                                 <label><i class="fas fa-user"></i> Last Name</label>
-                                <input type="text" id="profileLastName" value="<?php echo htmlspecialchars($current_staff['lastName']); ?>" required>
+                                <input type="text" id="profileLastName"
+                                    value="<?php echo htmlspecialchars($current_staff['lastName']); ?>" required>
                             </div>
                             <div class="staffModal-group">
                                 <label><i class="fas fa-envelope"></i> Email Address</label>
-                                <input type="email" id="profileEmail" value="<?php echo htmlspecialchars($current_staff['email']); ?>" required>
+                                <input type="email" id="profileEmail"
+                                    value="<?php echo htmlspecialchars($current_staff['email']); ?>" required>
                             </div>
                             <div class="staffModal-group">
                                 <label><i class="fas fa-phone"></i> Contact Number</label>
-                                <input type="tel" id="profileContactNumber" value="<?php echo htmlspecialchars($current_staff['contact_number']); ?>">
+                                <input type="tel" id="profileContactNumber"
+                                    value="<?php echo htmlspecialchars($current_staff['contact_number']); ?>">
                             </div>
                         </div>
                         <div class="staffModal-footer">
@@ -2771,7 +4236,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                                 <label><i class="fas fa-lock"></i> Current Password</label>
                                 <div class="password-input-wrapper">
                                     <input type="password" id="currentPassword" required>
-                                    <button type="button" class="toggle-password" onclick="togglePasswordField('currentPassword', this)">
+                                    <button type="button" class="toggle-password"
+                                        onclick="togglePasswordField('currentPassword', this)">
                                         <i class="fas fa-eye"></i>
                                     </button>
                                 </div>
@@ -2780,7 +4246,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                                 <label><i class="fas fa-lock"></i> New Password</label>
                                 <div class="password-input-wrapper">
                                     <input type="password" id="newPassword" required>
-                                    <button type="button" class="toggle-password" onclick="togglePasswordField('newPassword', this)">
+                                    <button type="button" class="toggle-password"
+                                        onclick="togglePasswordField('newPassword', this)">
                                         <i class="fas fa-eye"></i>
                                     </button>
                                 </div>
@@ -2789,7 +4256,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                                 <label><i class="fas fa-lock"></i> Confirm New Password</label>
                                 <div class="password-input-wrapper">
                                     <input type="password" id="confirmPassword" required>
-                                    <button type="button" class="toggle-password" onclick="togglePasswordField('confirmPassword', this)">
+                                    <button type="button" class="toggle-password"
+                                        onclick="togglePasswordField('confirmPassword', this)">
                                         <i class="fas fa-eye"></i>
                                     </button>
                                 </div>
@@ -2810,8 +4278,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
 
         </main>
     </div>
-
+    <?php include "includes/export-clients-excel.php"; ?>
+    <?php include "includes/export-orders-excel.php"; ?>
+    <?php include "includes/export-suppliers-excel.php"; ?>
+    <?php include "includes/export-quotations-excel.php"; ?>
     <script>
+
+
+
         function toggleSidebar() {
             const sidebar = document.querySelector('.sidebar');
             sidebar.classList.toggle('collapsed');
@@ -2825,7 +4299,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
         }
 
         // Optional: Restore sidebar state on page load
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             const sidebarCollapsed = localStorage.getItem('sidebarCollapsed');
             if (sidebarCollapsed === 'true') {
                 document.querySelector('.sidebar').classList.add('collapsed');
@@ -2852,15 +4326,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
 
         // 3. Get your order data from PHP
         const orders = <?php
-                        // Fetch orders with addresses
-                        $conn = mysqli_connect($servername, $username, $password, $dbname);
-                        $res = $conn->query("SELECT customer_name, customer_address, total_amount FROM orders WHERE customer_address IS NOT NULL LIMIT 10");
-                        $data = [];
-                        while ($row = $res->fetch_assoc()) {
-                            $data[] = $row;
-                        }
-                        echo json_encode($data);
-                        ?>;
+        // Fetch orders with addresses
+        $conn = mysqli_connect($servername, $username, $password, $dbname);
+        $res = $conn->query("SELECT customer_name, customer_address, total_amount FROM orders WHERE customer_address IS NOT NULL LIMIT 10");
+        $data = [];
+        while ($row = $res->fetch_assoc()) {
+            $data[] = $row;
+        }
+        echo json_encode($data);
+        ?>;
 
         // 4. Function to convert address to Pin
         const usedLocations = {};
@@ -2889,9 +4363,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                     usedLocations[key] = true;
                     // --- JITTER LOGIC END ---
 
-                    const marker = L.marker([lat, lon], {
-                        icon: yellowIcon
-                    }).addTo(map);
+                    const marker = L.marker([lat, lon], { icon: yellowIcon }).addTo(map);
 
                     marker.bindPopup(`
                 <b>${order.customer_name}</b><br>
@@ -2907,26 +4379,86 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
         // 5. Run the function for each order
         orders.forEach(order => addPin(order));
 
-        function updateStatus(id, status) {
-            fetch(window.location.href + '?ajax=1&action=update_inquiry_status', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        id: id,
-                        status: status
-                    })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        alert('Status updated!');
-                        location.reload(); // Refresh to show new status
-                    } else {
-                        alert('Error: ' + data.message);
-                    }
+        // ======= INQUIRIES JS =======
+        (function () {
+            var search = document.getElementById('inqSearch');
+            var filter = document.getElementById('inqStatusFilter');
+            if (!search || !filter) return;
+            function run() {
+                var term = search.value.toLowerCase();
+                var status = filter.value;
+                document.querySelectorAll('#inqBody .inq-row').forEach(function (row) {
+                    var ok = (!term || row.dataset.name.includes(term) || row.dataset.email.includes(term) || row.dataset.phone.includes(term))
+                        && (!status || row.dataset.status === status);
+                    row.style.display = ok ? '' : 'none';
                 });
+            }
+            search.addEventListener('input', run);
+            filter.addEventListener('change', run);
+        })();
+
+        function inqOpen(msg) {
+            var sc = { new: 'background:#fff3cd;color:#856404', read: 'background:#d1ecf1;color:#0c5460', replied: 'background:#d4edda;color:#155724' }[msg.status] || 'background:#eee;color:#333';
+            var dt = new Date(msg.created_at);
+            var dtStr = dt.toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' }) + ' at ' + dt.toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' });
+            var phone = msg.phone ? '<span><i class="fas fa-phone"></i>' + msg.phone + '</span>' : '';
+            var readBtn = (msg.status !== 'read' && msg.status !== 'replied') ? '<button class="inq-modal-act inq-modal-act-read" onclick="inqSetStatus(' + msg.id + ',\'read\',true)"><i class="fas fa-check"></i> Mark as Read</button>' : '';
+            var replyBtn = msg.status !== 'replied' ? '<button class="inq-modal-act inq-modal-act-reply" onclick="inqSetStatus(' + msg.id + ',\'replied\',true)"><i class="fas fa-reply"></i> Mark as Replied</button>' : '';
+
+            document.getElementById('inqModalBody').innerHTML =
+                '<div style="display:flex;align-items:center;gap:14px;margin-bottom:20px;">'
+                + '<div class="inq-avatar" style="width:52px;height:52px;font-size:22px;flex-shrink:0;">' + msg.name.charAt(0).toUpperCase() + '</div>'
+                + '<div><div style="font-size:18px;font-weight:700;color:#1a1a2e;">' + msg.name + '</div>'
+                + '<small style="color:#888;">Submitted ' + dtStr + '</small></div>'
+                + '<span class="inq-badge" style="margin-left:auto;' + sc + '">' + msg.status.charAt(0).toUpperCase() + msg.status.slice(1) + '</span></div>'
+                + '<div class="inq-modal-info"><span><i class="fas fa-envelope"></i>' + msg.email + '</span>' + phone + '</div>'
+                + '<div class="inq-modal-msg"><label><i class="fas fa-comment" style="margin-right:6px;"></i>Message</label>'
+                + '<p>' + msg.message.replace(/\n/g, '<br>') + '</p></div>'
+                + '<div class="inq-modal-footer">' + readBtn + replyBtn + '</div>';
+
+            document.getElementById('inqOverlay').style.display = 'flex';
+        }
+
+        function inqClose() {
+            document.getElementById('inqOverlay').style.display = 'none';
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            var overlay = document.getElementById('inqOverlay');
+            if (overlay) overlay.addEventListener('click', function (e) { if (e.target === this) inqClose(); });
+        });
+
+        function inqSetStatus(id, status, fromModal) {
+            fetch(window.location.href + '?ajax=1&action=update_inquiry_status', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: id, status: status })
+            })
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    if (!data.success) { alert('Update failed: ' + (data.message || '')); return; }
+                    // Update badge
+                    var badge = document.getElementById('inqBadge' + id);
+                    if (badge) {
+                        badge.className = 'inq-badge inq-badge-' + status;
+                        badge.textContent = status.charAt(0).toUpperCase() + status.slice(1);
+                    }
+                    // Update row
+                    document.querySelectorAll('#inqBody .inq-row').forEach(function (row) {
+                        var hasBtn = row.querySelector('#inqReadBtn' + id) || row.querySelector('#inqReplyBtn' + id);
+                        if (hasBtn) {
+                            row.dataset.status = status;
+                            var pill = row.querySelector('.inq-new-pill');
+                            if (pill) pill.remove();
+                            var rb = document.getElementById('inqReadBtn' + id);
+                            var rpb = document.getElementById('inqReplyBtn' + id);
+                            if (rb && (status === 'read' || status === 'replied')) rb.remove();
+                            if (rpb && status === 'replied') rpb.remove();
+                        }
+                    });
+                    if (fromModal) inqClose();
+                })
+                .catch(function () { alert('Network error. Please try again.'); });
         }
 
         // ============================================
@@ -3114,6 +4646,42 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
         // ============================================
         // UPDATE PROFILE FUNCTION
         // ============================================
+        function previewProfilePic(input) {
+            const file = input.files[0];
+            if (file) {
+                const maxSizeBytes = 2 * 1024 * 1024; // 2MB
+                const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+
+                // Client-side Validation
+                if (file.size > maxSizeBytes) {
+                    showToast('File size exceeds 2MB limit. Please choose a smaller image.', 'error');
+                    input.value = ""; // Clear file
+                    return;
+                }
+
+                if (!validTypes.includes(file.type)) {
+                    showToast('Invalid file type. Please upload a JPG, PNG, GIF, or WEBP image.', 'error');
+                    input.value = "";
+                    return;
+                }
+
+                // Preview the image
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const preview = document.getElementById('profile_preview');
+                    const initials = document.getElementById('profile_initials');
+                    
+                    preview.src = e.target.result;
+                    preview.style.display = 'block';
+                    
+                    if (initials) {
+                        initials.style.display = 'none';
+                    }
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
         async function handleUpdateProfile(event) {
             event.preventDefault();
 
@@ -3134,13 +4702,18 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 return;
             }
 
-            const data = {
-                action: 'update_profile',
-                firstName: firstName,
-                lastName: lastName,
-                email: email,
-                contact_number: contact
-            };
+            // Create form data for file upload support
+            const formData = new FormData();
+            formData.append('action', 'update_profile');
+            formData.append('firstName', firstName);
+            formData.append('lastName', lastName);
+            formData.append('email', email);
+            formData.append('contact_number', contact);
+
+            const fileInput = document.getElementById('profile_picture_input');
+            if (fileInput.files.length > 0) {
+                formData.append('profile_picture', fileInput.files[0]);
+            }
 
             const submitBtn = event.target.querySelector('button[type="submit"]');
             const originalText = submitBtn.innerHTML;
@@ -3150,10 +4723,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
             try {
                 const response = await fetch('profile_api.php', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(data)
+                    body: formData
                 });
 
                 const result = await response.json();
@@ -3161,12 +4731,20 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 if (result.success) {
                     showToast(result.message || 'Profile updated successfully!', 'success');
 
+                    // If profile picture was updated, reload to reflect in header and profile
+                    if (fileInput.files.length > 0) {
+                        setTimeout(() => {
+                            location.reload();
+                        }, 1500);
+                        return;
+                    }
+
                     // Update display values
                     document.getElementById('displayFirstName').textContent = firstName;
                     document.getElementById('displayLastName').textContent = lastName;
                     document.getElementById('displayEmail').textContent = email;
-                    document.getElementById('headerEmail').textContent = email;
-                    document.getElementById('displayContact').textContent = contact || 'Not set';
+                    if(document.getElementById('headerEmail')) document.getElementById('headerEmail').textContent = email;
+                    if(document.getElementById('displayContact')) document.getElementById('displayContact').textContent = contact || 'Not set';
 
                     // Update header
                     const profileName = document.querySelector('.profile-name');
@@ -3174,11 +4752,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                         profileName.textContent = `${firstName} ${lastName}`;
                     }
 
-                    // Update avatar
-                    const profileAvatar = document.querySelector('.profile-avatar-large');
+                    // Update avatar initials only if no picture exists
+                    const profileAvatar = document.querySelector('.profile-avatar-large .staff-avatar-initials');
                     if (profileAvatar) {
                         const initials = (firstName.charAt(0) + lastName.charAt(0)).toUpperCase();
                         profileAvatar.textContent = initials;
+                    }
+                    const smallAvatar = document.querySelector('.user-avatar .staff-avatar-initials');
+                    if (smallAvatar) {
+                        const initials = (firstName.charAt(0) + lastName.charAt(0)).toUpperCase();
+                        smallAvatar.textContent = initials;
                     }
 
                     setTimeout(() => {
@@ -3235,9 +4818,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
             try {
                 const response = await fetch('profile_api.php', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(data)
                 });
 
@@ -3296,7 +4877,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
         }
 
         // Close modals on outside click
-        window.addEventListener('click', function(event) {
+        window.addEventListener('click', function (event) {
             const editModal = document.getElementById('editProfileModal');
             const passwordModal = document.getElementById('changePasswordModal');
 
@@ -3309,7 +4890,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
         });
 
         // Close modals with Escape key
-        document.addEventListener('keydown', function(event) {
+        document.addEventListener('keydown', function (event) {
             if (event.key === 'Escape') {
                 closeEditProfileModal();
                 closeChangePasswordModal();
@@ -3386,11 +4967,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                         <td>${this.formatDate(supplier.registrationDate)}</td>
                         <td>
                             <div class="supplier-actions">
-                                <button class="btn-small-action btn-edit-quotation" onclick="SuppliersModule.editSupplier(${supplier.id})">
+                                <button class="btn-table-action btn-edit" onclick="SuppliersModule.editSupplier(${supplier.id})">
                                     <i class="fas fa-edit"></i> Edit
                                 </button>
-                                <button class="btn-small-action btn-delete-quotation" onclick="SuppliersModule.showDeleteModal(${supplier.id})">
-                                    <i class="fas fa-trash"></i> Archive
+                                <button class="btn-table-action btn-delete" onclick="SuppliersModule.showDeleteModal(${supplier.id})">
+                                    <i class="fas fa-trash"></i> Delete
                                 </button>
                             </div>
                         </td>
@@ -3438,7 +5019,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 const supplier = this.suppliers.find(s => s.id === id);
                 if (!supplier) return;
 
-                document.getElementById('supplierModalTitle').innerHTML = '<i class="fas fa-edit"></i> <span>Edit Supplier</span>';
+                document.getElementById('supplierModalTitle').innerHTML = '<span><i class="fas fa-edit"></i> Edit Supplier</span><span class="close" onclick="closeSupplierModal()">&times;</span>';
                 document.getElementById('supplierId').value = supplier.id;
                 document.getElementById('supplierName').value = supplier.supplierName || '';
                 document.getElementById('contactPerson').value = supplier.contactPerson || '';
@@ -3448,7 +5029,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 document.getElementById('city').value = supplier.city || '';
                 document.getElementById('country').value = supplier.country || '';
 
-                document.getElementById('supplierModal').classList.add('show');
+                document.getElementById('supplierModal').style.display = 'block';
             },
 
             showDeleteModal(id) {
@@ -3501,14 +5082,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
 
         // Global functions
         function openSupplierModal() {
-            document.getElementById('supplierModalTitle').innerHTML = '<i class="fas fa-truck"></i> <span>Add New Supplier</span>';
+            document.getElementById('supplierModalTitle').innerHTML = '<span><i class="fas fa-truck"></i> Add New Supplier</span><span class="close" onclick="closeSupplierModal()">&times;</span>';
             document.getElementById('supplierForm').reset();
             document.getElementById('supplierId').value = '';
-            document.getElementById('supplierModal').classList.add('show');
+            document.getElementById('supplierModal').style.display = 'block';
         }
 
         function closeSupplierModal() {
-            document.getElementById('supplierModal').classList.remove('show');
+            document.getElementById('supplierModal').style.display = 'none';
         }
 
         function closeDeleteSupplierModal() {
@@ -3545,10 +5126,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({
-                        ...formData,
-                        action
-                    })
+                    body: JSON.stringify({ ...formData, action })
                 });
 
                 const result = await response.json();
@@ -3580,10 +5158,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({
-                        id,
-                        action: 'delete'
-                    })
+                    body: JSON.stringify({ id, action: 'delete' })
                 });
 
                 const result = await response.json();
@@ -3602,7 +5177,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
         }
 
         // Close modal when clicking outside
-        window.onclick = function(event) {
+        window.onclick = function (event) {
             const supplierModal = document.getElementById('supplierModal');
             const deleteModal = document.getElementById('deleteSupplierModal');
 
@@ -3615,7 +5190,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
         }
 
         // Initialize on page load
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             SuppliersModule.init();
         });
 
@@ -3779,7 +5354,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
 
         // Hook into the existing showPage function to refresh dashboard when viewed
         const originalShowPage = window.showPage;
-        window.showPage = function(pageId, pageTitle) {
+        window.showPage = function (pageId, pageTitle) {
             // Call original function
             if (typeof originalShowPage === 'function') {
                 originalShowPage(pageId, pageTitle);
@@ -3801,7 +5376,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
         };
 
         // Initialize on page load
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             // Refresh dashboard if it's the active page
             const dashboardPage = document.getElementById('dashboard');
             if (dashboardPage && dashboardPage.classList.contains('active')) {
@@ -3819,12 +5394,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
             },
 
             setupFormSubmission() {
-                const productForm = document.querySelector('form[enctype="multipart/form-data"] input[name="action"][value="add_product"]');
-                const addForm = productForm ? productForm.closest('form') : null;
+                const productForm = document.querySelector('form[enctype="multipart/form-data"]');
 
-                if (addForm) {
-                    addForm.addEventListener('submit', async (e) => {
-                        const actionInput = addForm.querySelector('input[name="action"]');
+                if (productForm) {
+                    productForm.addEventListener('submit', async (e) => {
+                        const actionInput = productForm.querySelector('input[name="action"]');
 
                         // Only intercept add_product submissions
                         if (actionInput && actionInput.value === 'add_product') {
@@ -4061,7 +5635,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
         document.head.insertAdjacentHTML('beforeend', notificationStyles);
 
         // Initialize on DOM load
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             ProductFormHandler.init();
             console.log('✅ Product Form Handler initialized with auto-update');
         });
@@ -4194,7 +5768,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                         
                         <div class="sidebar-section">
                             <h4>Total Amount</h4>
-                            <p><strong>₱${parseFloat(order.total_amount).toLocaleString('en-US', {minimumFractionDigits: 2})}</strong></p>
+                            <p><strong>₱${parseFloat(order.total_amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}</strong></p>
                         </div>
                     </div>
                 </div>
@@ -4221,11 +5795,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 <div class="timeline-step ${stepClass}">
                     <div class="timeline-time">
                         ${new Date(order.created_at).toLocaleString('en-US', {
-                            month: 'short',
-                            day: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                        })}
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    })}
                     </div>
                     <div class="timeline-title">${this.getStatusText(status)}</div>
                     ${order.current_location && isActive ? `
@@ -4384,9 +5958,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 try {
                     const response = await fetch('../../controllers/staff_update_tracking.php', {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
+                        headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(formData)
                     });
 
@@ -4438,7 +6010,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
         };
 
         const ClientsModule = {
-            init: function() {
+            init: function () {
                 // Load data initially
                 this.loadClients();
 
@@ -4448,7 +6020,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 });
             },
 
-            loadClients: function() {
+            loadClients: function () {
                 const tbody = document.getElementById('clientsTableBody');
                 tbody.innerHTML = '<tr><td colspan="5">Loading clients...</td></tr>';
 
@@ -4463,7 +6035,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                     .catch(err => console.error('Error:', err));
             },
 
-            renderTable: function(clients) {
+            renderTable: function (clients) {
                 const tbody = document.getElementById('clientsTableBody');
                 if (!clients || clients.length === 0) {
                     tbody.innerHTML = '<tr><td colspan="5">No clients found.</td></tr>';
@@ -4481,7 +6053,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
         `).join('');
             },
 
-            filterClients: function(searchTerm) {
+            filterClients: function (searchTerm) {
                 const term = searchTerm.toLowerCase();
                 const filtered = this.allClients.filter(c =>
                     c.customer_name.toLowerCase().includes(term) ||
@@ -4494,107 +6066,455 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
         // Initialize when the script loads
         document.addEventListener('DOMContentLoaded', () => ClientsModule.init());
 
+        // ==================== ORDERS MODULE ====================
         const OrdersModule = {
-            initialized: false,
+            orders: [],
+            filtered: [],
 
-            init() {
-                if (this.initialized) return;
-                this.initialized = true;
+            // ── Load ──────────────────────────────────────────────────────────────
+            async loadOrders() {
+                const tbody = document.getElementById('ordersTableBody');
+                const table = document.getElementById('ordersTable');
+                const loading = document.getElementById('ordersLoadingState');
+                const empty = document.getElementById('ordersEmptyState');
 
-                const searchInput  = document.getElementById('orderSearch');
-                const statusFilter = document.getElementById('orderStatusFilter');
-                const paymentFilter = document.getElementById('paymentFilter');
+                if (tbody) tbody.innerHTML = '';
+                if (table) table.style.display = 'none';
+                if (loading) loading.style.display = 'block';
+                if (empty) empty.style.display = 'none';
 
-                if (searchInput) {
-                    let debounce;
-                    searchInput.addEventListener('input', () => {
-                        clearTimeout(debounce);
-                        debounce = setTimeout(() => this.loadOrders(), 350);
-                    });
+                try {
+                    const res = await fetch('dashboard.php?ajax=1&action=fetch_orders');
+                    const json = await res.json();
+
+                    if (!json.success) throw new Error(json.message || 'Server error');
+
+                    this.orders = json.data || [];
+                    this.filtered = [...this.orders];
+
+                    this.updateStats();
+                    this.renderOrders();
+                    this.bindFilters();
+
+                } catch (err) {
+                    console.error('OrdersModule:', err);
+                    if (tbody) tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;color:#e74c3c;padding:24px;">
+                <i class="fas fa-exclamation-circle"></i> ${err.message}
+            </td></tr>`;
+                    if (table) table.style.display = 'table';
+                } finally {
+                    if (loading) loading.style.display = 'none';
                 }
-                if (statusFilter)  statusFilter.addEventListener('change',  () => this.loadOrders());
-                if (paymentFilter) paymentFilter.addEventListener('change', () => this.loadOrders());
-
-                this.loadOrders();
             },
 
-            loadOrders() {
-                const tbody = document.getElementById('ordersTableBody');
-                if (!tbody) return;
+            // ── Stats ─────────────────────────────────────────────────────────────
+            updateStats() {
+                const orders = this.orders;
+                const total = orders.length;
+                const pending = orders.filter(o => (o.payment_status || '').toLowerCase() === 'pending').length;
+                const verify = orders.filter(o => (o.payment_status || '').toLowerCase() === 'pending_verification').length;
+                const paid = orders.filter(o => (o.payment_status || '').toLowerCase() === 'paid').length;
+                const revenue = orders
+                    .filter(o => (o.payment_status || '').toLowerCase() === 'paid')
+                    .reduce((s, o) => s + parseFloat(o.total_amount || 0), 0);
 
-                const search  = (document.getElementById('orderSearch')?.value || '').trim();
-                const status  = document.getElementById('orderStatusFilter')?.value  || '';
-                const payment = document.getElementById('paymentFilter')?.value || '';
+                this._setText('statTotal', total);
+                this._setText('statPending', pending);
+                this._setText('statVerify', verify);
+                this._setText('statPaid', paid);
+                this._setText('statRevenue', '₱' + revenue.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
 
-                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:30px;color:#888;"><i class="fas fa-spinner fa-spin"></i> Loading orders...</td></tr>';
-
-                const params = new URLSearchParams();
-                if (search)  params.set('search',  search);
-                if (status)  params.set('status',  status);
-                if (payment) params.set('payment', payment);
-
-                // Use dedicated controller — clean separation of concerns
-                fetch('../../controllers/get_orders.php?' + params.toString())
-                    .then(r => r.json())
-                    .then(res => {
-                        if (res.success) {
-                            this.renderOrders(res.data);
-                        } else {
-                            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:30px;color:#e74c3c;">Failed to load orders.</td></tr>';
-                        }
-                    })
-                    .catch(err => {
-                        console.error('Orders fetch error:', err);
-                        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:30px;color:#e74c3c;">Error loading orders. Please try again.</td></tr>';
-                    });
+                // Highlight badge when orders need verification
+                const badge = document.getElementById('ordersBadge');
+                if (badge) {
+                    if (verify > 0) {
+                        badge.textContent = verify + ' need verification';
+                        badge.style.display = 'inline-block';
+                    } else {
+                        badge.style.display = 'none';
+                    }
+                }
             },
 
-            renderOrders(orders) {
+            _setText(id, val) {
+                const el = document.getElementById(id);
+                if (el) el.textContent = val;
+            },
+
+            // ── Render ────────────────────────────────────────────────────────────
+            renderOrders() {
                 const tbody = document.getElementById('ordersTableBody');
+                const table = document.getElementById('ordersTable');
+                const empty = document.getElementById('ordersEmptyState');
                 if (!tbody) return;
 
-                if (!orders || orders.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:30px;color:#888;">No orders found.</td></tr>';
+                if (this.filtered.length === 0) {
+                    tbody.innerHTML = '';
+                    if (table) table.style.display = 'none';
+                    if (empty) empty.style.display = 'block';
                     return;
                 }
 
-                const paymentLabels = {
-                    'cod': 'Cash on Delivery',
-                    'maya_full': 'Maya (Full)',
-                    'maya_dp': 'Maya (Down Payment)',
-                    'unionbank': 'UnionBank'
-                };
+                if (empty) empty.style.display = 'none';
+                if (table) table.style.display = 'table';
 
-                tbody.innerHTML = orders.map(order => {
-                    const date = new Date(order.created_at).toLocaleDateString('en-US', {
-                        year: 'numeric', month: 'short', day: 'numeric'
-                    });
-                    const amount = parseFloat(order.total_amount).toLocaleString('en-PH', {
-                        style: 'currency', currency: 'PHP'
-                    });
-                    const payLabel = paymentLabels[order.payment_method] || order.payment_method;
-                    const os = (order.order_status || '').toLowerCase();
-                    const ps = (order.payment_status || '').toLowerCase();
-                    const cap = s => s ? s.charAt(0).toUpperCase() + s.slice(1) : '';
+                tbody.innerHTML = this.filtered.map(o => {
+                    const date = o.created_at
+                        ? new Date(o.created_at).toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' })
+                        : '—';
+                    const amount = parseFloat(o.total_amount || 0)
+                        .toLocaleString('en-PH', { style: 'currency', currency: 'PHP' });
 
-                    return `<tr>
-                        <td><strong>#${this.esc(order.order_reference)}</strong></td>
-                        <td>${this.esc(order.customer_name)}</td>
-                        <td>${this.esc(order.customer_email)}</td>
-                        <td>${amount}</td>
-                        <td>${date}</td>
-                        <td>${payLabel}</td>
-                        <td><span class="status-badge status-${ps}">${cap(ps)}</span></td>
-                        <td><span class="status-badge status-${os}">${cap(os)}</span></td>
-                    </tr>`;
+                    const isManual = ['instapay', 'gcash'].some(m => (o.payment_method || '').toLowerCase().includes(m));
+                    const hasReceipt = !!o.receipt_url;
+                    const needsVerify = (o.payment_status || '').toLowerCase() === 'pending_verification';
+
+                    // Receipt cell
+                    let receiptCell;
+                    if (hasReceipt) {
+                        receiptCell = `<button onclick="viewReceipt('${this.esc(o.receipt_url)}','${this.esc(o.order_reference)}')"
+                    style="background:#28a745;color:#fff;border:none;padding:5px 11px;border-radius:5px;cursor:pointer;font-size:12px;white-space:nowrap;">
+                    <i class="fas fa-image"></i> View
+                </button>`;
+                    } else if (isManual) {
+                        receiptCell = `<span style="color:#dc3545;font-size:12px;" title="No receipt uploaded">
+                    <i class="fas fa-exclamation-triangle"></i> Missing
+                </span>`;
+                    } else {
+                        receiptCell = `<span style="color:#ccc;font-size:12px;">—</span>`;
+                    }
+
+                    // Row highlight for pending verification
+                    const rowStyle = needsVerify ? 'background:#faf0ff;' : '';
+
+                    return `<tr style="${rowStyle}">
+                <td style="font-weight:700;font-size:12px;">${this.esc(o.order_reference || '—')}</td>
+                <td>
+                    <div style="font-weight:600;">${this.esc(o.customer_name || '—')}</div>
+                    <div style="font-size:11px;color:#888;">${this.esc(o.customer_email || '')}</div>
+                </td>
+                <td style="font-weight:700;">${amount}</td>
+                <td style="font-size:12px;white-space:nowrap;">${date}</td>
+                <td style="font-size:13px;">${this.formatMethod(o.payment_method || '')}</td>
+                <td>${this.payBadge(o.payment_status)}</td>
+                <td>${this.orderBadge(o.order_status)}</td>
+                <td style="text-align:center;">${receiptCell}</td>
+                <td style="text-align:center;">
+                    <button onclick="OrdersModule.openDetail(${o.id})"
+                        style="background:#007bff;color:#fff;border:none;padding:5px 11px;border-radius:5px;cursor:pointer;font-size:12px;">
+                        <i class="fas fa-eye"></i> Details
+                    </button>
+                </td>
+            </tr>`;
                 }).join('');
             },
 
-            esc(text) {
-                if (!text) return '';
-                const d = document.createElement('div');
-                d.textContent = text;
-                return d.innerHTML;
+            // ── Detail Modal ──────────────────────────────────────────────────────
+            openDetail(id) {
+                const o = this.orders.find(x => x.id == id);
+                if (!o) return;
+
+                const modal = document.getElementById('orderDetailModal');
+                const body = document.getElementById('orderDetailBody');
+                const amount = parseFloat(o.total_amount || 0)
+                    .toLocaleString('en-PH', { style: 'currency', currency: 'PHP' });
+                const date = o.created_at ? new Date(o.created_at).toLocaleString('en-PH') : '—';
+                const hasReceipt = !!o.receipt_url;
+                const needsVerify = (o.payment_status || '').toLowerCase() === 'pending_verification';
+
+                const verifySection = needsVerify ? `
+        <div style="background:#f3f0ff;border:1px solid #c4a8f5;border-radius:10px;padding:16px;margin-bottom:16px;">
+            <p style="margin:0 0 10px;font-weight:700;color:#6f42c1;"><i class="fas fa-clock"></i> This order is awaiting payment verification</p>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                <button onclick="OrdersModule.verifyPayment(${o.id}, 'paid')"
+                    style="background:#28a745;color:#fff;border:none;padding:9px 20px;border-radius:7px;cursor:pointer;font-weight:600;font-size:14px;">
+                    <i class="fas fa-check"></i> Approve — Mark as Paid
+                </button>
+                <button onclick="OrdersModule.verifyPayment(${o.id}, 'failed')"
+                    style="background:#dc3545;color:#fff;border:none;padding:9px 20px;border-radius:7px;cursor:pointer;font-weight:600;font-size:14px;">
+                    <i class="fas fa-times"></i> Cancel Order!
+                </button>
+            </div>
+        </div>` : '';
+
+                const receiptSection = hasReceipt ? `
+        <div style="background:#e8f5e9;border:1px solid #a5d6a7;border-radius:10px;padding:16px;">
+            <p style="margin:0 0 10px;font-weight:700;color:#2e7d32;font-size:13px;">
+                <i class="fas fa-receipt"></i> Payment Receipt Uploaded
+            </p>
+            <div style="text-align:center;">
+                <img src="${this.esc(o.receipt_url)}" alt="Receipt"
+                    style="max-width:100%;max-height:220px;border-radius:8px;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.15);border:1px solid #c8e6c9;"
+                    onclick="viewReceipt('${this.esc(o.receipt_url)}','${this.esc(o.order_reference)}')"
+                    onerror="this.style.display='none';document.getElementById('receiptFb_${o.id}').style.display='block'">
+                <div id="receiptFb_${o.id}" style="display:none;">
+                    <a href="${this.esc(o.receipt_url)}" target="_blank"
+                       style="display:inline-block;padding:8px 18px;background:#28a745;color:#fff;border-radius:6px;text-decoration:none;font-size:13px;">
+                        <i class="fas fa-file-pdf"></i> Open PDF Receipt
+                    </a>
+                </div>
+                <br>
+                <button onclick="viewReceipt('${this.esc(o.receipt_url)}','${this.esc(o.order_reference)}')"
+                    style="margin-top:10px;background:#28a745;color:#fff;border:none;padding:8px 20px;border-radius:7px;cursor:pointer;font-size:13px;">
+                    <i class="fas fa-expand-alt"></i> View Full Receipt
+                </button>
+            </div>
+        </div>` : `
+        <div style="background:#fff3e0;border:1px solid #ffcc80;border-radius:10px;padding:14px;text-align:center;color:#e65100;font-size:13px;">
+            <i class="fas fa-exclamation-triangle"></i> No payment receipt uploaded for this order.
+        </div>`;
+
+                body.innerHTML = `
+        ${verifySection}
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
+            <div>
+                <div style="font-size:10px;font-weight:800;color:#999;text-transform:uppercase;letter-spacing:.5px;">Order Reference</div>
+                <div style="font-weight:700;margin-top:3px;">${this.esc(o.order_reference || '—')}</div>
+            </div>
+            <div>
+                <div style="font-size:10px;font-weight:800;color:#999;text-transform:uppercase;letter-spacing:.5px;">Date Placed</div>
+                <div style="margin-top:3px;font-size:13px;">${date}</div>
+            </div>
+            <div>
+                <div style="font-size:10px;font-weight:800;color:#999;text-transform:uppercase;letter-spacing:.5px;">Customer Name</div>
+                <div style="font-weight:600;margin-top:3px;">${this.esc(o.customer_name || '—')}</div>
+            </div>
+            <div>
+                <div style="font-size:10px;font-weight:800;color:#999;text-transform:uppercase;letter-spacing:.5px;">Email</div>
+                <div style="margin-top:3px;font-size:13px;">${this.esc(o.customer_email || '—')}</div>
+            </div>
+            <div>
+                <div style="font-size:10px;font-weight:800;color:#999;text-transform:uppercase;letter-spacing:.5px;">Phone</div>
+                <div style="margin-top:3px;font-size:13px;">${this.esc(o.customer_phone || '—')}</div>
+            </div>
+            <div>
+                <div style="font-size:10px;font-weight:800;color:#999;text-transform:uppercase;letter-spacing:.5px;">Total Amount</div>
+                <div style="font-weight:800;font-size:20px;color:#28a745;margin-top:3px;">${amount}</div>
+            </div>
+            <div style="grid-column:1/-1;">
+                <div style="font-size:10px;font-weight:800;color:#999;text-transform:uppercase;letter-spacing:.5px;">Delivery Address</div>
+                <div style="margin-top:3px;font-size:13px;">${this.esc(o.customer_address || '—')}</div>
+            </div>
+        </div>
+        <div style="display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap;">
+            <div style="flex:1;background:#f8f9fa;border-radius:8px;padding:12px;min-width:120px;">
+                <div style="font-size:10px;font-weight:800;color:#999;text-transform:uppercase;">Payment Method</div>
+                <div style="margin-top:6px;">${this.formatMethod(o.payment_method || '—')}</div>
+            </div>
+            <div style="flex:1;background:#f8f9fa;border-radius:8px;padding:12px;min-width:120px;">
+                <div style="font-size:10px;font-weight:800;color:#999;text-transform:uppercase;">Payment Status</div>
+                <div style="margin-top:6px;">${this.payBadge(o.payment_status)}</div>
+            </div>
+            <div style="flex:1;background:#f8f9fa;border-radius:8px;padding:12px;min-width:120px;">
+                <div style="font-size:10px;font-weight:800;color:#999;text-transform:uppercase;">Order Status</div>
+                <div style="margin-top:6px;">${this.orderBadge(o.order_status)}</div>
+            </div>
+        </div>
+        ${o.staff_notes ? `
+        <div style="background:#fffde7;border:1px solid #ffe082;border-radius:8px;padding:12px;margin-bottom:16px;">
+            <div style="font-size:10px;font-weight:800;color:#999;text-transform:uppercase;margin-bottom:6px;"><i class="fas fa-sticky-note"></i> Staff Notes / Payment Info</div>
+            <div style="font-size:13px;">${this.esc(o.staff_notes)}</div>
+        </div>` : ''}
+        ${receiptSection}
+        `;
+
+                modal.style.display = 'flex';
+            },
+
+            // ── Verify Payment ────────────────────────────────────────────────────
+            async verifyPayment(orderId, newStatus) {
+                const label = newStatus === 'paid' ? 'approve' : 'Cancel';
+                if (!confirm(`Are you sure you want to ${label} this payment?`)) return;
+
+                try {
+                    const res = await fetch('dashboard.php?ajax=1&action=verify_payment', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ order_id: orderId, payment_status: newStatus })
+                    });
+                    const json = await res.json();
+
+                    if (json.success) {
+                        closeOrderDetailModal();
+                        this.showToast(newStatus === 'paid' ? 'Payment approved — order is now Processing.' : 'Payment rejected.', newStatus === 'paid' ? 'success' : 'warning');
+                        await this.loadOrders();
+                    } else {
+                        this.showToast('Error: ' + (json.message || 'Unknown error'), 'error');
+                    }
+                } catch (err) {
+                    this.showToast('Connection error: ' + err.message, 'error');
+                }
+            },
+
+            // ── Filter by status (called from stat card click) ───────────────────
+            filterByStatus(status) {
+                const sel = document.getElementById('orderStatusFilter');
+                if (sel) { sel.value = status; sel.dispatchEvent(new Event('change')); }
+                // Navigate to orders page if not already there
+                if (typeof showPage === 'function') showPage('orders', 'Orders');
+            },
+
+            // ── Bind Filters ──────────────────────────────────────────────────────
+            bindFilters() {
+                const search = document.getElementById('orderSearch');
+                const status = document.getElementById('orderStatusFilter');
+                const payment = document.getElementById('paymentFilter');
+                const receipt = document.getElementById('receiptFilter');
+
+                const apply = () => {
+                    const term = (search?.value || '').toLowerCase();
+                    const stat = (status?.value || '').toLowerCase();
+                    const pay = (payment?.value || '').toLowerCase();
+                    const rec = (receipt?.value || '');
+
+                    this.filtered = this.orders.filter(o => {
+                        const matchTerm = !term ||
+                            (o.order_reference || '').toLowerCase().includes(term) ||
+                            (o.customer_name || '').toLowerCase().includes(term) ||
+                            (o.customer_email || '').toLowerCase().includes(term);
+
+                        const matchStat = !stat || (o.payment_status || '').toLowerCase() === stat;
+                        const matchPay = !pay || (o.payment_method || '').toLowerCase().includes(pay);
+                        const matchRec = !rec ||
+                            (rec === 'has_receipt' && !!o.receipt_url) ||
+                            (rec === 'no_receipt' && !o.receipt_url);
+
+                        return matchTerm && matchStat && matchPay && matchRec;
+                    });
+                    this.renderOrders();
+                };
+
+                // Remove old listeners by replacing elements (simplest approach)
+                [search, status, payment, receipt].forEach(el => {
+                    if (!el) return;
+                    const clone = el.cloneNode(true);
+                    el.parentNode.replaceChild(clone, el);
+                    clone.addEventListener(clone.tagName === 'INPUT' ? 'input' : 'change', apply);
+                });
+            },
+
+            // ── Helpers ───────────────────────────────────────────────────────────
+            formatMethod(method) {
+                const m = (method || '').toLowerCase();
+                if (m.includes('instapay')) return '<i class="fas fa-university" style="color:#6f42c1;"></i> InstaPay';
+                if (m.includes('gcash')) return '<i class="fas fa-mobile-alt" style="color:#007bff;"></i> GCash';
+                if (m.includes('maya')) return '<i class="fas fa-credit-card" style="color:#fd7e14;"></i> Maya';
+                if (m.includes('cash')) return '<i class="fas fa-money-bill-wave" style="color:#28a745;"></i> Cash';
+                return method || '—';
+            },
+
+            payBadge(status) {
+                const map = {
+                    paid: { bg: '#d4edda', c: '#155724', t: 'Paid' },
+                    pending: { bg: '#fff3cd', c: '#856404', t: 'Pending' },
+                    pending_verification: { bg: '#e8d5ff', c: '#4a235a', t: 'Verifying' },
+                    failed: { bg: '#f8d7da', c: '#721c24', t: 'Failed' },
+                    cancelled: { bg: '#e2e3e5', c: '#383d41', t: 'Cancelled' },
+                };
+                const k = (status || 'pending').toLowerCase();
+                const cfg = map[k] || { bg: '#eee', c: '#555', t: status || '—' };
+                return `<span style="background:${cfg.bg};color:${cfg.c};padding:3px 9px;border-radius:12px;font-size:11px;font-weight:700;white-space:nowrap;">${cfg.t}</span>`;
+            },
+
+            orderBadge(status) {
+                const map = {
+                    pending: { bg: '#fff3cd', c: '#856404', t: 'Pending' },
+                    processing: { bg: '#cce5ff', c: '#004085', t: 'Processing' },
+                    confirmed: { bg: '#d1ecf1', c: '#0c5460', t: 'Confirmed' },
+                    shipped: { bg: '#d4edda', c: '#155724', t: 'Shipped' },
+                    delivered: { bg: '#28a745', c: '#fff', t: 'Delivered' },
+                    cancelled: { bg: '#f8d7da', c: '#721c24', t: 'Cancelled' },
+                    archived: { bg: '#e2e3e5', c: '#383d41', t: 'Archived' },
+                };
+                const k = (status || 'pending').toLowerCase();
+                const cfg = map[k] || { bg: '#eee', c: '#555', t: status || '—' };
+                return `<span style="background:${cfg.bg};color:${cfg.c};padding:3px 9px;border-radius:12px;font-size:11px;font-weight:700;white-space:nowrap;">${cfg.t}</span>`;
+            },
+
+            esc(str) {
+                return String(str || '')
+                    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+            },
+
+            showToast(msg, type = 'success') {
+                // Use existing toast system if available, else fallback alert
+                if (typeof showToast === 'function') {
+                    showToast(msg, type);
+                } else if (typeof Toast !== 'undefined') {
+                    Toast.show(msg, type);
+                } else {
+                    alert(msg);
+                }
+            }
+        };
+
+        // ── Receipt Modal ──────────────────────────────────────────────────────────
+        function viewReceipt(url, orderRef) {
+            const modal = document.getElementById('receiptModal');
+            const body = document.getElementById('receiptModalBody');
+            const refEl = document.getElementById('receiptOrderRef');
+            const dlBtn = document.getElementById('receiptDownloadBtn');
+
+            if (!modal) return;
+            if (refEl) refEl.textContent = 'Order: ' + (orderRef || '');
+            if (dlBtn) { dlBtn.href = url; dlBtn.download = 'receipt_' + (orderRef || '') + '.jpg'; }
+
+            const isPdf = (url || '').toLowerCase().endsWith('.pdf');
+            body.innerHTML = isPdf
+                ? `<iframe src="${url}" style="width:100%;height:520px;border:none;border-radius:6px;"></iframe>`
+                : `<img src="${url}" alt="Payment Receipt"
+               style="max-width:100%;max-height:72vh;border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,.25);"
+               onerror="this.outerHTML='<p style=color:#c0392b>Could not load receipt. <a href=\\'${url}\\' target=\\'_blank\\'>Open directly</a></p>'">`;
+
+            modal.style.display = 'flex';
+        }
+
+        function closeReceiptModal() {
+            const modal = document.getElementById('receiptModal');
+            const body = document.getElementById('receiptModalBody');
+            if (modal) modal.style.display = 'none';
+            if (body) body.innerHTML = ''; // free memory / stop video
+        }
+
+        function closeOrderDetailModal() {
+            const modal = document.getElementById('orderDetailModal');
+            if (modal) modal.style.display = 'none';
+        }
+
+        // Close on backdrop click
+        document.addEventListener('click', function (e) {
+            if (e.target === document.getElementById('receiptModal')) closeReceiptModal();
+            if (e.target === document.getElementById('orderDetailModal')) closeOrderDetailModal();
+        });
+
+        // Close on Escape
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') { closeReceiptModal(); closeOrderDetailModal(); }
+        });
+
+        // Auto-load orders when navigating to the orders page
+        const _origShowPage = window.showPage;
+        window.showPage = function (pageId, pageTitle) {
+            if (typeof _origShowPage === 'function') _origShowPage(pageId, pageTitle);
+            else if (typeof PageNavigation !== 'undefined') PageNavigation.showPage(pageId, pageTitle);
+            if (pageId === 'orders') setTimeout(() => OrdersModule.loadOrders(), 80);
+            if (pageId === 'tracking') setTimeout(() => TrackingModule.init(), 100);
+        };
+
+
+
+        // Initialize tracking when page is shown
+        const originalShowPageFunc = window.showPage;
+        window.showPage = function (pageId, pageTitle) {
+            if (typeof originalShowPageFunc === 'function') {
+                originalShowPageFunc(pageId, pageTitle);
+            } else {
+                PageNavigation.showPage(pageId, pageTitle);
+            }
+
+            if (pageId === 'tracking') {
+                setTimeout(() => TrackingModule.init(), 100);
             }
         };
 
@@ -4664,23 +6584,20 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
 
             // Update header
             document.querySelector('.profile-name').textContent = `${firstName} ${lastName}`;
-            document.querySelector('.profile-avatar-large').textContent =
-                `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+            const lgAvatar = document.querySelector('.profile-avatar-large .staff-avatar-initials');
+            if (lgAvatar) {
+                lgAvatar.textContent = `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+            }
 
             // Here you would send to your backend
-            console.log('Updating info:', {
-                firstName,
-                lastName,
-                email,
-                contact
-            });
+            console.log('Updating info:', { firstName, lastName, email, contact });
 
             alert('Information updated successfully!');
             closeEditInfoModal();
         }
 
         // Close modal when clicking outside
-        window.onclick = function(event) {
+        window.onclick = function (event) {
             const editModal = document.getElementById('editInfoModal');
             const passwordModal = document.getElementById('changePasswordModal');
 
@@ -4730,7 +6647,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
 
         // PRODUCT MODAL FUNCTIONS
         // Product Filtering Functionality
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             const filterButtons = document.querySelectorAll('.filter-btn');
             const productCards = document.querySelectorAll('.product-card');
             const productCountElement = document.getElementById('displayedProductCount');
@@ -4741,7 +6658,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
 
             // Make product cards clickable to edit
             productCards.forEach(card => {
-                card.addEventListener('click', function(e) {
+                card.addEventListener('click', function (e) {
                     // Don't open modal if clicking checkbox
                     if (e.target.type === 'checkbox') {
                         return;
@@ -4757,7 +6674,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
 
             // Filter button click handler
             filterButtons.forEach(button => {
-                button.addEventListener('click', function() {
+                button.addEventListener('click', function () {
                     // Remove active class from all buttons
                     filterButtons.forEach(btn => btn.classList.remove('active'));
 
@@ -4774,7 +6691,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
 
             // Search input handler
             if (searchInput) {
-                searchInput.addEventListener('input', function() {
+                searchInput.addEventListener('input', function () {
                     currentSearchTerm = this.value.toLowerCase().trim();
                     applyFilters();
                 });
@@ -4844,7 +6761,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
             const filterBar = document.querySelector('.filter-bar');
 
             if (filterIcon && filterBar) {
-                filterIcon.addEventListener('click', function() {
+                filterIcon.addEventListener('click', function () {
                     filterBar.style.display = filterBar.style.display === 'none' ? 'flex' : 'none';
                 });
             }
@@ -4885,7 +6802,40 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                     document.getElementById('editCategory').value = product.category;
                     document.getElementById('editStockQuantity').value = product.stockQuantity;
                     document.getElementById('editWarranty').value = product.warranty || '';
+                    // Show/hide MOQ wrapper based on loaded category
+                    const _editMoqWrapper = document.getElementById('editMoqWrapper');
+                    const _editMoqInput = document.getElementById('editMoq');
+                    const _editMoqHint = document.getElementById('editMoqHint');
+                    const _editMoqCats = ['Panel', 'Mounting & Accessories'];
+
+                    function _applyEditMoqVisibility(cat) {
+                        if (_editMoqCats.includes(cat)) {
+                            _editMoqWrapper.style.display = 'block';
+                            if (cat === 'Panel') {
+                                if (_editMoqHint) _editMoqHint.textContent = 'Solar Panels: bulk tiers 5 / 10 / 15 / 20 pcs';
+                            } else {
+                                if (_editMoqHint) _editMoqHint.textContent = 'Mounting & Accessories: set minimum order quantity';
+                            }
+                        } else {
+                            _editMoqWrapper.style.display = 'none';
+                        }
+                    }
+
+                    _editMoqInput.value = product.moq || 1;
+                    _applyEditMoqVisibility(product.category);
+
                     document.getElementById('editDescription').value = product.description || '';
+
+                    // Auto-update MOQ when category changes in edit form
+                    const editCatEl = document.getElementById('editCategory');
+                    editCatEl.onchange = function () {
+                        _applyEditMoqVisibility(this.value);
+                        if (this.value === 'Panel' && parseInt(_editMoqInput.value) < 2) {
+                            _editMoqInput.value = 2;
+                        } else if (!_editMoqCats.includes(this.value)) {
+                            _editMoqInput.value = 1;
+                        }
+                    };
 
                     // Load product images
                     loadProductImages(product.images);
@@ -4912,7 +6862,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
             const counterContainer = document.getElementById('carouselCounter');
             const prevBtn = document.getElementById('carouselPrevBtn');
             const nextBtn = document.getElementById('carouselNextBtn');
-            
+
             carouselImages = images || [];
             currentCarouselIndex = 0;
 
@@ -4924,11 +6874,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
             if (!images || images.length === 0) {
                 // Show no images placeholder
                 mainContainer.innerHTML = `
-                    <div class="no-images-placeholder">
-                        <i class="fas fa-image"></i>
-                        <p>No images uploaded yet</p>
-                    </div>
-                `;
+            <div class="no-images-placeholder">
+                <i class="fas fa-image"></i>
+                <p>No images uploaded yet</p>
+            </div>
+        `;
                 // Hide navigation buttons
                 if (prevBtn) prevBtn.style.display = 'none';
                 if (nextBtn) nextBtn.style.display = 'none';
@@ -4943,11 +6893,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
             const mainImageWrapper = document.createElement('div');
             mainImageWrapper.className = 'carousel-slide-wrapper';
             mainImageWrapper.innerHTML = `
-                <img id="carouselMainImage" src="../../${images[0].image_path}" alt="Product image" onerror="this.src='../../assets/img/product-placeholder.png'">
-                <button type="button" class="carousel-delete-btn" id="carouselDeleteBtn" onclick="markCarouselImageForDeletion()">
-                    <i class="fas fa-trash"></i> Delete This Image
-                </button>
-            `;
+        <img id="carouselMainImage" src="../../${images[0].image_path}" alt="Product image" onerror="this.src='../../assets/img/product-placeholder.png'">
+        <button type="button" class="carousel-delete-btn" id="carouselDeleteBtn" onclick="markCarouselImageForDeletion()">
+            <i class="fas fa-trash"></i> Delete This Image
+        </button>
+    `;
             mainContainer.appendChild(mainImageWrapper);
 
             // Create thumbnails
@@ -4957,9 +6907,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 thumb.dataset.imageId = image.id;
                 thumb.dataset.index = index;
                 thumb.innerHTML = `
-                    <img src="../../${image.image_path}" alt="Thumbnail ${index + 1}" onerror="this.src='../../assets/img/product-placeholder.png'">
-                    ${imagesToDelete.includes(image.id) ? '<span class="thumb-deleted-badge"><i class="fas fa-trash"></i></span>' : ''}
-                `;
+            <img src="../../${image.image_path}" alt="Thumbnail ${index + 1}" onerror="this.src='../../assets/img/product-placeholder.png'">
+            ${imagesToDelete.includes(image.id) ? '<span class="thumb-deleted-badge"><i class="fas fa-trash"></i></span>' : ''}
+        `;
                 thumb.onclick = () => goToCarouselSlide(index);
                 thumbnailsContainer.appendChild(thumb);
             });
@@ -4971,14 +6921,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
         // Go to specific carousel slide
         function goToCarouselSlide(index) {
             if (carouselImages.length === 0) return;
-            
+
             currentCarouselIndex = index;
             if (currentCarouselIndex < 0) currentCarouselIndex = carouselImages.length - 1;
             if (currentCarouselIndex >= carouselImages.length) currentCarouselIndex = 0;
 
             const mainImage = document.getElementById('carouselMainImage');
             const deleteBtn = document.getElementById('carouselDeleteBtn');
-            
+
             if (mainImage) {
                 mainImage.src = '../../' + carouselImages[currentCarouselIndex].image_path;
             }
@@ -5023,7 +6973,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
         // Mark current carousel image for deletion
         function markCarouselImageForDeletion() {
             if (carouselImages.length === 0) return;
-            
+
             const currentImageId = carouselImages[currentCarouselIndex].id;
             const deleteBtn = document.getElementById('carouselDeleteBtn');
             const thumbnail = document.querySelector(`.carousel-thumbnail[data-index="${currentCarouselIndex}"]`);
@@ -5081,63 +7031,56 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
         // Close edit modal
         function closeEditModal() {
             document.getElementById('editProductModal').style.display = 'none';
-            
+
             // Clear new images input and preview
             const newImagesInput = document.getElementById('newImagesInput');
             const newImagesPreview = document.getElementById('newImagesPreview');
-            
+
             if (newImagesInput) newImagesInput.value = '';
             if (newImagesPreview) newImagesPreview.innerHTML = '';
         }
 
         // Close modal when clicking outside
-        window.addEventListener('click', function(event) {
+        window.addEventListener('click', function (event) {
             const editModal = document.getElementById('editProductModal');
             if (event.target === editModal) {
                 closeEditModal();
             }
         });
 
-        // Handle edit form submission via AJAX
-        document.addEventListener('DOMContentLoaded', function() {
-            const editForm = document.getElementById('editProductForm');
-            if (editForm) {
-                editForm.addEventListener('submit', async function(e) {
-                    e.preventDefault();
-                    e.stopImmediatePropagation();
+        // Handle edit form submission
+        const editForm = document.getElementById('editProductForm');
+        if (editForm) {
+            editForm.addEventListener('submit', async function (e) {
+                e.preventDefault();
 
-                    const formData = new FormData(this);
+                const formData = new FormData(this);
 
-                    // Remove new_images from form data since images are already
-                    // uploaded immediately via AJAX — prevents duplicate uploads
-                    formData.delete('new_images[]');
+                try {
+                    const response = await fetch('edit_product.php', {
+                        method: 'POST',
+                        body: formData
+                    });
 
-                    try {
-                        const response = await fetch('edit_product.php', {
-                            method: 'POST',
-                            body: formData
-                        });
+                    const data = await response.json();
 
-                        const data = await response.json();
-
-                        if (data.success) {
-                            alert('Product updated successfully!');
-                            closeEditModal();
-                            window.location.href = window.location.pathname;
-                        } else {
-                            alert('Error updating product: ' + data.message);
-                        }
-                    } catch (error) {
-                        console.error('Error:', error);
-                        alert('Failed to update product. Please try again.');
+                    if (data.success) {
+                        alert('Product updated successfully!');
+                        closeEditModal();
+                        location.reload();
+                    } else {
+                        alert('Error updating product: ' + data.message);
                     }
-                });
-            }
-        });
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('Failed to update product. Please try again.');
+                }
+            });
+        }
 
         // Load first image for each product from product_images table
         async function loadProductCardImages() {
-            productCards.forEach(async (card) => {
+            document.querySelectorAll('.product-card').forEach(async (card) => {
                 const productId = card.getAttribute('data-product-id');
                 const imageElement = card.querySelector('.product-image img');
 
@@ -5148,14 +7091,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                         const data = await response.json();
 
                         if (data.success && data.image_path) {
-                            imageElement.src = '../' + data.image_path;
+                            imageElement.src = '../../' + data.image_path;
                         } else {
                             // Keep the placeholder if no image found
-                            imageElement.src = '../assets/img/product-placeholder.png';
+                            imageElement.src = '../../assets/img/product-placeholder.png';
                         }
                     } catch (error) {
                         console.error('Error loading image for product ' + productId, error);
-                        imageElement.src = '../assets/img/product-placeholder.png';
+                        imageElement.src = '../../assets/img/product-placeholder.png';
                     }
                 }
             });
@@ -5166,7 +7109,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
         }
 
         // Close modal when clicking outside
-        window.onclick = function(event) {
+        window.onclick = function (event) {
             const editModal = document.getElementById('editProductModal');
             const deleteModal = document.getElementById('deleteProductModal');
             const bulkDeleteModal = document.getElementById('bulkDeleteModal');
@@ -5215,7 +7158,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
             }
 
             const keepInput = document.createElement('input');
-            keepInput.type = 'hidden';f
+            keepInput.type = 'hidden';
             keepInput.name = 'keep_images[]';
             keepInput.value = imageFilename;
             imageItem.appendChild(keepInput);
@@ -5225,13 +7168,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
         }
 
         // Handle new images - upload immediately via AJAX and refresh carousel
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             const newImagesInput = document.getElementById('newImagesInput');
             if (newImagesInput) {
-                newImagesInput.addEventListener('change', async function(e) {
+                newImagesInput.addEventListener('change', async function (e) {
                     const previewDiv = document.getElementById('newImagesPreview');
                     if (!previewDiv) return;
-                    
+
                     previewDiv.innerHTML = '';
 
                     const files = e.target.files;
@@ -5278,7 +7221,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                             data.images.forEach((img, i) => {
                                 const preview = document.createElement('div');
                                 preview.className = 'new-image-preview-item';
-                                preview.innerHTML = 
+                                preview.innerHTML =
                                     '<img src="../../' + img.image_path + '" alt="New image ' + (i + 1) + '">' +
                                     '<div class="new-image-badge"><i class="fas fa-plus-circle"></i> New</div>';
                                 previewDiv.appendChild(preview);
@@ -5334,7 +7277,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
         }
 
         // Close modals when clicking outside
-        window.onclick = function(event) {
+        window.onclick = function (event) {
             const editModal = document.getElementById('editProductModal');
             const deleteModal = document.getElementById('deleteProductModal');
             const bulkDeleteModal = document.getElementById('bulkDeleteModal');
@@ -5508,17 +7451,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 <td><strong>${this.escapeHtml(q.email)}</strong></td>
                 <td><strong>${this.escapeHtml(q.contact)}</strong></td>
                 <td>${this.escapeHtml(q.location || '')}</td>
-                <td><span class="quotation-badge badge-${q.system_type.toLowerCase().replace(/ /g, '-')}">${q.  system_type}</span></td>
+                <td><span class="quotation-badge badge-${q.system_type.toLowerCase().replace(/ /g, '-')}">${q.system_type}</span></td>
                 <td>${q.kw || '-'}</td>
                 <td><span class="quotation-badge badge-${q.officer.toLowerCase()}">${this.escapeHtml(officerName)}  </span></td>
                 <td><span class="quotation-badge badge-${q.status.toLowerCase()}">${q.status}</span></td>
                 <td style="max-width: 200px; font-size: 11px;">${this.escapeHtml(q.remarks || '')}</td>
                 <td class="quotation-actions">
-                    <button class="btn-small-action btn-edit-quotation" onclick="QuotationModule.editQuotation(${q. id})">
+                    <button class="btn-small-action btn-edit-quotation" onclick="QuotationModule.editQuotation(${q.id})">
                         <i class="fas fa-edit"></i> Edit
                     </button>
                     <button class="btn-small-action btn-delete-quotation" onclick="QuotationModule.showDeleteModal  (${q.id})">
-                        <i class="fas fa-trash"></i> Archive
+                        <i class="fas fa-trash"></i> Delete
                     </button>
                 </td>
             `;
@@ -5567,7 +7510,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 // Update modal title
                 const modalTitle = document.getElementById('quotationModalTitle');
                 if (modalTitle) {
-                    modalTitle.textContent = 'Edit Quotation';
+                    modalTitle.innerHTML = '<i class="fas fa-edit"></i> Edit Quotation';
                 }
 
                 // Set form values with null checks
@@ -5593,10 +7536,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 if (statusInput) statusInput.value = quotation.status || '';
                 if (remarksInput) remarksInput.value = quotation.remarks || '';
 
-                // Show the modal
+                // Show the modal with explicit display
                 const modal = document.getElementById('quotationModal');
                 if (modal) {
+                    modal.style.display = 'block';
                     modal.classList.add('show');
+                    console.log('Modal should be visible now'); // Debug log
                 } else {
                     console.error('Modal element not found!');
                 }
@@ -5605,6 +7550,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
             closeQuotationModal() {
                 const modal = document.getElementById('quotationModal');
                 if (modal) {
+                    modal.style.display = 'none';
                     modal.classList.remove('show');
                 }
 
@@ -5616,7 +7562,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
 
                 const modalTitle = document.getElementById('quotationModalTitle');
                 if (modalTitle) {
-                    modalTitle.textContent = 'New Quotation';
+                    modalTitle.innerHTML = '<i class="fas fa-file-invoice"></i> New Quotation';
                 }
             },
 
@@ -5739,7 +7685,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
             },
 
             closeQuotationModal() {
-                document.getElementById('quotationModal').classList.remove('show');
+                document.getElementById('quotationModal').style.display = 'none';
                 document.getElementById('quotationForm').reset();
                 document.getElementById('quotationId').value = '';
             },
@@ -5766,10 +7712,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
 
         // Global functions
         function openQuotationModal() {
-            document.getElementById('quotationModalTitle').textContent = 'New Quotation';
+            document.getElementById('quotationModalTitle').innerHTML = '<i class="fas fa-file-invoice"></i> New Quotation';
             document.getElementById('quotationForm').reset();
             document.getElementById('quotationId').value = '';
-            document.getElementById('quotationModal').classList.add('show');
+            document.getElementById('quotationModal').style.display = 'block';
         }
 
         function closeQuotationModal() {
@@ -5785,10 +7731,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
         }
 
         // Initialize when quotation page becomes active
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             const quotationMenuItem = document.querySelector('.menu-item[onclick*="quotation"]');
             if (quotationMenuItem) {
-                quotationMenuItem.addEventListener('click', function() {
+                quotationMenuItem.addEventListener('click', function () {
                     setTimeout(() => {
                         if (QuotationModule.quotations.length === 0) {
                             QuotationModule.init();
@@ -5842,7 +7788,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
         };
 
         // MAIN INITIALIZATION
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             UserDropdown.init();
             BulkActions.init();
             ProductSearch.init();
@@ -5850,14 +7796,36 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
             console.log('✅ Staff Dashboard initialized successfully');
         });
 
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             const categorySelect = document.getElementById('category-select');
             const brandSelect = document.getElementById('brand-select');
 
             if (!categorySelect || !brandSelect) return;
 
-            categorySelect.addEventListener('change', function() {
+            categorySelect.addEventListener('change', function () {
                 const category = this.value;
+
+                // Show/hide and auto-set MOQ for Solar Panel & Mounting & Accessories only
+                const moqWrapper = document.getElementById('moq-field-wrapper');
+                const moqInput = document.getElementById('moq-input');
+                const moqHint = document.getElementById('moq-hint-text');
+                const moqCategories = ['Panel', 'Mounting & Accessories'];
+
+                if (moqWrapper && moqInput) {
+                    if (moqCategories.includes(category)) {
+                        moqWrapper.style.display = 'block';
+                        if (category === 'Panel') {
+                            moqInput.value = 2;
+                            if (moqHint) moqHint.textContent = 'Solar Panels: bulk tiers 5 / 10 / 15 / 20 pcs';
+                        } else {
+                            moqInput.value = 1;
+                            if (moqHint) moqHint.textContent = 'Mounting & Accessories: set minimum order quantity';
+                        }
+                    } else {
+                        moqWrapper.style.display = 'none';
+                        moqInput.value = 1; // reset to default when hidden
+                    }
+                }
 
                 // Reset brand dropdown
                 brandSelect.innerHTML = '<option value="">Loading brands...</option>';
@@ -6135,10 +8103,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
             scrollCarouselIntoView() {
                 const carousel = document.querySelector('.preview-carousel');
                 if (carousel) {
-                    carousel.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'nearest'
-                    });
+                    carousel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                 }
             },
 
@@ -6262,7 +8227,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
         }
 
         // Initialize when DOM is ready
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             ProductPreview.init();
 
             // Handle form reset
@@ -6279,24 +8244,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
         });
 
         // Form Submit Handler with Animation
-        document.addEventListener('DOMContentLoaded', function() {
-            // Only target the add-product form, not the edit form
-            const productForm = document.querySelector('form[enctype="multipart/form-data"] input[name="action"][value="add_product"]');
-            const addProductForm = productForm ? productForm.closest('form') : null;
-
-            if (addProductForm) {
-                addProductForm.addEventListener('submit', function(e) {
-                    // Check if this is the add product form
-                    const actionInput = this.querySelector('input[name="action"]');
-                    if (actionInput && actionInput.value === 'add_product') {
-                        // Start the upload animation
-                        UploadAnimation.start();
-
-                        // Let the form submit naturally
-                        // The animation will play while PHP processes the upload
-                    }
-                });
-            }
+        document.addEventListener('DOMContentLoaded', function () {
+            // Note: ProductFormHandler already handles form submission via AJAX
+            // No need to start UploadAnimation here as it conflicts with the AJAX handler
 
             // Check if there's a success message from PHP
             const alertSuccess = document.querySelector('.alert.success');
@@ -6334,154 +8284,259 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
     }
 `;
         document.head.appendChild(style);
+
+
+
+        // ══════════════════════════════════════════════════════════════════════════════
+        // BRANDS MODULE
+        // ══════════════════════════════════════════════════════════════════════════════
+        const BrandsModule = {
+            brands: [],
+            categories: [],
+
+            init() {
+                this.loadCategories().then(() => this.loadBrands());
+            },
+
+            ajaxUrl: 'dashboard.php?ajax=1',
+
+            async post(formData) {
+                formData.append('ajax', '1');
+                const res = await fetch('dashboard.php', { method: 'POST', body: formData });
+                return res.json();
+            },
+
+            // ── Load categories ──────────────────────────────────────────────────────
+            async loadCategories() {
+                try {
+                    const res = await fetch(this.ajaxUrl + '&action=fetch_categories');
+                    const data = await res.json();
+                    if (data.success) {
+                        this.categories = data.data;
+                        this.populateCategoryDropdowns();
+                    }
+                } catch (e) { console.error('loadCategories error', e); }
+            },
+
+            populateCategoryDropdowns() {
+                const selectors = ['#bNewCategory', '#bEditCategory', '#bCatFilter'];
+                selectors.forEach(sel => {
+                    const el = document.querySelector(sel);
+                    if (!el) return;
+                    // keep first option, remove rest
+                    while (el.options.length > 1) el.remove(1);
+                    this.categories.forEach(c => {
+                        const opt = document.createElement('option');
+                        opt.value = c.category_id;
+                        opt.textContent = c.category_name;
+                        el.appendChild(opt);
+                    });
+                });
+                // Update stat
+                const statEl = document.getElementById('brandStatCats');
+                if (statEl) statEl.textContent = this.categories.length;
+            },
+
+            // ── Load brands ──────────────────────────────────────────────────────────
+            async loadBrands() {
+                try {
+                    const res = await fetch(this.ajaxUrl + '&action=fetch_brands');
+                    const data = await res.json();
+                    if (data.success) {
+                        this.brands = data.data;
+                        this.renderTable(this.brands);
+                        const statEl = document.getElementById('brandStatTotal');
+                        if (statEl) statEl.textContent = this.brands.length;
+                    }
+                } catch (e) { console.error('loadBrands error', e); }
+            },
+
+            // ── Render table ─────────────────────────────────────────────────────────
+            renderTable(list) {
+                const tbody = document.getElementById('brandsTableBody');
+                if (!tbody) return;
+
+                if (!list || list.length === 0) {
+                    tbody.innerHTML = '<tr class="brands-empty"><td colspan="4"><i class="fas fa-box-open"></i> No brands yet. Add one!</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = list.map((b, i) => `
+            <tr data-brand-id="${b.brand_id}" data-brand-name="${this.esc(b.brand_name)}"
+                data-category-id="${b.category_id}" data-category-name="${this.esc(b.category_name)}">
+                <td style="color:#999;font-size:12px;">${i + 1}</td>
+                <td style="font-weight:600;">${this.esc(b.brand_name)}</td>
+                <td><span class="cat-badge ${this.badgeClass(b.category_name)}">${this.esc(b.category_name)}</span></td>
+                <td>
+                    <div class="brand-action-btns">
+                        <button class="btn-brand-edit" onclick="BrandsModule.openEditModal(this)">
+                            <i class="fas fa-edit"></i> Edit
+                        </button>
+                        <button class="btn-brand-del" onclick="BrandsModule.openDeleteConfirm(this)">
+                            <i class="fas fa-trash"></i> Delete
+                        </button>
+                    </div>
+                </td>
+            </tr>`).join('');
+            },
+
+            // ── Filters ──────────────────────────────────────────────────────────────
+            applyFilters() {
+                const search = (document.getElementById('bSearchInput')?.value || '').toLowerCase();
+                const catId = document.getElementById('bCatFilter')?.value || '';
+
+                const filtered = this.brands.filter(b => {
+                    const nameMatch = b.brand_name.toLowerCase().includes(search);
+                    const catMatch = !catId || String(b.category_id) === catId;
+                    return nameMatch && catMatch;
+                });
+                this.renderTable(filtered);
+            },
+
+            // ── Add brand ────────────────────────────────────────────────────────────
+            async addBrand() {
+                const brand_name = document.getElementById('bNewName')?.value.trim();
+                const category_id = document.getElementById('bNewCategory')?.value;
+
+                if (!brand_name || !category_id) {
+                    return this.toast('Brand name and category are required.', 'error');
+                }
+
+                const fd = new FormData();
+                fd.append('action', 'add_brand');
+                fd.append('brand_name', brand_name);
+                fd.append('category_id', category_id);
+
+                const data = await this.post(fd);
+                if (data.success) {
+                    this.toast(data.message);
+                    document.getElementById('bNewName').value = '';
+                    document.getElementById('bNewCategory').value = '';
+                    await this.loadBrands();
+                } else {
+                    this.toast(data.message, 'error');
+                }
+            },
+
+            // ── Edit modal ───────────────────────────────────────────────────────────
+            openEditModal(btn) {
+                const tr = btn.closest('tr');
+                document.getElementById('bEditId').value = tr.dataset.brandId;
+                document.getElementById('bEditName').value = tr.dataset.brandName;
+                document.getElementById('bEditCategory').value = tr.dataset.categoryId;
+                document.getElementById('bEditOverlay').classList.add('open');
+            },
+
+            closeEditModal() {
+                document.getElementById('bEditOverlay').classList.remove('open');
+            },
+
+            async saveEdit() {
+                const brand_id = document.getElementById('bEditId').value;
+                const brand_name = document.getElementById('bEditName').value.trim();
+                const category_id = document.getElementById('bEditCategory').value;
+
+                if (!brand_name || !category_id) {
+                    return this.toast('All fields are required.', 'error');
+                }
+
+                const fd = new FormData();
+                fd.append('action', 'edit_brand');
+                fd.append('brand_id', brand_id);
+                fd.append('brand_name', brand_name);
+                fd.append('category_id', category_id);
+
+                const data = await this.post(fd);
+                if (data.success) {
+                    this.toast(data.message);
+                    this.closeEditModal();
+                    await this.loadBrands();
+                } else {
+                    this.toast(data.message, 'error');
+                }
+            },
+
+            // ── Delete modal ─────────────────────────────────────────────────────────
+            openDeleteConfirm(btn) {
+                const tr = btn.closest('tr');
+                document.getElementById('bDeleteId').value = tr.dataset.brandId;
+                document.getElementById('bDeleteMsg').textContent =
+                    `Are you sure you want to delete "${tr.dataset.brandName}"?`;
+                document.getElementById('bDeleteOverlay').classList.add('open');
+            },
+
+            closeDeleteModal() {
+                document.getElementById('bDeleteOverlay').classList.remove('open');
+            },
+
+            async confirmDelete() {
+                const brand_id = document.getElementById('bDeleteId').value;
+                const fd = new FormData();
+                fd.append('action', 'delete_brand');
+                fd.append('brand_id', brand_id);
+
+                const data = await this.post(fd);
+                if (data.success) {
+                    this.toast(data.message);
+                    this.closeDeleteModal();
+                    await this.loadBrands();
+                } else {
+                    this.toast(data.message, 'error');
+                }
+            },
+
+            // ── Helpers ──────────────────────────────────────────────────────────────
+            toast(msg, type = 'success') {
+                const t = document.getElementById('brandToast');
+                if (!t) return;
+                t.textContent = msg;
+                t.className = `brand-toast ${type} show`;
+                setTimeout(() => t.classList.remove('show'), 3200);
+            },
+
+            badgeClass(name) {
+                const n = (name || '').toLowerCase();
+                if (n.includes('panel')) return 'panel';
+                if (n.includes('inverter')) return 'inverter';
+                if (n.includes('battery')) return 'battery';
+                if (n.includes('mount')) return 'mount';
+                if (n.includes('package')) return 'package';
+                if (n.includes('protect')) return 'protect';
+                return '';
+            },
+
+            esc(str) {
+                return String(str)
+                    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+            }
+        };
+
+        // Close brand overlays on backdrop click
+        document.addEventListener('DOMContentLoaded', function () {
+            document.querySelectorAll('.brand-overlay').forEach(ov => {
+                ov.addEventListener('click', e => { if (e.target === ov) ov.classList.remove('open'); });
+            });
+        });
+
+        // Initialize BrandsModule when the brands sidebar item is clicked
+        document.addEventListener('DOMContentLoaded', function () {
+            const brandsMenuItem = Array.from(document.querySelectorAll('.menu-item')).find(el =>
+                el.getAttribute('onclick')?.includes("showPage('brands'")
+            );
+            if (brandsMenuItem) {
+                brandsMenuItem.addEventListener('click', function () {
+                    setTimeout(() => BrandsModule.init(), 100);
+                });
+            }
+        });
+        // ══════════════════════════════════════════════════════════════════════════════
+        // END BRANDS MODULE
+        // ══════════════════════════════════════════════════════════════════════════════
+
+
     </script>
-<script>
-function showPage(pageId, pageTitle) {
-    // Hide all page content sections
-    document.querySelectorAll('.page-content').forEach(page => {
-        page.style.display = 'none';
-    });
-    // Show the selected page
-    document.getElementById(pageId).style.display = 'block';
-    // Optional: Update page title if you have a title element
-    const titleElement = document.getElementById('page-title');
-    if (titleElement) {
-        titleElement.textContent = pageTitle;
-    }
 
-    // Initialize modules when their pages are shown
-    if (pageId === 'orders') {
-        setTimeout(() => OrdersModule.init(), 100);
-    } else if (pageId === 'tracking') {
-        setTimeout(() => TrackingModule.init(), 100);
-    } else if (pageId === 'dashboard') {
-        setTimeout(() => {
-            if (typeof DashboardRefresh !== 'undefined') DashboardRefresh.refreshDashboard();
-        }, 100);
-    }
-}
-</script>
-
-<?php include "includes/export-clients-pdf.php"; ?>
-<?php include "includes/export-clients-excel.php"; ?>
-<?php include "includes/export-orders-pdf.php"; ?>
-<?php include "includes/export-orders-excel.php"; ?>
-<?php include "includes/export-suppliers-pdf.php"; ?>
-<?php include "includes/export-suppliers-excel.php"; ?>
-<?php include "includes/export-quotations-excel.php"; ?>
-<?php include "includes/export-quotations-pdf.php"; ?>
-
-<!-- Archive Product JS Functions -->
-<script>
-function restoreArchivedProduct(archiveId) {
-    if (!confirm('Are you sure you want to restore this product back to the Product list?')) return;
-
-    fetch('../../controllers/archive_product.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: 'action=restore&archive_id=' + encodeURIComponent(archiveId)
-    })
-    .then(res => res.json())
-    .then(data => {
-        alert(data.message);
-        if (data.success) location.reload();
-    })
-    .catch(() => alert('Failed to restore product.'));
-}
-
-function permanentDeleteProduct(archiveId) {
-    if (!confirm('Are you sure you want to PERMANENTLY delete this product? This action cannot be undone.')) return;
-
-    fetch('../../controllers/archive_product.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: 'action=permanent_delete&archive_id=' + encodeURIComponent(archiveId)
-    })
-    .then(res => res.json())
-    .then(data => {
-        alert(data.message);
-        if (data.success) {
-            const row = document.getElementById('archive-row-' + archiveId);
-            if (row) row.remove();
-        }
-    })
-    .catch(() => alert('Failed to delete product.'));
-}
-
-// ── Archive Quotation Functions ──
-function restoreArchivedQuotation(archiveId) {
-    if (!confirm('Are you sure you want to restore this quotation back to the Quotation list?')) return;
-
-    fetch('../../controllers/archive_quotation.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: 'action=restore&archive_id=' + encodeURIComponent(archiveId)
-    })
-    .then(res => res.json())
-    .then(data => {
-        alert(data.message);
-        if (data.success) location.reload();
-    })
-    .catch(() => alert('Failed to restore quotation.'));
-}
-
-function permanentDeleteQuotation(archiveId) {
-    if (!confirm('Are you sure you want to PERMANENTLY delete this quotation? This action cannot be undone.')) return;
-
-    fetch('../../controllers/archive_quotation.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: 'action=permanent_delete&archive_id=' + encodeURIComponent(archiveId)
-    })
-    .then(res => res.json())
-    .then(data => {
-        alert(data.message);
-        if (data.success) {
-            const row = document.getElementById('archive-quotation-row-' + archiveId);
-            if (row) row.remove();
-        }
-    })
-    .catch(() => alert('Failed to delete quotation.'));
-}
-
-// ── Archive Supplier Functions ──
-function restoreArchivedSupplier(archiveId) {
-    if (!confirm('Restore this supplier back to the active suppliers list?')) return;
-
-    fetch('../../controllers/archive_supplier.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: 'action=restore&archive_id=' + encodeURIComponent(archiveId)
-    })
-    .then(res => res.json())
-    .then(data => {
-        alert(data.message);
-        if (data.success) location.reload();
-    })
-    .catch(() => alert('Failed to restore supplier.'));
-}
-
-function permanentDeleteSupplier(archiveId) {
-    if (!confirm('Are you sure you want to PERMANENTLY delete this supplier? This action cannot be undone.')) return;
-
-    fetch('../../controllers/archive_supplier.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: 'action=permanent_delete&archive_id=' + encodeURIComponent(archiveId)
-    })
-    .then(res => res.json())
-    .then(data => {
-        alert(data.message);
-        if (data.success) {
-            const row = document.getElementById('archive-supplier-row-' + archiveId);
-            if (row) row.remove();
-        }
-    })
-    .catch(() => alert('Failed to delete supplier.'));
-}
-</script>
-
-<?php if (isset($conn) && $conn) { $conn->close(); } ?>
 </body>
 
 </html>
