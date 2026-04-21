@@ -279,6 +279,13 @@ $conn->close();
         .contact-form .input-group:focus-within .form-control {
             border-color: var(--clr-secondary);
         }
+
+        .contact-form .input-group .input-group-text {
+            font-size: 0.875rem;
+            color: var(--clr-dark);
+            font-weight: 500;
+            user-select: none;
+        }
  
         .contact-form textarea.form-control {
             resize: none;
@@ -1746,7 +1753,11 @@ $conn->close();
                                 </div>
 
                                 <div class="col-12 mb-3">
-                                    <input type="tel" class="form-control" id="contact_phone" name="phone" placeholder="Phone Number *" required>
+                                    <div class="input-group">
+                                        <span class="input-group-text">+63 &nbsp;<i class="fas fa-chevron-down" style="font-size:10px;color:#aaa;"></i></span>
+                                        <input type="tel" class="form-control" id="contact_phone" placeholder="9XX XXX XXXX" required maxlength="10" pattern="[0-9]{10}" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+                                        <input type="hidden" id="contact_phone_full" name="phone">
+                                    </div>
                                 </div>
 
                                 <div class="col-12 mb-4">
@@ -3567,7 +3578,7 @@ async function submitContactForm(event) {
     const phoneInput = document.getElementById('contact_phone');
     const phoneFullInput = document.getElementById('contact_phone_full');
     if (phoneFullInput && phoneInput) {
-        phoneFullInput.value = '+639' + phoneInput.value;
+        phoneFullInput.value = '+63' + phoneInput.value;
         phoneInput.name = '';
     }
 
