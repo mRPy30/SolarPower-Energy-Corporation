@@ -50,13 +50,27 @@ $conn->close();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/png" href="assets/img/icon.png">
     <title>SolarPower Energy - Smart Energy for Smarter Homes</title>
-    <meta property="og:image" content="https://solarpower.com.ph/assets/img/logo_no_background.png" />
+    <meta property="og:image" content="https://solarpower.com.ph/assets/img/new_logo.png" />    
     <!-- Bootstrap CSS -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <!-- AOS Animation -->
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "url": "https://solarpower.com.ph",
+      "logo": "https://solarpower.com.ph/assets/img/new_logo.png",
+      "name": "SolarPower Energy Corporation",
+      "contactPoint": {
+        "@type": "ContactPoint",
+        "telephone": "+63-995-394-7379",
+        "contactType": "customer service"
+      }
+    }
+    </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
     <link rel="stylesheet" href="assets/style.css">
@@ -1651,7 +1665,7 @@ $conn->close();
                         <!-- Visit Us Section -->
                         <div class="visit-us-section">
                             <h3>Visit Us</h3>
-                            <p>Come visit our showroom to see our solar products and speak with our experts in person.
+                            <p>Connect with our solarpower experts to discuss the best energy solutions for your needs.
                             </p>
                             <a href="https://wa.me/639953947379" class="whatsapp-btn" target="_blank">
                                 <i class="fab fa-whatsapp"></i>
