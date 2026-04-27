@@ -1,4 +1,4 @@
--- phpMyAdmin SQL Dump
+﻿-- phpMyAdmin SQL Dump
 -- version 5.2.2
 -- https://www.phpmyadmin.net/
 --
@@ -52,7 +52,7 @@ INSERT INTO `admin` (`id`, `firstName`, `lastName`, `username`, `password`, `cre
 --
 
 CREATE TABLE `archived_products` (
-  `archive_id` int(11) NOT NULL,
+  `archive_id` int(11) NOT NULL AUTO_INCREMENT,
   `original_id` int(11) NOT NULL,
   `displayName` varchar(255) NOT NULL,
   `brandName` varchar(255) NOT NULL,
@@ -64,16 +64,17 @@ CREATE TABLE `archived_products` (
   `imagePath` varchar(255) NOT NULL,
   `postedByStaffId` int(11) DEFAULT NULL,
   `deleted_by` int(11) DEFAULT NULL,
-  `deleted_at` datetime NOT NULL DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+  `deleted_at` datetime NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`archive_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci AUTO_INCREMENT=1;
 
 --
 -- Dumping data for table `archived_products`
 --
 
-INSERT INTO `archived_products` (`archive_id`, `original_id`, `displayName`, `brandName`, `price`, `category`, `stockQuantity`, `warranty`, `description`, `imagePath`, `postedByStaffId`, `deleted_by`, `deleted_at`) VALUES
-(0, 235, 'U-TYPE METAL BRACKET 4 sets of  L-FOOT (SCREW, RUBBER PUD & BOLT)', 'Universal Brand', 600.00, 'Mounting & Accessories', 1000, '2 years', 'L-foot mounting kits are standard structural components used to secure solar panel rails to rooftops, typically including an aluminum L-bracket, a protective rubber (EPDM) pad, a stainless steel bolt, and a mounting screw.', 'path/to/uploaded/image.jpg', 10, 10, '2026-04-17 23:00:27'),
-(0, 64, 'SINGLE CORE PV WIRE RED 4mm2', 'Universal Brand', 0.00, 'Mounting & Accessories', 1500, '0', 'A box of 100 meters of single core red 4mmÂ² PV wire typically costs between â‚±3,000 and â‚±6,500, with a price per meter of around â‚±32 to â‚±65. The price of â‚±37.00 per meter falls within the typical range for this product when purchased in bulk. \\\\r\\\\n', 'path/to/uploaded/image.jpg', 5, NULL, '2026-04-26 18:23:14');
+INSERT INTO `archived_products` (`original_id`, `displayName`, `brandName`, `price`, `category`, `stockQuantity`, `warranty`, `description`, `imagePath`, `postedByStaffId`, `deleted_by`, `deleted_at`) VALUES
+(235, 'U-TYPE METAL BRACKET 4 sets of  L-FOOT (SCREW, RUBBER PUD & BOLT)', 'Universal Brand', 600.00, 'Mounting & Accessories', 1000, '2 years', 'L-foot mounting kits are standard structural components used to secure solar panel rails to rooftops, typically including an aluminum L-bracket, a protective rubber (EPDM) pad, a stainless steel bolt, and a mounting screw.', 'path/to/uploaded/image.jpg', 10, 10, '2026-04-17 23:00:27'),
+(64, 'SINGLE CORE PV WIRE RED 4mm2', 'Universal Brand', 0.00, 'Mounting & Accessories', 1500, '0', 'A box of 100 meters of single core red 4mmÂ² PV wire typically costs between â‚±3,000 and â‚±6,500, with a price per meter of around â‚±32 to â‚±65. The price of â‚±37.00 per meter falls within the typical range for this product when purchased in bulk. \\\\r\\\\n', 'path/to/uploaded/image.jpg', 5, NULL, '2026-04-26 18:23:14');
 
 -- --------------------------------------------------------
 
@@ -82,7 +83,7 @@ INSERT INTO `archived_products` (`archive_id`, `original_id`, `displayName`, `br
 --
 
 CREATE TABLE `archived_quotations` (
-  `archive_id` int(11) NOT NULL,
+  `archive_id` int(11) NOT NULL AUTO_INCREMENT,
   `original_id` int(11) NOT NULL,
   `quotation_number` varchar(10) DEFAULT NULL,
   `client_name` varchar(255) NOT NULL,
@@ -97,8 +98,9 @@ CREATE TABLE `archived_quotations` (
   `created_by` int(11) DEFAULT NULL,
   `original_created_at` timestamp NULL DEFAULT NULL,
   `deleted_by` int(11) DEFAULT NULL,
-  `deleted_at` datetime NOT NULL DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+  `deleted_at` datetime NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`archive_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci AUTO_INCREMENT=1;
 
 -- --------------------------------------------------------
 
@@ -107,7 +109,7 @@ CREATE TABLE `archived_quotations` (
 --
 
 CREATE TABLE `archived_suppliers` (
-  `archive_id` int(11) NOT NULL,
+  `archive_id` int(11) NOT NULL AUTO_INCREMENT,
   `original_id` int(11) NOT NULL,
   `supplierName` varchar(255) NOT NULL,
   `contactPerson` varchar(255) DEFAULT NULL,
@@ -118,8 +120,9 @@ CREATE TABLE `archived_suppliers` (
   `country` varchar(100) DEFAULT NULL,
   `registrationDate` timestamp NULL DEFAULT NULL,
   `deleted_by` int(11) DEFAULT NULL,
-  `deleted_at` datetime NOT NULL DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+  `deleted_at` datetime NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`archive_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci AUTO_INCREMENT=1;
 
 -- --------------------------------------------------------
 

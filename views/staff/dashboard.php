@@ -8519,6 +8519,126 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
             });
         });
 
+        // ══════════════════════════════════════════════════════════════════════════════
+        // ARCHIVE ACTION HANDLERS
+        // ══════════════════════════════════════════════════════════════════════════════
+
+        /**
+         * Generic helper: POST to a controller and handle the JSON response.
+         * @param {string} url        - Relative URL of the PHP controller
+         * @param {object} params     - Key/value pairs to send as POST body
+         * @param {string} rowId      - DOM id of the <tr> to remove on success
+         * @param {string} successMsg - Toast message shown on success
+         */
+        async function _archiveAction(url, params, rowId, successMsg) {
+            const body = new URLSearchParams(params);
+            try {
+                const res  = await fetch(url, { method: 'POST', body });
+                const data = await res.json();
+                if (data.success) {
+                    const row = document.getElementById(rowId);
+                    if (row) row.remove();
+                    _showArchiveToast(successMsg, 'success');
+                } else {
+                    _showArchiveToast(data.message || 'Action failed.', 'error');
+                }
+            } catch (err) {
+                _showArchiveToast('Network error. Please try again.', 'error');
+            }
+        }
+
+        /** Tiny toast notification for archive actions */
+        function _showArchiveToast(msg, type) {
+            let toast = document.getElementById('archiveToast');
+            if (!toast) {
+                toast = document.createElement('div');
+                toast.id = 'archiveToast';
+                toast.style.cssText = `
+                    position:fixed; bottom:28px; right:28px; z-index:99999;
+                    min-width:260px; max-width:380px; padding:14px 20px;
+                    border-radius:10px; font-size:14px; font-weight:600;
+                    box-shadow:0 6px 24px rgba(0,0,0,.18);
+                    transition:opacity .4s; opacity:0; pointer-events:none;`;
+                document.body.appendChild(toast);
+            }
+            toast.textContent = msg;
+            toast.style.background = type === 'success' ? '#27ae60' : '#e74c3c';
+            toast.style.color = '#fff';
+            toast.style.opacity = '1';
+            clearTimeout(toast._timer);
+            toast._timer = setTimeout(() => { toast.style.opacity = '0'; }, 3000);
+        }
+
+        // ── PRODUCTS ──────────────────────────────────────────────────────────────────
+
+        function restoreArchivedProduct(archiveId) {
+            if (!confirm('Restore this product back to the active product list?')) return;
+            _archiveAction(
+                '../../controllers/archive_product.php',
+                { action: 'restore', archive_id: archiveId },
+                'archive-row-' + archiveId,
+                'Product restored successfully.'
+            );
+        }
+
+        function permanentDeleteProduct(archiveId) {
+            if (!confirm('Permanently delete this product? This action cannot be undone.')) return;
+            _archiveAction(
+                '../../controllers/archive_product.php',
+                { action: 'permanent_delete', archive_id: archiveId },
+                'archive-row-' + archiveId,
+                'Product permanently deleted.'
+            );
+        }
+
+        // ── QUOTATIONS ────────────────────────────────────────────────────────────────
+
+        function restoreArchivedQuotation(archiveId) {
+            if (!confirm('Restore this quotation back to the active list?')) return;
+            _archiveAction(
+                '../../controllers/archive_quotation.php',
+                { action: 'restore', archive_id: archiveId },
+                'archive-quotation-row-' + archiveId,
+                'Quotation restored successfully.'
+            );
+        }
+
+        function permanentDeleteQuotation(archiveId) {
+            if (!confirm('Permanently delete this quotation? This action cannot be undone.')) return;
+            _archiveAction(
+                '../../controllers/archive_quotation.php',
+                { action: 'permanent_delete', archive_id: archiveId },
+                'archive-quotation-row-' + archiveId,
+                'Quotation permanently deleted.'
+            );
+        }
+
+        // ── SUPPLIERS ─────────────────────────────────────────────────────────────────
+
+        function restoreArchivedSupplier(archiveId) {
+            if (!confirm('Restore this supplier back to the active supplier list?')) return;
+            _archiveAction(
+                '../../controllers/archive_supplier.php',
+                { action: 'restore', archive_id: archiveId },
+                'archive-supplier-row-' + archiveId,
+                'Supplier restored successfully.'
+            );
+        }
+
+        function permanentDeleteSupplier(archiveId) {
+            if (!confirm('Permanently delete this supplier? This action cannot be undone.')) return;
+            _archiveAction(
+                '../../controllers/archive_supplier.php',
+                { action: 'permanent_delete', archive_id: archiveId },
+                'archive-supplier-row-' + archiveId,
+                'Supplier permanently deleted.'
+            );
+        }
+
+        // ══════════════════════════════════════════════════════════════════════════════
+        // END ARCHIVE ACTION HANDLERS
+        // ══════════════════════════════════════════════════════════════════════════════
+
         // Initialize BrandsModule when the brands sidebar item is clicked
         document.addEventListener('DOMContentLoaded', function () {
             const brandsMenuItem = Array.from(document.querySelectorAll('.menu-item')).find(el =>
