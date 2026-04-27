@@ -1,52 +1,48 @@
 <?php
-// brand_data.php
+/**
+ * brand_data.php
+ * Returns brands for a given category name (used by the Add Product form dropdown).
+ * Queries the `brands` table joined with `categories`.
+ */
 header('Content-Type: application/json');
 
-// Database connection details
-$servername = "localhost";
-$username = "root";
-$password = "";
-$dbname = "solar_power";
+include __DIR__ . '/../config/dbconn.php';
 
 $conn = mysqli_connect($servername, $username, $password, $dbname);
-
 if ($conn->connect_error) {
-    // In a real application, you should log this error and return a generic message
     http_response_code(500);
     echo json_encode(["error" => "Database connection failed"]);
     exit;
 }
 
-// Get the category from the GET request
-$category = $_GET['category'] ?? '';
+$category = trim($_GET['category'] ?? '');
+$brands   = [];
 
-$brands = [];
-
-if (!empty($category)) {
-    // Sanitize the input for safety (optional, but good practice, since it's used in a placeholder query)
-    $safe_category = $conn->real_escape_string($category);
-
-    // In a real application, you would have a dedicated 'brands' table
-    // For this example, we'll return hardcoded brands based on category
-    // Replace this with a real DB query like: 
-    // $sql = "SELECT DISTINCT brandName FROM product WHERE category = '{$safe_category}' ORDER BY brandName";
-    
-    // Example hardcoded brand data:
-    if ($safe_category === 'Panel') {
-        $brands = ["Trina Solar", "Jinko Solar", "Aiko", "Lvtopsun", "Aerosolar", "IanSolar"];
-    } elseif ($safe_category === 'Inverter') {
-        $brands = ["Huawei", "Solis", "TrinaSolar", "Solax", "Deye", "LuxPower"];
-    } elseif ($safe_category === 'Battery') {
-        $brands = ["IanSolar", "Solax", "TrinaSolar", "JA Solar", "HoyMiles"];
-    } elseif ($safe_category === 'Package') {
-        $brands = ["Grid-tie", "Hybrid"];
-    } else {
-        $brands = ["Universal Brand"];
+if ($category !== '') {
+    // Fetch brands whose associated category name matches (case-insensitive)
+    $stmt = $conn->prepare("
+        SELECT b.brand_name
+        FROM brands b
+        JOIN categories c ON b.category_id = c.category_id
+        WHERE c.category_name = ?
+        ORDER BY b.brand_name ASC
+    ");
+    $stmt->bind_param("s", $category);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    while ($row = $result->fetch_assoc()) {
+        $brands[] = $row['brand_name'];
+    }
+    $stmt->close();
+} else {
+    // No category filter — return all brand names
+    $result = $conn->query("SELECT DISTINCT brand_name FROM brands ORDER BY brand_name ASC");
+    if ($result) {
+        while ($row = $result->fetch_assoc()) {
+            $brands[] = $row['brand_name'];
+        }
     }
 }
 
-// Return the brands as a JSON array
-echo json_encode(array_unique($brands));
-
 $conn->close();
-?>
+echo json_encode(array_values(array_unique($brands)));

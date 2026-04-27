@@ -724,6 +724,106 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
                     echo json_encode(['success' => false, 'message' => 'Current password incorrect']);
                 }
                 break;
+            // ── BRANDS: fetch all brands (joined with categories) ─────────────────
+            case 'fetch_brands':
+                $result = $conn->query("
+                    SELECT b.brand_id, b.brand_name, b.category_id,
+                           c.category_name
+                    FROM brands b
+                    LEFT JOIN categories c ON b.category_id = c.category_id
+                    ORDER BY c.category_name ASC, b.brand_name ASC
+                ");
+                $brands = [];
+                if ($result) {
+                    while ($row = $result->fetch_assoc()) $brands[] = $row;
+                }
+                echo json_encode(['success' => true, 'data' => $brands]);
+                break;
+
+            // ── BRANDS: fetch all categories ──────────────────────────────────────
+            case 'fetch_categories':
+                $result = $conn->query("SELECT category_id, category_name FROM categories ORDER BY category_name ASC");
+                $cats = [];
+                if ($result) {
+                    while ($row = $result->fetch_assoc()) $cats[] = $row;
+                }
+                echo json_encode(['success' => true, 'data' => $cats]);
+                break;
+
+            // ── BRANDS: add a new brand ────────────────────────────────────────────
+            case 'add_brand':
+                $brandName  = trim($_POST['brand_name']  ?? '');
+                $categoryId = intval($_POST['category_id'] ?? 0);
+                if ($brandName === '' || $categoryId === 0) {
+                    echo json_encode(['success' => false, 'message' => 'Brand name and category are required.']);
+                    break;
+                }
+                // Check duplicate in same category
+                $chk = $conn->prepare("SELECT brand_id FROM brands WHERE brand_name = ? AND category_id = ?");
+                $chk->bind_param("si", $brandName, $categoryId);
+                $chk->execute();
+                $chk->store_result();
+                if ($chk->num_rows > 0) {
+                    echo json_encode(['success' => false, 'message' => 'This brand already exists in that category.']);
+                    $chk->close(); break;
+                }
+                $chk->close();
+                $ins = $conn->prepare("INSERT INTO brands (brand_name, category_id) VALUES (?, ?)");
+                $ins->bind_param("si", $brandName, $categoryId);
+                if ($ins->execute()) {
+                    echo json_encode(['success' => true, 'message' => 'Brand added successfully.', 'id' => $ins->insert_id]);
+                } else {
+                    echo json_encode(['success' => false, 'message' => 'Failed to add brand: ' . $conn->error]);
+                }
+                $ins->close();
+                break;
+
+            // ── BRANDS: update a brand ────────────────────────────────────────────
+            case 'edit_brand':
+                $brandId    = intval($_POST['brand_id']    ?? 0);
+                $brandName  = trim($_POST['brand_name']    ?? '');
+                $categoryId = intval($_POST['category_id'] ?? 0);
+                if ($brandId === 0 || $brandName === '' || $categoryId === 0) {
+                    echo json_encode(['success' => false, 'message' => 'Brand ID, name, and category are required.']);
+                    break;
+                }
+                // Duplicate check (exclude self)
+                $chk = $conn->prepare("SELECT brand_id FROM brands WHERE brand_name = ? AND category_id = ? AND brand_id != ?");
+                $chk->bind_param("sii", $brandName, $categoryId, $brandId);
+                $chk->execute();
+                $chk->store_result();
+                if ($chk->num_rows > 0) {
+                    echo json_encode(['success' => false, 'message' => 'Another brand with the same name exists in that category.']);
+                    $chk->close(); break;
+                }
+                $chk->close();
+                $upd = $conn->prepare("UPDATE brands SET brand_name = ?, category_id = ? WHERE brand_id = ?");
+                $upd->bind_param("sii", $brandName, $categoryId, $brandId);
+                if ($upd->execute()) {
+                    echo json_encode(['success' => true, 'message' => 'Brand updated successfully.']);
+                } else {
+                    echo json_encode(['success' => false, 'message' => 'Failed to update brand: ' . $conn->error]);
+                }
+                $upd->close();
+                break;
+
+            // ── BRANDS: delete a brand ────────────────────────────────────────────
+            case 'delete_brand':
+                $brandId = intval($_POST['brand_id'] ?? 0);
+                if ($brandId === 0) {
+                    echo json_encode(['success' => false, 'message' => 'Brand ID is required.']);
+                    break;
+                }
+                $del = $conn->prepare("DELETE FROM brands WHERE brand_id = ?");
+                $del->bind_param("i", $brandId);
+                if ($del->execute() && $del->affected_rows > 0) {
+                    echo json_encode(['success' => true, 'message' => 'Brand deleted successfully.']);
+                } else {
+                    echo json_encode(['success' => false, 'message' => 'Brand not found or already deleted.']);
+                }
+                $del->close();
+                break;
+
             default:
                 echo json_encode(['success' => false, 'message' => 'Invalid action']);
         }
