@@ -1761,7 +1761,7 @@ tbody tr:last-child td {
     height: 36px;
     min-width: 36px;
     border-radius: 50%;
-    background:#217346;
+    background: #217346;
     color: white;
     border: none;
     cursor: pointer;
@@ -2459,7 +2459,7 @@ tbody tr:last-child td {
 
 /* Empty state */
 .image-preview-grid:empty::before {
-    content: "📷 No images uploaded yet. Click above to add up to 15 images.";
+    content: "ðŸ“· No images uploaded yet. Click above to add up to 15 images.";
     display: block;
     text-align: center;
     color: #999;
@@ -3414,9 +3414,12 @@ tbody tr:last-child td {
 }
 
 .btn-edit-quotation:hover {
-       background: #3498db;/* slightly darker gray */
-    box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15); /* deeper shadow on hover */
-    transform: translateY(-2px); /* subtle lift effect */
+    background: #3498db;
+    /* slightly darker gray */
+    box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
+    /* deeper shadow on hover */
+    transform: translateY(-2px);
+    /* subtle lift effect */
 }
 
 .btn-delete-quotation {

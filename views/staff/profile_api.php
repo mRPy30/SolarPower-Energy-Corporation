@@ -30,38 +30,38 @@ switch ($action) {
         $lastName = trim($_POST['lastName'] ?? ($input['lastName'] ?? ''));
         $email = trim($_POST['email'] ?? ($input['email'] ?? ''));
         $contact = trim($_POST['contact_number'] ?? ($input['contact_number'] ?? ''));
-        
+
         // Validate required fields
         if (empty($firstName) || empty($lastName) || empty($email)) {
             echo json_encode(['success' => false, 'message' => 'First name, last name, and email are required']);
             break;
         }
-        
+
         // Validate email format
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             echo json_encode(['success' => false, 'message' => 'Invalid email format']);
             break;
         }
-        
+
         // Check if email is already used by another staff
         $check_stmt = $conn->prepare("SELECT id FROM staff WHERE email = ? AND id != ?");
         $check_stmt->bind_param("si", $email, $staff_id);
         $check_stmt->execute();
         $check_result = $check_stmt->get_result();
-        
+
         if ($check_result->num_rows > 0) {
             $check_stmt->close();
             echo json_encode(['success' => false, 'message' => 'Email already in use by another staff member']);
             break;
         }
         $check_stmt->close();
-        
+
         // Handle File Upload if a new file was provided
         $profilePictureFilename = null;
         if (isset($_FILES['profile_picture']) && $_FILES['profile_picture']['error'] === UPLOAD_ERR_OK) {
             $file = $_FILES['profile_picture'];
             $maxSize = 2 * 1024 * 1024; // 2MB
-            
+
             // Server-side size validation
             if ($file['size'] > $maxSize) {
                 echo json_encode(['success' => false, 'message' => 'File exceeds 2MB limit.']);
@@ -97,7 +97,7 @@ switch ($action) {
                 exit;
             }
         }
-        
+
         // Determine whether to update profile picture
         if ($profilePictureFilename) {
             $query = "UPDATE staff SET firstName = ?, lastName = ?, email = ?, contact_number = ?, profile_picture = ? WHERE id = ?";
@@ -108,7 +108,7 @@ switch ($action) {
             $stmt = $conn->prepare($query);
             $stmt->bind_param("ssssi", $firstName, $lastName, $email, $contact, $staff_id);
         }
-        
+
         if ($stmt->execute()) {
             // Update session variables
             $_SESSION['firstName'] = $firstName;
@@ -116,14 +116,14 @@ switch ($action) {
             if ($profilePictureFilename) {
                 $_SESSION['profile_picture'] = $profilePictureFilename;
             }
-            
+
             $stmt->close();
-            
+
             // Get updated image path for response if it was uploaded, else get current
             $responsePic = $profilePictureFilename;
-            
+
             echo json_encode([
-                'success' => true, 
+                'success' => true,
                 'message' => 'Profile updated successfully',
                 'data' => [
                     'firstName' => $firstName,
@@ -139,49 +139,49 @@ switch ($action) {
             echo json_encode(['success' => false, 'message' => 'Failed to update profile: ' . $error]);
         }
         break;
-        
+
     case 'change_password':
         // Get input
         $currentPassword = $input['currentPassword'] ?? '';
         $newPassword = $input['newPassword'] ?? '';
-        
+
         // Validate input
         if (empty($currentPassword) || empty($newPassword)) {
             echo json_encode(['success' => false, 'message' => 'Both current and new password are required']);
             break;
         }
-        
+
         // Basic password length validation
         if (strlen($newPassword) < 8) {
             echo json_encode(['success' => false, 'message' => 'New password must be at least 8 characters long']);
             break;
         }
-        
+
         // Get current password from database
         $stmt = $conn->prepare("SELECT password FROM staff WHERE id = ?");
         if (!$stmt) {
             echo json_encode(['success' => false, 'message' => 'Database error: ' . $conn->error]);
             break;
         }
-        
+
         $stmt->bind_param("i", $staff_id);
         $stmt->execute();
         $result = $stmt->get_result();
         $staff = $result->fetch_assoc();
         $stmt->close();
-        
+
         if (!$staff) {
             echo json_encode([
-                'success' => false, 
+                'success' => false,
                 'message' => 'Staff member not found',
                 'debug' => ['staff_id' => $staff_id]
             ]);
             break;
         }
-        
+
         $stored_password = $staff['password'];
         $password_correct = false;
-        
+
         // Check if stored password is hashed or plain text
         if (substr($stored_password, 0, 4) === '$2y$') {
             // Hashed password - use password_verify
@@ -190,10 +190,10 @@ switch ($action) {
             // Plain text password (old data) - compare directly
             $password_correct = ($currentPassword === $stored_password);
         }
-        
+
         if (!$password_correct) {
             echo json_encode([
-                'success' => false, 
+                'success' => false,
                 'message' => 'Current password is incorrect',
                 'debug' => [
                     'stored_password_preview' => substr($stored_password, 0, 10) . '...',
@@ -202,14 +202,14 @@ switch ($action) {
             ]);
             break;
         }
-        
+
         // Hash the new password
         $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
-        
+
         // Verify that the hashed password was created successfully
         if (strlen($hashedPassword) < 60) {
             echo json_encode([
-                'success' => false, 
+                'success' => false,
                 'message' => 'Error creating password hash. Column might be too short.',
                 'debug' => [
                     'hash_length' => strlen($hashedPassword),
@@ -218,24 +218,24 @@ switch ($action) {
             ]);
             break;
         }
-        
+
         // Update password
         $update_stmt = $conn->prepare("UPDATE staff SET password = ? WHERE id = ?");
         if (!$update_stmt) {
             echo json_encode([
-                'success' => false, 
+                'success' => false,
                 'message' => 'Failed to prepare update: ' . $conn->error,
                 'debug' => ['error' => $conn->error]
             ]);
             break;
         }
-        
+
         $update_stmt->bind_param("si", $hashedPassword, $staff_id);
-        
+
         if ($update_stmt->execute()) {
             $rows_affected = $update_stmt->affected_rows;
             $update_stmt->close();
-            
+
             // CRITICAL: Verify what actually got saved in database
             $verify_stmt = $conn->prepare("SELECT password, LENGTH(password) as pwd_len FROM staff WHERE id = ?");
             $verify_stmt->bind_param("i", $staff_id);
@@ -243,10 +243,10 @@ switch ($action) {
             $verify_result = $verify_stmt->get_result();
             $saved_data = $verify_result->fetch_assoc();
             $verify_stmt->close();
-            
+
             $saved_password = $saved_data['password'];
             $saved_length = $saved_data['pwd_len'];
-            
+
             // Check if password was truncated
             if ($saved_length < 60) {
                 echo json_encode([
@@ -265,9 +265,9 @@ switch ($action) {
             } else if ($rows_affected > 0) {
                 // Test if the saved password can be verified
                 $can_verify = password_verify($newPassword, $saved_password);
-                
+
                 echo json_encode([
-                    'success' => true, 
+                    'success' => true,
                     'message' => 'Password changed successfully',
                     'debug' => [
                         'rows_affected' => $rows_affected,
@@ -281,7 +281,7 @@ switch ($action) {
                 ]);
             } else {
                 echo json_encode([
-                    'success' => false, 
+                    'success' => false,
                     'message' => 'No rows were updated',
                     'debug' => [
                         'rows_affected' => $rows_affected,
@@ -294,7 +294,7 @@ switch ($action) {
             $error = $update_stmt->error;
             $update_stmt->close();
             echo json_encode([
-                'success' => false, 
+                'success' => false,
                 'message' => 'Failed to update password: ' . $error,
                 'debug' => [
                     'mysql_error' => $error,
@@ -303,10 +303,9 @@ switch ($action) {
             ]);
         }
         break;
-        
+
     default:
         echo json_encode(['success' => false, 'message' => 'Invalid action']);
 }
 
 $conn->close();
-?>
