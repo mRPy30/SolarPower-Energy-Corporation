@@ -824,6 +824,106 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
                 $del->close();
                 break;
 
+            // ── CATEGORIES: fetch all ────────────────────────────────────────────
+            case 'fetch_all_categories':
+                $result = $conn->query("SELECT category_id, category_name FROM categories ORDER BY category_name ASC");
+                $cats = [];
+                if ($result) {
+                    while ($row = $result->fetch_assoc()) $cats[] = $row;
+                }
+                // also count brands per category
+                $brandCounts = [];
+                $bcRes = $conn->query("SELECT category_id, COUNT(*) AS cnt FROM brands GROUP BY category_id");
+                if ($bcRes) {
+                    while ($r = $bcRes->fetch_assoc()) $brandCounts[$r['category_id']] = $r['cnt'];
+                }
+                foreach ($cats as &$c) {
+                    $c['brand_count'] = $brandCounts[$c['category_id']] ?? 0;
+                }
+                unset($c);
+                echo json_encode(['success' => true, 'data' => $cats]);
+                break;
+
+            // ── CATEGORIES: add ──────────────────────────────────────────────────
+            case 'add_category':
+                $catName = trim($_POST['category_name'] ?? '');
+                if ($catName === '') {
+                    echo json_encode(['success' => false, 'message' => 'Category name is required.']);
+                    break;
+                }
+                $chk = $conn->prepare("SELECT category_id FROM categories WHERE category_name = ?");
+                $chk->bind_param("s", $catName);
+                $chk->execute();
+                $chk->store_result();
+                if ($chk->num_rows > 0) {
+                    echo json_encode(['success' => false, 'message' => 'This category already exists.']);
+                    $chk->close(); break;
+                }
+                $chk->close();
+                $ins = $conn->prepare("INSERT INTO categories (category_name) VALUES (?)");
+                $ins->bind_param("s", $catName);
+                if ($ins->execute()) {
+                    echo json_encode(['success' => true, 'message' => 'Category added successfully.', 'id' => $ins->insert_id]);
+                } else {
+                    echo json_encode(['success' => false, 'message' => 'Failed to add category: ' . $conn->error]);
+                }
+                $ins->close();
+                break;
+
+            // ── CATEGORIES: edit ─────────────────────────────────────────────────
+            case 'edit_category':
+                $catId   = intval($_POST['category_id'] ?? 0);
+                $catName = trim($_POST['category_name'] ?? '');
+                if ($catId === 0 || $catName === '') {
+                    echo json_encode(['success' => false, 'message' => 'Category ID and name are required.']);
+                    break;
+                }
+                $chk = $conn->prepare("SELECT category_id FROM categories WHERE category_name = ? AND category_id != ?");
+                $chk->bind_param("si", $catName, $catId);
+                $chk->execute();
+                $chk->store_result();
+                if ($chk->num_rows > 0) {
+                    echo json_encode(['success' => false, 'message' => 'Another category with that name already exists.']);
+                    $chk->close(); break;
+                }
+                $chk->close();
+                $upd = $conn->prepare("UPDATE categories SET category_name = ? WHERE category_id = ?");
+                $upd->bind_param("si", $catName, $catId);
+                if ($upd->execute()) {
+                    echo json_encode(['success' => true, 'message' => 'Category updated successfully.']);
+                } else {
+                    echo json_encode(['success' => false, 'message' => 'Failed to update category: ' . $conn->error]);
+                }
+                $upd->close();
+                break;
+
+            // ── CATEGORIES: delete ───────────────────────────────────────────────
+            case 'delete_category':
+                $catId = intval($_POST['category_id'] ?? 0);
+                if ($catId === 0) {
+                    echo json_encode(['success' => false, 'message' => 'Category ID is required.']);
+                    break;
+                }
+                // Prevent deletion if brands are still linked
+                $chk = $conn->prepare("SELECT COUNT(*) AS cnt FROM brands WHERE category_id = ?");
+                $chk->bind_param("i", $catId);
+                $chk->execute();
+                $row = $chk->get_result()->fetch_assoc();
+                $chk->close();
+                if ($row['cnt'] > 0) {
+                    echo json_encode(['success' => false, 'message' => "Cannot delete: {$row['cnt']} brand(s) still use this category. Remove or reassign them first."]);
+                    break;
+                }
+                $del = $conn->prepare("DELETE FROM categories WHERE category_id = ?");
+                $del->bind_param("i", $catId);
+                if ($del->execute() && $del->affected_rows > 0) {
+                    echo json_encode(['success' => true, 'message' => 'Category deleted successfully.']);
+                } else {
+                    echo json_encode(['success' => false, 'message' => 'Category not found or already deleted.']);
+                }
+                $del->close();
+                break;
+
             default:
                 echo json_encode(['success' => false, 'message' => 'Invalid action']);
         }
@@ -1484,6 +1584,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
             <div class="menu-item" onclick="showPage('brands', 'Brands')" data-tooltip="Brands">
                 <i class="fas fa-trademark"></i>
                 <span>Brands</span>
+            </div>
+            <div class="menu-item" onclick="showPage('categories', 'Categories')" data-tooltip="Categories">
+                <i class="fas fa-tags"></i>
+                <span>Categories</span>
             </div>
             <div class="menu-item" onclick="showPage('product', 'Product')" data-tooltip="Product">
                 <i class="fas fa-box"></i>
@@ -2796,6 +2900,400 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
             </div><!-- end #brands page-content -->
             <!-- ═══════════════ END BRANDS PAGE ═══════════════ -->
 
+            <!-- ═══════════════ CATEGORIES PAGE ═══════════════ -->
+            <div id="categories" class="page-content">
+                <style>
+                    /* ── Categories page (mirrors Brands styles, prefixed cat-) ── */
+                    .cat-page-wrap { padding: 24px; }
+
+                    .cat-stats {
+                        display: flex;
+                        gap: 14px;
+                        margin-bottom: 22px;
+                        flex-wrap: wrap;
+                    }
+                    .cat-stat-box {
+                        background: #fff;
+                        border-radius: 12px;
+                        padding: 18px 24px;
+                        flex: 1;
+                        min-width: 150px;
+                        text-align: center;
+                        box-shadow: 0 2px 8px rgba(0,0,0,.06);
+                        border-top: 4px solid #8b5cf6;
+                    }
+                    .cat-stat-box.blue  { border-color: #3b82f6; }
+                    .cat-stat-box.green { border-color: #22c55e; }
+                    .cat-stat-box h4 {
+                        font-size: 11px;
+                        color: #888;
+                        letter-spacing: .6px;
+                        margin-bottom: 6px;
+                        text-transform: uppercase;
+                    }
+                    .cat-stat-box .value {
+                        font-size: 30px;
+                        font-weight: 800;
+                        color: #1e293b;
+                    }
+
+                    .cat-layout {
+                        display: grid;
+                        grid-template-columns: 320px 1fr;
+                        gap: 22px;
+                    }
+                    @media(max-width:800px){ .cat-layout { grid-template-columns: 1fr; } }
+
+                    .cat-card {
+                        background: #fff;
+                        border-radius: 14px;
+                        box-shadow: 0 2px 10px rgba(0,0,0,.06);
+                        overflow: hidden;
+                    }
+                    .cat-card-head {
+                        padding: 16px 20px;
+                        border-bottom: 1px solid #f0f3fa;
+                        display: flex;
+                        align-items: center;
+                        gap: 10px;
+                    }
+                    .cat-card-head h2 {
+                        font-size: 15px;
+                        font-weight: 700;
+                        flex: 1;
+                        color: #1e293b;
+                    }
+                    .cat-card-body { padding: 20px; }
+
+                    /* form */
+                    .cfg { margin-bottom: 14px; }
+                    .cfg label {
+                        display: block;
+                        font-size: 12px;
+                        font-weight: 600;
+                        color: #555;
+                        margin-bottom: 5px;
+                    }
+                    .cfg input {
+                        width: 100%;
+                        padding: 9px 13px;
+                        border: 1.5px solid #e2e8f0;
+                        border-radius: 8px;
+                        font-size: 14px;
+                        background: #fafbff;
+                        box-sizing: border-box;
+                        transition: border .2s;
+                    }
+                    .cfg input:focus {
+                        outline: none;
+                        border-color: #8b5cf6;
+                        background: #fff;
+                    }
+                    .btn-cat-add {
+                        width: 100%;
+                        padding: 10px;
+                        border: none;
+                        border-radius: 8px;
+                        cursor: pointer;
+                        background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+                        color: #fff;
+                        font-size: 14px;
+                        font-weight: 600;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        gap: 8px;
+                        transition: opacity .2s;
+                    }
+                    .btn-cat-add:hover { opacity: .88; }
+
+                    /* toolbar */
+                    .cat-toolbar {
+                        display: flex;
+                        gap: 10px;
+                        flex-wrap: wrap;
+                        margin-bottom: 14px;
+                    }
+                    .cat-toolbar input {
+                        flex: 1;
+                        min-width: 150px;
+                        padding: 8px 13px;
+                        border: 1.5px solid #e2e8f0;
+                        border-radius: 8px;
+                        font-size: 13px;
+                        background: #fafbff;
+                    }
+                    .cat-toolbar input:focus {
+                        outline: none;
+                        border-color: #8b5cf6;
+                    }
+
+                    /* table */
+                    .cat-table {
+                        width: 100%;
+                        border-collapse: collapse;
+                        font-size: 14px;
+                    }
+                    .cat-table thead th {
+                        text-align: left;
+                        padding: 10px 13px;
+                        background: #f8fafc;
+                        color: #64748b;
+                        font-size: 11px;
+                        font-weight: 700;
+                        text-transform: uppercase;
+                        letter-spacing: .5px;
+                        border-bottom: 2px solid #e9ecf3;
+                    }
+                    .cat-table tbody tr {
+                        border-bottom: 1px solid #f1f3fa;
+                        transition: background .15s;
+                    }
+                    .cat-table tbody tr:hover { background: #f5f3ff; }
+                    .cat-table td { padding: 11px 13px; }
+
+                    .cat-count-badge {
+                        display: inline-block;
+                        padding: 2px 10px;
+                        border-radius: 20px;
+                        font-size: 11px;
+                        font-weight: 600;
+                        background: #ede9fe;
+                        color: #5b21b6;
+                    }
+                    .cat-count-badge.zero {
+                        background: #f1f5f9;
+                        color: #94a3b8;
+                    }
+
+                    .cat-action-btns { display: flex; gap: 6px; }
+                    .btn-cat-edit, .btn-cat-del {
+                        border: none;
+                        cursor: pointer;
+                        border-radius: 7px;
+                        padding: 5px 10px;
+                        font-size: 12px;
+                        font-weight: 600;
+                        transition: background .2s;
+                    }
+                    .btn-cat-edit { background: #e0f2fe; color: #0369a1; }
+                    .btn-cat-edit:hover { background: #bae6fd; }
+                    .btn-cat-del  { background: #fee2e2; color: #b91c1c; }
+                    .btn-cat-del:hover  { background: #fecaca; }
+
+                    .cat-empty td {
+                        text-align: center;
+                        padding: 32px;
+                        color: #aaa;
+                    }
+
+                    /* modals */
+                    .cat-overlay {
+                        display: none;
+                        position: fixed;
+                        inset: 0;
+                        background: rgba(0,0,0,.45);
+                        z-index: 1000;
+                        align-items: center;
+                        justify-content: center;
+                    }
+                    .cat-overlay.open { display: flex; }
+                    .cat-modal {
+                        background: #fff;
+                        border-radius: 14px;
+                        padding: 26px;
+                        width: 420px;
+                        max-width: 94vw;
+                        box-shadow: 0 20px 50px rgba(0,0,0,.2);
+                        animation: catPopIn .2s ease;
+                    }
+                    @keyframes catPopIn {
+                        from { transform: scale(.9); opacity: 0 }
+                        to   { transform: scale(1);  opacity: 1 }
+                    }
+                    .cat-modal h3 { font-size: 17px; font-weight: 700; margin-bottom: 18px; }
+                    .cat-modal-actions {
+                        display: flex;
+                        gap: 10px;
+                        justify-content: flex-end;
+                        margin-top: 18px;
+                    }
+                    .btn-ccancel {
+                        padding: 8px 18px;
+                        border: 1.5px solid #e2e8f0;
+                        border-radius: 8px;
+                        background: #fff;
+                        cursor: pointer;
+                        font-size: 13px;
+                    }
+                    .btn-csave {
+                        padding: 8px 18px;
+                        border: none;
+                        border-radius: 8px;
+                        cursor: pointer;
+                        background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+                        color: #fff;
+                        font-size: 13px;
+                        font-weight: 600;
+                    }
+                    .btn-cdelete {
+                        padding: 8px 18px;
+                        border: none;
+                        border-radius: 8px;
+                        cursor: pointer;
+                        background: #dc2626;
+                        color: #fff;
+                        font-size: 13px;
+                        font-weight: 600;
+                    }
+                    .cat-confirm-center { text-align: center; }
+                    .cat-confirm-center p { color: #555; margin: 10px 0 4px; }
+                    .cat-warn-txt { color: #ef4444; font-size: 12px; }
+
+                    /* toast */
+                    .cat-toast {
+                        position: fixed;
+                        bottom: 22px;
+                        right: 22px;
+                        z-index: 9999;
+                        padding: 12px 18px;
+                        border-radius: 10px;
+                        font-size: 13px;
+                        font-weight: 600;
+                        color: #fff;
+                        box-shadow: 0 6px 20px rgba(0,0,0,.15);
+                        transform: translateY(80px);
+                        opacity: 0;
+                        transition: transform .3s, opacity .3s;
+                        pointer-events: none;
+                    }
+                    .cat-toast.show  { transform: translateY(0); opacity: 1; }
+                    .cat-toast.success { background: #16a34a; }
+                    .cat-toast.error   { background: #dc2626; }
+                </style>
+
+                <div class="cat-page-wrap">
+
+                    <!-- Stats -->
+                    <div class="cat-stats">
+                        <div class="cat-stat-box">
+                            <h4>Total Categories</h4>
+                            <div class="value" id="catStatTotal">–</div>
+                        </div>
+                        <div class="cat-stat-box blue">
+                            <h4>Total Brands</h4>
+                            <div class="value" id="catStatBrands">–</div>
+                        </div>
+                        <div class="cat-stat-box green">
+                            <h4>Categories with Brands</h4>
+                            <div class="value" id="catStatActive">–</div>
+                        </div>
+                    </div>
+
+                    <div class="cat-layout">
+
+                        <!-- LEFT: Add category form -->
+                        <div>
+                            <div class="cat-card">
+                                <div class="cat-card-head">
+                                    <i class="fas fa-plus-circle" style="color:#8b5cf6;font-size:17px;"></i>
+                                    <h2>Add New Category</h2>
+                                </div>
+                                <div class="cat-card-body">
+                                    <div class="cfg">
+                                        <label><i class="fas fa-tag"></i> Category Name *</label>
+                                        <input type="text" id="cNewName" placeholder="e.g. Solar Panel">
+                                    </div>
+                                    <button class="btn-cat-add" onclick="CategoriesModule.addCategory()">
+                                        <i class="fas fa-plus"></i> Add Category
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Tip card -->
+                            <div class="cat-card" style="margin-top:18px;">
+                                <div class="cat-card-head">
+                                    <i class="fas fa-lightbulb" style="color:#8b5cf6;font-size:17px;"></i>
+                                    <h2>How it works</h2>
+                                </div>
+                                <div class="cat-card-body" style="font-size:13px;color:#666;line-height:1.9;">
+                                    <p>Categories group your products and brands into logical types (e.g. <strong>Battery</strong>, <strong>Inverter</strong>).</p>
+                                    <br>
+                                    <p><i class="fas fa-check" style="color:#16a34a;"></i> Add a category → assign brands to it</p>
+                                    <p><i class="fas fa-check" style="color:#16a34a;"></i> Edit the name anytime</p>
+                                    <p><i class="fas fa-exclamation-triangle" style="color:#f59e0b;"></i> Cannot delete a category that still has brands linked to it</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- RIGHT: Category table -->
+                        <div class="cat-card">
+                            <div class="cat-card-head">
+                                <i class="fas fa-list" style="color:#8b5cf6;font-size:17px;"></i>
+                                <h2>All Categories</h2>
+                            </div>
+                            <div class="cat-card-body">
+                                <div class="cat-toolbar">
+                                    <input type="text" id="cSearchInput" placeholder="🔍 Search category…"
+                                        oninput="CategoriesModule.applyFilters()">
+                                </div>
+                                <table class="cat-table">
+                                    <thead>
+                                        <tr>
+                                            <th>#</th>
+                                            <th>Category Name</th>
+                                            <th>Brands</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="catTableBody">
+                                        <tr class="cat-empty">
+                                            <td colspan="4"><i class="fas fa-spinner fa-spin"></i> Loading…</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                    </div><!-- end cat-layout -->
+                </div><!-- end cat-page-wrap -->
+
+                <!-- Edit Modal -->
+                <div class="cat-overlay" id="cEditOverlay">
+                    <div class="cat-modal">
+                        <h3><i class="fas fa-edit" style="color:#8b5cf6;"></i> Edit Category</h3>
+                        <input type="hidden" id="cEditId">
+                        <div class="cfg">
+                            <label>Category Name *</label>
+                            <input type="text" id="cEditName" placeholder="Category name">
+                        </div>
+                        <div class="cat-modal-actions">
+                            <button class="btn-ccancel" onclick="CategoriesModule.closeEditModal()">Cancel</button>
+                            <button class="btn-csave"   onclick="CategoriesModule.saveEdit()"><i class="fas fa-save"></i> Save</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Delete Confirm Modal -->
+                <div class="cat-overlay" id="cDeleteOverlay">
+                    <div class="cat-modal cat-confirm-center">
+                        <h3 style="color:#dc2626;"><i class="fas fa-trash"></i> Delete Category</h3>
+                        <input type="hidden" id="cDeleteId">
+                        <p id="cDeleteMsg">Are you sure?</p>
+                        <p class="cat-warn-txt">This action cannot be undone. Categories with brands cannot be deleted.</p>
+                        <div class="cat-modal-actions" style="justify-content:center;">
+                            <button class="btn-ccancel" onclick="CategoriesModule.closeDeleteModal()">Cancel</button>
+                            <button class="btn-cdelete" onclick="CategoriesModule.confirmDelete()"><i class="fas fa-trash"></i> Yes, Delete</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Toast -->
+                <div class="cat-toast" id="catToast"></div>
+
+            </div><!-- end #categories page-content -->
+            <!-- ═══════════════ END CATEGORIES PAGE ═══════════════ -->
+
             <!-- Other page sections remain the same -->
 
             <div id="add-product" class="page-content add-product-page">
@@ -2839,12 +3337,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                                         Category <span class="required">*</span>
                                     </label>
                                     <select id="category-select" name="category" required>
-                                        <option value="">Select a category</option>
-                                        <option value="Panel">Solar Panel</option>
-                                        <option value="Battery">Battery</option>
-                                        <option value="Inverter">Inverter</option>
-                                        <option value="Mounting & Accessories">Mounting & Accessories</option>
-                                        <option value="Package">Package Deals</option>
+                                        <option value="">Loading categories…</option>
                                     </select>
                                 </div>
 
@@ -7902,6 +8395,26 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
 
             if (!categorySelect || !brandSelect) return;
 
+            // ── Populate category dropdown from database ──────────────────────────
+            fetch('dashboard.php?ajax=1&action=fetch_categories')
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success && data.data.length > 0) {
+                        categorySelect.innerHTML = '<option value="">Select a category</option>';
+                        data.data.forEach(cat => {
+                            const opt = document.createElement('option');
+                            opt.value = cat.category_name;      // stored as plain name in products table
+                            opt.textContent = cat.category_name;
+                            categorySelect.appendChild(opt);
+                        });
+                    } else {
+                        categorySelect.innerHTML = '<option value="">No categories found</option>';
+                    }
+                })
+                .catch(() => {
+                    categorySelect.innerHTML = '<option value="">Failed to load categories</option>';
+                });
+
             categorySelect.addEventListener('change', function () {
                 const category = this.value;
 
@@ -8752,6 +9265,205 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
         });
         // ══════════════════════════════════════════════════════════════════════════════
         // END BRANDS MODULE
+        // ══════════════════════════════════════════════════════════════════════════════
+
+
+        // ══════════════════════════════════════════════════════════════════════════════
+        // CATEGORIES MODULE
+        // ══════════════════════════════════════════════════════════════════════════════
+        const CategoriesModule = {
+            categories: [],
+
+            init() {
+                this.loadCategories();
+            },
+
+            ajaxUrl: 'dashboard.php?ajax=1',
+
+            async post(formData) {
+                formData.append('ajax', '1');
+                const res = await fetch('dashboard.php', { method: 'POST', body: formData });
+                return res.json();
+            },
+
+            // ── Load categories ──────────────────────────────────────────────────────
+            async loadCategories() {
+                try {
+                    const res  = await fetch(this.ajaxUrl + '&action=fetch_all_categories');
+                    const data = await res.json();
+                    if (data.success) {
+                        this.categories = data.data;
+                        this.renderTable(this.categories);
+                        this.updateStats(this.categories);
+                    }
+                } catch (e) { console.error('CategoriesModule.loadCategories error', e); }
+            },
+
+            updateStats(list) {
+                const total = list.length;
+                const totalBrands = list.reduce((s, c) => s + parseInt(c.brand_count || 0), 0);
+                const active = list.filter(c => parseInt(c.brand_count) > 0).length;
+                const el = id => document.getElementById(id);
+                if (el('catStatTotal'))  el('catStatTotal').textContent  = total;
+                if (el('catStatBrands')) el('catStatBrands').textContent = totalBrands;
+                if (el('catStatActive')) el('catStatActive').textContent = active;
+            },
+
+            // ── Render table ─────────────────────────────────────────────────────────
+            renderTable(list) {
+                const tbody = document.getElementById('catTableBody');
+                if (!tbody) return;
+
+                if (!list || list.length === 0) {
+                    tbody.innerHTML = '<tr class="cat-empty"><td colspan="4"><i class="fas fa-folder-open"></i> No categories yet. Add one!</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = list.map((c, i) => `
+                    <tr data-cat-id="${c.category_id}" data-cat-name="${this.esc(c.category_name)}">
+                        <td style="color:#999;font-size:12px;">${i + 1}</td>
+                        <td style="font-weight:600;">${this.esc(c.category_name)}</td>
+                        <td><span class="cat-count-badge ${parseInt(c.brand_count) === 0 ? 'zero' : ''}">${c.brand_count} brand${c.brand_count == 1 ? '' : 's'}</span></td>
+                        <td>
+                            <div class="cat-action-btns">
+                                <button class="btn-cat-edit" onclick="CategoriesModule.openEditModal(this)">
+                                    <i class="fas fa-edit"></i> Edit
+                                </button>
+                                <button class="btn-cat-del" onclick="CategoriesModule.openDeleteConfirm(this)">
+                                    <i class="fas fa-trash"></i> Delete
+                                </button>
+                            </div>
+                        </td>
+                    </tr>`).join('');
+            },
+
+            // ── Filter ───────────────────────────────────────────────────────────────
+            applyFilters() {
+                const search = (document.getElementById('cSearchInput')?.value || '').toLowerCase();
+                const filtered = this.categories.filter(c =>
+                    c.category_name.toLowerCase().includes(search)
+                );
+                this.renderTable(filtered);
+            },
+
+            // ── Add category ─────────────────────────────────────────────────────────
+            async addCategory() {
+                const category_name = document.getElementById('cNewName')?.value.trim();
+                if (!category_name) {
+                    return this.toast('Category name is required.', 'error');
+                }
+                const fd = new FormData();
+                fd.append('action', 'add_category');
+                fd.append('category_name', category_name);
+
+                const data = await this.post(fd);
+                if (data.success) {
+                    this.toast(data.message);
+                    document.getElementById('cNewName').value = '';
+                    await this.loadCategories();
+                } else {
+                    this.toast(data.message, 'error');
+                }
+            },
+
+            // ── Edit modal ───────────────────────────────────────────────────────────
+            openEditModal(btn) {
+                const tr = btn.closest('tr');
+                document.getElementById('cEditId').value   = tr.dataset.catId;
+                document.getElementById('cEditName').value = tr.dataset.catName;
+                document.getElementById('cEditOverlay').classList.add('open');
+            },
+
+            closeEditModal() {
+                document.getElementById('cEditOverlay').classList.remove('open');
+            },
+
+            async saveEdit() {
+                const category_id   = document.getElementById('cEditId').value;
+                const category_name = document.getElementById('cEditName').value.trim();
+                if (!category_name) {
+                    return this.toast('Category name is required.', 'error');
+                }
+                const fd = new FormData();
+                fd.append('action', 'edit_category');
+                fd.append('category_id', category_id);
+                fd.append('category_name', category_name);
+
+                const data = await this.post(fd);
+                if (data.success) {
+                    this.toast(data.message);
+                    this.closeEditModal();
+                    await this.loadCategories();
+                } else {
+                    this.toast(data.message, 'error');
+                }
+            },
+
+            // ── Delete modal ─────────────────────────────────────────────────────────
+            openDeleteConfirm(btn) {
+                const tr = btn.closest('tr');
+                document.getElementById('cDeleteId').value = tr.dataset.catId;
+                document.getElementById('cDeleteMsg').textContent =
+                    `Delete "${tr.dataset.catName}"?`;
+                document.getElementById('cDeleteOverlay').classList.add('open');
+            },
+
+            closeDeleteModal() {
+                document.getElementById('cDeleteOverlay').classList.remove('open');
+            },
+
+            async confirmDelete() {
+                const category_id = document.getElementById('cDeleteId').value;
+                const fd = new FormData();
+                fd.append('action', 'delete_category');
+                fd.append('category_id', category_id);
+
+                const data = await this.post(fd);
+                if (data.success) {
+                    this.toast(data.message);
+                    this.closeDeleteModal();
+                    await this.loadCategories();
+                } else {
+                    this.toast(data.message, 'error');
+                }
+            },
+
+            // ── Helpers ──────────────────────────────────────────────────────────────
+            toast(msg, type = 'success') {
+                const t = document.getElementById('catToast');
+                if (!t) return;
+                t.textContent = msg;
+                t.className = `cat-toast ${type} show`;
+                setTimeout(() => t.classList.remove('show'), 3200);
+            },
+
+            esc(str) {
+                return String(str)
+                    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+            }
+        };
+
+        // Close category overlays on backdrop click
+        document.addEventListener('DOMContentLoaded', function () {
+            document.querySelectorAll('.cat-overlay').forEach(ov => {
+                ov.addEventListener('click', e => { if (e.target === ov) ov.classList.remove('open'); });
+            });
+        });
+
+        // Initialize CategoriesModule when the Categories sidebar item is clicked
+        document.addEventListener('DOMContentLoaded', function () {
+            const catMenuItem = Array.from(document.querySelectorAll('.menu-item')).find(el =>
+                el.getAttribute('onclick')?.includes("showPage('categories'")
+            );
+            if (catMenuItem) {
+                catMenuItem.addEventListener('click', function () {
+                    setTimeout(() => CategoriesModule.init(), 100);
+                });
+            }
+        });
+        // ══════════════════════════════════════════════════════════════════════════════
+        // END CATEGORIES MODULE
         // ══════════════════════════════════════════════════════════════════════════════
 
 
