@@ -11,7 +11,7 @@ $configFile = __DIR__ . '/promo-images.json';
 $config = [
     'main'   => 'assets/img/go-solar.jpg',
     'top'    => 'assets/img/installnow.jpg',
-    'bottom' => 'asset/img/occular.jpg',
+    'bottom' => 'assets/img/occular.jpg',
 ];
 if (file_exists($configFile)) {
     $saved = json_decode(file_get_contents($configFile), true);
