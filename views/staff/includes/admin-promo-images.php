@@ -10,7 +10,7 @@ $configFile = __DIR__ . '/promo-images.json';
 // Load current config
 $config = [
     'main'   => 'assets/img/go-solar.jpg',
-    'top'    => 'assets/img/installnow.jpg',
+    'top'    => 'assets/mg/installnow.jpg',
     'bottom' => 'assets/img/occular.jpg',
 ];
 if (file_exists($configFile)) {
