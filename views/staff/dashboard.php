@@ -1594,6 +1594,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 <span>Product</span>
             </div>
 
+            <div class="menu-item" onclick="showPage('promo-images', 'Promo Banners')" data-tooltip="Promo Banners">
+                <i class="fas fa-images"></i>
+                <span>Promo Banners</span>
+            </div>
+
 
             <div class="menu-label">SALES & TRANSACTIONS</div>
             <div class="menu-item" onclick="showPage('tracking', 'Tracking')" data-tooltip="Tracking">
@@ -3484,6 +3489,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                     </div>
                 </form>
             </div>
+
+
+
+            <?php include_once __DIR__ . '/includes/admin-promo-images.php'; ?>
 
             <div id="tracking" class="page-content">
                 <div class="tracking-page-container">
@@ -9467,8 +9476,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
         // ══════════════════════════════════════════════════════════════════════════════
 
 
+        <?php if (isset($_GET['saved']) || isset($_GET['error'])): ?>
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(function() {
+                showPage('promo-images', 'Promo Banners');
+            }, 300);
+        });
+        <?php endif; ?>
     </script>
-
 </body>
 
 </html>

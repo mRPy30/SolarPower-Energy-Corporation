@@ -8,11 +8,11 @@
  */
 
 // ── Config ──────────────────────────────────────────────────────────────────
-define('UPLOAD_DIR',   __DIR__ . '/assets/img/');   // where images are saved
+define('UPLOAD_DIR',   __DIR__ . '/../../../assets/img/');   // where images are saved
 define('CONFIG_FILE',  __DIR__ . '/promo-images.json'); // persists active paths
 define('MAX_SIZE',     5 * 1024 * 1024);             // 5 MB
 define('ALLOWED_MIME', ['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
-define('ADMIN_URL',    'admin-promo-images.php');    // redirect back here
+define('ADMIN_URL',    '../dashboard.php');    // redirect back here
 
 // Slot → saved filename map
 $slotMap = [

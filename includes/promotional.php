@@ -1,3 +1,19 @@
+<?php
+$_promoDefaults = [
+    'main'   => 'assets/img/go-solar.jpg',
+    'top'    => 'assets/img/installnow.jpg',
+    'bottom' => 'assets/img/occular.jpg',
+];
+$_promoConfig = $_promoDefaults;
+$_promoJsonFile = __DIR__ . '/../views/staff/includes/promo-images.json';
+if (file_exists($_promoJsonFile)) {
+    $_saved = json_decode(file_get_contents($_promoJsonFile), true);
+    if (is_array($_saved)) {
+        $_promoConfig = array_merge($_promoDefaults, $_saved);
+    }
+}
+$_cb = filemtime($_promoJsonFile) ?: time();
+?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -180,7 +196,7 @@
             <div class="row g-4 promo-row">
                 <div class="col-md-6 d-flex">
                     <a href="https://www.facebook.com/share/p/1Lo6QbRZm6/" target="_blank" rel="noopener noreferrer" class="promo-card promo-card-main promo-link-wrap">
-                        <img src="assets/img/go-solar.jpg" alt="Solar Power Solutions" class="promo-video-bg">
+                        <img src="<?= htmlspecialchars($_promoConfig['main']) ?>?v=<?= $_cb ?>" alt="Solar Power Solutions" class="promo-video-bg">
 
                         <div class="play-icon">
                             <i class="fas fa-play"></i>
@@ -192,12 +208,12 @@
                 <div class="col-md-6 promo-right-col">
                     <a href="https://www.facebook.com/permalink.php?story_fbid=pfbid02XrvG3bZ8mQH6f6kPHqPmrmSWxeTDcR6kWmgVgo8NUWkaZ77srag41zQjFqStU4rMl&id=61578373983187"
                         target="_blank" rel="noopener noreferrer" class="promo-card promo-card-sm promo-link-wrap">
-                        <img src="assets/img/installnow.jpg" alt="Grid-Tie Packages">
+                        <img src="<?= htmlspecialchars($_promoConfig['top']) ?>?v=<?= $_cb ?>" alt="Grid-Tie Packages">
                         <div class="fb-hover-badge"><i class="fab fa-facebook"></i> View Post</div>
                     </a>
                     <a href="https://www.facebook.com/photo/?fbid=122169296384945799"
                         target="_blank" rel="noopener noreferrer" class="promo-card promo-card-sm promo-link-wrap">
-                        <img src="assets/img/occular.jpg" alt="Hybrid Packages">
+                        <img src="<?= htmlspecialchars($_promoConfig['bottom']) ?>?v=<?= $_cb ?>" alt="Hybrid Packages">
                         <div class="fb-hover-badge"><i class="fab fa-facebook"></i> View Post</div>
                     </a>
                 </div>

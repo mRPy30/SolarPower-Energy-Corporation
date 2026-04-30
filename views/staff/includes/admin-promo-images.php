@@ -21,18 +21,9 @@ if (file_exists($configFile)) {
 $success = $_GET['saved'] ?? false;
 $error   = $_GET['error']  ?? false;
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Promo Image Manager — SolarPower Energy</title>
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
-
+<div id="promo-images" class="page-content promo-images-page">
 <style>
-  :root {
+  .promo-images-page {
     --sun: #F5A623;
     --sun-light: #FFF3DC;
     --solar: #1A3C5E;
@@ -46,73 +37,25 @@ $error   = $_GET['error']  ?? false;
     --danger: #E53E3E;
     --radius: 14px;
     --shadow: 0 4px 20px rgba(26,60,94,.09);
-  }
-
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-  body {
     font-family: 'DM Sans', sans-serif;
-    background: var(--surface);
     color: var(--text);
-    min-height: 100vh;
-  }
-
-  /* ── Top bar ── */
-  .topbar {
-    background: var(--solar);
-    padding: 0 32px;
-    height: 60px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    box-shadow: 0 2px 12px rgba(0,0,0,.18);
-  }
-  .topbar-logo {
-    width: 30px;
-    height: 30px;
-    background: var(--sun);
-    border-radius: 8px;
-    display: grid;
-    place-items: center;
-    font-size: 14px;
-    color: var(--solar);
-  }
-  .topbar-title {
-    font-family: 'Syne', sans-serif;
-    font-weight: 700;
-    font-size: 1rem;
-    color: #fff;
-    letter-spacing: .3px;
-  }
-  .topbar-badge {
-    margin-left: auto;
-    background: rgba(255,255,255,.12);
-    color: rgba(255,255,255,.75);
-    font-size: .72rem;
-    font-weight: 500;
-    padding: 4px 12px;
-    border-radius: 20px;
-    letter-spacing: .4px;
   }
 
   /* ── Layout ── */
-  .workspace {
+  .promo-images-page .workspace {
     display: grid;
     grid-template-columns: 1fr 380px;
     gap: 28px;
     max-width: 1180px;
-    margin: 36px auto;
+    margin: 20px auto;
     padding: 0 24px 48px;
   }
   @media (max-width: 900px) {
-    .workspace { grid-template-columns: 1fr; }
+    .promo-images-page .workspace { grid-template-columns: 1fr; }
   }
 
   /* ── Section heading ── */
-  .section-label {
+  .promo-images-page .section-label {
     font-family: 'Syne', sans-serif;
     font-weight: 700;
     font-size: .72rem;
@@ -349,14 +292,9 @@ $error   = $_GET['error']  ?? false;
   .file-indicator.chosen { color: var(--success); }
   .file-indicator i { font-size:.75rem; }
 </style>
-</head>
-<body>
 
-<div class="topbar">
-  <div class="topbar-logo"><i class="fas fa-solar-panel"></i></div>
-  <span class="topbar-title">Promotional Image Manager</span>
-  <span class="topbar-badge"><i class="fas fa-lock" style="font-size:.6rem;margin-right:4px;"></i> Staff Only</span>
-</div>
+
+
 
 <div class="workspace">
 
@@ -376,7 +314,7 @@ $error   = $_GET['error']  ?? false;
     <?php endif; ?>
 
     <!-- Card 1: Main (Large Left) -->
-    <form method="POST" action="save-promo-images.php" enctype="multipart/form-data" id="form-main">
+    <form method="POST" action="includes/save-promo-images.php" enctype="multipart/form-data" id="form-main">
       <input type="hidden" name="slot" value="main">
       <div class="upload-card" id="card-main">
         <div class="upload-card-header">
@@ -408,7 +346,7 @@ $error   = $_GET['error']  ?? false;
     </form>
 
     <!-- Card 2: Top Right -->
-    <form method="POST" action="save-promo-images.php" enctype="multipart/form-data" id="form-top">
+    <form method="POST" action="includes/save-promo-images.php" enctype="multipart/form-data" id="form-top">
       <input type="hidden" name="slot" value="top">
       <div class="upload-card" id="card-top">
         <div class="upload-card-header">
@@ -440,7 +378,7 @@ $error   = $_GET['error']  ?? false;
     </form>
 
     <!-- Card 3: Bottom Right -->
-    <form method="POST" action="save-promo-images.php" enctype="multipart/form-data" id="form-bottom">
+    <form method="POST" action="includes/save-promo-images.php" enctype="multipart/form-data" id="form-bottom">
       <input type="hidden" name="slot" value="bottom">
       <div class="upload-card" id="card-bottom">
         <div class="upload-card-header">
@@ -574,5 +512,4 @@ document.querySelectorAll('.drop-zone').forEach(dz => {
 })();
 </script>
 
-</body>
-</html>
+</div><!-- /promo-images -->
