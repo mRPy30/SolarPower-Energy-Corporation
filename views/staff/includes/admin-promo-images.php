@@ -5,18 +5,42 @@
  * Include in your admin panel or access directly (add auth as needed).
  */
 
+date_default_timezone_set('Asia/Manila');
+
 $configFile = __DIR__ . '/promo-images.json';
 
+
 // Load current config
-$config = [
-    'main'   => 'assets/img/go-solar.jpg',
-    'top'    => 'assets/img/installnow.jpg',
-    'bottom' => 'assets/img/occular.jpg',
+$defaults = [
+    'image' => '',
+    'link'  => '',
+    'start' => date('Y-m-d\TH:i'),
 ];
+
+
+
+$config = [
+    'main'   => array_merge($defaults, ['image' => 'assets/img/go-solar.jpg']),
+    'top'    => array_merge($defaults, ['image' => 'assets/img/installnow.jpg']),
+    'bottom' => array_merge($defaults, ['image' => 'assets/img/occular.jpg']),
+];
+
 if (file_exists($configFile)) {
     $saved = json_decode(file_get_contents($configFile), true);
-    if ($saved) $config = array_merge($config, $saved);
+    if ($saved) {
+        foreach (['main', 'top', 'bottom'] as $s) {
+            if (isset($saved[$s])) {
+                // Handle both old string format and new object format
+                if (is_string($saved[$s])) {
+                    $config[$s]['image'] = $saved[$s];
+                } else {
+                    $config[$s] = array_merge($config[$s], $saved[$s]);
+                }
+            }
+        }
+    }
 }
+
 
 $success = $_GET['saved'] ?? false;
 $error   = $_GET['error']  ?? false;
@@ -291,7 +315,22 @@ $error   = $_GET['error']  ?? false;
   }
   .file-indicator.chosen { color: var(--success); }
   .file-indicator i { font-size:.75rem; }
+
+  /* ── New Form Fields ── */
+  .form-group { margin-top: 15px; }
+  .form-group label {
+    display: block; font-size: .75rem; font-weight: 700; color: var(--muted);
+    text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px;
+  }
+  .form-control {
+    width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border);
+    font-size: .85rem; font-family: inherit; transition: border-color .2s;
+  }
+  .form-control:focus { outline: none; border-color: var(--solar-mid); }
+  .form-row { display: grid; grid-template-columns: 1fr; gap: 12px; margin-top: 15px; }
 </style>
+
+
 
 
 
@@ -326,7 +365,7 @@ $error   = $_GET['error']  ?? false;
         </div>
         <div class="upload-card-body">
           <div class="thumb-wrap main-thumb" id="thumb-main">
-            <img src="<?= htmlspecialchars($config['main']) ?>?cb=<?= time() ?>" alt="Main promo" id="preview-main">
+            <img src="<?= htmlspecialchars($config['main']['image']) ?>?cb=<?= time() ?>" alt="Main promo" id="preview-main">
             <div class="thumb-overlay">
               <i class="fas fa-camera"></i>
               <span>Current image</span>
@@ -338,10 +377,25 @@ $error   = $_GET['error']  ?? false;
             <div class="drop-text"><strong>Click or drag</strong> to replace<br>JPG, PNG, WebP — max 5MB</div>
           </div>
           <div class="file-indicator" id="indicator-main"><i class="fas fa-image"></i> No file chosen</div>
+          
+          <div class="form-group">
+            <label><i class="fas fa-link"></i> Destination Link</label>
+            <input type="url" name="link" class="form-control" placeholder="https://facebook.com/..." value="<?= htmlspecialchars($config['main']['link']) ?>">
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label><i class="fas fa-calendar-alt"></i> Start Posting</label>
+              <input type="datetime-local" name="start" class="form-control" value="<?= htmlspecialchars($config['main']['start']) ?>">
+            </div>
+          </div>
+
+
           <button type="submit" class="btn-save" onclick="setLoading(this)">
-            <i class="fas fa-upload"></i> Upload &amp; Save Main Banner
+            <i class="fas fa-save"></i> Save Changes
           </button>
         </div>
+
       </div>
     </form>
 
@@ -358,7 +412,7 @@ $error   = $_GET['error']  ?? false;
         </div>
         <div class="upload-card-body">
           <div class="thumb-wrap small-thumb" id="thumb-top">
-            <img src="<?= htmlspecialchars($config['top']) ?>?cb=<?= time() ?>" alt="Top right promo" id="preview-top">
+            <img src="<?= htmlspecialchars($config['top']['image']) ?>?cb=<?= time() ?>" alt="Top right promo" id="preview-top">
             <div class="thumb-overlay">
               <i class="fas fa-camera"></i>
               <span>Current image</span>
@@ -370,10 +424,25 @@ $error   = $_GET['error']  ?? false;
             <div class="drop-text"><strong>Click or drag</strong> to replace<br>JPG, PNG, WebP — max 5MB</div>
           </div>
           <div class="file-indicator" id="indicator-top"><i class="fas fa-image"></i> No file chosen</div>
+          
+          <div class="form-group">
+            <label><i class="fas fa-link"></i> Destination Link</label>
+            <input type="url" name="link" class="form-control" placeholder="https://facebook.com/..." value="<?= htmlspecialchars($config['top']['link']) ?>">
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label><i class="fas fa-calendar-alt"></i> Start Posting</label>
+              <input type="datetime-local" name="start" class="form-control" value="<?= htmlspecialchars($config['top']['start']) ?>">
+            </div>
+          </div>
+
+
           <button type="submit" class="btn-save" onclick="setLoading(this)">
-            <i class="fas fa-upload"></i> Upload &amp; Save Top Card
+            <i class="fas fa-save"></i> Save Changes
           </button>
         </div>
+
       </div>
     </form>
 
@@ -390,23 +459,37 @@ $error   = $_GET['error']  ?? false;
         </div>
         <div class="upload-card-body">
           <div class="thumb-wrap small-thumb" id="thumb-bottom">
-            <img src="<?= htmlspecialchars($config['bottom']) ?>?cb=<?= time() ?>" alt="Bottom right promo" id="preview-bottom">
+            <img src="<?= htmlspecialchars($config['bottom']['image']) ?>?cb=<?= time() ?>" alt="Bottom right promo" id="preview-bottom">
             <div class="thumb-overlay">
               <i class="fas fa-camera"></i>
               <span>Current image</span>
             </div>
           </div>
           <div class="drop-zone" id="dz-bottom">
-            <input type="file" name="image" accept="image/*" onchange="previewImage(this,'preview-panel-bottom-img','preview-panel-bottom','indicator-bottom')">
             <input type="file" name="image" accept="image/*" onchange="previewImage(this,'preview-bottom','preview-panel-bottom','indicator-bottom')" style="display:block;position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;">
             <div class="drop-icon"><i class="fas fa-cloud-upload-alt"></i></div>
             <div class="drop-text"><strong>Click or drag</strong> to replace<br>JPG, PNG, WebP — max 5MB</div>
           </div>
           <div class="file-indicator" id="indicator-bottom"><i class="fas fa-image"></i> No file chosen</div>
+          
+          <div class="form-group">
+            <label><i class="fas fa-link"></i> Destination Link</label>
+            <input type="url" name="link" class="form-control" placeholder="https://facebook.com/..." value="<?= htmlspecialchars($config['bottom']['link']) ?>">
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label><i class="fas fa-calendar-alt"></i> Start Posting</label>
+              <input type="datetime-local" name="start" class="form-control" value="<?= htmlspecialchars($config['bottom']['start']) ?>">
+            </div>
+          </div>
+
+
           <button type="submit" class="btn-save" onclick="setLoading(this)">
-            <i class="fas fa-upload"></i> Upload &amp; Save Bottom Card
+            <i class="fas fa-save"></i> Save Changes
           </button>
         </div>
+
       </div>
     </form>
 
@@ -432,19 +515,20 @@ $error   = $_GET['error']  ?? false;
       <div class="preview-body">
         <div class="mini-promo">
           <div class="mini-card large">
-            <img src="<?= htmlspecialchars($config['main']) ?>?cb=<?= time() ?>" id="preview-panel-main" alt="Main">
+            <img src="<?= htmlspecialchars($config['main']['image']) ?>?cb=<?= time() ?>" id="preview-panel-main" alt="Main">
             <div class="mini-card-label">Main Banner</div>
           </div>
           <div style="display:flex;flex-direction:column;gap:8px;">
             <div class="mini-card">
-              <img src="<?= htmlspecialchars($config['top']) ?>?cb=<?= time() ?>" id="preview-panel-top" alt="Top">
+              <img src="<?= htmlspecialchars($config['top']['image']) ?>?cb=<?= time() ?>" id="preview-panel-top" alt="Top">
               <div class="mini-card-label">Top Right</div>
             </div>
             <div class="mini-card">
-              <img src="<?= htmlspecialchars($config['bottom']) ?>?cb=<?= time() ?>" id="preview-panel-bottom" alt="Bottom">
+              <img src="<?= htmlspecialchars($config['bottom']['image']) ?>?cb=<?= time() ?>" id="preview-panel-bottom" alt="Bottom">
               <div class="mini-card-label">Bottom Right</div>
             </div>
           </div>
+
         </div>
         <p class="preview-hint"><i class="fas fa-eye" style="margin-right:4px;"></i>Preview updates instantly when you choose a file</p>
       </div>
@@ -479,17 +563,10 @@ function previewImage(input, cardImgId, panelImgId, indicatorId) {
 }
 
 function setLoading(btn) {
-  // Make sure a file was chosen
-  const form = btn.closest('form');
-  const fileInput = form.querySelector('input[type=file]');
-  if (!fileInput.files.length) {
-    event.preventDefault();
-    alert('Please choose an image file first.');
-    return;
-  }
   btn.classList.add('loading');
-  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading…';
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving…';
 }
+
 
 // Drag-and-drop visual feedback
 document.querySelectorAll('.drop-zone').forEach(dz => {

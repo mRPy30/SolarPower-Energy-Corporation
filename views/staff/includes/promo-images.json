@@ -1,5 +1,17 @@
 {
-    "main": "assets\/img\/promo-main.webp",
-    "top": "assets\/img\/promo-top.png",
-    "bottom": "assets\/img\/promo-bottom.jpg"
+    "main": {
+        "image": "assets\/img\/promo-main.png",
+        "link": "https:\/\/www.facebook.com\/janvier.araque",
+        "start": "2026-05-04T10:08"
+    },
+    "top": {
+        "image": "assets\/img\/promo-top.png",
+        "link": "https:\/\/www.facebook.com\/permalink.php?story_fbid=pfbid02XrvG3bZ8mQH6f6kPHqPmrmSWxeTDcR6kWmgVgo8NUWkaZ77srag41zQjFqStU4rMl&id=61578373983187",
+        "start": "2026-05-04T10:08"
+    },
+    "bottom": {
+        "image": "assets\/img\/promo-bottom.jpg",
+        "link": "https:\/\/www.facebook.com\/Janvieeerrrrrzz.30",
+        "start": "2026-05-04T10:08"
+    }
 }
