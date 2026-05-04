@@ -38,6 +38,11 @@ if (!array_key_exists($slot, $slotMap)) {
 $link  = $_POST['link'] ?? '';
 $start = $_POST['start'] ?? '';
 
+$start = normalize_start_schedule($start);
+if ($start === null) {
+    redirect_error('Invalid Start Posting format. Use MM/DD/YYYY HH:MM am/pm.');
+}
+
 // ── Update JSON config ────────────────────────────────────────────────────────
 $config = [];
 if (file_exists(CONFIG_FILE)) {
@@ -112,4 +117,30 @@ exit;
 function redirect_error(string $msg): void {
     header('Location: ' . ADMIN_URL . '?error=' . urlencode($msg));
     exit;
+}
+
+function normalize_start_schedule(string $value): ?string {
+    $value = trim($value);
+
+    if ($value === '') {
+        return date('m/d/Y h:i a');
+    }
+
+    $dt = DateTime::createFromFormat('m/d/Y h:i a', $value);
+    if ($dt instanceof DateTime) {
+        return $dt->format('m/d/Y h:i a');
+    }
+
+    // Backward compatibility with old datetime-local payload.
+    $dt = DateTime::createFromFormat('Y-m-d\TH:i', $value);
+    if ($dt instanceof DateTime) {
+        return $dt->format('m/d/Y h:i a');
+    }
+
+    // Last attempt for parseable date text.
+    try {
+        return (new DateTime($value))->format('m/d/Y h:i a');
+    } catch (Exception $e) {
+        return null;
+    }
 }

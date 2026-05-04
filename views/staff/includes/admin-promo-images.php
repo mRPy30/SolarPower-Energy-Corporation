@@ -9,13 +9,39 @@ date_default_timezone_set('Asia/Manila');
 
 $configFile = __DIR__ . '/promo-images.json';
 
+function format_start_display(string $value): string {
+  $value = trim($value);
+  if ($value === '') {
+    return date('m/d/Y h:i a');
+  }
+
+  // Already in desired display format.
+  $dt = DateTime::createFromFormat('m/d/Y h:i a', $value);
+  if ($dt instanceof DateTime) {
+    return $dt->format('m/d/Y h:i a');
+  }
+
+  // Backward compatibility with older datetime-local format.
+  $dt = DateTime::createFromFormat('Y-m-d\TH:i', $value);
+  if ($dt instanceof DateTime) {
+    return $dt->format('m/d/Y h:i a');
+  }
+
+  // Fallback for any parseable datetime string.
+  try {
+    return (new DateTime($value))->format('m/d/Y h:i a');
+  } catch (Exception $e) {
+    return date('m/d/Y h:i a');
+  }
+}
+
 
 // Load current config
 
 $defaults = [
     'image' => '',
     'link'  => '',
-    'start' => date('Y-m-d\TH:i'),
+  'start' => date('m/d/Y h:i a'),
 ];
 
 
@@ -40,6 +66,10 @@ if (file_exists($configFile)) {
             }
         }
     }
+}
+
+foreach (['main', 'top', 'bottom'] as $s) {
+  $config[$s]['start'] = format_start_display((string)($config[$s]['start'] ?? ''));
 }
 
 
@@ -387,7 +417,7 @@ $error   = $_GET['error']  ?? false;
           <div class="form-row">
             <div class="form-group">
               <label><i class="fas fa-calendar-alt"></i> Start Posting</label>
-              <input type="datetime-local" name="start" class="form-control" value="<?= htmlspecialchars($config['main']['start']) ?>">
+              <input type="text" name="start" class="form-control start-posting-input" placeholder="MM/DD/YYYY HH:MM am/pm" value="<?= date('m/d/Y h:i a') ?>" autocomplete="off" inputmode="text">
             </div>
           </div>
 
@@ -434,7 +464,7 @@ $error   = $_GET['error']  ?? false;
           <div class="form-row">
             <div class="form-group">
               <label><i class="fas fa-calendar-alt"></i> Start Posting</label>
-              <input type="datetime-local" name="start" class="form-control" value="<?= htmlspecialchars($config['top']['start']) ?>">
+              <input type="text" name="start" class="form-control start-posting-input" placeholder="MM/DD/YYYY HH:MM am/pm" value="<?= date('m/d/Y h:i a') ?>" autocomplete="off" inputmode="text">
             </div>
           </div>
 
@@ -481,7 +511,7 @@ $error   = $_GET['error']  ?? false;
           <div class="form-row">
             <div class="form-group">
               <label><i class="fas fa-calendar-alt"></i> Start Posting</label>
-              <input type="datetime-local" name="start" class="form-control" value="<?= htmlspecialchars($config['bottom']['start']) ?>">
+              <input type="text" name="start" class="form-control start-posting-input" placeholder="MM/DD/YYYY HH:MM am/pm" value="<?= date('m/d/Y h:i a') ?>" autocomplete="off" inputmode="text">
             </div>
           </div>
 
@@ -539,6 +569,123 @@ $error   = $_GET['error']  ?? false;
 </div><!-- /workspace -->
 
 <script>
+function nowInPHT() {
+  const now = new Date();
+  const phtNowText = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Manila',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true
+  }).format(now);
+
+  const parts = phtNowText.match(/^(\d{2})\/(\d{2})\/(\d{4}),?\s(\d{2}):(\d{2})\s([AP]M)$/i);
+  if (!parts) return '';
+  return `${parts[1]}/${parts[2]}/${parts[3]} ${parts[4]}:${parts[5]} ${parts[6].toLowerCase()}`;
+}
+
+function parseHumanDateTimePHT(value) {
+  const m = value.trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})\s(\d{1,2}):(\d{2})\s([ap]m)$/i);
+  if (!m) return null;
+
+  const month = parseInt(m[1], 10);
+  const day = parseInt(m[2], 10);
+  const year = parseInt(m[3], 10);
+  let hour = parseInt(m[4], 10);
+  const minute = parseInt(m[5], 10);
+  const meridiem = m[6].toLowerCase();
+
+  if (month < 1 || month > 12 || day < 1 || day > 31 || hour < 1 || hour > 12 || minute < 0 || minute > 59) {
+    return null;
+  }
+
+  if (meridiem === 'pm' && hour !== 12) hour += 12;
+  if (meridiem === 'am' && hour === 12) hour = 0;
+
+  const utcMs = Date.UTC(year, month - 1, day, hour - 8, minute, 0);
+  const dt = new Date(utcMs);
+
+  // Validate exact date components after normalization.
+  const phtParts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Manila',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true
+  }).format(dt).match(/^(\d{2})\/(\d{2})\/(\d{4}),?\s(\d{2}):(\d{2})\s([AP]M)$/i);
+
+  if (!phtParts) return null;
+  const cmp = `${phtParts[1]}/${phtParts[2]}/${phtParts[3]} ${phtParts[4]}:${phtParts[5]} ${phtParts[6].toLowerCase()}`;
+  const normInput = `${String(month).padStart(2, '0')}/${String(day).padStart(2, '0')}/${year} ${String(((hour % 12) || 12)).padStart(2, '0')}:${String(minute).padStart(2, '0')} ${meridiem}`;
+  return cmp === normInput ? dt : null;
+}
+
+function formatDateToHumanPHT(dateObj) {
+  const txt = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Manila',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true
+  }).format(dateObj);
+
+  const m = txt.match(/^(\d{2})\/(\d{2})\/(\d{4}),?\s(\d{2}):(\d{2})\s([AP]M)$/i);
+  if (!m) return txt;
+  return `${m[1]}/${m[2]}/${m[3]} ${m[4]}:${m[5]} ${m[6].toLowerCase()}`;
+}
+
+function handleScheduleCheckOnSubmit(e) {
+  const form = e.target;
+  const startInput = form.querySelector('input[name="start"]');
+  if (!startInput) return;
+
+  // Use current PHT as default when empty.
+  if (!startInput.value.trim()) {
+    startInput.value = nowInPHT();
+  }
+
+  const parsed = parseHumanDateTimePHT(startInput.value);
+  if (!parsed) {
+    e.preventDefault();
+    alert('Please use this format: MM/DD/YYYY HH:MM am/pm');
+    startInput.focus();
+    return;
+  }
+
+  // Normalize before submit.
+  startInput.value = formatDateToHumanPHT(parsed);
+
+  const nowPht = parseHumanDateTimePHT(nowInPHT());
+  if (!nowPht) return;
+
+  const selectedMs = parsed.getTime();
+  const nowMs = nowPht.getTime();
+
+  if (selectedMs < nowMs) {
+    e.preventDefault();
+    const msg = 'This time has already passed. Would you like to update it to now or a future time?\n\nPress OK to set it to now, or Cancel to edit it.';
+    const useNow = window.confirm(msg);
+    if (useNow) {
+      startInput.value = nowInPHT();
+      form.submit();
+    } else {
+      startInput.focus();
+    }
+    return;
+  }
+
+  const confirmMsg = `Your post is scheduled for ${startInput.value} PHT.\n\nPress OK to continue.`;
+  if (!window.confirm(confirmMsg)) {
+    e.preventDefault();
+  }
+}
+
 function previewImage(input, cardImgId, panelImgId, indicatorId) {
   const file = input.files[0];
   if (!file) return;
@@ -574,6 +721,33 @@ document.querySelectorAll('.drop-zone').forEach(dz => {
   dz.addEventListener('dragover',  e => { e.preventDefault(); dz.classList.add('dragover'); });
   dz.addEventListener('dragleave', () => dz.classList.remove('dragover'));
   dz.addEventListener('drop',      e => { e.preventDefault(); dz.classList.remove('dragover'); });
+});
+
+// Keep Start Posting synced to current PHT every minute until user edits manually.
+const startInputs = document.querySelectorAll('.start-posting-input');
+
+function refreshStartInputsFromNow() {
+  const nowText = nowInPHT();
+  if (!nowText) return;
+
+  startInputs.forEach(input => {
+    if (input.dataset.userEdited === '1') return;
+    input.value = nowText;
+  });
+}
+
+startInputs.forEach(input => {
+  input.dataset.userEdited = '0';
+  input.addEventListener('input', () => {
+    input.dataset.userEdited = '1';
+  });
+});
+
+refreshStartInputsFromNow();
+setInterval(refreshStartInputsFromNow, 60000);
+
+document.querySelectorAll('form[action="includes/save-promo-images.php"]').forEach(form => {
+  form.addEventListener('submit', handleScheduleCheckOnSubmit);
 });
 </script>
 
