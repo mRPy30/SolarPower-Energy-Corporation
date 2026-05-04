@@ -5,34 +5,50 @@
  * Include in your admin panel or access directly (add auth as needed).
  */
 
+date_default_timezone_set('Asia/Manila');
+
 $configFile = __DIR__ . '/promo-images.json';
 
+
 // Load current config
-$config = [
-    'main'   => 'assets/img/-solar.jpg',
-    'top'    => 'assets/img/installnow.jpg',
-    'bottom' => 'assets/img/occular.jpg',
+
+$defaults = [
+    'image' => '',
+    'link'  => '',
+    'start' => date('Y-m-d\TH:i'),
 ];
+
+
+
+$config = [
+    'main'   => array_merge($defaults, ['image' => 'assets/img/go-solar.jpg']),
+    'top'    => array_merge($defaults, ['image' => 'assets/img/installnow.jpg']),
+    'bottom' => array_merge($defaults, ['image' => 'assets/img/occular.jpg']),
+];
+
 if (file_exists($configFile)) {
     $saved = json_decode(file_get_contents($configFile), true);
-    if ($saved) $config = array_merge($config, $saved);
+    if ($saved) {
+        foreach (['main', 'top', 'bottom'] as $s) {
+            if (isset($saved[$s])) {
+                // Handle both old string format and new object format
+                if (is_string($saved[$s])) {
+                    $config[$s]['image'] = $saved[$s];
+                } else {
+                    $config[$s] = array_merge($config[$s], $saved[$s]);
+                }
+            }
+        }
+    }
 }
+
 
 $success = $_GET['saved'] ?? false;
 $error   = $_GET['error']  ?? false;
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Promo Image Manager — SolarPower Energy</title>
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
-
+<div id="promo-images" class="page-content promo-images-page">
 <style>
-  :root {
+  .promo-images-page {
     --sun: #F5A623;
     --sun-light: #FFF3DC;
     --solar: #1A3C5E;
@@ -46,73 +62,25 @@ $error   = $_GET['error']  ?? false;
     --danger: #E53E3E;
     --radius: 14px;
     --shadow: 0 4px 20px rgba(26,60,94,.09);
-  }
-
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-  body {
     font-family: 'DM Sans', sans-serif;
-    background: var(--surface);
     color: var(--text);
-    min-height: 100vh;
-  }
-
-  /* ── Top bar ── */
-  .topbar {
-    background: var(--solar);
-    padding: 0 32px;
-    height: 60px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    box-shadow: 0 2px 12px rgba(0,0,0,.18);
-  }
-  .topbar-logo {
-    width: 30px;
-    height: 30px;
-    background: var(--sun);
-    border-radius: 8px;
-    display: grid;
-    place-items: center;
-    font-size: 14px;
-    color: var(--solar);
-  }
-  .topbar-title {
-    font-family: 'Syne', sans-serif;
-    font-weight: 700;
-    font-size: 1rem;
-    color: #fff;
-    letter-spacing: .3px;
-  }
-  .topbar-badge {
-    margin-left: auto;
-    background: rgba(255,255,255,.12);
-    color: rgba(255,255,255,.75);
-    font-size: .72rem;
-    font-weight: 500;
-    padding: 4px 12px;
-    border-radius: 20px;
-    letter-spacing: .4px;
   }
 
   /* ── Layout ── */
-  .workspace {
+  .promo-images-page .workspace {
     display: grid;
     grid-template-columns: 1fr 380px;
     gap: 28px;
     max-width: 1180px;
-    margin: 36px auto;
+    margin: 20px auto;
     padding: 0 24px 48px;
   }
   @media (max-width: 900px) {
-    .workspace { grid-template-columns: 1fr; }
+    .promo-images-page .workspace { grid-template-columns: 1fr; }
   }
 
   /* ── Section heading ── */
-  .section-label {
+  .promo-images-page .section-label {
     font-family: 'Syne', sans-serif;
     font-weight: 700;
     font-size: .72rem;
@@ -348,15 +316,25 @@ $error   = $_GET['error']  ?? false;
   }
   .file-indicator.chosen { color: var(--success); }
   .file-indicator i { font-size:.75rem; }
-</style>
-</head>
-<body>
 
-<div class="topbar">
-  <div class="topbar-logo"><i class="fas fa-solar-panel"></i></div>
-  <span class="topbar-title">Promotional Image Manager</span>
-  <span class="topbar-badge"><i class="fas fa-lock" style="font-size:.6rem;margin-right:4px;"></i> Staff Only</span>
-</div>
+  /* ── New Form Fields ── */
+  .form-group { margin-top: 15px; }
+  .form-group label {
+    display: block; font-size: .75rem; font-weight: 700; color: var(--muted);
+    text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px;
+  }
+  .form-control {
+    width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border);
+    font-size: .85rem; font-family: inherit; transition: border-color .2s;
+  }
+  .form-control:focus { outline: none; border-color: var(--solar-mid); }
+  .form-row { display: grid; grid-template-columns: 1fr; gap: 12px; margin-top: 15px; }
+</style>
+
+
+
+
+
 
 <div class="workspace">
 
@@ -376,7 +354,7 @@ $error   = $_GET['error']  ?? false;
     <?php endif; ?>
 
     <!-- Card 1: Main (Large Left) -->
-    <form method="POST" action="save-promo-images.php" enctype="multipart/form-data" id="form-main">
+    <form method="POST" action="includes/save-promo-images.php" enctype="multipart/form-data" id="form-main">
       <input type="hidden" name="slot" value="main">
       <div class="upload-card" id="card-main">
         <div class="upload-card-header">
@@ -388,7 +366,7 @@ $error   = $_GET['error']  ?? false;
         </div>
         <div class="upload-card-body">
           <div class="thumb-wrap main-thumb" id="thumb-main">
-            <img src="<?= htmlspecialchars($config['main']) ?>?cb=<?= time() ?>" alt="Main promo" id="preview-main">
+            <img src="<?= htmlspecialchars($config['main']['image']) ?>?cb=<?= time() ?>" alt="Main promo" id="preview-main">
             <div class="thumb-overlay">
               <i class="fas fa-camera"></i>
               <span>Current image</span>
@@ -400,15 +378,30 @@ $error   = $_GET['error']  ?? false;
             <div class="drop-text"><strong>Click or drag</strong> to replace<br>JPG, PNG, WebP — max 5MB</div>
           </div>
           <div class="file-indicator" id="indicator-main"><i class="fas fa-image"></i> No file chosen</div>
+          
+          <div class="form-group">
+            <label><i class="fas fa-link"></i> Destination Link</label>
+            <input type="url" name="link" class="form-control" placeholder="https://facebook.com/..." value="<?= htmlspecialchars($config['main']['link']) ?>">
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label><i class="fas fa-calendar-alt"></i> Start Posting</label>
+              <input type="datetime-local" name="start" class="form-control" value="<?= htmlspecialchars($config['main']['start']) ?>">
+            </div>
+          </div>
+
+
           <button type="submit" class="btn-save" onclick="setLoading(this)">
-            <i class="fas fa-upload"></i> Upload &amp; Save Main Banner
+            <i class="fas fa-save"></i> Save Changes
           </button>
         </div>
+
       </div>
     </form>
 
     <!-- Card 2: Top Right -->
-    <form method="POST" action="save-promo-images.php" enctype="multipart/form-data" id="form-top">
+    <form method="POST" action="includes/save-promo-images.php" enctype="multipart/form-data" id="form-top">
       <input type="hidden" name="slot" value="top">
       <div class="upload-card" id="card-top">
         <div class="upload-card-header">
@@ -420,7 +413,7 @@ $error   = $_GET['error']  ?? false;
         </div>
         <div class="upload-card-body">
           <div class="thumb-wrap small-thumb" id="thumb-top">
-            <img src="<?= htmlspecialchars($config['top']) ?>?cb=<?= time() ?>" alt="Top right promo" id="preview-top">
+            <img src="<?= htmlspecialchars($config['top']['image']) ?>?cb=<?= time() ?>" alt="Top right promo" id="preview-top">
             <div class="thumb-overlay">
               <i class="fas fa-camera"></i>
               <span>Current image</span>
@@ -432,15 +425,30 @@ $error   = $_GET['error']  ?? false;
             <div class="drop-text"><strong>Click or drag</strong> to replace<br>JPG, PNG, WebP — max 5MB</div>
           </div>
           <div class="file-indicator" id="indicator-top"><i class="fas fa-image"></i> No file chosen</div>
+          
+          <div class="form-group">
+            <label><i class="fas fa-link"></i> Destination Link</label>
+            <input type="url" name="link" class="form-control" placeholder="https://facebook.com/..." value="<?= htmlspecialchars($config['top']['link']) ?>">
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label><i class="fas fa-calendar-alt"></i> Start Posting</label>
+              <input type="datetime-local" name="start" class="form-control" value="<?= htmlspecialchars($config['top']['start']) ?>">
+            </div>
+          </div>
+
+
           <button type="submit" class="btn-save" onclick="setLoading(this)">
-            <i class="fas fa-upload"></i> Upload &amp; Save Top Card
+            <i class="fas fa-save"></i> Save Changes
           </button>
         </div>
+
       </div>
     </form>
 
     <!-- Card 3: Bottom Right -->
-    <form method="POST" action="save-promo-images.php" enctype="multipart/form-data" id="form-bottom">
+    <form method="POST" action="includes/save-promo-images.php" enctype="multipart/form-data" id="form-bottom">
       <input type="hidden" name="slot" value="bottom">
       <div class="upload-card" id="card-bottom">
         <div class="upload-card-header">
@@ -452,23 +460,37 @@ $error   = $_GET['error']  ?? false;
         </div>
         <div class="upload-card-body">
           <div class="thumb-wrap small-thumb" id="thumb-bottom">
-            <img src="<?= htmlspecialchars($config['bottom']) ?>?cb=<?= time() ?>" alt="Bottom right promo" id="preview-bottom">
+            <img src="<?= htmlspecialchars($config['bottom']['image']) ?>?cb=<?= time() ?>" alt="Bottom right promo" id="preview-bottom">
             <div class="thumb-overlay">
               <i class="fas fa-camera"></i>
               <span>Current image</span>
             </div>
           </div>
           <div class="drop-zone" id="dz-bottom">
-            <input type="file" name="image" accept="image/*" onchange="previewImage(this,'preview-panel-bottom-img','preview-panel-bottom','indicator-bottom')">
-            <input type="file" name="image" accept="image/*" onchange="previewImage(this,'preview-bottom','preview-panel-bottom','indicator-bottom')" style="display:block;position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;">
+            <input type="file" name="image" accept="image/*" onchange="previewImage(this,'preview-bottom','preview-panel-bottom','indicator-bottom')">
             <div class="drop-icon"><i class="fas fa-cloud-upload-alt"></i></div>
             <div class="drop-text"><strong>Click or drag</strong> to replace<br>JPG, PNG, WebP — max 5MB</div>
           </div>
           <div class="file-indicator" id="indicator-bottom"><i class="fas fa-image"></i> No file chosen</div>
+          
+          <div class="form-group">
+            <label><i class="fas fa-link"></i> Destination Link</label>
+            <input type="url" name="link" class="form-control" placeholder="https://facebook.com/..." value="<?= htmlspecialchars($config['bottom']['link']) ?>">
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label><i class="fas fa-calendar-alt"></i> Start Posting</label>
+              <input type="datetime-local" name="start" class="form-control" value="<?= htmlspecialchars($config['bottom']['start']) ?>">
+            </div>
+          </div>
+
+
           <button type="submit" class="btn-save" onclick="setLoading(this)">
-            <i class="fas fa-upload"></i> Upload &amp; Save Bottom Card
+            <i class="fas fa-save"></i> Save Changes
           </button>
         </div>
+
       </div>
     </form>
 
@@ -494,19 +516,20 @@ $error   = $_GET['error']  ?? false;
       <div class="preview-body">
         <div class="mini-promo">
           <div class="mini-card large">
-            <img src="<?= htmlspecialchars($config['main']) ?>?cb=<?= time() ?>" id="preview-panel-main" alt="Main">
+            <img src="<?= htmlspecialchars($config['main']['image']) ?>?cb=<?= time() ?>" id="preview-panel-main" alt="Main">
             <div class="mini-card-label">Main Banner</div>
           </div>
           <div style="display:flex;flex-direction:column;gap:8px;">
             <div class="mini-card">
-              <img src="<?= htmlspecialchars($config['top']) ?>?cb=<?= time() ?>" id="preview-panel-top" alt="Top">
+              <img src="<?= htmlspecialchars($config['top']['image']) ?>?cb=<?= time() ?>" id="preview-panel-top" alt="Top">
               <div class="mini-card-label">Top Right</div>
             </div>
             <div class="mini-card">
-              <img src="<?= htmlspecialchars($config['bottom']) ?>?cb=<?= time() ?>" id="preview-panel-bottom" alt="Bottom">
+              <img src="<?= htmlspecialchars($config['bottom']['image']) ?>?cb=<?= time() ?>" id="preview-panel-bottom" alt="Bottom">
               <div class="mini-card-label">Bottom Right</div>
             </div>
           </div>
+
         </div>
         <p class="preview-hint"><i class="fas fa-eye" style="margin-right:4px;"></i>Preview updates instantly when you choose a file</p>
       </div>
@@ -541,17 +564,10 @@ function previewImage(input, cardImgId, panelImgId, indicatorId) {
 }
 
 function setLoading(btn) {
-  // Make sure a file was chosen
-  const form = btn.closest('form');
-  const fileInput = form.querySelector('input[type=file]');
-  if (!fileInput.files.length) {
-    event.preventDefault();
-    alert('Please choose an image file first.');
-    return;
-  }
   btn.classList.add('loading');
-  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading…';
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving…';
 }
+
 
 // Drag-and-drop visual feedback
 document.querySelectorAll('.drop-zone').forEach(dz => {
@@ -559,20 +575,6 @@ document.querySelectorAll('.drop-zone').forEach(dz => {
   dz.addEventListener('dragleave', () => dz.classList.remove('dragover'));
   dz.addEventListener('drop',      e => { e.preventDefault(); dz.classList.remove('dragover'); });
 });
-
-// Fix bottom card: only one file input needed — clean up the duplicate
-(function() {
-  const dz = document.getElementById('dz-bottom');
-  const inputs = dz.querySelectorAll('input[type=file]');
-  // Remove the first (hidden absolutely positioned duplicate was unintentional)
-  if (inputs.length > 1) inputs[0].remove();
-  // Re-attach correct handler
-  inputs[inputs.length - 1].onchange = function() {
-    previewImage(this, 'preview-bottom', 'preview-panel-bottom', 'indicator-bottom');
-  };
-  inputs[inputs.length - 1].style = '';
-})();
 </script>
 
-</body>
-</html>
+</div><!-- /promo-images -->
