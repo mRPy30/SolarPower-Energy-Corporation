@@ -1,10 +1,18 @@
     <link rel="stylesheet" href="assets/style.css?v=20260223-chatbot">
 
-    <!-- Toggle Button -->
-    <button class="chat-fab" id="chatFab" onclick="toggleChat()">
-        <i class="fas fa-comment-dots fab-open"></i>
-        <i class="fas fa-times fab-close"></i>
-    </button>
+    <!-- Floating Chat FAB Wrapper -->
+    <div class="chat-fab-wrapper" id="chatFabWrapper">
+        <!-- "Talk to our agent now!" tooltip -->
+        <span class="chat-fab-tooltip" id="chatTooltip" onclick="toggleChat()">
+            Talk to our agent now!
+        </span>
+
+        <!-- Toggle Button -->
+        <button class="chat-fab" id="chatFab" onclick="toggleChat()" aria-label="Open Chat">
+            <i class="fas fa-comment-dots fab-open"></i>
+            <i class="fas fa-times fab-close"></i>
+        </button>
+    </div>
 
     <!-- Chat Widget Panel -->
     <div class="chatbot-widget" id="chatWidget">
@@ -29,9 +37,8 @@
     </div>
 
 
-<script>
-    
-          // Chatbot Data & Logic
+    <script>
+        // Chatbot Data & Logic
         const faqData = [{
                 id: 'cost',
                 question: 'How much does solar cost?',
@@ -82,6 +89,8 @@
         function toggleChat() {
             const isOpen = chatWidget.classList.toggle('open');
             chatFab.classList.toggle('open', isOpen);
+            const wrapper = document.getElementById('chatFabWrapper');
+            if (wrapper) wrapper.classList.toggle('open', isOpen);
             if (isOpen && !chatInited) {
                 chatInited = true;
                 initChat();
@@ -185,5 +194,4 @@
                 }, 300);
             }, 1200);
         }
-
-</script>
+    </script>

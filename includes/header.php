@@ -131,7 +131,7 @@ function isActive($page)
     }
 
     .logo img {
-        width: 165px;
+        width: 180px;
         height: 85px;
         border-radius: var(--border-radius-md);
         transition: all 0.3s ease;
@@ -287,8 +287,8 @@ function isActive($page)
         }
 
         .logo img {
-            width: 100px;
-            height: 65px;
+            width: 107px;
+            height: 50px;
         }
 
         header.scrolled .logo img {
@@ -384,7 +384,7 @@ function isActive($page)
         }
 
         .logo img {
-            width: 80px;
+            width: 107px;
             height: 50px;
         }
 
@@ -449,7 +449,7 @@ function isActive($page)
 
 <script>
     // Scroll effect for header
-    window.addEventListener('scroll', function () {
+    window.addEventListener('scroll', function() {
         const header = document.getElementById('mainHeader');
         if (header && window.scrollY > 50) {
             header.classList.add('scrolled');
@@ -464,7 +464,7 @@ function isActive($page)
     const mobileOverlay = document.getElementById('mobileOverlay');
 
     if (mobileMenuBtn) {
-        mobileMenuBtn.addEventListener('click', function () {
+        mobileMenuBtn.addEventListener('click', function() {
             this.classList.toggle('active');
             mobileNav.classList.toggle('active');
             mobileOverlay.classList.toggle('active');
@@ -474,7 +474,7 @@ function isActive($page)
 
     // Close menu when overlay is clicked
     if (mobileOverlay) {
-        mobileOverlay.addEventListener('click', function () {
+        mobileOverlay.addEventListener('click', function() {
             mobileMenuBtn.classList.remove('active');
             mobileNav.classList.remove('active');
             this.classList.remove('active');
@@ -485,7 +485,7 @@ function isActive($page)
     // Close menu when a link is clicked
     const navLinks = document.querySelectorAll('nav a');
     navLinks.forEach(link => {
-        link.addEventListener('click', function () {
+        link.addEventListener('click', function() {
             if (window.innerWidth <= 768) {
                 mobileMenuBtn.classList.remove('active');
                 mobileNav.classList.remove('active');
@@ -498,16 +498,16 @@ function isActive($page)
     // Copy phone number to clipboard
     function copyPhone() {
         const number = '+63 995 394 7379';
-        navigator.clipboard.writeText(number).then(function () {
+        navigator.clipboard.writeText(number).then(function() {
             const el = document.getElementById('phoneNumber');
             const original = el.textContent;
             el.textContent = 'Copied!';
             el.style.textDecoration = 'none';
-            setTimeout(function () {
+            setTimeout(function() {
                 el.textContent = original;
                 el.style.textDecoration = 'underline';
             }, 1500);
-        }).catch(function () {
+        }).catch(function() {
             // Fallback for older browsers
             const temp = document.createElement('input');
             temp.value = number;
@@ -520,7 +520,7 @@ function isActive($page)
     }
 
     // Dropdown Toggle Logic
-    document.getElementById('profileBtn')?.addEventListener('click', function (e) {
+    document.getElementById('profileBtn')?.addEventListener('click', function(e) {
         document.getElementById('profileDropdown').classList.toggle('show');
     });
 </script>
