@@ -1,17 +1,17 @@
 {
     "main": {
-        "image": "assets\/img\/promo-main.png",
-        "link": "https:\/\/www.facebook.com\/profile.php?id=61578373983187",
-        "start": "05\/04\/2026 04:20 pm"
+        "image": "assets\/img\/promo-main.jpg",
+        "link": "https:\/\/www.facebook.com\/share\/p\/1Ct5fohLui\/",
+        "start": "05\/05\/2026 01:28 pm"
     },
     "top": {
-        "image": "assets\/img\/promo-top.png",
-        "link": "https:\/\/www.facebook.com\/permalink.php?story_fbid=pfbid02XrvG3bZ8mQH6f6kPHqPmrmSWxeTDcR6kWmgVgo8NUWkaZ77srag41zQjFqStU4rMl&id=61578373983187",
-        "start": "2026-05-04T10:08"
+        "image": "assets\/img\/promo-top.jpg",
+        "link": "https:\/\/www.facebook.com\/share\/p\/1E1KU41SJS\/",
+        "start": "05\/05\/2026 11:45 am"
     },
     "bottom": {
         "image": "assets\/img\/promo-bottom.jpg",
-        "link": "https:\/\/www.facebook.com\/Janvieeerrrrrzz.30",
-        "start": "2026-05-04T10:08"
+        "link": "https:\/\/www.facebook.com\/share\/p\/1CNyY2eBq5\/",
+        "start": "05\/05\/2026 11:45 am"
     }
 }

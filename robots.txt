@@ -1,3 +1,12 @@
 User-agent: *
 Allow: /
+
+# Sitemaps
 Sitemap: https://solarpower.com.ph/sitemap.xml
+
+# Disallow admin and controllers
+Disallow: /views/admin/
+Disallow: /views/staff/
+Disallow: /controllers/
+Disallow: /config/
+Disallow: /vendor/

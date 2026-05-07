@@ -32,14 +32,24 @@ if (!$data || !isset($data['items']) || !isset($data['customer'])) {
 }
 
 // Extract data
-$totalAmount = floatval($data['amount']);
-$items = $data['items'];
-$customer = $data['customer'];
+$totalAmount = floatval($data['totalAmount'] ?? ($data['amount'] ?? 0));
+$items = $data['items'] ?? [];
 $paymentMethod = $data['paymentMethod'] ?? 'cod';
 
+// Extract customer data (handle both object and flat structure)
+if (isset($data['customer']) && is_array($data['customer'])) {
+    $customer = $data['customer'];
+} else {
+    $customer = [
+        'name' => $data['customerName'] ?? '',
+        'email' => $data['customerEmail'] ?? '',
+        'phone' => $data['customerPhone'] ?? '',
+        'address' => $data['customerAddress'] ?? ''
+    ];
+}
+
 // Validate customer data
-if (empty($customer['name']) || empty($customer['email']) || 
-    empty($customer['phone']) || empty($customer['address'])) {
+if (empty($customer['name']) || empty($customer['email'])) {
     echo json_encode([
         'success' => false,
         'message' => 'Customer information is incomplete'
@@ -123,11 +133,10 @@ try {
     // Commit transaction
     $conn->commit();
     
-    // Send success response
     echo json_encode([
         'success' => true,
         'message' => 'Order placed successfully',
-        'orderId' => $orderReference
+        'orderRef' => $orderReference
     ]);
     
 } catch (Exception $e) {

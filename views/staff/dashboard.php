@@ -148,10 +148,10 @@ function get_best_seller($conn)
 }
 
 $stats = [
-    'clients' => $conn->query("SELECT COUNT(*) FROM client")->fetch_row()[0],
-    'products' => $conn->query("SELECT COUNT(*) FROM product")->fetch_row()[0],
-    'orders' => $conn->query("SELECT COUNT(*) FROM orders")->fetch_row()[0],
-    'suppliers' => $conn->query("SELECT COUNT(*) FROM supplier")->fetch_row()[0]
+    'clients' => $conn->query("SELECT COUNT(DISTINCT customer_email) FROM orders")->fetch_row()[0] ?? 0,
+    'products' => $conn->query("SELECT COUNT(*) FROM product")->fetch_row()[0] ?? 0,
+    'orders' => $conn->query("SELECT COUNT(*) FROM orders")->fetch_row()[0] ?? 0,
+    'suppliers' => $conn->query("SELECT COUNT(*) FROM supplier")->fetch_row()[0] ?? 0
 ];
 
 
@@ -194,9 +194,9 @@ function get_stats($conn)
         'suppliers' => 0,
     ];
 
-    $result = $conn->query("SELECT COUNT(*) FROM client");
+    $result = $conn->query("SELECT COUNT(DISTINCT customer_email) FROM orders");
     if ($result) {
-        $stats['clients'] = $result->fetch_row()[0];
+        $stats['clients'] = $result->fetch_row()[0] ?? 0;
         $result->close();
     }
 
