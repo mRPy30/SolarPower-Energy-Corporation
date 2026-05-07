@@ -367,7 +367,6 @@ $error   = $_GET['error']  ?? false;
 
 
 <div class="workspace">
-
   <!-- Left: Upload Forms -->
   <div>
     <div class="section-label">Manage Promotional Images</div>
@@ -384,7 +383,7 @@ $error   = $_GET['error']  ?? false;
     <?php endif; ?>
 
     <!-- Card 1: Main (Large Left) -->
-    <form method="POST" action="includes/save-promo-images.php" enctype="multipart/form-data" id="form-main">
+    <form method="POST" action="/SolarPower-Energy-Corporation/views/staff/includes/save-promo-images.php" enctype="multipart/form-data" id="form-main">
       <input type="hidden" name="slot" value="main">
       <div class="upload-card" id="card-main">
         <div class="upload-card-header">
@@ -431,7 +430,7 @@ $error   = $_GET['error']  ?? false;
     </form>
 
     <!-- Card 2: Top Right -->
-    <form method="POST" action="includes/save-promo-images.php" enctype="multipart/form-data" id="form-top">
+    <form method="POST" action="/SolarPower-Energy-Corporation/views/staff/includes/save-promo-images.php" enctype="multipart/form-data" id="form-top">
       <input type="hidden" name="slot" value="top">
       <div class="upload-card" id="card-top">
         <div class="upload-card-header">
@@ -478,7 +477,7 @@ $error   = $_GET['error']  ?? false;
     </form>
 
     <!-- Card 3: Bottom Right -->
-    <form method="POST" action="includes/save-promo-images.php" enctype="multipart/form-data" id="form-bottom">
+    <form method="POST" action="/SolarPower-Energy-Corporation/views/staff/includes/save-promo-images.php" enctype="multipart/form-data" id="form-bottom">
       <input type="hidden" name="slot" value="bottom">
       <div class="upload-card" id="card-bottom">
         <div class="upload-card-header">
@@ -641,6 +640,7 @@ function formatDateToHumanPHT(dateObj) {
 }
 
 function handleScheduleCheckOnSubmit(e) {
+  e.preventDefault();
   const form = e.target;
   const startInput = form.querySelector('input[name="start"]');
   if (!startInput) return;
@@ -652,7 +652,6 @@ function handleScheduleCheckOnSubmit(e) {
 
   const parsed = parseHumanDateTimePHT(startInput.value);
   if (!parsed) {
-    e.preventDefault();
     alert('Please use this format: MM/DD/YYYY HH:MM am/pm');
     startInput.focus();
     return;
@@ -668,7 +667,6 @@ function handleScheduleCheckOnSubmit(e) {
   const nowMs = nowPht.getTime();
 
   if (selectedMs < nowMs) {
-    e.preventDefault();
     const msg = 'This time has already passed. Would you like to update it to now or a future time?\n\nPress OK to set it to now, or Cancel to edit it.';
     const useNow = window.confirm(msg);
     if (useNow) {
@@ -681,8 +679,10 @@ function handleScheduleCheckOnSubmit(e) {
   }
 
   const confirmMsg = `Your post is scheduled for ${startInput.value} PHT.\n\nPress OK to continue.`;
-  if (!window.confirm(confirmMsg)) {
-    e.preventDefault();
+  if (window.confirm(confirmMsg)) {
+    form.submit();
+  } else {
+    startInput.focus();
   }
 }
 
@@ -746,7 +746,8 @@ startInputs.forEach(input => {
 refreshStartInputsFromNow();
 setInterval(refreshStartInputsFromNow, 60000);
 
-document.querySelectorAll('form[action="includes/save-promo-images.php"]').forEach(form => {
+// Attach handler to any form that posts to our save endpoint (robust selector)
+document.querySelectorAll('form[action*="save-promo-images.php"]').forEach(form => {
   form.addEventListener('submit', handleScheduleCheckOnSubmit);
 });
 </script>

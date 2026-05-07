@@ -48,9 +48,32 @@ $conn->close();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" type="image/png" href="assets/img/icon.png">
+    
+    <!-- Primary Meta Tags -->
     <title>SolarPower Energy - Smart Energy for Smarter Homes</title>
-    <meta property="og:image" content="https://solarpower.com.ph/assets/img/new_logo.png" />    
+    <meta name="title" content="SolarPower Energy - Smart Energy for Smarter Homes">
+    <meta name="description" content="SolarPower Energy Corporation is a top provider of premium solar panels, inverters, and battery solutions for residential and commercial customers in the Philippines.">
+    <meta name="keywords" content="solar panels Philippines, solar energy, solar installation, residential solar, commercial solar, grid-tie, hybrid solar, LuxPower, off-grid">
+    <meta name="author" content="SolarPower Energy Corporation">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://solarpower.com.ph/">
+    <meta property="og:title" content="SolarPower Energy - Smart Energy for Smarter Homes">
+    <meta property="og:description" content="SolarPower Energy Corporation is a top provider of premium solar panels, inverters, and battery solutions for residential and commercial customers in the Philippines.">
+    <meta property="og:image" content="https://solarpower.com.ph/assets/img/new_logo.png">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://solarpower.com.ph/">
+    <meta property="twitter:title" content="SolarPower Energy - Smart Energy for Smarter Homes">
+    <meta property="twitter:description" content="SolarPower Energy Corporation is a top provider of premium solar panels, inverters, and battery solutions for residential and commercial customers in the Philippines.">
+    <meta property="twitter:image" content="https://solarpower.com.ph/assets/img/new_logo.png">
+    
+    <!-- Canonical Link -->
+    <link rel="canonical" href="https://solarpower.com.ph/">
+
+    <link rel="icon" type="image/png" href="assets/img/icon.png">
     <!-- Bootstrap CSS -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome -->
