@@ -18,14 +18,13 @@ $sql = "SELECT
 FROM product p
 LEFT JOIN product_images pi 
     ON p.id = pi.product_id
-WHERE pi.image_path IS NOT NULL
+WHERE pi.image_path IS NOT NULL 
+  AND (TRIM(p.brandName) = 'Hybrid' OR TRIM(p.brandName) = 'Grid-tie')
 GROUP BY p.id
 ORDER BY 
     CASE 
         WHEN TRIM(p.brandName) = 'Grid-tie' THEN 0 
         WHEN TRIM(p.brandName) = 'Hybrid' THEN 1 
-        WHEN TRIM(p.brandName) = 'LuxPower' THEN 2 
-        ELSE 3 
     END ASC, 
     p.id DESC";
 
@@ -50,27 +49,69 @@ $conn->close();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/png" href="assets/img/icon.png">
     <title>SolarPower Energy - Smart Energy for Smarter Homes</title>
-    <meta property="og:image" content="https://solarpower.com.ph/assets/img/new_logo.png" />    
-    <!-- Bootstrap CSS -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <!-- AOS Animation -->
-    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    <meta name="description" content="Switch to SolarPower Energy Corporation, the leading solar panel provider in the Philippines. DOE-accredited solar installations for residential and commercial properties. Save up to 80% on your electricity bills today!">
+    <meta name="keywords" content="Solar Power Philippines, Solar Panel Installation, Smart Energy, Renewable Energy PH, SolarPower Energy Corporation, Grid-tie Solar, Hybrid Solar System, DOE Accredited Solar">
+    <meta name="author" content="SolarPower Energy Corporation">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://solarpower.com.ph">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://solarpower.com.ph">
+    <meta property="og:title" content="SolarPower Energy - Smart Energy for Smarter Homes">
+    <meta property="og:description" content="Join the renewable revolution! Get professional solar installations with flexible payment plans. Switch to SolarPower Energy today.">
+    <meta property="og:image" content="https://solarpower.com.ph/assets/img/new_logo.png">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://solarpower.com.ph">
+    <meta property="twitter:title" content="SolarPower Energy - Solar Panel Installation Philippines">
+    <meta property="twitter:description" content="DOE-accredited solar provider. Save on electricity bills with our Hybrid and Grid-tie solar solutions.">
+    <meta property="twitter:image" content="https://solarpower.com.ph/assets/img/new_logo.png">
+
     <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "Organization",
-      "url": "https://solarpower.com.ph",
-      "logo": "https://solarpower.com.ph/assets/img/new_logo.png",
-      "name": "SolarPower Energy Corporation",
-      "contactPoint": {
-        "@type": "ContactPoint",
-        "telephone": "+63-995-394-7379",
-        "contactType": "customer service"
-      }
-    }
+        {
+            "@context": "https://schema.org",
+            "@type": "LocalBusiness",
+            "name": "SolarPower Energy Corporation",
+            "image": "https://solarpower.com.ph/assets/img/new_logo.png",
+            "url": "https://solarpower.com.ph",
+            "telephone": "+63-995-394-7379",
+            "address": {
+                "@type": "PostalAddress",
+                "streetAddress": "Various Locations",
+                "addressLocality": "Metro Manila",
+                "addressCountry": "PH"
+            },
+            "geo": {
+                "@type": "GeoCoordinates",
+                "latitude": 14.5995,
+                "longitude": 120.9842
+            },
+            "openingHoursSpecification": {
+                "@type": "OpeningHoursSpecification",
+                "dayOfWeek": [
+                    "Monday",
+                    "Tuesday",
+                    "Wednesday",
+                    "Thursday",
+                    "Friday",
+                    "Saturday"
+                ],
+                "opens": "08:00",
+                "closes": "17:00"
+            },
+            "sameAs": [
+                "https://www.facebook.com/solarpowerenergycorp"
+            ]
+        }
     </script>
+
+    <!-- CSS Libraries -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
     <link rel="stylesheet" href="assets/style.css">
@@ -80,26 +121,26 @@ $conn->close();
             padding: 80px 0;
             background: #fff;
         }
- 
+
         .contact-info h2 {
             font-size: 28px;
             color: var(--clr-dark);
             font-weight: 700;
             margin-bottom: 6px;
         }
- 
+
         .contact-section-sub {
             color: var(--clr-text-secondary);
             font-size: 0.92rem;
             margin-bottom: 36px;
             line-height: 1.6;
         }
- 
+
         /* Visit Us / WhatsApp block */
         .visit-us-section {
             margin-bottom: 32px;
         }
- 
+
         .visit-us-section h3 {
             font-size: 13px;
             font-weight: 700;
@@ -108,24 +149,26 @@ $conn->close();
             color: #999;
             margin-bottom: 4px;
         }
- 
+
         .visit-us-section p {
             color: var(--clr-text-secondary);
             font-size: 0.88rem;
             line-height: 1.6;
             margin-bottom: 14px;
         }
- 
+
         /* Contact detail rows */
-        .company-info { margin-bottom: 24px; }
- 
+        .company-info {
+            margin-bottom: 24px;
+        }
+
         .contact-detail {
             display: flex;
             align-items: flex-start;
             margin-bottom: 18px;
             gap: 12px;
         }
- 
+
         .contact-detail .icon-wrap {
             width: 36px;
             height: 36px;
@@ -136,21 +179,23 @@ $conn->close();
             justify-content: center;
             flex-shrink: 0;
         }
- 
+
         .contact-detail i {
             color: var(--clr-secondary);
             font-size: 14px;
         }
- 
+
         .company-info .phone-number {
             font-weight: 500;
             color: var(--clr-dark);
             cursor: pointer;
         }
- 
+
         /* Hours Section */
-        .hours-section { margin-top: 20px; }
- 
+        .hours-section {
+            margin-top: 20px;
+        }
+
         .hours-toggle {
             width: 100%;
             display: flex;
@@ -166,17 +211,21 @@ $conn->close();
             color: var(--clr-dark);
             transition: var(--transition-fast);
         }
- 
-        .hours-toggle:hover { background: #f9fafb; }
- 
-        .hours-toggle strong { color: var(--clr-dark); }
- 
+
+        .hours-toggle:hover {
+            background: #f9fafb;
+        }
+
+        .hours-toggle strong {
+            color: var(--clr-dark);
+        }
+
         .hours-toggle i {
             transition: transform 0.3s ease;
             color: #aaa;
             font-size: 12px;
         }
- 
+
         .hours-content {
             max-height: 0;
             overflow: hidden;
@@ -187,7 +236,7 @@ $conn->close();
             border: 1px solid #e5e7eb;
             border-top: none;
         }
- 
+
         .hour-item {
             display: flex;
             justify-content: space-between;
@@ -196,14 +245,16 @@ $conn->close();
             color: #555;
             border-bottom: 1px solid #f0f0f0;
         }
- 
-        .hour-item:last-child { border-bottom: none; }
- 
+
+        .hour-item:last-child {
+            border-bottom: none;
+        }
+
         .hour-item span:first-child {
             font-weight: 500;
             color: var(--clr-dark);
         }
- 
+
         .contact-detail strong {
             display: block;
             margin-bottom: 2px;
@@ -213,7 +264,7 @@ $conn->close();
             text-transform: uppercase;
             letter-spacing: 0.06em;
         }
- 
+
         .contact-detail p,
         .contact-detail span,
         .contact-detail a {
@@ -222,36 +273,36 @@ $conn->close();
             margin: 0;
             font-size: 0.88rem;
         }
- 
+
         .contact-detail a {
             text-decoration: none;
             color: var(--clr-dark);
         }
- 
+
         .contact-detail a:hover {
             color: var(--clr-secondary);
         }
- 
+
         /* Form wrapper — clean, no heavy shadow */
         .contact-form-wrapper {
             padding: 0;
             border: none;
             background: transparent;
         }
- 
+
         .contact-form-wrapper h3 {
             font-size: 1.4rem;
             font-weight: 700;
             color: var(--clr-dark);
             margin-bottom: 6px;
         }
- 
+
         .contact-form-sub {
             font-size: 0.88rem;
             color: var(--clr-text-secondary);
             margin-bottom: 28px;
         }
- 
+
         .contact-form .form-control {
             padding: 10px 14px;
             border: 1.5px solid #e5e7eb;
@@ -261,14 +312,14 @@ $conn->close();
             transition: border-color 0.2s, background 0.2s;
             color: var(--clr-dark);
         }
- 
+
         .contact-form .form-control:focus {
             border-color: var(--clr-secondary);
             background: #fff;
             box-shadow: none;
             outline: none;
         }
- 
+
         .contact-form .input-group-text {
             background: #fafafa;
             border: 1.5px solid #e5e7eb;
@@ -279,17 +330,17 @@ $conn->close();
             font-size: 0.88rem;
             padding: 10px 12px;
         }
- 
+
         .contact-form .input-group .form-control {
             border-left: none;
             border-radius: 0 8px 8px 0;
         }
- 
+
         .contact-form .input-group:focus-within .input-group-text {
             border-color: var(--clr-secondary);
             background: #fff;
         }
- 
+
         .contact-form .input-group:focus-within .form-control {
             border-color: var(--clr-secondary);
         }
@@ -300,11 +351,11 @@ $conn->close();
             font-weight: 500;
             user-select: none;
         }
- 
+
         .contact-form textarea.form-control {
             resize: none;
         }
- 
+
         .btn-submit {
             background: var(--clr-secondary);
             color: #fff;
@@ -318,12 +369,16 @@ $conn->close();
             transition: background 0.2s;
             letter-spacing: 0.04em;
         }
- 
-        .btn-submit:hover { background: #085231; }
- 
+
+        .btn-submit:hover {
+            background: #085231;
+        }
+
         /* Social Links */
-        .contact-social-links { margin-top: 28px; }
- 
+        .contact-social-links {
+            margin-top: 28px;
+        }
+
         .contact-social-label {
             font-size: 11px;
             font-weight: 700;
@@ -332,13 +387,13 @@ $conn->close();
             color: #999;
             margin-bottom: 10px;
         }
- 
+
         .social-links {
             display: flex;
             gap: 8px;
             flex-wrap: wrap;
         }
- 
+
         .social-links a {
             width: 34px;
             height: 34px;
@@ -352,23 +407,29 @@ $conn->close();
             text-decoration: none;
             transition: all 0.2s ease;
         }
- 
+
         .social-links a:hover {
             background: var(--clr-secondary);
             color: #fff;
         }
- 
+
         /* Section divider */
         .contact-divider {
             border: none;
             border-top: 1px solid #f0f0f0;
             margin: 24px 0;
         }
- 
+
         /* Responsive */
         @media (max-width: 768px) {
-            .whatsapp-btn { width: 100%; justify-content: center; }
-            .contact-us { padding: 48px 0; }
+            .whatsapp-btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .contact-us {
+                padding: 48px 0;
+            }
         }
     </style>
 
@@ -383,7 +444,7 @@ $conn->close();
             <div class="hero-content">
                 <!-- LEFT: HERO TEXT -->
                 <div class="hero-text" data-aos="fade-right">
-                    <h1>Smart Energy for<br>Smarter Homes</h1>
+                    <h1>Solar Panel Installation Philippines - <br>Smart Energy for Smarter Homes</h1>
                     <p class="hero-tagline">One Stop Shop for Solar Power Mega Company</p>
                     <p>Invest in solar today - enjoy decades of energy independence and savings.</p>
                     <div class="hero-cta">
@@ -464,23 +525,14 @@ $conn->close();
             <!-- Filter Bar -->
             <div class="filter-bar" data-aos="fade-up">
                 <div class="filter-buttons" id="categoryFilters">
-                    <button class="filter-btn active" data-category="all">
+                    <button class="filter-btn active" data-filter="all">
                         <i class="fas fa-th"></i> All
                     </button>
-                    <button class="filter-btn" data-category="Panel">
-                        <i class="fas fa-solar-panel"></i> Panels
+                    <button class="filter-btn" data-filter="Grid-tie">
+                        <i class="fas fa-solar-panel"></i> Grid-tie
                     </button>
-                    <button class="filter-btn" data-category="Inverter">
-                        <i class="fas fa-plug"></i> Inverters
-                    </button>
-                    <button class="filter-btn" data-category="Battery">
-                        <i class="fas fa-battery-full"></i> Batteries
-                    </button>
-                    <button class="filter-btn" data-category="Mounting & Accessories">
-                        <i class="fas fa-tools"></i> Mounting & Accessories
-                    </button>
-                    <button class="filter-btn" data-category="Package Setup">
-                        <i class="fas fa-tools"></i> Package Setup
+                    <button class="filter-btn" data-filter="Hybrid">
+                        <i class="fas fa-battery-full"></i> Hybrid
                     </button>
                 </div>
 
@@ -1305,7 +1357,7 @@ $conn->close();
                     </div>
                 </div>
 
-                <!-- 03 Off-Grid — right to left -->
+                <!-- 03 Off-Grid — hidden as per current focus
                 <div class="solar-system-row" id="system-offgrid" data-aos="fade-left" data-aos-duration="900">
                     <div class="system-image-col">
                         <div class="system-img-frame">
@@ -1329,6 +1381,7 @@ $conn->close();
                         </div>
                     </div>
                 </div>
+                -->
 
             </div>
         </div>
@@ -1336,61 +1389,61 @@ $conn->close();
 
 
     <!-- Testimonials Section -->
-<section class="py-5" style="background: var(--bs-light, #f8f9fa);">
-  <div class="container py-5">
-    <div class="text-center mb-5" data-aos="fade-up">
-      <h2 class="fw-bold">What Our Clients Say</h2>
-      <p class="text-muted">Real experiences from homeowners and businesses who made the switch.</p>
-    </div>
-    <div class="row g-4 justify-content-center">
-
-      <div class="col-md-4" data-aos="fade-up" data-aos-delay="300">
-        <div style="background:#fff; border:1px solid rgba(0,0,0,0.08); border-radius:16px; padding:1.5rem; position:relative;">
-          <span style="position:absolute; top:12px; right:18px; font-size:48px; line-height:1; color:#ddd; font-family:Georgia,serif;">&ldquo;</span>
-          <div class="d-flex align-items-center mb-3">
-            <img src="assets/img/user2.jpg" alt="Samantha Esplana" class="rounded-circle me-3"
-              style="width:50px;height:50px;object-fit:cover;">
-            <div>
-              <strong style="font-size:14px;">Samantha Esplana</strong>
-              <p class="text-muted small mb-0">Alabang, Muntinlupa</p>
+    <section class="py-5" style="background: var(--bs-light, #f8f9fa);">
+        <div class="container py-5">
+            <div class="text-center mb-5" data-aos="fade-up">
+                <h2 class="fw-bold">What Our Clients Say</h2>
+                <p class="text-muted">Real experiences from homeowners and businesses who made the switch.</p>
             </div>
-          </div>
-          <div class="mb-3">
-            <i class="fas fa-star text-warning"></i>
-            <i class="fas fa-star text-warning"></i>
-            <i class="fas fa-star text-warning"></i>
-            <i class="fas fa-star text-warning"></i>
-            <i class="far fa-star text-warning"></i>
-          </div>
-          <p class="text-muted fst-italic" style="font-size:13px;">"Very professional and reliable service. Everything was done on time and communication was clear throughout the process."</p>
-        </div>
-      </div>
+            <div class="row g-4 justify-content-center">
 
-      <div class="col-md-4" data-aos="fade-up" data-aos-delay="200">
-        <div style="background:#fff; border:1px solid rgba(0,0,0,0.08); border-radius:16px; padding:1.5rem; position:relative;">
-          <span style="position:absolute; top:12px; right:18px; font-size:48px; line-height:1; color:#ddd; font-family:Georgia,serif;">&ldquo;</span>
-          <div class="d-flex align-items-center mb-3">
-            <img src="assets/img/user2.jpg" alt="Rayne Velasco" class="rounded-circle me-3"
-              style="width:50px;height:50px;object-fit:cover;">
-            <div>
-              <strong style="font-size:14px;">Rayne Velasco</strong>
-              <p class="text-muted small mb-0">Bacoor, Cavite</p>
+                <div class="col-md-4" data-aos="fade-up" data-aos-delay="300">
+                    <div style="background:#fff; border:1px solid rgba(0,0,0,0.08); border-radius:16px; padding:1.5rem; position:relative;">
+                        <span style="position:absolute; top:12px; right:18px; font-size:48px; line-height:1; color:#ddd; font-family:Georgia,serif;">&ldquo;</span>
+                        <div class="d-flex align-items-center mb-3">
+                            <img src="assets/img/user2.jpg" alt="Samantha Esplana" class="rounded-circle me-3"
+                                style="width:50px;height:50px;object-fit:cover;">
+                            <div>
+                                <strong style="font-size:14px;">Samantha Esplana</strong>
+                                <p class="text-muted small mb-0">Alabang, Muntinlupa</p>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <i class="fas fa-star text-warning"></i>
+                            <i class="fas fa-star text-warning"></i>
+                            <i class="fas fa-star text-warning"></i>
+                            <i class="fas fa-star text-warning"></i>
+                            <i class="far fa-star text-warning"></i>
+                        </div>
+                        <p class="text-muted fst-italic" style="font-size:13px;">"Very professional and reliable service. Everything was done on time and communication was clear throughout the process."</p>
+                    </div>
+                </div>
+
+                <div class="col-md-4" data-aos="fade-up" data-aos-delay="200">
+                    <div style="background:#fff; border:1px solid rgba(0,0,0,0.08); border-radius:16px; padding:1.5rem; position:relative;">
+                        <span style="position:absolute; top:12px; right:18px; font-size:48px; line-height:1; color:#ddd; font-family:Georgia,serif;">&ldquo;</span>
+                        <div class="d-flex align-items-center mb-3">
+                            <img src="assets/img/user2.jpg" alt="Rayne Velasco" class="rounded-circle me-3"
+                                style="width:50px;height:50px;object-fit:cover;">
+                            <div>
+                                <strong style="font-size:14px;">Rayne Velasco</strong>
+                                <p class="text-muted small mb-0">Bacoor, Cavite</p>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <i class="fas fa-star text-warning"></i>
+                            <i class="fas fa-star text-warning"></i>
+                            <i class="fas fa-star text-warning"></i>
+                            <i class="fas fa-star text-warning"></i>
+                            <i class="far fa-star text-warning"></i>
+                        </div>
+                        <p class="text-muted fst-italic" style="font-size:13px;">"They are so accommodating and responsive! They answered all my questions that I needed to know about installing solar, which really helped me decide. Highly recommended!"</p>
+                    </div>
+                </div>
+
             </div>
-          </div>
-          <div class="mb-3">
-            <i class="fas fa-star text-warning"></i>
-            <i class="fas fa-star text-warning"></i>
-            <i class="fas fa-star text-warning"></i>
-            <i class="fas fa-star text-warning"></i>
-            <i class="far fa-star text-warning"></i>
-          </div>
-          <p class="text-muted fst-italic" style="font-size:13px;">"They are so accommodating and responsive! They answered all my questions that I needed to know about installing solar, which really helped me decide. Highly recommended!"</p>
         </div>
-      </div>
-
-    </div>
-  </div>
-</section>
+    </section>
 
 
 
@@ -2149,7 +2202,7 @@ $conn->close();
     // SOLAR POWER E-COMMERCE - ORGANIZED JAVASCRIPT
     // ============================================
 
-// ============================================
+    // ============================================
     // 1. GLOBAL VARIABLES & INITIALIZATION
     // ============================================
     let cart = [];
@@ -2225,7 +2278,7 @@ $conn->close();
                 brandName: product.brandName || '',
                 price: parseFloat(product.price),
                 image_path: product.image_path,
-                quantity: moq,   // start at MOQ, not 1
+                quantity: moq, // start at MOQ, not 1
                 moq: moq
             });
             if (moq > 1) {
@@ -2494,14 +2547,14 @@ $conn->close();
     }
 
     async function initializeAddressDropdowns() {
-        const provinceEl     = document.getElementById('province');
+        const provinceEl = document.getElementById('province');
         const municipalityEl = document.getElementById('municipality');
-        const barangayEl     = document.getElementById('barangay');
+        const barangayEl = document.getElementById('barangay');
 
         if (!provinceEl) return;
 
         // When province changes — load cities/municipalities
-        provinceEl.addEventListener('change', async function () {
+        provinceEl.addEventListener('change', async function() {
             const code = this.value;
 
             municipalityEl.innerHTML = '<option value="">Select City / Municipality</option>';
@@ -2521,7 +2574,7 @@ $conn->close();
                     populateSelect('barangay', barangays, 'name', 'name', 'Select Barangay');
                     municipalityEl.innerHTML = '<option value="' + cityCode + '">' + provinceEl.options[provinceEl.selectedIndex].text + '</option>';
                     municipalityEl.disabled = false;
-                } catch(e) {
+                } catch (e) {
                     setSelectError('barangay', 'Failed to load barangays. Please refresh.');
                 }
                 return;
@@ -2529,19 +2582,23 @@ $conn->close();
 
             municipalityEl.innerHTML = '<option value="">Loading cities...</option>';
             try {
-                const cities = await psgcFetch(PSGC_BASE + '/provinces/' + code + '/cities/').catch(function() { return []; });
-                const municipalities = await psgcFetch(PSGC_BASE + '/provinces/' + code + '/municipalities/').catch(function() { return []; });
+                const cities = await psgcFetch(PSGC_BASE + '/provinces/' + code + '/cities/').catch(function() {
+                    return [];
+                });
+                const municipalities = await psgcFetch(PSGC_BASE + '/provinces/' + code + '/municipalities/').catch(function() {
+                    return [];
+                });
                 const combined = cities.concat(municipalities);
                 if (combined.length === 0) throw new Error('No cities found');
                 populateSelect('municipality', combined, 'code', 'name', 'Select City / Municipality');
-            } catch(e) {
+            } catch (e) {
                 console.error('City load error:', e);
                 setSelectError('municipality', 'Failed to load cities. Please refresh.');
             }
         });
 
         // When municipality/city changes — load barangays
-        municipalityEl.addEventListener('change', async function () {
+        municipalityEl.addEventListener('change', async function() {
             const code = this.value;
 
             barangayEl.innerHTML = '<option value="">Select Barangay</option>';
@@ -2551,13 +2608,17 @@ $conn->close();
 
             barangayEl.innerHTML = '<option value="">Loading barangays...</option>';
             try {
-                let barangays = await psgcFetch(PSGC_BASE + '/cities/' + code + '/barangays/').catch(function() { return null; });
+                let barangays = await psgcFetch(PSGC_BASE + '/cities/' + code + '/barangays/').catch(function() {
+                    return null;
+                });
                 if (!barangays || barangays.length === 0) {
-                    barangays = await psgcFetch(PSGC_BASE + '/municipalities/' + code + '/barangays/').catch(function() { return []; });
+                    barangays = await psgcFetch(PSGC_BASE + '/municipalities/' + code + '/barangays/').catch(function() {
+                        return [];
+                    });
                 }
                 if (!barangays || barangays.length === 0) throw new Error('No barangays found');
                 populateSelect('barangay', barangays, 'name', 'name', 'Select Barangay');
-            } catch(e) {
+            } catch (e) {
                 console.error('Barangay load error:', e);
                 setSelectError('barangay', 'Failed to load barangays. Please refresh.');
             }
@@ -2572,12 +2633,16 @@ $conn->close();
             populateSelect('province', provinces, 'code', 'name', 'Select Province');
 
             // Append NCR (Metro Manila) highly-urbanized cities as a separate group
-            const ncrCities = await psgcFetch(PSGC_BASE + '/regions/130000000/cities/').catch(function() { return []; });
+            const ncrCities = await psgcFetch(PSGC_BASE + '/regions/130000000/cities/').catch(function() {
+                return [];
+            });
             if (ncrCities && ncrCities.length > 0) {
                 const optgroup = document.createElement('optgroup');
                 optgroup.label = '--- NCR (Metro Manila) ---';
                 ncrCities
-                    .sort(function(a, b) { return a.name.localeCompare(b.name); })
+                    .sort(function(a, b) {
+                        return a.name.localeCompare(b.name);
+                    })
                     .forEach(function(city) {
                         const opt = document.createElement('option');
                         opt.value = 'NCR_' + city.code;
@@ -2586,7 +2651,7 @@ $conn->close();
                     });
                 provinceEl.appendChild(optgroup);
             }
-        } catch(e) {
+        } catch (e) {
             console.error('Province load error:', e);
             setSelectError('province', 'Failed to load provinces. Please refresh.');
         }
@@ -2897,657 +2962,707 @@ $conn->close();
         });
     }
 
-// ============================================
-// 5. INSTAPAY PAYMENT INTEGRATION
-// ============================================
+    // ============================================
+    // 5. INSTAPAY PAYMENT INTEGRATION
+    // ============================================
 
-// Delivery fee calculation based on location
-function calculateDeliveryFee() {
-    const address = document.getElementById('cust_address')?.value.toLowerCase() || '';
-    
-    // Metro Manila / Nearby Areas (1-30km)
-    if (address.includes('manila') || address.includes('quezon') || address.includes('caloocan') || 
-        address.includes('pasig') || address.includes('makati') || address.includes('taguig') || 
-        address.includes('pasay') || address.includes('parañaque') || address.includes('muntinlupa') || 
-        address.includes('las piñas') || address.includes('valenzuela') || address.includes('malabon') || 
-        address.includes('navotas') || address.includes('marikina') || address.includes('san juan') || 
-        address.includes('mandaluyong') || address.includes('pateros')) {
-        
-        // For now, return mid-range since we can't determine exact distance
-        return 2500; // 6-10km default for Metro Manila
-    }
-    
-    // South Luzon
-    if (address.includes('cavite')) return 4200;
-    if (address.includes('laguna')) return 6000;
-    if (address.includes('batangas')) return 8500;
-    if (address.includes('rizal')) return 7000;
-    
-    // North Luzon
-    if (address.includes('bulacan')) return 7000;
-    if (address.includes('pampanga')) return 10000;
-    if (address.includes('tarlac')) return 10000;
-    
-    // Visayas & Mindanao - varies
-    if (address.includes('cebu') || address.includes('davao') || address.includes('iloilo') || 
-        address.includes('bacolod') || address.includes('cagayan de oro') || address.includes('zamboanga')) {
-        return 0; // Will vary, show "Contact us"
-    }
-    
-    // Default - nearby areas
-    return 2000; // 1-5km default
-}
+    // Delivery fee calculation based on location
+    function calculateDeliveryFee() {
+        const address = document.getElementById('cust_address')?.value.toLowerCase() || '';
 
-// Check if cart contains Grid-tie or Hybrid products
-function hasGridTieOrHybridProduct() {
-    if (!cart || cart.length === 0) return false;
-    
-    // We need to check the actual product data
-    // For now, we'll check if any product has these keywords in the name
-    return cart.some(item => {
-        const name = (item.displayName || '').toLowerCase();
-        const brand = (item.brandName || '').toLowerCase();
-        return brand.includes('grid-tie') || brand.includes('hybrid') || 
-               name.includes('grid-tie') || name.includes('hybrid');
-    });
-}
+        // Metro Manila / Nearby Areas (1-30km)
+        if (address.includes('manila') || address.includes('quezon') || address.includes('caloocan') ||
+            address.includes('pasig') || address.includes('makati') || address.includes('taguig') ||
+            address.includes('pasay') || address.includes('parañaque') || address.includes('muntinlupa') ||
+            address.includes('las piñas') || address.includes('valenzuela') || address.includes('malabon') ||
+            address.includes('navotas') || address.includes('marikina') || address.includes('san juan') ||
+            address.includes('mandaluyong') || address.includes('pateros')) {
 
-function updatePaymentDisplay() {
-    console.log('💳 Updating payment display...');
-    
-    const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked')?.value || 'full';
-    
-    // Calculate delivery fee
-    const deliveryFee = calculateDeliveryFee();
-    const deliveryFeeDisplay = document.getElementById('deliveryFeeDisplay');
-    if (deliveryFeeDisplay) {
-        if (deliveryFee === 0) {
-            deliveryFeeDisplay.innerHTML = '<span class="text-info">Contact us</span>';
-        } else {
-            deliveryFeeDisplay.textContent = '₱' + deliveryFee.toLocaleString(undefined, {minimumFractionDigits: 2});
+            // For now, return mid-range since we can't determine exact distance
+            return 2500; // 6-10km default for Metro Manila
         }
-    }
-    
-    // Calculate installation fee (only for Grid-tie or Hybrid)
-    const installationFee = hasGridTieOrHybridProduct() ? 2000 : 0;
-    const installationFeeDisplay = document.getElementById('installationFeeDisplay');
-    if (installationFeeDisplay) {
-        if (installationFee === 0) {
-            installationFeeDisplay.innerHTML = '<span class="text-success">FREE</span>';
-        } else {
-            installationFeeDisplay.textContent = '₱' + installationFee.toLocaleString(undefined, {minimumFractionDigits: 2});
+
+        // South Luzon
+        if (address.includes('cavite')) return 4200;
+        if (address.includes('laguna')) return 6000;
+        if (address.includes('batangas')) return 8500;
+        if (address.includes('rizal')) return 7000;
+
+        // North Luzon
+        if (address.includes('bulacan')) return 7000;
+        if (address.includes('pampanga')) return 10000;
+        if (address.includes('tarlac')) return 10000;
+
+        // Visayas & Mindanao - varies
+        if (address.includes('cebu') || address.includes('davao') || address.includes('iloilo') ||
+            address.includes('bacolod') || address.includes('cagayan de oro') || address.includes('zamboanga')) {
+            return 0; // Will vary, show "Contact us"
         }
+
+        // Default - nearby areas
+        return 2000; // 1-5km default
     }
-    
-    // Calculate base total from cart
-    let cartTotal = 0;
-    if (cart && cart.length > 0) {
-        cartTotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
+    // Check if cart contains Grid-tie or Hybrid products
+    function hasGridTieOrHybridProduct() {
+        if (!cart || cart.length === 0) return false;
+
+        // We need to check the actual product data
+        // For now, we'll check if any product has these keywords in the name
+        return cart.some(item => {
+            const name = (item.displayName || '').toLowerCase();
+            const brand = (item.brandName || '').toLowerCase();
+            return brand.includes('grid-tie') || brand.includes('hybrid') ||
+                name.includes('grid-tie') || name.includes('hybrid');
+        });
     }
-    
-    // Add installation and delivery fees to total
-    const totalAmount = cartTotal + installationFee + deliveryFee;
-    window.currentTotalAmount = totalAmount;
-    
-    const amountToPayDisplay = document.getElementById('amountToPay');
-    const paymentNote = document.getElementById('paymentNote');
-    const confirmBtn = document.getElementById('confirmPaymentBtn');
-    
-    if (paymentMethod === 'full') {
-        amountToPayDisplay.textContent = '₱' + totalAmount.toLocaleString(undefined, {minimumFractionDigits: 2});
-        paymentNote.innerHTML = '<i class="fas fa-info-circle"></i> You are paying the <strong>Full Amount (100%)</strong> via InstaPay.';
-        paymentNote.className = 'alert alert-success';
-    } else if (paymentMethod === 'downpayment') {
-        const downpayment = totalAmount * 0.5;
-        amountToPayDisplay.textContent = '₱' + downpayment.toLocaleString(undefined, {minimumFractionDigits: 2});
-        paymentNote.innerHTML = '<i class="fas fa-info-circle"></i> You are paying <strong>50% Down Payment</strong> via InstaPay. Remaining 50% before delivery.';
-        paymentNote.className = 'alert alert-warning';
-    } else if (paymentMethod === 'initial') {
-        const initialPayment = totalAmount * 0.2;
-        const remaining = totalAmount - initialPayment;
-        amountToPayDisplay.textContent = '₱' + initialPayment.toLocaleString(undefined, {minimumFractionDigits: 2});
-        paymentNote.innerHTML = `
+
+    function updatePaymentDisplay() {
+        console.log('💳 Updating payment display...');
+
+        const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked')?.value || 'full';
+
+        // Calculate delivery fee
+        const deliveryFee = calculateDeliveryFee();
+        const deliveryFeeDisplay = document.getElementById('deliveryFeeDisplay');
+        if (deliveryFeeDisplay) {
+            if (deliveryFee === 0) {
+                deliveryFeeDisplay.innerHTML = '<span class="text-info">Contact us</span>';
+            } else {
+                deliveryFeeDisplay.textContent = '₱' + deliveryFee.toLocaleString(undefined, {
+                    minimumFractionDigits: 2
+                });
+            }
+        }
+
+        // Calculate installation fee (only for Grid-tie or Hybrid)
+        const installationFee = hasGridTieOrHybridProduct() ? 2000 : 0;
+        const installationFeeDisplay = document.getElementById('installationFeeDisplay');
+        if (installationFeeDisplay) {
+            if (installationFee === 0) {
+                installationFeeDisplay.innerHTML = '<span class="text-success">FREE</span>';
+            } else {
+                installationFeeDisplay.textContent = '₱' + installationFee.toLocaleString(undefined, {
+                    minimumFractionDigits: 2
+                });
+            }
+        }
+
+        // Calculate base total from cart
+        let cartTotal = 0;
+        if (cart && cart.length > 0) {
+            cartTotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        }
+
+        // Add installation and delivery fees to total
+        const totalAmount = cartTotal + installationFee + deliveryFee;
+        window.currentTotalAmount = totalAmount;
+
+        const amountToPayDisplay = document.getElementById('amountToPay');
+        const paymentNote = document.getElementById('paymentNote');
+        const confirmBtn = document.getElementById('confirmPaymentBtn');
+
+        if (paymentMethod === 'full') {
+            amountToPayDisplay.textContent = '₱' + totalAmount.toLocaleString(undefined, {
+                minimumFractionDigits: 2
+            });
+            paymentNote.innerHTML = '<i class="fas fa-info-circle"></i> You are paying the <strong>Full Amount (100%)</strong> via InstaPay.';
+            paymentNote.className = 'alert alert-success';
+        } else if (paymentMethod === 'downpayment') {
+            const downpayment = totalAmount * 0.5;
+            amountToPayDisplay.textContent = '₱' + downpayment.toLocaleString(undefined, {
+                minimumFractionDigits: 2
+            });
+            paymentNote.innerHTML = '<i class="fas fa-info-circle"></i> You are paying <strong>50% Down Payment</strong> via InstaPay. Remaining 50% before delivery.';
+            paymentNote.className = 'alert alert-warning';
+        } else if (paymentMethod === 'initial') {
+            const initialPayment = totalAmount * 0.2;
+            const remaining = totalAmount - initialPayment;
+            amountToPayDisplay.textContent = '₱' + initialPayment.toLocaleString(undefined, {
+                minimumFractionDigits: 2
+            });
+            paymentNote.innerHTML = `
             <i class="fas fa-info-circle"></i> 
             You are paying <strong>20% Initial Payment</strong> (₱${initialPayment.toLocaleString(undefined, {minimumFractionDigits: 2})}) via InstaPay.<br>
             <small class="text-muted">Remaining balance: ₱${remaining.toLocaleString(undefined, {minimumFractionDigits: 2})} (80% - to be paid before installation)</small>
         `;
-        paymentNote.className = 'alert alert-info';
-    }
-    
-    // Update checkout total display
-    const checkoutTotal = document.getElementById('checkoutTotal');
-    if (checkoutTotal) {
-        checkoutTotal.textContent = '₱' + totalAmount.toLocaleString(undefined, {minimumFractionDigits: 2});
-    }
-}
+            paymentNote.className = 'alert alert-info';
+        }
 
-function getCartItems() {
-    const items = [];
-    
-    if (cart && cart.length > 0) {
-        cart.forEach(item => {
-            items.push({
-                name: item.displayName || 'Solar Product',
-                price: parseFloat(item.price) || 0,
-                quantity: parseInt(item.quantity) || 1
+        // Update checkout total display
+        const checkoutTotal = document.getElementById('checkoutTotal');
+        if (checkoutTotal) {
+            checkoutTotal.textContent = '₱' + totalAmount.toLocaleString(undefined, {
+                minimumFractionDigits: 2
+            });
+        }
+    }
+
+    function getCartItems() {
+        const items = [];
+
+        if (cart && cart.length > 0) {
+            cart.forEach(item => {
+                items.push({
+                    name: item.displayName || 'Solar Product',
+                    price: parseFloat(item.price) || 0,
+                    quantity: parseInt(item.quantity) || 1
+                });
+            });
+        }
+
+        return items;
+    }
+
+    function previewReceipt(input) {
+        const container = document.getElementById('receiptPreviewContainer');
+        const previewImg = document.getElementById('receiptPreviewImg');
+        const fileNameEl = document.getElementById('receiptFileName');
+
+        if (input.files && input.files[0]) {
+            const file = input.files[0];
+            fileNameEl.textContent = file.name + ' (' + (file.size / 1024).toFixed(1) + ' KB)';
+
+            if (file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    previewImg.src = e.target.result;
+                    previewImg.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            } else {
+                previewImg.style.display = 'none';
+            }
+            container.style.display = 'block';
+        } else {
+            container.style.display = 'none';
+        }
+    }
+
+    function confirmInstapayOrder() {
+        console.log('💵 Confirming InstaPay order...');
+
+        const custName = document.getElementById('cust_name')?.value.trim();
+        const custEmail = document.getElementById('cust_email')?.value.trim();
+        const custPhone = document.getElementById('cust_phone')?.value.trim();
+        const custAddress = document.getElementById('cust_address')?.value.trim();
+        const receiptFile = document.getElementById('receiptUpload')?.files[0];
+
+        if (!custName || !custEmail || !custPhone || !custAddress) {
+            showNotificationModal('error', 'Please complete all required customer details.');
+            return;
+        }
+
+        if (cart.length === 0) {
+            showNotificationModal('error', 'Your cart is empty.');
+            return;
+        }
+
+        if (!receiptFile) {
+            showNotificationModal('error', 'Please upload your transaction receipt before submitting.');
+            document.getElementById('receiptUpload')?.scrollIntoView({
+                behavior: 'smooth',
+                block: 'center'
+            });
+            return;
+        }
+
+        // Validate file size (max 5MB)
+        if (receiptFile.size > 5 * 1024 * 1024) {
+            showNotificationModal('error', 'Receipt file is too large. Maximum size is 5MB.');
+            return;
+        }
+
+        const confirmBtn = document.getElementById('confirmPaymentBtn');
+        confirmBtn.disabled = true;
+        confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Submitting Order...';
+
+        const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked')?.value || 'full';
+        let paymentPercentage = '100%';
+        if (paymentMethod === 'downpayment') paymentPercentage = '50%';
+        if (paymentMethod === 'initial') paymentPercentage = '20%';
+
+        const totalAmount = window.currentTotalAmount || 0;
+        let amountPaid = totalAmount;
+        if (paymentMethod === 'downpayment') amountPaid = totalAmount * 0.5;
+        if (paymentMethod === 'initial') amountPaid = totalAmount * 0.2;
+
+        // Build FormData so we can include the file
+        const formData = new FormData();
+        formData.append('customerName', custName);
+        formData.append('customerEmail', custEmail);
+        formData.append('customerPhone', custPhone);
+        formData.append('customerAddress', custAddress);
+        formData.append('paymentType', paymentMethod);
+        formData.append('paymentMethod', 'instapay');
+        formData.append('amountPaid', amountPaid);
+        formData.append('totalAmount', totalAmount);
+        formData.append('deliveryFee', calculateDeliveryFee());
+        formData.append('installationFee', hasGridTieOrHybridProduct() ? 2000 : 0);
+        formData.append('items', JSON.stringify(getCartItems()));
+        formData.append('receipt', receiptFile);
+
+        fetch('controllers/ordering/create-instapay-order.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                // Capture raw text first so we can debug if it is not JSON
+                return response.text().then(text => {
+                    console.log('Raw server response:', text);
+                    try {
+                        return JSON.parse(text);
+                    } catch (e) {
+                        // Server returned non-JSON (PHP error page, 404, etc.)
+                        throw new Error('Server returned invalid response: ' + text.substring(0, 300));
+                    }
+                });
+            })
+            .then(data => {
+                confirmBtn.disabled = false;
+                confirmBtn.innerHTML = '<i class="fas fa-check-circle me-2"></i>Confirm &amp; Submit Order';
+
+                if (data.success) {
+                    console.log('InstaPay order saved:', data.orderRef);
+                    const orderRef = data.orderRef || 'ORD-INSTAPAY-' + Date.now();
+                    displayOrderConfirmation(orderRef);
+                    clearCart();
+                    showNotificationModal('success', 'Order submitted successfully! We will verify your payment soon.');
+                } else {
+                    console.error('Order failed:', data.message);
+                    showNotificationModal('error', data.message || 'Failed to submit order. Please try again.');
+                }
+            })
+            .catch(error => {
+                console.error(' InstaPay order error:', error.message);
+                confirmBtn.disabled = false;
+                confirmBtn.innerHTML = '<i class="fas fa-check-circle me-2"></i>Confirm &amp; Submit Order';
+                // Show the actual server error message so it is easy to debug
+                const userMsg = error.message.includes('Server returned') ?
+                    'Server error — please check browser console (F12) for details.' :
+                    error.message;
+                showNotificationModal('error', userMsg);
+            });
+    }
+
+    // Old Maya payment function - now replaced by InstaPay
+    function payWithMaya(paymentType) {
+        console.log(' Processing Maya payment...');
+
+        // Validate customer info
+        const custName = document.getElementById('cust_name')?.value.trim();
+        const custEmail = document.getElementById('cust_email')?.value.trim();
+        const custPhone = document.getElementById('cust_phone')?.value.trim();
+        const custAddress = document.getElementById('cust_address')?.value.trim();
+
+        if (!custName || !custEmail || !custPhone || !custAddress) {
+            showNotificationModal('error', 'Please complete all required fields.');
+            return;
+        }
+
+        if (cart.length === 0) {
+            showNotificationModal('error', 'Your cart is empty.');
+            return;
+        }
+
+        // Show loading
+        const confirmBtn = document.getElementById('confirmPaymentBtn');
+        const originalText = confirmBtn.textContent;
+        confirmBtn.disabled = true;
+        confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+
+        // Calculate amount
+        const totalAmount = window.currentTotalAmount || 0;
+        let amountToPay = totalAmount;
+
+        if (paymentType === 'downpayment') {
+            amountToPay = totalAmount * 0.5;
+        }
+
+        // Prepare order data
+        const orderData = {
+            customerName: custName,
+            customerEmail: custEmail,
+            customerPhone: custPhone,
+            customerAddress: custAddress,
+            paymentType: paymentType,
+            amountToPay: amountToPay,
+            totalAmount: totalAmount,
+            items: getCartItems()
+        };
+
+        console.log('Sending to Maya API:', orderData);
+
+        // Call backend to create Maya payment
+        fetch('process_payment.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(orderData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                confirmBtn.disabled = false;
+                confirmBtn.textContent = originalText;
+
+                if (data.success) {
+                    console.log('✅ Maya payment created:', data.orderRef);
+
+                    // Store order reference
+                    sessionStorage.setItem('currentOrderRef', data.orderRef);
+
+                    // Redirect to Maya payment (amount is LOCKED by API)
+                    console.log('🔗 Redirecting to Maya:', data.paymentUrl);
+                    window.location.href = data.paymentUrl;
+
+                } else {
+                    console.error('❌ Payment creation failed:', data.error);
+                    showNotificationModal('error', data.error || 'Failed to create payment. Please try again.');
+                }
+            })
+            .catch(error => {
+                console.error('❌ Payment error:', error);
+                confirmBtn.disabled = false;
+                confirmBtn.textContent = originalText;
+                showNotificationModal('error', 'An error occurred. Please try again.');
+            });
+    }
+
+    function confirmCODOrder() {
+        console.log('💵 Processing COD order...');
+
+        const custName = document.getElementById('cust_name')?.value.trim();
+        const custEmail = document.getElementById('cust_email')?.value.trim();
+        const custPhone = document.getElementById('cust_phone')?.value.trim();
+        const custAddress = document.getElementById('cust_address')?.value.trim();
+
+        if (!custName || !custEmail || !custPhone || !custAddress) {
+            showNotificationModal('error', 'Please complete all required fields.');
+            return;
+        }
+
+        if (cart.length === 0) {
+            showNotificationModal('error', 'Your cart is empty.');
+            return;
+        }
+
+        const confirmed = confirm('Confirm Cash on Delivery order?\n\nYou will pay when order arrives.');
+        if (!confirmed) return;
+
+        const confirmBtn = document.getElementById('confirmPaymentBtn');
+        confirmBtn.disabled = true;
+        confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+
+        const totalAmount = window.currentTotalAmount || 0;
+
+        const orderData = {
+            customerName: custName,
+            customerEmail: custEmail,
+            customerPhone: custPhone,
+            customerAddress: custAddress,
+            paymentType: 'cod',
+            amountToPay: 0,
+            totalAmount: totalAmount,
+            items: getCartItems(),
+            paymentMethod: 'cod'
+        };
+
+        fetch('controllers/ordering/create-cod-order.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(orderData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                confirmBtn.disabled = false;
+                confirmBtn.textContent = 'Confirm COD Order';
+
+                if (data.success) {
+                    console.log('✅ COD order placed:', data.orderRef);
+                    const orderRef = data.orderRef || 'ORD-COD-' + Date.now();
+                    displayOrderConfirmation(orderRef);
+                    clearCart();
+                    showNotificationModal('success', 'Order placed successfully!');
+                } else {
+                    console.error('❌ COD order failed:', data.message);
+                    showNotificationModal('error', data.message || 'Failed to place order.');
+                }
+            })
+            .catch(error => {
+                console.error('❌ COD error:', error);
+                confirmBtn.disabled = false;
+                confirmBtn.textContent = 'Confirm COD Order';
+                showNotificationModal('error', 'An error occurred. Please try again.');
+            });
+    }
+
+    function displayOrderConfirmation(orderRef) {
+        console.log('🎉 Displaying order confirmation:', orderRef);
+
+        // Update confirmation step details
+        document.getElementById('confOrderRef').textContent = orderRef;
+        document.getElementById('confCustomerName').textContent = document.getElementById('cust_name').value;
+        document.getElementById('confTotalAmount').textContent = '₱' + (window.currentTotalAmount || 0).toLocaleString(undefined, {
+            minimumFractionDigits: 2
+        });
+
+        // Switch to step 3
+        goToStep(3);
+    }
+
+    function copyOrderRef() {
+        const orderRef = document.getElementById('confOrderRef')?.textContent;
+        if (orderRef) {
+            navigator.clipboard.writeText(orderRef).then(() => {
+                showNotificationModal('success', '✅ Order reference copied to clipboard!');
+            }).catch(() => {
+                // Fallback for older browsers
+                const el = document.createElement('textarea');
+                el.value = orderRef;
+                document.body.appendChild(el);
+                el.select();
+                document.execCommand('copy');
+                document.body.removeChild(el);
+                showNotificationModal('success', '✅ Order reference copied!');
+            });
+        }
+    }
+
+    function copyToClipboard(text, el) {
+        navigator.clipboard.writeText(text).then(() => {
+            const orig = el.textContent;
+            el.textContent = 'Copied!';
+            setTimeout(() => {
+                el.textContent = orig;
+            }, 1500);
+        }).catch(() => {
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+        });
+    }
+
+    // ============================================
+    // 6. SAVINGS CALCULATOR LOGIC
+    // ============================================
+
+    function setupCalculator() {
+        const billInput = document.getElementById('billAmount');
+
+        if (billInput) {
+            billInput.addEventListener('keypress', function(event) {
+                if (event.key === 'Enter') {
+                    calculateSavings();
+                }
+            });
+        }
+    }
+
+    function expandCalculator() {
+        const calculatorBox = document.getElementById('calculatorBox');
+        if (calculatorBox) {
+            calculatorBox.classList.remove('collapsed');
+            calculatorBox.classList.add('expanded');
+        }
+    }
+
+    function shrinkCalculatorIfEmpty() {
+        const billInput = document.getElementById('billAmount');
+        const calculatorBox = document.getElementById('calculatorBox');
+        const results = document.getElementById('results');
+
+        if (calculatorBox && billInput && !billInput.value && !results.classList.contains('show')) {
+            setTimeout(() => {
+                calculatorBox.classList.remove('expanded');
+                calculatorBox.classList.add('collapsed');
+            }, 200);
+        }
+    }
+
+    function calculateSavings() {
+        const billAmount = parseFloat(document.getElementById('billAmount').value);
+        const errorMessage = document.getElementById('errorMessage');
+        const results = document.getElementById('results');
+        const calculatorBox = document.getElementById('calculatorBox');
+
+        if (!billAmount || billAmount <= 0) {
+            errorMessage.textContent = 'Please enter a valid electric bill amount';
+            results.classList.remove('show');
+            return;
+        }
+
+        errorMessage.textContent = '';
+
+        if (calculatorBox) {
+            calculatorBox.classList.remove('collapsed');
+            calculatorBox.classList.add('expanded');
+        }
+
+        const avgRate = 14.50;
+        const monthlyConsumption = billAmount / avgRate;
+        const dailyConsumption = monthlyConsumption / 30;
+        const sunHours = 4.5;
+        const systemEfficiency = 0.85;
+        const panelWattage = 610;
+        const savingsPercentage = 0.95;
+
+        const requiredKwp = dailyConsumption / (sunHours * systemEfficiency);
+        const numberOfPanels = Math.ceil((requiredKwp * 1000) / panelWattage);
+        const monthlySavings = billAmount * savingsPercentage;
+        const yearlySavings = monthlySavings * 12;
+
+        setTimeout(() => {
+            document.getElementById('kwpValue').textContent = requiredKwp.toFixed(1);
+            document.getElementById('panelsValue').textContent = numberOfPanels;
+            document.getElementById('monthlySavings').textContent = '₱' + monthlySavings.toLocaleString('en-PH', {
+                maximumFractionDigits: 0
+            });
+            document.getElementById('yearlySavings').textContent = '₱' + yearlySavings.toLocaleString('en-PH', {
+                maximumFractionDigits: 0
+            });
+
+            results.classList.add('show');
+        }, 100);
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        setupCalculator();
+
+        const calculatorBox = document.getElementById('calculatorBox');
+        if (calculatorBox) {
+            calculatorBox.classList.add('collapsed');
+        }
+
+        // Add click handler for bulb icon with wiggle animation
+        const bulbIcon = document.querySelector('.savings-icon');
+        if (bulbIcon) {
+            bulbIcon.addEventListener('click', function() {
+                // Trigger wiggle animation
+                this.style.animation = 'none';
+                setTimeout(() => {
+                    this.style.animation = '';
+                }, 10);
+
+                // Expand calculator if collapsed
+                const billInput = document.getElementById('billAmount');
+                if (calculatorBox && calculatorBox.classList.contains('collapsed')) {
+                    expandCalculator();
+                    if (billInput) {
+                        setTimeout(() => billInput.focus(), 300);
+                    }
+                }
+            });
+        }
+    });
+    // ============================================
+    // 7. FILTERS & SEARCH
+    // ============================================
+    function initializeFilters() {
+        const filterButtons = document.querySelectorAll('.filter-btn');
+
+        filterButtons.forEach(btn => {
+            btn.addEventListener('click', function() {
+                filterButtons.forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                const filterValue = this.getAttribute('data-filter');
+                filterProducts(filterValue);
             });
         });
     }
-    
-    return items;
-}
 
-function previewReceipt(input) {
-    const container = document.getElementById('receiptPreviewContainer');
-    const previewImg = document.getElementById('receiptPreviewImg');
-    const fileNameEl = document.getElementById('receiptFileName');
-    
-    if (input.files && input.files[0]) {
-        const file = input.files[0];
-        fileNameEl.textContent = file.name + ' (' + (file.size / 1024).toFixed(1) + ' KB)';
-        
-        if (file.type.startsWith('image/')) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                previewImg.src = e.target.result;
-                previewImg.style.display = 'block';
-            };
-            reader.readAsDataURL(file);
-        } else {
-            previewImg.style.display = 'none';
-        }
-        container.style.display = 'block';
-    } else {
-        container.style.display = 'none';
-    }
-}
+    function filterProducts(filterValue) {
+        const productsGrid = document.getElementById('productsGrid');
+        const products = document.querySelectorAll('.product-card');
+        const viewMoreContainer = document.getElementById('viewMoreContainer');
+        const viewMoreBtn = document.getElementById('viewMoreBtn');
 
-function confirmInstapayOrder() {
-    console.log('💵 Confirming InstaPay order...');
-    
-    const custName = document.getElementById('cust_name')?.value.trim();
-    const custEmail = document.getElementById('cust_email')?.value.trim();
-    const custPhone = document.getElementById('cust_phone')?.value.trim();
-    const custAddress = document.getElementById('cust_address')?.value.trim();
-    const receiptFile = document.getElementById('receiptUpload')?.files[0];
-    
-    if (!custName || !custEmail || !custPhone || !custAddress) {
-        showNotificationModal('error', 'Please complete all required customer details.');
-        return;
-    }
-    
-    if (cart.length === 0) {
-        showNotificationModal('error', 'Your cart is empty.');
-        return;
-    }
-    
-    if (!receiptFile) {
-        showNotificationModal('error', 'Please upload your transaction receipt before submitting.');
-        document.getElementById('receiptUpload')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        return;
-    }
-    
-    // Validate file size (max 5MB)
-    if (receiptFile.size > 5 * 1024 * 1024) {
-        showNotificationModal('error', 'Receipt file is too large. Maximum size is 5MB.');
-        return;
-    }
-    
-    const confirmBtn = document.getElementById('confirmPaymentBtn');
-    confirmBtn.disabled = true;
-    confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Submitting Order...';
-    
-    const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked')?.value || 'full';
-    let paymentPercentage = '100%';
-    if (paymentMethod === 'downpayment') paymentPercentage = '50%';
-    if (paymentMethod === 'initial') paymentPercentage = '20%';
-    
-    const totalAmount = window.currentTotalAmount || 0;
-    let amountPaid = totalAmount;
-    if (paymentMethod === 'downpayment') amountPaid = totalAmount * 0.5;
-    if (paymentMethod === 'initial') amountPaid = totalAmount * 0.2;
-    
-    // Build FormData so we can include the file
-    const formData = new FormData();
-    formData.append('customerName', custName);
-    formData.append('customerEmail', custEmail);
-    formData.append('customerPhone', custPhone);
-    formData.append('customerAddress', custAddress);
-    formData.append('paymentType', paymentMethod);
-    formData.append('paymentMethod', 'instapay');
-    formData.append('amountPaid', amountPaid);
-    formData.append('totalAmount', totalAmount);
-    formData.append('deliveryFee', calculateDeliveryFee());
-    formData.append('installationFee', hasGridTieOrHybridProduct() ? 2000 : 0);
-    formData.append('items', JSON.stringify(getCartItems()));
-    formData.append('receipt', receiptFile);
-    
-    fetch('controllers/ordering/create-instapay-order.php', {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => {
-        // Capture raw text first so we can debug if it is not JSON
-        return response.text().then(text => {
-            console.log('Raw server response:', text);
-            try {
-                return JSON.parse(text);
-            } catch (e) {
-                // Server returned non-JSON (PHP error page, 404, etc.)
-                throw new Error('Server returned invalid response: ' + text.substring(0, 300));
+        let visibleCount = 0;
+
+        products.forEach(product => {
+            const productBrand = product.getAttribute('data-brand');
+
+            if (filterValue === 'all' || productBrand === filterValue) {
+                product.style.display = 'flex';
+                visibleCount++;
+
+                // Handle hidden-product class for View More functionality
+                if (visibleCount > 4) {
+                    product.classList.add('hidden-product');
+                } else {
+                    product.classList.remove('hidden-product');
+                }
+            } else {
+                product.style.display = 'none';
+                product.classList.remove('hidden-product');
             }
         });
-    })
-    .then(data => {
-        confirmBtn.disabled = false;
-        confirmBtn.innerHTML = '<i class="fas fa-check-circle me-2"></i>Confirm &amp; Submit Order';
-        
-        if (data.success) {
-            console.log('InstaPay order saved:', data.orderRef);
-            const orderRef = data.orderRef || 'ORD-INSTAPAY-' + Date.now();
-            displayOrderConfirmation(orderRef);
-            clearCart();
-            showNotificationModal('success', 'Order submitted successfully! We will verify your payment soon.');
-        } else {
-            console.error('Order failed:', data.message);
-            showNotificationModal('error', data.message || 'Failed to submit order. Please try again.');
-        }
-    })
-    .catch(error => {
-        console.error(' InstaPay order error:', error.message);
-        confirmBtn.disabled = false;
-        confirmBtn.innerHTML = '<i class="fas fa-check-circle me-2"></i>Confirm &amp; Submit Order';
-        // Show the actual server error message so it is easy to debug
-        const userMsg = error.message.includes('Server returned') 
-            ? 'Server error — please check browser console (F12) for details.' 
-            : error.message;
-        showNotificationModal('error', userMsg);
-    });
-}
 
-// Old Maya payment function - now replaced by InstaPay
-function payWithMaya(paymentType) {
-    console.log(' Processing Maya payment...');
-    
-    // Validate customer info
-    const custName = document.getElementById('cust_name')?.value.trim();
-    const custEmail = document.getElementById('cust_email')?.value.trim();
-    const custPhone = document.getElementById('cust_phone')?.value.trim();
-    const custAddress = document.getElementById('cust_address')?.value.trim();
-    
-    if (!custName || !custEmail || !custPhone || !custAddress) {
-        showNotificationModal('error', 'Please complete all required fields.');
-        return;
+        // Reset the grid to collapsed state
+        if (productsGrid) productsGrid.classList.remove('show-all');
+        if (viewMoreBtn) {
+            viewMoreBtn.classList.remove('expanded');
+            const btnText = viewMoreBtn.childNodes[viewMoreBtn.childNodes.length - 1];
+            if (btnText) btnText.textContent = ' View More';
+        }
+
+        // Show/hide view more button based on filtered results
+        if (viewMoreContainer) {
+            viewMoreContainer.style.display = visibleCount > 4 ? 'block' : 'none';
+        }
     }
-    
-    if (cart.length === 0) {
-        showNotificationModal('error', 'Your cart is empty.');
-        return;
+
+    function initializeSort() {
+        const sortSelect = document.getElementById('sortSelect');
+        if (sortSelect) {
+            sortSelect.addEventListener('change', function() {
+                sortProducts(this.value);
+            });
+        }
     }
-    
-    // Show loading
-    const confirmBtn = document.getElementById('confirmPaymentBtn');
-    const originalText = confirmBtn.textContent;
-    confirmBtn.disabled = true;
-    confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
-    
-    // Calculate amount
-    const totalAmount = window.currentTotalAmount || 0;
-    let amountToPay = totalAmount;
-    
-    if (paymentType === 'downpayment') {
-        amountToPay = totalAmount * 0.5;
-    }
-    
-    // Prepare order data
-    const orderData = {
-        customerName: custName,
-        customerEmail: custEmail,
-        customerPhone: custPhone,
-        customerAddress: custAddress,
-        paymentType: paymentType,
-        amountToPay: amountToPay,
-        totalAmount: totalAmount,
-        items: getCartItems()
-    };
-    
-    console.log('Sending to Maya API:', orderData);
-    
-    // Call backend to create Maya payment
-    fetch('process_payment.php', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(orderData)
-    })
-    .then(response => response.json())
-    .then(data => {
-        confirmBtn.disabled = false;
-        confirmBtn.textContent = originalText;
-        
-        if (data.success) {
-            console.log('✅ Maya payment created:', data.orderRef);
-            
-            // Store order reference
-            sessionStorage.setItem('currentOrderRef', data.orderRef);
-            
-            // Redirect to Maya payment (amount is LOCKED by API)
-            console.log('🔗 Redirecting to Maya:', data.paymentUrl);
-            window.location.href = data.paymentUrl;
-            
-        } else {
-            console.error('❌ Payment creation failed:', data.error);
-            showNotificationModal('error', data.error || 'Failed to create payment. Please try again.');
-        }
-    })
-    .catch(error => {
-        console.error('❌ Payment error:', error);
-        confirmBtn.disabled = false;
-        confirmBtn.textContent = originalText;
-        showNotificationModal('error', 'An error occurred. Please try again.');
-    });
-}
 
-function confirmCODOrder() {
-    console.log('💵 Processing COD order...');
-    
-    const custName = document.getElementById('cust_name')?.value.trim();
-    const custEmail = document.getElementById('cust_email')?.value.trim();
-    const custPhone = document.getElementById('cust_phone')?.value.trim();
-    const custAddress = document.getElementById('cust_address')?.value.trim();
-    
-    if (!custName || !custEmail || !custPhone || !custAddress) {
-        showNotificationModal('error', 'Please complete all required fields.');
-        return;
-    }
-    
-    if (cart.length === 0) {
-        showNotificationModal('error', 'Your cart is empty.');
-        return;
-    }
-    
-    const confirmed = confirm('Confirm Cash on Delivery order?\n\nYou will pay when order arrives.');
-    if (!confirmed) return;
-    
-    const confirmBtn = document.getElementById('confirmPaymentBtn');
-    confirmBtn.disabled = true;
-    confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
-    
-    const totalAmount = window.currentTotalAmount || 0;
-    
-    const orderData = {
-        customerName: custName,
-        customerEmail: custEmail,
-        customerPhone: custPhone,
-        customerAddress: custAddress,
-        paymentType: 'cod',
-        amountToPay: 0,
-        totalAmount: totalAmount,
-        items: getCartItems(),
-        paymentMethod: 'cod'
-    };
-    
-    fetch('controllers/ordering/create-cod-order.php', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(orderData)
-    })
-    .then(response => response.json())
-    .then(data => {
-        confirmBtn.disabled = false;
-        confirmBtn.textContent = 'Confirm COD Order';
-        
-        if (data.success) {
-            console.log('✅ COD order placed:', data.orderRef);
-            const orderRef = data.orderRef || 'ORD-COD-' + Date.now();
-            displayOrderConfirmation(orderRef);
-            clearCart();
-            showNotificationModal('success', 'Order placed successfully!');
-        } else {
-            console.error('❌ COD order failed:', data.message);
-            showNotificationModal('error', data.message || 'Failed to place order.');
-        }
-    })
-    .catch(error => {
-        console.error('❌ COD error:', error);
-        confirmBtn.disabled = false;
-        confirmBtn.textContent = 'Confirm COD Order';
-        showNotificationModal('error', 'An error occurred. Please try again.');
-    });
-}
+    function sortProducts(sortType) {
+        const grid = document.getElementById('productsGrid');
+        if (!grid) return;
 
-function displayOrderConfirmation(orderRef) {
-    console.log('🎉 Displaying order confirmation:', orderRef);
-    
-    // Update confirmation step details
-    document.getElementById('confOrderRef').textContent = orderRef;
-    document.getElementById('confCustomerName').textContent = document.getElementById('cust_name').value;
-    document.getElementById('confTotalAmount').textContent = '₱' + (window.currentTotalAmount || 0).toLocaleString(undefined, {minimumFractionDigits: 2});
-    
-    // Switch to step 3
-    goToStep(3);
-}
+        const products = Array.from(document.querySelectorAll('.product-card'));
 
-function copyOrderRef() {
-    const orderRef = document.getElementById('confOrderRef')?.textContent;
-    if (orderRef) {
-        navigator.clipboard.writeText(orderRef).then(() => {
-            showNotificationModal('success', '✅ Order reference copied to clipboard!');
-        }).catch(() => {
-            // Fallback for older browsers
-            const el = document.createElement('textarea');
-            el.value = orderRef;
-            document.body.appendChild(el);
-            el.select();
-            document.execCommand('copy');
-            document.body.removeChild(el);
-            showNotificationModal('success', '✅ Order reference copied!');
-        });
-    }
-}
-
-function copyToClipboard(text, el) {
-    navigator.clipboard.writeText(text).then(() => {
-        const orig = el.textContent;
-        el.textContent = 'Copied!';
-        setTimeout(() => { el.textContent = orig; }, 1500);
-    }).catch(() => {
-        const ta = document.createElement('textarea');
-        ta.value = text;
-        document.body.appendChild(ta);
-        ta.select();
-        document.execCommand('copy');
-        document.body.removeChild(ta);
-    });
-}
-
-// ============================================
-// 6. SAVINGS CALCULATOR LOGIC
-// ============================================
-
-function setupCalculator() {
-            const billInput = document.getElementById('billAmount');
-            
-            if (billInput) {
-                billInput.addEventListener('keypress', function(event) {
-                    if (event.key === 'Enter') {
-                        calculateSavings();
-                    }
-                });
-            }
-        }
-
-        function expandCalculator() {
-            const calculatorBox = document.getElementById('calculatorBox');
-            if (calculatorBox) {
-                calculatorBox.classList.remove('collapsed');
-                calculatorBox.classList.add('expanded');
-            }
-        }
-
-        function shrinkCalculatorIfEmpty() {
-            const billInput = document.getElementById('billAmount');
-            const calculatorBox = document.getElementById('calculatorBox');
-            const results = document.getElementById('results');
-            
-            if (calculatorBox && billInput && !billInput.value && !results.classList.contains('show')) {
-                setTimeout(() => {
-                    calculatorBox.classList.remove('expanded');
-                    calculatorBox.classList.add('collapsed');
-                }, 200);
-            }
-        }
-
-        function calculateSavings() {
-            const billAmount = parseFloat(document.getElementById('billAmount').value);
-            const errorMessage = document.getElementById('errorMessage');
-            const results = document.getElementById('results');
-            const calculatorBox = document.getElementById('calculatorBox');
-            
-            if (!billAmount || billAmount <= 0) {
-                errorMessage.textContent = 'Please enter a valid electric bill amount';
-                results.classList.remove('show');
-                return;
-            }
-            
-            errorMessage.textContent = '';
-            
-            if (calculatorBox) {
-                calculatorBox.classList.remove('collapsed');
-                calculatorBox.classList.add('expanded');
-            }
-            
-            const avgRate = 14.50;
-            const monthlyConsumption = billAmount / avgRate;
-            const dailyConsumption = monthlyConsumption / 30;
-            const sunHours = 4.5;
-            const systemEfficiency = 0.85;
-            const panelWattage = 610;
-            const savingsPercentage = 0.95;
-            
-            const requiredKwp = dailyConsumption / (sunHours * systemEfficiency);
-            const numberOfPanels = Math.ceil((requiredKwp * 1000) / panelWattage);
-            const monthlySavings = billAmount * savingsPercentage;
-            const yearlySavings = monthlySavings * 12;
-            
-            setTimeout(() => {
-                document.getElementById('kwpValue').textContent = requiredKwp.toFixed(1);
-                document.getElementById('panelsValue').textContent = numberOfPanels;
-                document.getElementById('monthlySavings').textContent = '₱' + monthlySavings.toLocaleString('en-PH', {maximumFractionDigits: 0});
-                document.getElementById('yearlySavings').textContent = '₱' + yearlySavings.toLocaleString('en-PH', {maximumFractionDigits: 0});
-                
-                results.classList.add('show');
-            }, 100);
-        }
-
-        document.addEventListener('DOMContentLoaded', function() {
-            setupCalculator();
-            
-            const calculatorBox = document.getElementById('calculatorBox');
-            if (calculatorBox) {
-                calculatorBox.classList.add('collapsed');
-            }
-            
-            // Add click handler for bulb icon with wiggle animation
-            const bulbIcon = document.querySelector('.savings-icon');
-            if (bulbIcon) {
-                bulbIcon.addEventListener('click', function() {
-                    // Trigger wiggle animation
-                    this.style.animation = 'none';
-                    setTimeout(() => {
-                        this.style.animation = '';
-                    }, 10);
-                    
-                    // Expand calculator if collapsed
-                    const billInput = document.getElementById('billAmount');
-                    if (calculatorBox && calculatorBox.classList.contains('collapsed')) {
-                        expandCalculator();
-                        if (billInput) {
-                            setTimeout(() => billInput.focus(), 300);
-                        }
-                    }
-                });
+        products.sort((a, b) => {
+            switch (sortType) {
+                case 'price-low':
+                    return parseFloat(a.getAttribute('data-price')) - parseFloat(b.getAttribute('data-price'));
+                case 'price-high':
+                    return parseFloat(b.getAttribute('data-price')) - parseFloat(a.getAttribute('data-price'));
+                case 'name-asc':
+                    return a.getAttribute('data-name').localeCompare(b.getAttribute('data-name'));
+                case 'name-desc':
+                    return b.getAttribute('data-name').localeCompare(a.getAttribute('data-name'));
+                default:
+                    return 0;
             }
         });
-        // ============================================
-// 7. FILTERS & SEARCH
-// ============================================
-function initializeFilters() {
-    const filterButtons = document.querySelectorAll('.filter-btn');
-    
-    filterButtons.forEach(btn => {
-        btn.addEventListener('click', function() {
-            filterButtons.forEach(b => b.classList.remove('active'));
-            this.classList.add('active');
-            const category = this.getAttribute('data-category');
-            filterProducts(category);
-        });
-    });
-}
 
-function filterProducts(category) {
-    const products = document.querySelectorAll('.product-card');
-    
-    products.forEach(product => {
-        const productCategory = product.getAttribute('data-category');
-        
-        if (category === 'all' || productCategory === category) {
-            product.style.display = 'block';
-        } else {
-            product.style.display = 'none';
-        }
-    });
-}
-
-function initializeSort() {
-    const sortSelect = document.getElementById('sortSelect');
-    if (sortSelect) {
-        sortSelect.addEventListener('change', function() {
-            sortProducts(this.value);
-        });
-    }
-}
-
-function sortProducts(sortType) {
-    const grid = document.getElementById('productsGrid');
-    if (!grid) return;
-    
-    const products = Array.from(document.querySelectorAll('.product-card'));
-    
-    products.sort((a, b) => {
-        switch(sortType) {
-            case 'price-low':
-                return parseFloat(a.getAttribute('data-price')) - parseFloat(b.getAttribute('data-price'));
-            case 'price-high':
-                return parseFloat(b.getAttribute('data-price')) - parseFloat(a.getAttribute('data-price'));
-            case 'name-asc':
-                return a.getAttribute('data-name').localeCompare(b.getAttribute('data-name'));
-            case 'name-desc':
-                return b.getAttribute('data-name').localeCompare(a.getAttribute('data-name'));
-            default:
-                return 0;
-        }
-    });
-    
-    products.forEach(product => grid.appendChild(product));
-}
-
-// ============================================
-// 8. UTILS & NOTIFICATIONS
-// ============================================
-
-function showNotificationModal(type, message) {
-    // Check if simple Toast exists, if not, use alert
-    const toastContainer = document.getElementById('toast-container');
-    if (!toastContainer) {
-        alert(message);
-        return;
+        products.forEach(product => grid.appendChild(product));
     }
 
-    const toastHtml = `
+    // ============================================
+    // 8. UTILS & NOTIFICATIONS
+    // ============================================
+
+    function showNotificationModal(type, message) {
+        // Check if simple Toast exists, if not, use alert
+        const toastContainer = document.getElementById('toast-container');
+        if (!toastContainer) {
+            alert(message);
+            return;
+        }
+
+        const toastHtml = `
         <div class="toast align-items-center text-white bg-${type === 'success' ? 'success' : 'danger'} border-0 show" role="alert">
             <div class="d-flex">
                 <div class="toast-body">
@@ -3557,372 +3672,372 @@ function showNotificationModal(type, message) {
             </div>
         </div>
     `;
-    
-    toastContainer.innerHTML = toastHtml;
-    setTimeout(() => {
-        toastContainer.innerHTML = '';
-    }, 4000);
-}
 
-function initializeSubscription() {
-    const form = document.getElementById('subscribeForm');
-    if (!form) return;
-
-    form.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const email = form.querySelector('input[type="email"]').value;
-        showNotificationModal('success', `Salamat! ${email} has been subscribed to our newsletter.`);
-        form.reset();
-    });
-}
-
-function initializeContactForm() {
-    // handled by submitContactForm() called via onsubmit on the form
-}
-
-async function submitContactForm(event) {
-    event.preventDefault();
-
-    const form        = document.getElementById('contactForm');
-    const submitBtn   = document.getElementById('contactSubmitBtn');
-    const btnText     = submitBtn.querySelector('.btn-text');
-    const btnSpinner  = submitBtn.querySelector('.btn-spinner');
-
-    // Combine +639 prefix with phone digits
-    const phoneInput = document.getElementById('contact_phone');
-    const phoneFullInput = document.getElementById('contact_phone_full');
-    if (phoneFullInput && phoneInput) {
-        phoneFullInput.value = '+63' + phoneInput.value;
-        phoneInput.name = '';
+        toastContainer.innerHTML = toastHtml;
+        setTimeout(() => {
+            toastContainer.innerHTML = '';
+        }, 4000);
     }
 
-    // Show loading state
-    btnText.classList.add('d-none');
-    btnSpinner.classList.remove('d-none');
-    submitBtn.disabled = true;
+    function initializeSubscription() {
+        const form = document.getElementById('subscribeForm');
+        if (!form) return;
 
-    try {
-        const formData = new FormData(form);
-
-        const response = await fetch('controllers/contact_submit.php', {
-            method: 'POST',
-            body: formData
-        });
-
-        const result = await response.json();
-
-        if (result.success) {
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const email = form.querySelector('input[type="email"]').value;
+            showNotificationModal('success', `Salamat! ${email} has been subscribed to our newsletter.`);
             form.reset();
-            // Show success modal if it exists, otherwise fallback notification
-            const successModal = document.getElementById('contactSuccessModal');
-            if (successModal) {
-                const modal = new bootstrap.Modal(successModal);
-                modal.show();
-            } else {
-                showNotificationModal('success', 'Message sent! We will get back to you soon.');
-            }
-        } else {
-            showNotificationModal('error', result.message || 'Failed to send message. Please try again.');
-        }
-    } catch (err) {
-        console.error('Contact form error:', err);
-        showNotificationModal('error', 'There was an error submitting your message. Please try again or contact us directly at solar@solarpower.com.ph');
-    } finally {
-        // Restore button state
-        btnText.classList.remove('d-none');
-        btnSpinner.classList.add('d-none');
-        submitBtn.disabled = false;
+        });
     }
-}
 
-document.getElementById('roofTypeSelect').addEventListener('change', function () {
-    const other = document.getElementById('roofOtherInput');
-    if (this.value === 'Other') {
-        other.classList.remove('d-none');
-        other.setAttribute('required', 'required');
-    } else {
-        other.classList.add('d-none');
-        other.removeAttribute('required');
-        other.value = '';
+    function initializeContactForm() {
+        // handled by submitContactForm() called via onsubmit on the form
     }
-});
 
+    async function submitContactForm(event) {
+        event.preventDefault();
 
-function initializeInspectionForm() {
-    const inspectionForm = document.getElementById('inspectionForm');
-    
-    if (!inspectionForm) return;
-    
-    inspectionForm.addEventListener('submit', async function(e) {
-        e.preventDefault();
-        
-        const submitBtn = document.getElementById('inspectionBtn');
+        const form = document.getElementById('contactForm');
+        const submitBtn = document.getElementById('contactSubmitBtn');
         const btnText = submitBtn.querySelector('.btn-text');
-        const spinner = submitBtn.querySelector('.spinner-border');
-        
+        const btnSpinner = submitBtn.querySelector('.btn-spinner');
+
+        // Combine +639 prefix with phone digits
+        const phoneInput = document.getElementById('contact_phone');
+        const phoneFullInput = document.getElementById('contact_phone_full');
+        if (phoneFullInput && phoneInput) {
+            phoneFullInput.value = '+63' + phoneInput.value;
+            phoneInput.name = '';
+        }
+
         // Show loading state
         btnText.classList.add('d-none');
-        spinner.classList.remove('d-none');
+        btnSpinner.classList.remove('d-none');
         submitBtn.disabled = true;
-        
+
         try {
-            const formData = new FormData(inspectionForm);
-            
-            // STEP 1: Try PHP handler first (beautiful custom email)
-            console.log('📧 Attempting to send via PHP...');
-            
-            const phpResponse = await fetch('send-inspection-email.php', {
+            const formData = new FormData(form);
+
+            const response = await fetch('controllers/contact_submit.php', {
                 method: 'POST',
                 body: formData
             });
-            
-            const phpResult = await phpResponse.json();
-            
-            if (phpResult.success) {
-                // ✅ SUCCESS - PHP worked!
-                console.log('✅ Email sent successfully via PHP');
-                showSuccessAndReset();
-                return;
+
+            const result = await response.json();
+
+            if (result.success) {
+                form.reset();
+                // Show success modal if it exists, otherwise fallback notification
+                const successModal = document.getElementById('contactSuccessModal');
+                if (successModal) {
+                    const modal = new bootstrap.Modal(successModal);
+                    modal.show();
+                } else {
+                    showNotificationModal('success', 'Message sent! We will get back to you soon.');
+                }
             } else {
-                throw new Error('PHP handler failed');
+                showNotificationModal('error', result.message || 'Failed to send message. Please try again.');
             }
-            
-        } catch (phpError) {
-            // STEP 2: PHP failed, try FormSubmit backup
-            console.warn('⚠️ PHP failed, trying FormSubmit backup...', phpError);
-            
+        } catch (err) {
+            console.error('Contact form error:', err);
+            showNotificationModal('error', 'There was an error submitting your message. Please try again or contact us directly at solar@solarpower.com.ph');
+        } finally {
+            // Restore button state
+            btnText.classList.remove('d-none');
+            btnSpinner.classList.add('d-none');
+            submitBtn.disabled = false;
+        }
+    }
+
+    document.getElementById('roofTypeSelect').addEventListener('change', function() {
+        const other = document.getElementById('roofOtherInput');
+        if (this.value === 'Other') {
+            other.classList.remove('d-none');
+            other.setAttribute('required', 'required');
+        } else {
+            other.classList.add('d-none');
+            other.removeAttribute('required');
+            other.value = '';
+        }
+    });
+
+
+    function initializeInspectionForm() {
+        const inspectionForm = document.getElementById('inspectionForm');
+
+        if (!inspectionForm) return;
+
+        inspectionForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const submitBtn = document.getElementById('inspectionBtn');
+            const btnText = submitBtn.querySelector('.btn-text');
+            const spinner = submitBtn.querySelector('.spinner-border');
+
+            // Show loading state
+            btnText.classList.add('d-none');
+            spinner.classList.remove('d-none');
+            submitBtn.disabled = true;
+
             try {
                 const formData = new FormData(inspectionForm);
-                
+
+                // STEP 1: Try PHP handler first (beautiful custom email)
+                console.log('📧 Attempting to send via PHP...');
+
+                const phpResponse = await fetch('send-inspection-email.php', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const phpResult = await phpResponse.json();
+
+                if (phpResult.success) {
+                    // ✅ SUCCESS - PHP worked!
+                    console.log('✅ Email sent successfully via PHP');
+                    showSuccessAndReset();
+                    return;
+                } else {
+                    throw new Error('PHP handler failed');
+                }
+
+            } catch (phpError) {
+                // STEP 2: PHP failed, try FormSubmit backup
+                console.warn('⚠️ PHP failed, trying FormSubmit backup...', phpError);
+
+                try {
+                    const formData = new FormData(inspectionForm);
+
+                    // Add FormSubmit config
+                    formData.append('_subject', '🌞 New Solar Inspection Request');
+                    formData.append('_captcha', 'false');
+                    formData.append('_template', 'box');
+
+                    const formsubmitResponse = await fetch('https://formsubmit.co/solar@solarpower.com.ph', {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'Accept': 'application/json'
+                        }
+                    });
+
+                    if (formsubmitResponse.ok) {
+                        // ✅ SUCCESS - FormSubmit worked!
+                        console.log('✅ Email sent successfully via FormSubmit');
+                        showSuccessAndReset();
+                    } else {
+                        throw new Error('FormSubmit also failed');
+                    }
+
+                } catch (formsubmitError) {
+                    // Both methods failed
+                    console.error('❌ Both PHP and FormSubmit failed', formsubmitError);
+
+                    // Reset button
+                    btnText.classList.remove('d-none');
+                    spinner.classList.add('d-none');
+                    submitBtn.disabled = false;
+
+                    alert('There was an error submitting your request. Please try again or contact us directly at solar@solarpower.com.ph');
+                }
+            }
+        });
+    }
+
+    function showSuccessAndReset() {
+        const inspectionForm = document.getElementById('inspectionForm');
+        const submitBtn = document.getElementById('inspectionBtn');
+        const btnText = submitBtn.querySelector('.btn-text');
+        const spinner = submitBtn.querySelector('.spinner-border');
+
+        // Reset button
+        btnText.classList.remove('d-none');
+        spinner.classList.add('d-none');
+        submitBtn.disabled = false;
+
+        // Reset form
+        inspectionForm.reset();
+
+        // Close inspection modal
+        const inspectionModal = bootstrap.Modal.getInstance(document.getElementById('inspectionModal'));
+        if (inspectionModal) {
+            inspectionModal.hide();
+        }
+
+        // Show success modal
+        const successModal = new bootstrap.Modal(document.getElementById('inspectionSuccessModal'));
+        successModal.show();
+    }
+
+    // Initialize when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        initializeInspectionForm();
+    });
+
+    // ===========================
+    // UTILITIES
+    // ===========================
+    function toggleHours() {
+        const hoursContent = document.getElementById('hours-content');
+        const hoursIcon = document.getElementById('hours-icon');
+
+        if (hoursContent.style.maxHeight) {
+            hoursContent.style.maxHeight = null;
+            hoursIcon.style.transform = 'rotate(0deg)';
+        } else {
+            hoursContent.style.maxHeight = hoursContent.scrollHeight + 'px';
+            hoursIcon.style.transform = 'rotate(180deg)';
+        }
+    }
+
+    // ============================================
+    // 13. RENT TO OWN FORM
+    // ============================================
+    function initializeRentToOwnForm() {
+        const rtoForm = document.getElementById('rentToOwnForm');
+
+        if (!rtoForm) return;
+
+        rtoForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const submitBtn = rtoForm.querySelector('.btn-submit-rto');
+            const btnText = submitBtn.querySelector('.btn-text');
+            const spinner = submitBtn.querySelector('.spinner-border');
+
+            // Show loading state
+            btnText.classList.add('d-none');
+            spinner.classList.remove('d-none');
+            submitBtn.disabled = true;
+
+            try {
+                const formData = new FormData(rtoForm);
+
                 // Add FormSubmit config
-                formData.append('_subject', '🌞 New Solar Inspection Request');
+                formData.append('_subject', '🏭 New Rent-to-Own Application (Industrial/Commercial)');
                 formData.append('_captcha', 'false');
                 formData.append('_template', 'box');
-                
-                const formsubmitResponse = await fetch('https://formsubmit.co/solar@solarpower.com.ph', {
+
+                const response = await fetch('https://formsubmit.co/solar@solarpower.com.ph', {
                     method: 'POST',
                     body: formData,
                     headers: {
                         'Accept': 'application/json'
                     }
                 });
-                
-                if (formsubmitResponse.ok) {
-                    // ✅ SUCCESS - FormSubmit worked!
-                    console.log('✅ Email sent successfully via FormSubmit');
-                    showSuccessAndReset();
+
+                if (response.ok) {
+                    // Success
+                    showNotificationModal('success', 'Application submitted successfully! We will contact you soon.');
+                    rtoForm.reset();
                 } else {
-                    throw new Error('FormSubmit also failed');
+                    throw new Error('Submission failed');
                 }
-                
-            } catch (formsubmitError) {
-                // Both methods failed
-                console.error('❌ Both PHP and FormSubmit failed', formsubmitError);
-                
-                // Reset button
+
+            } catch (error) {
+                console.error('Error submitting form:', error);
+                showNotificationModal('error', 'There was an error submitting your application. Please try again or contact us directly.');
+            } finally {
+                // Reset button state
                 btnText.classList.remove('d-none');
                 spinner.classList.add('d-none');
                 submitBtn.disabled = false;
-                
-                alert('There was an error submitting your request. Please try again or contact us directly at solar@solarpower.com.ph');
             }
-        }
+        });
+    }
+
+    // Initialize Rent to Own form when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        initializeRentToOwnForm();
     });
-}
 
-function showSuccessAndReset() {
-    const inspectionForm = document.getElementById('inspectionForm');
-    const submitBtn = document.getElementById('inspectionBtn');
-    const btnText = submitBtn.querySelector('.btn-text');
-    const spinner = submitBtn.querySelector('.spinner-border');
-    
-    // Reset button
-    btnText.classList.remove('d-none');
-    spinner.classList.add('d-none');
-    submitBtn.disabled = false;
-    
-    // Reset form
-    inspectionForm.reset();
-    
-    // Close inspection modal
-    const inspectionModal = bootstrap.Modal.getInstance(document.getElementById('inspectionModal'));
-    if (inspectionModal) {
-        inspectionModal.hide();
-    }
-    
-    // Show success modal
-    const successModal = new bootstrap.Modal(document.getElementById('inspectionSuccessModal'));
-    successModal.show();
-}
+    // ========== MOBILE-OPTIMIZED VIEW MORE FUNCTIONALITY ==========
 
-// Initialize when page loads
-document.addEventListener('DOMContentLoaded', function() {
-    initializeInspectionForm();
-});
+    /**
+     * Enhanced toggle function for View More button
+     * Shows first 4 products on load, then toggles all products
+     */
+    function toggleViewMore() {
+        const productsGrid = document.getElementById('productsGrid');
+        const viewMoreBtn = document.getElementById('viewMoreBtn');
+        const btnIcon = viewMoreBtn.querySelector('i');
+        const btnText = viewMoreBtn.childNodes[viewMoreBtn.childNodes.length - 1];
 
-// ===========================
-// UTILITIES
-// ===========================
-function toggleHours() {
-    const hoursContent = document.getElementById('hours-content');
-    const hoursIcon = document.getElementById('hours-icon');
-    
-    if (hoursContent.style.maxHeight) {
-        hoursContent.style.maxHeight = null;
-        hoursIcon.style.transform = 'rotate(0deg)';
-    } else {
-        hoursContent.style.maxHeight = hoursContent.scrollHeight + 'px';
-        hoursIcon.style.transform = 'rotate(180deg)';
-    }
-}
+        // Toggle the show-all class
+        productsGrid.classList.toggle('show-all');
 
-// ============================================
-// 13. RENT TO OWN FORM
-// ============================================
-function initializeRentToOwnForm() {
-    const rtoForm = document.getElementById('rentToOwnForm');
-    
-    if (!rtoForm) return;
-    
-    rtoForm.addEventListener('submit', async function(e) {
-        e.preventDefault();
-        
-        const submitBtn = rtoForm.querySelector('.btn-submit-rto');
-        const btnText = submitBtn.querySelector('.btn-text');
-        const spinner = submitBtn.querySelector('.spinner-border');
-        
-        // Show loading state
-        btnText.classList.add('d-none');
-        spinner.classList.remove('d-none');
-        submitBtn.disabled = true;
-        
-        try {
-            const formData = new FormData(rtoForm);
-            
-            // Add FormSubmit config
-            formData.append('_subject', '🏭 New Rent-to-Own Application (Industrial/Commercial)');
-            formData.append('_captcha', 'false');
-            formData.append('_template', 'box');
-            
-            const response = await fetch('https://formsubmit.co/solar@solarpower.com.ph', {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'Accept': 'application/json'
+        // Update button appearance and text
+        if (productsGrid.classList.contains('show-all')) {
+            viewMoreBtn.classList.add('expanded');
+            btnText.textContent = ' View Less';
+
+            // Scroll smoothly to show newly revealed products
+            setTimeout(() => {
+                const firstHiddenProduct = document.querySelector('.hidden-product');
+                if (firstHiddenProduct) {
+                    firstHiddenProduct.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'nearest'
+                    });
                 }
-            });
-            
-            if (response.ok) {
-                // Success
-                showNotificationModal('success', 'Application submitted successfully! We will contact you soon.');
-                rtoForm.reset();
-            } else {
-                throw new Error('Submission failed');
-            }
-            
-        } catch (error) {
-            console.error('Error submitting form:', error);
-            showNotificationModal('error', 'There was an error submitting your application. Please try again or contact us directly.');
-        } finally {
-            // Reset button state
-            btnText.classList.remove('d-none');
-            spinner.classList.add('d-none');
-            submitBtn.disabled = false;
-        }
-    });
-}
+            }, 100);
+        } else {
+            viewMoreBtn.classList.remove('expanded');
+            btnText.textContent = ' View More';
 
-// Initialize Rent to Own form when page loads
-document.addEventListener('DOMContentLoaded', function() {
-    initializeRentToOwnForm();
-});
-
-// ========== MOBILE-OPTIMIZED VIEW MORE FUNCTIONALITY ==========
-
-/**
- * Enhanced toggle function for View More button
- * Shows first 4 products on load, then toggles all products
- */
-function toggleViewMore() {
-    const productsGrid = document.getElementById('productsGrid');
-    const viewMoreBtn = document.getElementById('viewMoreBtn');
-    const btnIcon = viewMoreBtn.querySelector('i');
-    const btnText = viewMoreBtn.childNodes[viewMoreBtn.childNodes.length - 1];
-    
-    // Toggle the show-all class
-    productsGrid.classList.toggle('show-all');
-    
-    // Update button appearance and text
-    if (productsGrid.classList.contains('show-all')) {
-        viewMoreBtn.classList.add('expanded');
-        btnText.textContent = ' View Less';
-        
-        // Scroll smoothly to show newly revealed products
-        setTimeout(() => {
-            const firstHiddenProduct = document.querySelector('.hidden-product');
-            if (firstHiddenProduct) {
-                firstHiddenProduct.scrollIntoView({ 
-                    behavior: 'smooth', 
-                    block: 'nearest' 
+            // Scroll back to the beginning of the grid
+            const catalogSection = document.querySelector('.catalogs-section');
+            if (catalogSection) {
+                catalogSection.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
                 });
             }
-        }, 100);
-    } else {
-        viewMoreBtn.classList.remove('expanded');
-        btnText.textContent = ' View More';
-        
-        // Scroll back to the beginning of the grid
-        const catalogSection = document.querySelector('.catalogs-section');
-        if (catalogSection) {
-            catalogSection.scrollIntoView({ 
-                behavior: 'smooth', 
-                block: 'start' 
-            });
         }
     }
-}
 
-/**
- * Initialize the view more functionality on page load
- */
-document.addEventListener('DOMContentLoaded', function() {
-    const productsGrid = document.getElementById('productsGrid');
-    const viewMoreContainer = document.getElementById('viewMoreContainer');
-    const allProducts = document.querySelectorAll('.product-card');
-    
-    // Count visible vs hidden products
-    const hiddenProducts = document.querySelectorAll('.hidden-product');
-    
-    // Hide the "View More" button if there are 4 or fewer products total
-    if (allProducts.length <= 4) {
-        if (viewMoreContainer) {
-            viewMoreContainer.style.display = 'none';
+    /**
+     * Initialize the view more functionality on page load
+     */
+    document.addEventListener('DOMContentLoaded', function() {
+        const productsGrid = document.getElementById('productsGrid');
+        const viewMoreContainer = document.getElementById('viewMoreContainer');
+        const allProducts = document.querySelectorAll('.product-card');
+
+        // Count visible vs hidden products
+        const hiddenProducts = document.querySelectorAll('.hidden-product');
+
+        // Hide the "View More" button if there are 4 or fewer products total
+        if (allProducts.length <= 4) {
+            if (viewMoreContainer) {
+                viewMoreContainer.style.display = 'none';
+            }
+        } else {
+            if (viewMoreContainer) {
+                viewMoreContainer.style.display = 'block';
+            }
         }
-    } else {
-        if (viewMoreContainer) {
-            viewMoreContainer.style.display = 'block';
-        }
-    }
-    
-    // Log for debugging
-    console.log(`Total products: ${allProducts.length}`);
-    console.log(`Hidden products: ${hiddenProducts.length}`);
-});
 
-
-
-/**
- * Optional: Smooth fade-in animation for products when they appear
- */
-function animateProductReveal() {
-    const hiddenProducts = document.querySelectorAll('.products-grid.show-all .hidden-product');
-    
-    hiddenProducts.forEach((product, index) => {
-        setTimeout(() => {
-            product.style.animationDelay = `${index * 0.1}s`;
-        }, index * 50);
+        // Log for debugging
+        console.log(`Total products: ${allProducts.length}`);
+        console.log(`Hidden products: ${hiddenProducts.length}`);
     });
-}
+
+
+
+    /**
+     * Optional: Smooth fade-in animation for products when they appear
+     */
+    function animateProductReveal() {
+        const hiddenProducts = document.querySelectorAll('.products-grid.show-all .hidden-product');
+
+        hiddenProducts.forEach((product, index) => {
+            setTimeout(() => {
+                product.style.animationDelay = `${index * 0.1}s`;
+            }, index * 50);
+        });
+    }
 </script>
 
 <!-- Toast Notification Container -->
@@ -3934,184 +4049,273 @@ function animateProductReveal() {
      ==================================================== -->
 
 <style>
-/* ── Floating Button ── */
-.float-track-btn {
-    position: fixed;
-    bottom: 150px; /* taas ng ibang floating btn — i-adjust kung kailangan */
-    right: 20px;
-    z-index: 9990;
-    width: 54px;
-    height: 54px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #f39c12, #e67e22);
-    color: white;
-    border: none;
-    box-shadow: 0 4px 15px rgba(243,156,18,0.5);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 20px;
-    transition: transform 0.2s, box-shadow 0.2s;
-}
-.float-track-btn:hover {
-    transform: scale(1.1);
-    box-shadow: 0 6px 20px rgba(243,156,18,0.65);
-}
-.float-track-btn .track-tooltip {
-    position: absolute;
-    right: 62px;
-    background: #2c3e50;
-    color: #fff;
-    font-size: 12px;
-    font-weight: 600;
-    padding: 5px 10px;
-    border-radius: 6px;
-    white-space: nowrap;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.2s;
-}
-.float-track-btn:hover .track-tooltip { opacity: 1; }
+    /* ── Floating Button ── */
+    .float-track-btn {
+        position: fixed;
+        bottom: 150px;
+        /* taas ng ibang floating btn — i-adjust kung kailangan */
+        right: 20px;
+        z-index: 9990;
+        width: 54px;
+        height: 54px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #f39c12, #e67e22);
+        color: white;
+        border: none;
+        box-shadow: 0 4px 15px rgba(243, 156, 18, 0.5);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
 
-/* ── Slide-up Panel ── */
-.track-panel {
-    position: fixed;
-    bottom: 215px; /* taas ng button */
-    right: 20px;
-    width: 370px;
-    max-width: calc(100vw - 30px);
-    background: #fff;
-    border-radius: 18px;
-    box-shadow: 0 15px 50px rgba(0,0,0,0.18);
-    z-index: 9991;
-    overflow: hidden;
-    transform: translateY(20px) scale(0.97);
-    opacity: 0;
-    pointer-events: none;
-    transition: transform 0.3s ease, opacity 0.3s ease;
-}
-.track-panel.open {
-    transform: translateY(0) scale(1);
-    opacity: 1;
-    pointer-events: all;
-}
+    .float-track-btn:hover {
+        transform: scale(1.1);
+        box-shadow: 0 6px 20px rgba(243, 156, 18, 0.65);
+    }
 
-/* Panel Header */
-.track-panel-header {
-    background: linear-gradient(135deg, #2d5016, #3d6b1e);
-    color: white;
-    padding: 16px 20px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-.track-panel-header h6 {
-    margin: 0;
-    font-weight: 700;
-    font-size: 15px;
-}
-.track-panel-header .close-panel {
-    background: rgba(255,255,255,0.2);
-    border: none;
-    color: white;
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 14px;
-    transition: background 0.2s;
-}
-.track-panel-header .close-panel:hover { background: rgba(255,255,255,0.35); }
+    .float-track-btn .track-tooltip {
+        position: absolute;
+        right: 62px;
+        background: #2c3e50;
+        color: #fff;
+        font-size: 12px;
+        font-weight: 600;
+        padding: 5px 10px;
+        border-radius: 6px;
+        white-space: nowrap;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s;
+    }
 
-/* Panel Body */
-.track-panel-body { padding: 20px; }
+    .float-track-btn:hover .track-tooltip {
+        opacity: 1;
+    }
 
-/* Search Input */
-.track-input-wrap { position: relative; margin-bottom: 12px; }
-.track-input-wrap i {
-    position: absolute;
-    left: 13px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: #aaa;
-    font-size: 14px;
-}
-.track-input-wrap input {
-    width: 100%;
-    padding: 11px 12px 11px 36px;
-    border: 2px solid #eee;
-    border-radius: 10px;
-    font-size: 14px;
-    outline: none;
-    transition: border 0.2s;
-}
-.track-input-wrap input:focus { border-color: #f39c12; }
+    /* ── Slide-up Panel ── */
+    .track-panel {
+        position: fixed;
+        bottom: 215px;
+        /* taas ng button */
+        right: 20px;
+        width: 370px;
+        max-width: calc(100vw - 30px);
+        background: #fff;
+        border-radius: 18px;
+        box-shadow: 0 15px 50px rgba(0, 0, 0, 0.18);
+        z-index: 9991;
+        overflow: hidden;
+        transform: translateY(20px) scale(0.97);
+        opacity: 0;
+        pointer-events: none;
+        transition: transform 0.3s ease, opacity 0.3s ease;
+    }
 
-/* Search Button */
-.track-search-btn {
-    width: 100%;
-    padding: 11px;
-    background: linear-gradient(135deg, #f39c12, #e67e22);
-    color: white;
-    border: none;
-    border-radius: 10px;
-    font-weight: 700;
-    font-size: 14px;
-    cursor: pointer;
-    transition: opacity 0.2s;
-}
-.track-search-btn:hover { opacity: 0.9; }
-.track-search-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    .track-panel.open {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+        pointer-events: all;
+    }
 
-/* Results */
-.track-results { margin-top: 14px; max-height: 260px; overflow-y: auto; }
-.track-results::-webkit-scrollbar { width: 4px; }
-.track-results::-webkit-scrollbar-thumb { background: #ddd; border-radius: 4px; }
+    /* Panel Header */
+    .track-panel-header {
+        background: linear-gradient(135deg, #2d5016, #3d6b1e);
+        color: white;
+        padding: 16px 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
 
-/* Order Row */
-.track-order-row {
-    border: 1px solid #f0f0f0;
-    border-radius: 12px;
-    padding: 14px;
-    margin-bottom: 10px;
-    transition: box-shadow 0.2s;
-}
-.track-order-row:hover { box-shadow: 0 3px 12px rgba(0,0,0,0.08); }
-.track-order-ref { font-size: 11px; color: #999; font-weight: 600; }
-.track-order-items { font-size: 13px; font-weight: 700; color: #2c3e50; margin: 4px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.track-order-location { font-size: 12px; color: #888; }
-.track-status-badge {
-    font-size: 10px;
-    font-weight: 700;
-    text-transform: uppercase;
-    background: rgba(243,156,18,0.12);
-    color: #e67e22;
-    padding: 3px 9px;
-    border-radius: 20px;
-}
-.track-order-amount { font-size: 13px; font-weight: 700; color: #27ae60; }
+    .track-panel-header h6 {
+        margin: 0;
+        font-weight: 700;
+        font-size: 15px;
+    }
 
-/* States */
-.track-empty { text-align: center; padding: 20px 0; }
-.track-empty img { width: 55px; opacity: 0.4; margin-bottom: 8px; }
-.track-empty p { color: #bbb; font-size: 13px; margin: 0; }
-.track-loading { text-align: center; padding: 20px; color: #f39c12; }
+    .track-panel-header .close-panel {
+        background: rgba(255, 255, 255, 0.2);
+        border: none;
+        color: white;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        transition: background 0.2s;
+    }
 
-/* Full details link */
-.track-full-link {
-    display: block;
-    text-align: center;
-    margin-top: 10px;
-    font-size: 12px;
-    color: #f39c12;
-    text-decoration: none;
-    font-weight: 600;
-}
-.track-full-link:hover { text-decoration: underline; }
+    .track-panel-header .close-panel:hover {
+        background: rgba(255, 255, 255, 0.35);
+    }
+
+    /* Panel Body */
+    .track-panel-body {
+        padding: 20px;
+    }
+
+    /* Search Input */
+    .track-input-wrap {
+        position: relative;
+        margin-bottom: 12px;
+    }
+
+    .track-input-wrap i {
+        position: absolute;
+        left: 13px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #aaa;
+        font-size: 14px;
+    }
+
+    .track-input-wrap input {
+        width: 100%;
+        padding: 11px 12px 11px 36px;
+        border: 2px solid #eee;
+        border-radius: 10px;
+        font-size: 14px;
+        outline: none;
+        transition: border 0.2s;
+    }
+
+    .track-input-wrap input:focus {
+        border-color: #f39c12;
+    }
+
+    /* Search Button */
+    .track-search-btn {
+        width: 100%;
+        padding: 11px;
+        background: linear-gradient(135deg, #f39c12, #e67e22);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        font-weight: 700;
+        font-size: 14px;
+        cursor: pointer;
+        transition: opacity 0.2s;
+    }
+
+    .track-search-btn:hover {
+        opacity: 0.9;
+    }
+
+    .track-search-btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    /* Results */
+    .track-results {
+        margin-top: 14px;
+        max-height: 260px;
+        overflow-y: auto;
+    }
+
+    .track-results::-webkit-scrollbar {
+        width: 4px;
+    }
+
+    .track-results::-webkit-scrollbar-thumb {
+        background: #ddd;
+        border-radius: 4px;
+    }
+
+    /* Order Row */
+    .track-order-row {
+        border: 1px solid #f0f0f0;
+        border-radius: 12px;
+        padding: 14px;
+        margin-bottom: 10px;
+        transition: box-shadow 0.2s;
+    }
+
+    .track-order-row:hover {
+        box-shadow: 0 3px 12px rgba(0, 0, 0, 0.08);
+    }
+
+    .track-order-ref {
+        font-size: 11px;
+        color: #999;
+        font-weight: 600;
+    }
+
+    .track-order-items {
+        font-size: 13px;
+        font-weight: 700;
+        color: #2c3e50;
+        margin: 4px 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .track-order-location {
+        font-size: 12px;
+        color: #888;
+    }
+
+    .track-status-badge {
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        background: rgba(243, 156, 18, 0.12);
+        color: #e67e22;
+        padding: 3px 9px;
+        border-radius: 20px;
+    }
+
+    .track-order-amount {
+        font-size: 13px;
+        font-weight: 700;
+        color: #27ae60;
+    }
+
+    /* States */
+    .track-empty {
+        text-align: center;
+        padding: 20px 0;
+    }
+
+    .track-empty img {
+        width: 55px;
+        opacity: 0.4;
+        margin-bottom: 8px;
+    }
+
+    .track-empty p {
+        color: #bbb;
+        font-size: 13px;
+        margin: 0;
+    }
+
+    .track-loading {
+        text-align: center;
+        padding: 20px;
+        color: #f39c12;
+    }
+
+    /* Full details link */
+    .track-full-link {
+        display: block;
+        text-align: center;
+        margin-top: 10px;
+        font-size: 12px;
+        color: #f39c12;
+        text-decoration: none;
+        font-weight: 600;
+    }
+
+    .track-full-link:hover {
+        text-decoration: underline;
+    }
 </style>
 
 <!-- Floating Button -->
@@ -4129,8 +4333,8 @@ function animateProductReveal() {
     <div class="track-panel-body">
         <div class="track-input-wrap">
             <i class="fas fa-phone"></i>
-            <input type="tel" id="floatTrackPhone" placeholder="e.g. +639805926760" 
-                   onkeydown="if(event.key==='Enter') doFloatTrack()">
+            <input type="tel" id="floatTrackPhone" placeholder="e.g. +639805926760"
+                onkeydown="if(event.key==='Enter') doFloatTrack()">
         </div>
         <button class="track-search-btn" id="floatTrackBtn" onclick="doFloatTrack()">
             <i class="fas fa-search me-1"></i> TRACK ORDERS
@@ -4140,71 +4344,71 @@ function animateProductReveal() {
 </div>
 
 <script>
-// ── Toggle panel open/close ──────────────────────────────────────────────────
-function toggleTrackPanel() {
-    const panel = document.getElementById('trackPanel');
-    panel.classList.toggle('open');
-    if (panel.classList.contains('open')) {
-        setTimeout(() => document.getElementById('floatTrackPhone').focus(), 200);
-    }
-}
-
-// Close panel when clicking outside
-document.addEventListener('click', function(e) {
-    const panel  = document.getElementById('trackPanel');
-    const btn    = document.querySelector('.float-track-btn');
-    if (!panel.contains(e.target) && !btn.contains(e.target)) {
-        panel.classList.remove('open');
-    }
-});
-
-// ── Status label map (same as track-order.php) ──────────────────────────────
-function getStatusLabel(status) {
-    const map = {
-        'maya_initial' : 'Initial Payment',
-        'maya_full'    : 'Full Payment',
-        'down_payment' : 'Down Payment',
-        'pending'      : 'Pending',
-        'confirmed'    : 'To Ship',
-        'in_transit'   : 'To Receive',
-        'delivered'    : 'Completed',
-    };
-    if (!status) return 'Pending';
-    return map[status] || status.charAt(0).toUpperCase() + status.slice(1);
-}
-
-// ── Fetch orders ─────────────────────────────────────────────────────────────
-function doFloatTrack() {
-    const phone  = document.getElementById('floatTrackPhone').value.trim();
-    const btn    = document.getElementById('floatTrackBtn');
-    const result = document.getElementById('floatTrackResults');
-
-    if (!phone) {
-        result.innerHTML = `<p class="text-danger small mt-2"><i class="fas fa-exclamation-circle me-1"></i>Please enter your cellphone number.</p>`;
-        return;
+    // ── Toggle panel open/close ──────────────────────────────────────────────────
+    function toggleTrackPanel() {
+        const panel = document.getElementById('trackPanel');
+        panel.classList.toggle('open');
+        if (panel.classList.contains('open')) {
+            setTimeout(() => document.getElementById('floatTrackPhone').focus(), 200);
+        }
     }
 
-    // Loading state
-    btn.disabled = true;
-    btn.innerHTML = `<i class="fas fa-spinner fa-spin me-1"></i> Searching...`;
-    result.innerHTML = `<div class="track-loading"><i class="fas fa-spinner fa-spin fa-lg"></i></div>`;
+    // Close panel when clicking outside
+    document.addEventListener('click', function(e) {
+        const panel = document.getElementById('trackPanel');
+        const btn = document.querySelector('.float-track-btn');
+        if (!panel.contains(e.target) && !btn.contains(e.target)) {
+            panel.classList.remove('open');
+        }
+    });
 
-    fetch(`controllers/customer_track_order.php?phone=${encodeURIComponent(phone)}`)
-        .then(res => res.json())
-        .then(data => {
-            btn.disabled = false;
-            btn.innerHTML = `<i class="fas fa-search me-1"></i> TRACK ORDERS`;
+    // ── Status label map (same as track-order.php) ──────────────────────────────
+    function getStatusLabel(status) {
+        const map = {
+            'maya_initial': 'Initial Payment',
+            'maya_full': 'Full Payment',
+            'down_payment': 'Down Payment',
+            'pending': 'Pending',
+            'confirmed': 'To Ship',
+            'in_transit': 'To Receive',
+            'delivered': 'Completed',
+        };
+        if (!status) return 'Pending';
+        return map[status] || status.charAt(0).toUpperCase() + status.slice(1);
+    }
 
-            if (!data.success) {
-                result.innerHTML = `
+    // ── Fetch orders ─────────────────────────────────────────────────────────────
+    function doFloatTrack() {
+        const phone = document.getElementById('floatTrackPhone').value.trim();
+        const btn = document.getElementById('floatTrackBtn');
+        const result = document.getElementById('floatTrackResults');
+
+        if (!phone) {
+            result.innerHTML = `<p class="text-danger small mt-2"><i class="fas fa-exclamation-circle me-1"></i>Please enter your cellphone number.</p>`;
+            return;
+        }
+
+        // Loading state
+        btn.disabled = true;
+        btn.innerHTML = `<i class="fas fa-spinner fa-spin me-1"></i> Searching...`;
+        result.innerHTML = `<div class="track-loading"><i class="fas fa-spinner fa-spin fa-lg"></i></div>`;
+
+        fetch(`controllers/customer_track_order.php?phone=${encodeURIComponent(phone)}`)
+            .then(res => res.json())
+            .then(data => {
+                btn.disabled = false;
+                btn.innerHTML = `<i class="fas fa-search me-1"></i> TRACK ORDERS`;
+
+                if (!data.success) {
+                    result.innerHTML = `
                     <div class="track-empty">
                         <img src="https://cdn-icons-png.flaticon.com/512/4076/4076432.png" alt="">
                         <p>${data.message || 'No orders found.'}</p>
                     </div>`;
-                return;
-            }
+                    return;
+                }
 
-            const rows = data.orders.map(order => `
+                const rows = data.orders.map(order => `
                 <div class="track-order-row">
                     <div class="d-flex justify-content-between align-items-center mb-1">
                         <span class="track-order-ref">${order.order_reference}</span>
@@ -4220,18 +4424,18 @@ function doFloatTrack() {
                 </div>
             `).join('');
 
-            result.innerHTML = `
+                result.innerHTML = `
                 <div class="track-results">${rows}</div>
                 <a href="track-order.php" class="track-full-link">
                     <i class="fas fa-external-link-alt me-1"></i> View full order details
                 </a>`;
-        })
-        .catch(() => {
-            btn.disabled = false;
-            btn.innerHTML = `<i class="fas fa-search me-1"></i> TRACK ORDERS`;
-            result.innerHTML = `<p class="text-danger small mt-2"><i class="fas fa-exclamation-circle me-1"></i>Connection error. Please try again.</p>`;
-        });
-}
+            })
+            .catch(() => {
+                btn.disabled = false;
+                btn.innerHTML = `<i class="fas fa-search me-1"></i> TRACK ORDERS`;
+                result.innerHTML = `<p class="text-danger small mt-2"><i class="fas fa-exclamation-circle me-1"></i>Connection error. Please try again.</p>`;
+            });
+    }
 </script>
 <!-- END FLOATING TRACK ORDER -->
 

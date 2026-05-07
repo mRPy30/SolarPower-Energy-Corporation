@@ -60,16 +60,14 @@ function get_stats($conn) {
 function get_recent_orders($conn) {
     $orders = [];
     
-    // Adjust this query based on your actual database schema
+    // Join orders with order_items to get at least one product name for display
     $query = "SELECT 
                 o.id,
-                o.orderStatus,
-                c.firstName as clientFName,
-                c.lastName as clientLName,
-                p.displayName as productName
+                o.order_reference,
+                o.order_status,
+                o.customer_name,
+                (SELECT product_name FROM order_items WHERE order_id = o.id LIMIT 1) as product_name
               FROM orders o
-              LEFT JOIN client c ON o.clientId = c.id
-              LEFT JOIN product p ON o.productId = p.id
               ORDER BY o.created_at DESC
               LIMIT 5";
     
@@ -87,14 +85,13 @@ function get_recent_orders($conn) {
 
 // Function to get most sold product
 function get_most_sold_product($conn) {
-    // Adjust this query based on your actual database schema
     $query = "SELECT 
-                p.displayName as productName,
-                COUNT(o.id) as totalSold
-              FROM orders o
-              JOIN product p ON o.productId = p.id
-              WHERE o.orderStatus = 'delivered'
-              GROUP BY o.productId
+                product_name as productName,
+                SUM(quantity) as totalSold
+              FROM order_items oi
+              JOIN orders o ON oi.order_id = o.id
+              WHERE o.order_status = 'delivered'
+              GROUP BY product_id
               ORDER BY totalSold DESC
               LIMIT 1";
     

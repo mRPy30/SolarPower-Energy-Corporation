@@ -45,7 +45,7 @@ function get_stats($conn) {
     
     $result = $conn->query("SELECT COUNT(DISTINCT customer_email) FROM orders WHERE order_status != 'archived'");
     if ($result) {
-        $stats['clients'] = $result->fetch_row()[0];
+        $stats['clients'] = $result->fetch_row()[0] ?? 0;
         $result->close();
     }
 
@@ -111,11 +111,11 @@ function get_stats($conn) {
 
 
 function get_most_sold_product($conn) {
-    $query = "SELECT p.displayName as productName, COUNT(o.id) as totalSold 
-              FROM orders o 
-              JOIN product p ON o.id = p.id 
+    $query = "SELECT oi.product_name as productName, SUM(oi.quantity) as totalSold 
+              FROM order_items oi 
+              JOIN orders o ON oi.order_id = o.id 
               WHERE o.order_status = 'delivered' 
-              GROUP BY o.id 
+              GROUP BY oi.product_name 
               ORDER BY totalSold DESC 
               LIMIT 1";
     
