@@ -2,77 +2,76 @@
 session_start();
 header('Content-Type: application/json');
 
+// Enable full error reporting for mysqli
+mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+
 // Database connection
 $servername = "localhost";
 $username   = "root";
 $password   = "";
 $dbname     = "solar_power";
 
-$conn = new mysqli($servername, $username, $password, $dbname);
-
-if ($conn->connect_error) {
-    echo json_encode([
-        'success' => false,
-        'message' => 'Database connection failed'
-    ]);
-    exit;
-}
-
-// Get POST data
-$input = file_get_contents('php://input');
-$data = json_decode($input, true);
-
-// Validate input
-if (!$data || !isset($data['items']) || !isset($data['customer'])) {
-    echo json_encode([
-        'success' => false,
-        'message' => 'Invalid request data'
-    ]);
-    exit;
-}
-
-// Extract data
-$totalAmount = floatval($data['totalAmount'] ?? ($data['amount'] ?? 0));
-$items = $data['items'] ?? [];
-$paymentMethod = $data['paymentMethod'] ?? 'cod';
-
-// Extract customer data (handle both object and flat structure)
-if (isset($data['customer']) && is_array($data['customer'])) {
-    $customer = $data['customer'];
-} else {
-    $customer = [
-        'name' => $data['customerName'] ?? '',
-        'email' => $data['customerEmail'] ?? '',
-        'phone' => $data['customerPhone'] ?? '',
-        'address' => $data['customerAddress'] ?? ''
-    ];
-}
-
-// Validate customer data
-if (empty($customer['name']) || empty($customer['email'])) {
-    echo json_encode([
-        'success' => false,
-        'message' => 'Customer information is incomplete'
-    ]);
-    exit;
-}
-
-// Validate cart items
-if (empty($items) || !is_array($items)) {
-    echo json_encode([
-        'success' => false,
-        'message' => 'Cart is empty'
-    ]);
-    exit;
-}
-
-// Generate order reference
-$orderReference = 'ORD-' . date('Ymd') . '-' . strtoupper(substr(md5(uniqid(rand(), true)), 0, 6));
-
-// Begin transaction
-$conn->begin_transaction();
-
 try {
+    $conn = new mysqli($servername, $username, $password, $dbname);
+
+    if ($conn->connect_error) {
+        throw new Exception('Database connection failed: ' . $conn->connect_error);
+    }
+
+    // Get POST data
+    $input = file_get_contents('php://input');
+    $data = json_decode($input, true);
+
+    // Validate input
+    if (!$data || !isset($data['items'])) {
+        echo json_encode([
+            'success' => false,
+            'message' => 'Invalid request data'
+        ]);
+        exit;
+    }
+
+    // Extract data
+    $totalAmount = floatval($data['totalAmount'] ?? ($data['amount'] ?? 0));
+    $items = $data['items'] ?? [];
+    $paymentMethod = $data['paymentMethod'] ?? 'cod';
+
+    // Extract customer data (handle both object and flat structure)
+    if (isset($data['customer']) && is_array($data['customer'])) {
+        $customer = $data['customer'];
+    } else {
+        $customer = [
+            'name' => $data['customerName'] ?? $data['customer']['name'] ?? '',
+            'email' => $data['customerEmail'] ?? $data['customer']['email'] ?? '',
+            'phone' => $data['customerPhone'] ?? $data['customer']['phone'] ?? '',
+            'address' => $data['customerAddress'] ?? $data['customer']['address'] ?? ''
+        ];
+    }
+
+    // Validate customer data
+    if (empty($customer['name']) || empty($customer['email'])) {
+        echo json_encode([
+            'success' => false,
+            'message' => 'Customer information is incomplete'
+        ]);
+        exit;
+    }
+
+    // Validate cart items
+    if (empty($items) || !is_array($items)) {
+        echo json_encode([
+            'success' => false,
+            'message' => 'Cart is empty'
+        ]);
+        exit;
+    }
+
+    // Generate order reference
+    $orderReference = 'ORD-' . date('Ymd') . '-' . strtoupper(substr(md5(uniqid(rand(), true)), 0, 6));
+
+    // Begin transaction
+    $conn->begin_transaction();
+
     // Insert order
     $stmt = $conn->prepare("
         INSERT INTO orders 
@@ -93,7 +92,7 @@ try {
     );
     
     if (!$stmt->execute()) {
-        throw new Exception('Failed to create order');
+        throw new Exception('Failed to create order: ' . $stmt->error);
     }
     
     $orderId = $conn->insert_id;
@@ -107,10 +106,10 @@ try {
     ");
     
     foreach ($items as $item) {
-        $productId = intval($item['id']);
-        $productName = $item['displayName'];
-        $quantity = intval($item['quantity']);
-        $price = floatval($item['price']);
+        $productId = intval($item['id'] ?? 0);
+        $productName = $item['name'] ?? $item['displayName'] ?? 'Unknown Product';
+        $quantity = intval($item['quantity'] ?? 1);
+        $price = floatval($item['price'] ?? 0);
         $subtotal = $price * $quantity;
         
         $itemStmt->bind_param(
@@ -124,7 +123,7 @@ try {
         );
         
         if (!$itemStmt->execute()) {
-            throw new Exception('Failed to add order item');
+            throw new Exception('Failed to add order item: ' . $itemStmt->error);
         }
     }
     
@@ -132,6 +131,7 @@ try {
     
     // Commit transaction
     $conn->commit();
+    $conn->close();
     
     echo json_encode([
         'success' => true,
@@ -139,15 +139,16 @@ try {
         'orderRef' => $orderReference
     ]);
     
-} catch (Exception $e) {
-    // Rollback on error
-    $conn->rollback();
+} catch (Throwable $e) {
+    // Rollback on any error
+    if (isset($conn) && $conn) {
+        try { $conn->rollback(); } catch (Throwable $rbErr) {}
+        try { $conn->close(); } catch (Throwable $clErr) {}
+    }
     
     echo json_encode([
         'success' => false,
         'message' => 'Order creation failed: ' . $e->getMessage()
     ]);
 }
-
-$conn->close();
-?>
+?>
