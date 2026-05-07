@@ -47,10 +47,14 @@ $conn->close();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" type="image/png" href="assets/img/icon.png">
+
+    <!-- Primary Meta Tags -->
     <title>SolarPower Energy - Smart Energy for Smarter Homes</title>
-    <meta name="description" content="Switch to SolarPower Energy Corporation, the leading solar panel provider in the Philippines. DOE-accredited solar installations for residential and commercial properties. Save up to 80% on your electricity bills today!">
-    <meta name="keywords" content="Solar Power Philippines, Solar Panel Installation, Smart Energy, Renewable Energy PH, SolarPower Energy Corporation, Grid-tie Solar, Hybrid Solar System, DOE Accredited Solar">
+
+    <meta name="description"
+        content="Switch to SolarPower Energy Corporation, the leading solar panel provider in the Philippines. DOE-accredited solar installations for residential and commercial properties. Save up to 80% on your electricity bills today!">
+    <meta name="keywords"
+        content="Solar Power Philippines, Solar Panel Installation, Smart Energy, Renewable Energy PH, SolarPower Energy Corporation, Grid-tie Solar, Hybrid Solar System, DOE Accredited Solar">
     <meta name="author" content="SolarPower Energy Corporation">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://solarpower.com.ph">
@@ -59,53 +63,57 @@ $conn->close();
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://solarpower.com.ph">
     <meta property="og:title" content="SolarPower Energy - Smart Energy for Smarter Homes">
-    <meta property="og:description" content="Join the renewable revolution! Get professional solar installations with flexible payment plans. Switch to SolarPower Energy today.">
+    <meta property="og:description"
+        content="Join the renewable revolution! Get professional solar installations with flexible payment plans. Switch to SolarPower Energy today.">
+
     <meta property="og:image" content="https://solarpower.com.ph/assets/img/new_logo.png">
 
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">
+
     <meta property="twitter:url" content="https://solarpower.com.ph">
     <meta property="twitter:title" content="SolarPower Energy - Solar Panel Installation Philippines">
-    <meta property="twitter:description" content="DOE-accredited solar provider. Save on electricity bills with our Hybrid and Grid-tie solar solutions.">
+    <meta property="twitter:description"
+        content="DOE-accredited solar provider. Save on electricity bills with our Hybrid and Grid-tie solar solutions.">
     <meta property="twitter:image" content="https://solarpower.com.ph/assets/img/new_logo.png">
 
     <script type="application/ld+json">
-        {
-            "@context": "https://schema.org",
-            "@type": "LocalBusiness",
-            "name": "SolarPower Energy Corporation",
-            "image": "https://solarpower.com.ph/assets/img/new_logo.png",
-            "url": "https://solarpower.com.ph",
-            "telephone": "+63-995-394-7379",
-            "address": {
-                "@type": "PostalAddress",
-                "streetAddress": "Various Locations",
-                "addressLocality": "Metro Manila",
-                "addressCountry": "PH"
-            },
-            "geo": {
-                "@type": "GeoCoordinates",
-                "latitude": 14.5995,
-                "longitude": 120.9842
-            },
-            "openingHoursSpecification": {
-                "@type": "OpeningHoursSpecification",
-                "dayOfWeek": [
-                    "Monday",
-                    "Tuesday",
-                    "Wednesday",
-                    "Thursday",
-                    "Friday",
-                    "Saturday"
-                ],
-                "opens": "08:00",
-                "closes": "17:00"
-            },
-            "sameAs": [
-                "https://www.facebook.com/solarpowerenergycorp"
-            ]
-        }
-    </script>
+{
+    "@context": "https://schema.org",
+    "@type": "LocalBusiness",
+    "name": "SolarPower Energy Corporation",
+    "image": "https://solarpower.com.ph/assets/img/new_logo.png",
+    "url": "https://solarpower.com.ph",
+    "telephone": "+63-995-394-7379",
+    "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "Various Locations",
+        "addressLocality": "Metro Manila",
+        "addressCountry": "PH"
+    },
+    "geo": {
+        "@type": "GeoCoordinates",
+        "latitude": 14.5995,
+        "longitude": 120.9842
+    },
+    "openingHoursSpecification": {
+        "@type": "OpeningHoursSpecification",
+        "dayOfWeek": [
+            "Monday",
+            "Tuesday",
+            "Wednesday",
+            "Thursday",
+            "Friday",
+            "Saturday"
+        ],
+        "opens": "08:00",
+        "closes": "17:00"
+    },
+    "sameAs": [
+        "https://www.facebook.com/solarpowerenergycorp"
+    ]
+}
+</script>
 
     <!-- CSS Libraries -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
@@ -1333,7 +1341,8 @@ $conn->close();
                 </div>
 
                 <!-- 02 Hybrid — left to right -->
-                <div class="solar-system-row solar-system-row--reverse" id="system-hybrid" data-aos="fade-right" data-aos-duration="900">
+                <div class="solar-system-row solar-system-row--reverse" id="system-hybrid" data-aos="fade-right"
+                    data-aos-duration="900">
                     <div class="system-image-col">
                         <div class="system-img-frame">
                             <img src="assets/img/hybrid-solar.png" alt="Hybrid Solar System" class="system-img">
@@ -1398,8 +1407,10 @@ $conn->close();
             <div class="row g-4 justify-content-center">
 
                 <div class="col-md-4" data-aos="fade-up" data-aos-delay="300">
-                    <div style="background:#fff; border:1px solid rgba(0,0,0,0.08); border-radius:16px; padding:1.5rem; position:relative;">
-                        <span style="position:absolute; top:12px; right:18px; font-size:48px; line-height:1; color:#ddd; font-family:Georgia,serif;">&ldquo;</span>
+                    <div
+                        style="background:#fff; border:1px solid rgba(0,0,0,0.08); border-radius:16px; padding:1.5rem; position:relative;">
+                        <span
+                            style="position:absolute; top:12px; right:18px; font-size:48px; line-height:1; color:#ddd; font-family:Georgia,serif;">&ldquo;</span>
                         <div class="d-flex align-items-center mb-3">
                             <img src="assets/img/user2.jpg" alt="Samantha Esplana" class="rounded-circle me-3"
                                 style="width:50px;height:50px;object-fit:cover;">
@@ -1415,13 +1426,17 @@ $conn->close();
                             <i class="fas fa-star text-warning"></i>
                             <i class="far fa-star text-warning"></i>
                         </div>
-                        <p class="text-muted fst-italic" style="font-size:13px;">"Very professional and reliable service. Everything was done on time and communication was clear throughout the process."</p>
+                        <p class="text-muted fst-italic" style="font-size:13px;">"Very professional and reliable
+                            service. Everything was done on time and communication was clear throughout the process."
+                        </p>
                     </div>
                 </div>
 
                 <div class="col-md-4" data-aos="fade-up" data-aos-delay="200">
-                    <div style="background:#fff; border:1px solid rgba(0,0,0,0.08); border-radius:16px; padding:1.5rem; position:relative;">
-                        <span style="position:absolute; top:12px; right:18px; font-size:48px; line-height:1; color:#ddd; font-family:Georgia,serif;">&ldquo;</span>
+                    <div
+                        style="background:#fff; border:1px solid rgba(0,0,0,0.08); border-radius:16px; padding:1.5rem; position:relative;">
+                        <span
+                            style="position:absolute; top:12px; right:18px; font-size:48px; line-height:1; color:#ddd; font-family:Georgia,serif;">&ldquo;</span>
                         <div class="d-flex align-items-center mb-3">
                             <img src="assets/img/user2.jpg" alt="Rayne Velasco" class="rounded-circle me-3"
                                 style="width:50px;height:50px;object-fit:cover;">
@@ -1437,7 +1452,9 @@ $conn->close();
                             <i class="fas fa-star text-warning"></i>
                             <i class="far fa-star text-warning"></i>
                         </div>
-                        <p class="text-muted fst-italic" style="font-size:13px;">"They are so accommodating and responsive! They answered all my questions that I needed to know about installing solar, which really helped me decide. Highly recommended!"</p>
+                        <p class="text-muted fst-italic" style="font-size:13px;">"They are so accommodating and
+                            responsive! They answered all my questions that I needed to know about installing solar,
+                            which really helped me decide. Highly recommended!"</p>
                     </div>
                 </div>
 
@@ -1732,7 +1749,8 @@ $conn->close();
                                 <div class="icon-wrap"><i class="fas fa-map-marker-alt"></i></div>
                                 <div>
                                     <strong>Address</strong>
-                                    <p>4/F PBB Corporate Center, 1906 Finance Drive, Madrigal Business Park 1, Ayala Alabang, Muntinlupa City, 1780, Philippines</p>
+                                    <p>4/F PBB Corporate Center, 1906 Finance Drive, Madrigal Business Park 1, Ayala
+                                        Alabang, Muntinlupa City, 1780, Philippines</p>
                                 </div>
                             </div>
 
@@ -1740,7 +1758,8 @@ $conn->close();
                                 <div class="icon-wrap"><i class="fas fa-phone"></i></div>
                                 <div>
                                     <strong>Phone</strong>
-                                    <span class="phone-number" id="phone-copy" onclick="copyToClipboard('+639953947379', this)">+639953947379</span>
+                                    <span class="phone-number" id="phone-copy"
+                                        onclick="copyToClipboard('+639953947379', this)">+639953947379</span>
                                 </div>
                             </div>
 
@@ -1748,7 +1767,8 @@ $conn->close();
                                 <div class="icon-wrap"><i class="fas fa-envelope"></i></div>
                                 <div>
                                     <strong>Email</strong>
-                                    <a href="mailto:solar@solarpower.com.ph" class="contact-link">solar@solarpower.com.ph</a>
+                                    <a href="mailto:solar@solarpower.com.ph"
+                                        class="contact-link">solar@solarpower.com.ph</a>
                                 </div>
                             </div>
                         </div>
@@ -1795,11 +1815,16 @@ $conn->close();
                         <div class="contact-social-links">
                             <p class="contact-social-label">Follow Us</p>
                             <div class="social-links">
-                                <a href="https://www.facebook.com/p/SolarPower-Energy-Corporation-61578373983187/" target="_blank" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
-                                <a href="https://www.instagram.com/solarpowerenergycorporation?igsh=MWh4YTEyYWpzbDNlNQ==" target="_blank" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
-                                <a href="https://www.tiktok.com/@solarpower.energy?_r=1&_t=ZS-92HlpTBUuzF" target="_blank" aria-label="TikTok"><i class="fab fa-tiktok"></i></a>
-                                <a href="https://youtube.com/@solarpowerenergycorporation?si=-kln0fTid4zMZDXq" target="_blank" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
-                                <a href="https://www.linkedin.com/in/solar-power-6792283aa" target="_blank" aria-label="LinkedIn"><i class="fab fa-linkedin-in"></i></a>
+                                <a href="https://www.facebook.com/p/SolarPower-Energy-Corporation-61578373983187/"
+                                    target="_blank" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+                                <a href="https://www.instagram.com/solarpowerenergycorporation?igsh=MWh4YTEyYWpzbDNlNQ=="
+                                    target="_blank" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                                <a href="https://www.tiktok.com/@solarpower.energy?_r=1&_t=ZS-92HlpTBUuzF"
+                                    target="_blank" aria-label="TikTok"><i class="fab fa-tiktok"></i></a>
+                                <a href="https://youtube.com/@solarpowerenergycorporation?si=-kln0fTid4zMZDXq"
+                                    target="_blank" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
+                                <a href="https://www.linkedin.com/in/solar-power-6792283aa" target="_blank"
+                                    aria-label="LinkedIn"><i class="fab fa-linkedin-in"></i></a>
                             </div>
                         </div>
                     </div>
@@ -1812,23 +1837,29 @@ $conn->close();
                         <form class="contact-form" id="contactForm" onsubmit="submitContactForm(event)">
                             <div class="row">
                                 <div class="col-md-6 mb-3">
-                                    <input type="text" class="form-control" id="contact_name" name="name" placeholder="Full Name *" required>
+                                    <input type="text" class="form-control" id="contact_name" name="name"
+                                        placeholder="Full Name *" required>
                                 </div>
 
                                 <div class="col-md-6 mb-3">
-                                    <input type="email" class="form-control" id="contact_email" name="email" placeholder="Email Address *" required>
+                                    <input type="email" class="form-control" id="contact_email" name="email"
+                                        placeholder="Email Address *" required>
                                 </div>
 
                                 <div class="col-12 mb-3">
                                     <div class="input-group">
-                                        <span class="input-group-text">+63 &nbsp;<i class="fas fa-chevron-down" style="font-size:10px;color:#aaa;"></i></span>
-                                        <input type="tel" class="form-control" id="contact_phone" placeholder="9XX XXX XXXX" required maxlength="10" pattern="[0-9]{10}" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+                                        <span class="input-group-text">+63 &nbsp;<i class="fas fa-chevron-down"
+                                                style="font-size:10px;color:#aaa;"></i></span>
+                                        <input type="tel" class="form-control" id="contact_phone"
+                                            placeholder="9XX XXX XXXX" required maxlength="10" pattern="[0-9]{10}"
+                                            oninput="this.value=this.value.replace(/[^0-9]/g,'')">
                                         <input type="hidden" id="contact_phone_full" name="phone">
                                     </div>
                                 </div>
 
                                 <div class="col-12 mb-4">
-                                    <textarea class="form-control" id="contact_message" name="message" rows="6" placeholder="Your Message *" required></textarea>
+                                    <textarea class="form-control" id="contact_message" name="message" rows="6"
+                                        placeholder="Your Message *" required></textarea>
                                 </div>
 
                                 <div class="col-12">
@@ -1853,14 +1884,11 @@ $conn->close();
                 <div class="col-lg-8" data-aos="zoom-in">
                     <div class="subscription-bar">
                         <h3>Subscribe Now!</h3>
-                        <p style="color: rgba(255,255,255,0.9); margin-bottom: 20px;">Get weekly solar tips, updates, and exclusive offers delivered to your inbox</p>
+                        <p style="color: rgba(255,255,255,0.9); margin-bottom: 20px;">Get weekly solar tips, updates,
+                            and exclusive offers delivered to your inbox</p>
                         <form id="subscribe-form" class="d-flex">
-                            <input type="email"
-                                name="email"
-                                id="subscribe-email"
-                                class="form-control"
-                                placeholder="Enter your email address"
-                                required>
+                            <input type="email" name="email" id="subscribe-email" class="form-control"
+                                placeholder="Enter your email address" required>
                             <button type="submit" class="btn btn-subscribe" id="subscribe-btn">
                                 <span class="btn-text">Subscribe!</span>
                                 <span class="btn-spinner d-none">
@@ -1887,8 +1915,7 @@ $conn->close();
                 </div>
                 <div class="modal-body text-center">
                     <div class="mb-3">
-                        <i class="fas fa-solar-panel text-success"
-                            style="font-size: 48px;"></i>
+                        <i class="fas fa-solar-panel text-success" style="font-size: 48px;"></i>
                     </div>
                     <p class="mb-1">
                         Thank you for sending contacts
@@ -1983,7 +2010,8 @@ $conn->close();
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label fw-semibold small text-uppercase">Contact Number</label>
                                     <div class="input-group">
-                                        <span class="input-group-text" style="background:#e8f4ef;border-color:#dee2e6;color:#0a5c3d;font-weight:700;font-size:0.93rem;">+639</span>
+                                        <span class="input-group-text"
+                                            style="background:#e8f4ef;border-color:#dee2e6;color:#0a5c3d;font-weight:700;font-size:0.93rem;">+639</span>
                                         <input type="tel" name="phone" class="form-control" placeholder="XXXXXXXXX"
                                             required maxlength="9" pattern="[0-9]{9}"
                                             oninput="this.value=this.value.replace(/[^0-9]/g,'')">
@@ -2207,7 +2235,7 @@ $conn->close();
     // ============================================
     let cart = [];
 
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
         console.log('🚀 Solar Power System Initialized');
 
         // Initialize all modules
@@ -2430,7 +2458,7 @@ $conn->close();
                         ₱${item.price.toLocaleString()} × ${item.quantity}
                     </p>
                     <p class="mb-0 fw-bold text-primary">
-                        ₱${itemTotal.toLocaleString(undefined, {minimumFractionDigits: 2})}
+                        ₱${itemTotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                     </p>
                     ${(item.moq || 1) > 1 ? `<small style="color:#856404;background:#fff3cd;border-radius:4px;padding:1px 7px;font-size:0.72rem;"><i class="fas fa-layer-group"></i> MOQ: ${item.moq} pcs</small>` : ''}
                 </div>
@@ -2462,7 +2490,7 @@ $conn->close();
         <div class="cart-summary bg-light p-3 rounded mt-3">
             <div class="d-flex justify-content-between mb-2">
                 <span>Subtotal:</span>
-                <span class="fw-bold">₱${subtotal.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
+                <span class="fw-bold">₱${subtotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
             </div>
             <div class="d-flex justify-content-between mb-2">
                 <span>Delivery Fee:</span>
@@ -2475,7 +2503,7 @@ $conn->close();
             <hr>
             <div class="d-flex justify-content-between" style="font-size: 1.2rem;">
                 <span class="fw-bold">Subtotal:</span>
-                <span class="fw-bold text-primary">₱${subtotal.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
+                <span class="fw-bold text-primary">₱${subtotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
             </div>
             <small class="text-muted d-block mt-2">*Final total including delivery and installation fees will be shown at checkout</small>
         </div>
@@ -2537,7 +2565,7 @@ $conn->close();
         sel.innerHTML = '<option value="">' + placeholder + '</option>';
         items
             .sort((a, b) => (a[labelKey] || '').localeCompare(b[labelKey] || ''))
-            .forEach(function(item) {
+            .forEach(function (item) {
                 const opt = document.createElement('option');
                 opt.value = item[valueKey];
                 opt.textContent = item[labelKey];
@@ -2554,7 +2582,7 @@ $conn->close();
         if (!provinceEl) return;
 
         // When province changes — load cities/municipalities
-        provinceEl.addEventListener('change', async function() {
+        provinceEl.addEventListener('change', async function () {
             const code = this.value;
 
             municipalityEl.innerHTML = '<option value="">Select City / Municipality</option>';
@@ -2582,10 +2610,10 @@ $conn->close();
 
             municipalityEl.innerHTML = '<option value="">Loading cities...</option>';
             try {
-                const cities = await psgcFetch(PSGC_BASE + '/provinces/' + code + '/cities/').catch(function() {
+                const cities = await psgcFetch(PSGC_BASE + '/provinces/' + code + '/cities/').catch(function () {
                     return [];
                 });
-                const municipalities = await psgcFetch(PSGC_BASE + '/provinces/' + code + '/municipalities/').catch(function() {
+                const municipalities = await psgcFetch(PSGC_BASE + '/provinces/' + code + '/municipalities/').catch(function () {
                     return [];
                 });
                 const combined = cities.concat(municipalities);
@@ -2598,7 +2626,7 @@ $conn->close();
         });
 
         // When municipality/city changes — load barangays
-        municipalityEl.addEventListener('change', async function() {
+        municipalityEl.addEventListener('change', async function () {
             const code = this.value;
 
             barangayEl.innerHTML = '<option value="">Select Barangay</option>';
@@ -2608,11 +2636,11 @@ $conn->close();
 
             barangayEl.innerHTML = '<option value="">Loading barangays...</option>';
             try {
-                let barangays = await psgcFetch(PSGC_BASE + '/cities/' + code + '/barangays/').catch(function() {
+                let barangays = await psgcFetch(PSGC_BASE + '/cities/' + code + '/barangays/').catch(function () {
                     return null;
                 });
                 if (!barangays || barangays.length === 0) {
-                    barangays = await psgcFetch(PSGC_BASE + '/municipalities/' + code + '/barangays/').catch(function() {
+                    barangays = await psgcFetch(PSGC_BASE + '/municipalities/' + code + '/barangays/').catch(function () {
                         return [];
                     });
                 }
@@ -2633,17 +2661,17 @@ $conn->close();
             populateSelect('province', provinces, 'code', 'name', 'Select Province');
 
             // Append NCR (Metro Manila) highly-urbanized cities as a separate group
-            const ncrCities = await psgcFetch(PSGC_BASE + '/regions/130000000/cities/').catch(function() {
+            const ncrCities = await psgcFetch(PSGC_BASE + '/regions/130000000/cities/').catch(function () {
                 return [];
             });
             if (ncrCities && ncrCities.length > 0) {
                 const optgroup = document.createElement('optgroup');
                 optgroup.label = '--- NCR (Metro Manila) ---';
                 ncrCities
-                    .sort(function(a, b) {
+                    .sort(function (a, b) {
                         return a.name.localeCompare(b.name);
                     })
-                    .forEach(function(city) {
+                    .forEach(function (city) {
                         const opt = document.createElement('option');
                         opt.value = 'NCR_' + city.code;
                         opt.textContent = city.name + ' (NCR)';
@@ -2796,7 +2824,7 @@ $conn->close();
                     <p class="mb-1 fw-bold" style="font-size: 0.95rem;">${item.displayName}</p>
                     <small class="text-muted">₱${item.price.toLocaleString()} x ${item.quantity}</small>
                     <p class="mb-0 fw-bold text-primary" style="font-size: 0.9rem;">
-                        ₱${itemTotal.toLocaleString(undefined, {minimumFractionDigits: 2})}
+                        ₱${itemTotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                     </p>
                 </div>
                 <div class="d-flex flex-column align-items-end gap-2">
@@ -3083,8 +3111,8 @@ $conn->close();
             });
             paymentNote.innerHTML = `
             <i class="fas fa-info-circle"></i> 
-            You are paying <strong>20% Initial Payment</strong> (₱${initialPayment.toLocaleString(undefined, {minimumFractionDigits: 2})}) via InstaPay.<br>
-            <small class="text-muted">Remaining balance: ₱${remaining.toLocaleString(undefined, {minimumFractionDigits: 2})} (80% - to be paid before installation)</small>
+            You are paying <strong>20% Initial Payment</strong> (₱${initialPayment.toLocaleString(undefined, { minimumFractionDigits: 2 })}) via InstaPay.<br>
+            <small class="text-muted">Remaining balance: ₱${remaining.toLocaleString(undefined, { minimumFractionDigits: 2 })} (80% - to be paid before installation)</small>
         `;
             paymentNote.className = 'alert alert-info';
         }
@@ -3125,7 +3153,7 @@ $conn->close();
 
             if (file.type.startsWith('image/')) {
                 const reader = new FileReader();
-                reader.onload = function(e) {
+                reader.onload = function (e) {
                     previewImg.src = e.target.result;
                     previewImg.style.display = 'block';
                 };
@@ -3203,9 +3231,9 @@ $conn->close();
         formData.append('receipt', receiptFile);
 
         fetch('controllers/ordering/create-instapay-order.php', {
-                method: 'POST',
-                body: formData
-            })
+            method: 'POST',
+            body: formData
+        })
             .then(response => {
                 // Capture raw text first so we can debug if it is not JSON
                 return response.text().then(text => {
@@ -3295,12 +3323,12 @@ $conn->close();
 
         // Call backend to create Maya payment
         fetch('process_payment.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(orderData)
-            })
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(orderData)
+        })
             .then(response => response.json())
             .then(data => {
                 confirmBtn.disabled = false;
@@ -3369,12 +3397,12 @@ $conn->close();
         };
 
         fetch('controllers/ordering/create-cod-order.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(orderData)
-            })
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(orderData)
+        })
             .then(response => response.json())
             .then(data => {
                 confirmBtn.disabled = false;
@@ -3456,7 +3484,7 @@ $conn->close();
         const billInput = document.getElementById('billAmount');
 
         if (billInput) {
-            billInput.addEventListener('keypress', function(event) {
+            billInput.addEventListener('keypress', function (event) {
                 if (event.key === 'Enter') {
                     calculateSavings();
                 }
@@ -3531,7 +3559,7 @@ $conn->close();
         }, 100);
     }
 
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
         setupCalculator();
 
         const calculatorBox = document.getElementById('calculatorBox');
@@ -3542,7 +3570,7 @@ $conn->close();
         // Add click handler for bulb icon with wiggle animation
         const bulbIcon = document.querySelector('.savings-icon');
         if (bulbIcon) {
-            bulbIcon.addEventListener('click', function() {
+            bulbIcon.addEventListener('click', function () {
                 // Trigger wiggle animation
                 this.style.animation = 'none';
                 setTimeout(() => {
@@ -3567,7 +3595,7 @@ $conn->close();
         const filterButtons = document.querySelectorAll('.filter-btn');
 
         filterButtons.forEach(btn => {
-            btn.addEventListener('click', function() {
+            btn.addEventListener('click', function () {
                 filterButtons.forEach(b => b.classList.remove('active'));
                 this.classList.add('active');
                 const filterValue = this.getAttribute('data-filter');
@@ -3620,7 +3648,7 @@ $conn->close();
     function initializeSort() {
         const sortSelect = document.getElementById('sortSelect');
         if (sortSelect) {
-            sortSelect.addEventListener('change', function() {
+            sortSelect.addEventListener('change', function () {
                 sortProducts(this.value);
             });
         }
@@ -3750,7 +3778,7 @@ $conn->close();
         }
     }
 
-    document.getElementById('roofTypeSelect').addEventListener('change', function() {
+    document.getElementById('roofTypeSelect').addEventListener('change', function () {
         const other = document.getElementById('roofOtherInput');
         if (this.value === 'Other') {
             other.classList.remove('d-none');
@@ -3768,7 +3796,7 @@ $conn->close();
 
         if (!inspectionForm) return;
 
-        inspectionForm.addEventListener('submit', async function(e) {
+        inspectionForm.addEventListener('submit', async function (e) {
             e.preventDefault();
 
             const submitBtn = document.getElementById('inspectionBtn');
@@ -3871,7 +3899,7 @@ $conn->close();
     }
 
     // Initialize when page loads
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
         initializeInspectionForm();
     });
 
@@ -3899,7 +3927,7 @@ $conn->close();
 
         if (!rtoForm) return;
 
-        rtoForm.addEventListener('submit', async function(e) {
+        rtoForm.addEventListener('submit', async function (e) {
             e.preventDefault();
 
             const submitBtn = rtoForm.querySelector('.btn-submit-rto');
@@ -3948,7 +3976,7 @@ $conn->close();
     }
 
     // Initialize Rent to Own form when page loads
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
         initializeRentToOwnForm();
     });
 
@@ -4000,7 +4028,7 @@ $conn->close();
     /**
      * Initialize the view more functionality on page load
      */
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
         const productsGrid = document.getElementById('productsGrid');
         const viewMoreContainer = document.getElementById('viewMoreContainer');
         const allProducts = document.querySelectorAll('.product-card');
@@ -4354,7 +4382,7 @@ $conn->close();
     }
 
     // Close panel when clicking outside
-    document.addEventListener('click', function(e) {
+    document.addEventListener('click', function (e) {
         const panel = document.getElementById('trackPanel');
         const btn = document.querySelector('.float-track-btn');
         if (!panel.contains(e.target) && !btn.contains(e.target)) {
