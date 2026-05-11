@@ -6387,7 +6387,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 const tbody = document.getElementById('clientsTableBody');
                 tbody.innerHTML = '<tr><td colspan="5">Loading clients...</td></tr>';
 
-                fetch('dashboard.php?ajax=1&action=fetch_clients')
+                fetch(`${STAFF_DASHBOARD_AJAX_URL}&action=fetch_clients`)
                     .then(response => response.json())
                     .then(res => {
                         if (res.success) {
@@ -6447,7 +6447,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 if (empty) empty.style.display = 'none';
 
                 try {
-                    const res = await fetch('dashboard.php?ajax=1&action=fetch_orders');
+                    const res = await fetch(`${STAFF_DASHBOARD_AJAX_URL}&action=fetch_orders`);
                     const json = await res.json();
 
                     if (!json.success) throw new Error(json.message || 'Server error');
@@ -6690,7 +6690,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 if (!confirm(`Are you sure you want to ${label} this payment?`)) return;
 
                 try {
-                    const res = await fetch('dashboard.php?ajax=1&action=verify_payment', {
+                    const res = await fetch(`${STAFF_DASHBOARD_AJAX_URL}&action=verify_payment`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ order_id: orderId, payment_status: newStatus })
@@ -8151,6 +8151,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
         };
 
         // MAIN INITIALIZATION
+        const STAFF_DASHBOARD_URL = <?php echo json_encode($_SERVER['SCRIPT_NAME']); ?>;
+        const STAFF_DASHBOARD_AJAX_URL = <?php echo json_encode($_SERVER['SCRIPT_NAME'] . '?ajax=1'); ?>;
+
         document.addEventListener('DOMContentLoaded', function () {
             UserDropdown.init();
             BulkActions.init();
@@ -8166,8 +8169,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
             if (!categorySelect || !brandSelect) return;
 
             // ── Populate category dropdown from database ──────────────────────────
-            fetch('dashboard.php?ajax=1&action=fetch_categories')
-                .then(r => r.json())
+            fetch(`${STAFF_DASHBOARD_AJAX_URL}&action=fetch_categories`)
+                .then(async (response) => {
+                    if (!response.ok) {
+                        const body = await response.text();
+                        throw new Error(`HTTP ${response.status}: ${body.slice(0, 200)}`);
+                    }
+
+                    return response.json();
+                })
                 .then(data => {
                     if (data.success && data.data.length > 0) {
                         categorySelect.innerHTML = '<option value="">Select a category</option>';
@@ -8181,7 +8191,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                         categorySelect.innerHTML = '<option value="">No categories found</option>';
                     }
                 })
-                .catch(() => {
+                .catch(error => {
+                    console.error('Failed to load categories:', error);
                     categorySelect.innerHTML = '<option value="">Failed to load categories</option>';
                 });
 
@@ -8681,11 +8692,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 this.loadCategories().then(() => this.loadBrands());
             },
 
-            ajaxUrl: 'dashboard.php?ajax=1',
+            ajaxUrl: STAFF_DASHBOARD_AJAX_URL,
 
             async post(formData) {
                 formData.append('ajax', '1');
-                const res = await fetch('dashboard.php', { method: 'POST', body: formData });
+                const res = await fetch(STAFF_DASHBOARD_URL, { method: 'POST', body: formData });
                 return res.json();
             },
 
@@ -9048,11 +9059,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 this.loadCategories();
             },
 
-            ajaxUrl: 'dashboard.php?ajax=1',
+            ajaxUrl: STAFF_DASHBOARD_AJAX_URL,
 
             async post(formData) {
                 formData.append('ajax', '1');
-                const res = await fetch('dashboard.php', { method: 'POST', body: formData });
+                const res = await fetch(STAFF_DASHBOARD_URL, { method: 'POST', body: formData });
                 return res.json();
             },
 
