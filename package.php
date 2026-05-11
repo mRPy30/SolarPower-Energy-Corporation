@@ -264,19 +264,21 @@ $conn->close();
         .product-image {
             position: relative; 
             width: 100%; 
-            height: 310px; 
-            background: #fafafa; 
+            height: 260px; 
+            background: #ffffff; 
             display: flex; 
             align-items: center; 
-            justify-content: center; 
-            padding: 30px; 
+            justify-content: center;
+            overflow: hidden;
+            border-bottom: 1px solid #f0f0f0;
         }
         
         .product-image img {
             width: 100%;
             height: 100%;
-            object-fit: cover;
-            transition: transform 0.3s ease;
+            object-fit: contain;
+            padding: 6px;
+            transition: transform 0.35s ease;
         }
         
         .product-card:hover .product-image img {

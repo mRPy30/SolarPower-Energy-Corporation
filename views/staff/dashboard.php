@@ -10,6 +10,363 @@ if (!isset($_SESSION['user_id']) || empty($_SESSION['user_id'])) {
 // Database connection details
 include "../../config/dbconn.php";
 
+// Handle AJAX requests early to avoid running dashboard queries
+if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
+    header('Content-Type: application/json');
+
+    if (!$conn) {
+        echo json_encode(['success' => false, 'message' => 'Database connection failed']);
+        exit;
+    }
+
+    $action = $_GET['action'] ?? ($_POST['action'] ?? 'fetch');
+
+    try {
+        switch ($action) {
+            case 'fetch':
+                $query = "SELECT * FROM supplier ORDER BY registrationDate DESC";
+                $result = $conn->query($query);
+                $suppliers = [];
+                if ($result && $result->num_rows > 0) {
+                    while ($row = $result->fetch_assoc()) $suppliers[] = $row;
+                }
+                echo json_encode(['success' => true, 'data' => $suppliers, 'count' => count($suppliers)]);
+                break;
+            case 'create':
+                $data = json_decode(file_get_contents('php://input'), true);
+                if (empty($data['supplierName'])) {
+                    echo json_encode(['success' => false, 'message' => 'Supplier name is required']);
+                    break;
+                }
+                $supplierName = trim($data['supplierName']);
+                $contactPerson = trim($data['contactPerson'] ?? '');
+                $email = trim($data['email'] ?? '');
+                $phone = trim($data['phone'] ?? '');
+                $address = trim($data['address'] ?? '');
+                $city = trim($data['city'] ?? '');
+                $country = trim($data['country'] ?? '');
+                if (!empty($email) && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                    echo json_encode(['success' => false, 'message' => 'Invalid email format']);
+                    break;
+                }
+                $checkStmt = $conn->prepare("SELECT id FROM supplier WHERE supplierName = ?");
+                $checkStmt->bind_param("s", $supplierName);
+                $checkStmt->execute();
+                $checkResult = $checkStmt->get_result();
+                if ($checkResult->num_rows > 0) {
+                    echo json_encode(['success' => false, 'message' => 'Supplier with this name already exists']);
+                    $checkStmt->close();
+                    break;
+                }
+                $checkStmt->close();
+                $stmt = $conn->prepare("INSERT INTO supplier (supplierName, contactPerson, email, phone, address, city, country, registrationDate) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)");
+                $stmt->bind_param("sssssss", $supplierName, $contactPerson, $email, $phone, $address, $city, $country);
+                if ($stmt->execute()) echo json_encode(['success' => true, 'message' => 'Supplier created successfully', 'id' => $stmt->insert_id]);
+                else echo json_encode(['success' => false, 'message' => 'Failed to create supplier']);
+                $stmt->close();
+                break;
+            case 'fetch_orders':
+                $search = isset($_GET['search']) ? trim($_GET['search']) : '';
+                $status = isset($_GET['status']) ? trim($_GET['status']) : '';
+                $payment = isset($_GET['payment']) ? trim($_GET['payment']) : '';
+                $orderQuery = "SELECT id, order_reference, customer_name, customer_email, total_amount, created_at, payment_method, payment_status, order_status FROM orders WHERE order_status != 'archived'";
+                $params = [];
+                $types = '';
+                if ($search !== '') {
+                    $orderQuery .= " AND (customer_name LIKE ? OR order_reference LIKE ? OR customer_email LIKE ?)";
+                    $sp = '%' . $search . '%';
+                    $params[] = $sp; $params[] = $sp; $params[] = $sp;
+                    $types .= 'sss';
+                }
+                if ($status !== '') {
+                    $orderQuery .= " AND order_status = ?";
+                    $params[] = $status; $types .= 's';
+                }
+                if ($payment !== '') {
+                    $orderQuery .= " AND payment_method = ?";
+                    $params[] = $payment; $types .= 's';
+                }
+                $orderQuery .= " ORDER BY created_at DESC";
+                $stmt = $conn->prepare($orderQuery);
+                if (!empty($params)) $stmt->bind_param($types, ...$params);
+                $stmt->execute();
+                $result = $stmt->get_result();
+                $orders = [];
+                while ($row = $result->fetch_assoc()) $orders[] = $row;
+                $stmt->close();
+                echo json_encode(['success' => true, 'data' => $orders]);
+                break;
+            case 'update':
+                $data = json_decode(file_get_contents('php://input'), true);
+                if (empty($data['id']) || empty($data['supplierName'])) {
+                    echo json_encode(['success' => false, 'message' => 'Missing required fields']);
+                    break;
+                }
+                $id = intval($data['id']);
+                $supplierName = trim($data['supplierName']);
+                $contactPerson = trim($data['contactPerson'] ?? '');
+                $email = trim($data['email'] ?? '');
+                $phone = trim($data['phone'] ?? '');
+                $address = trim($data['address'] ?? '');
+                $city = trim($data['city'] ?? '');
+                $country = trim($data['country'] ?? '');
+                if (!empty($email) && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                    echo json_encode(['success' => false, 'message' => 'Invalid email format']);
+                    break;
+                }
+                $dupStmt = $conn->prepare("SELECT id FROM supplier WHERE supplierName = ? AND id != ?");
+                $dupStmt->bind_param("si", $supplierName, $id);
+                $dupStmt->execute();
+                $dupResult = $dupStmt->get_result();
+                if ($dupResult->num_rows > 0) {
+                    echo json_encode(['success' => false, 'message' => 'Another supplier with this name already exists']);
+                    $dupStmt->close();
+                    break;
+                }
+                $dupStmt->close();
+                $stmt = $conn->prepare("UPDATE supplier SET supplierName = ?, contactPerson = ?, email = ?, phone = ?, address = ?, city = ?, country = ? WHERE id = ?");
+                $stmt->bind_param("sssssssi", $supplierName, $contactPerson, $email, $phone, $address, $city, $country, $id);
+                if ($stmt->execute()) echo json_encode(['success' => true, 'message' => 'Supplier updated successfully']);
+                else echo json_encode(['success' => false, 'message' => 'Failed to update supplier']);
+                $stmt->close();
+                break;
+            case 'update_inquiry_status':
+                $data = json_decode(file_get_contents('php://input'), true);
+                $id = intval($data['id']);
+                $newStatus = $data['status'];
+                $stmt = $conn->prepare("UPDATE contact_messages SET status = ? WHERE id = ?");
+                $stmt->bind_param("si", $newStatus, $id);
+                if ($stmt->execute()) echo json_encode(['success' => true]);
+                else echo json_encode(['success' => false, 'message' => 'Update failed']);
+                $stmt->close();
+                break;
+            case 'fetch_clients':
+                $query = "SELECT customer_name, customer_email, customer_phone, customer_address, COUNT(id) as total_orders FROM orders GROUP BY customer_email ORDER BY customer_name ASC";
+                $result = $conn->query($query);
+                $clients = [];
+                if ($result) {
+                    while ($row = $result->fetch_assoc()) $clients[] = $row;
+                    $result->close();
+                }
+                echo json_encode(['success' => true, 'data' => $clients]);
+                break;
+            case 'delete':
+                $data = json_decode(file_get_contents('php://input'), true);
+                if (empty($data['id'])) {
+                    echo json_encode(['success' => false, 'message' => 'Supplier ID is required']);
+                    break;
+                }
+                $id = intval($data['id']);
+                $checkStmt = $conn->prepare("SELECT * FROM supplier WHERE id = ?");
+                $checkStmt->bind_param("i", $id);
+                $checkStmt->execute();
+                $checkResult = $checkStmt->get_result();
+                if ($checkResult->num_rows === 0) {
+                    echo json_encode(['success' => false, 'message' => 'Supplier not found']);
+                    $checkStmt->close();
+                    break;
+                }
+                $supplier = $checkResult->fetch_assoc();
+                $checkStmt->close();
+                $conn->query("CREATE TABLE IF NOT EXISTS `archived_suppliers` (`archive_id` int(11) NOT NULL AUTO_INCREMENT, `original_id` int(11) NOT NULL, `supplierName` varchar(255) NOT NULL, `contactPerson` varchar(255) DEFAULT NULL, `email` varchar(100) DEFAULT NULL, `phone` varchar(20) DEFAULT NULL, `address` text DEFAULT NULL, `city` varchar(100) DEFAULT NULL, `country` varchar(100) DEFAULT NULL, `registrationDate` timestamp NULL DEFAULT NULL, `deleted_by` int(11) DEFAULT NULL, `deleted_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (`archive_id`)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;");
+                $archStmt = $conn->prepare("INSERT INTO archived_suppliers (original_id, supplierName, contactPerson, email, phone, address, city, country, registrationDate, deleted_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                $deleted_by = $_SESSION['user_id'] ?? null;
+                $archStmt->bind_param("issssssssi", $supplier['id'], $supplier['supplierName'], $supplier['contactPerson'], $supplier['email'], $supplier['phone'], $supplier['address'], $supplier['city'], $supplier['country'], $supplier['registrationDate'], $deleted_by);
+                $archStmt->execute();
+                $archStmt->close();
+                $stmt = $conn->prepare("DELETE FROM supplier WHERE id = ?");
+                $stmt->bind_param("i", $id);
+                if ($stmt->execute()) echo json_encode(['success' => true, 'message' => 'Supplier archived and deleted successfully', 'deletedName' => $supplier['supplierName']]);
+                else echo json_encode(['success' => false, 'message' => 'Failed to delete supplier']);
+                $stmt->close();
+                break;
+            case 'update_profile':
+                $fName = $_POST['firstName'];
+                $lName = $_POST['lastName'];
+                $email = $_POST['email'];
+                $phone = $_POST['contact'];
+                $sId = $_SESSION['staff_id'];
+                $update = $conn->prepare("UPDATE staff SET firstName=?, lastName=?, email=?, contact_number=? WHERE id=?");
+                $update->bind_param("ssssi", $fName, $lName, $email, $phone, $sId);
+                if ($update->execute()) echo json_encode(['success' => true, 'message' => 'Profile updated successfully']);
+                else echo json_encode(['success' => false, 'message' => 'Update failed']);
+                break;
+            case 'change_password':
+                $current = $_POST['currentPassword'];
+                $new = $_POST['newPassword'];
+                $sId = $_SESSION['staff_id'];
+                if (strlen($new) < 8) {
+                    echo json_encode(['success' => false, 'message' => 'Password must be at least 8 characters long']);
+                    break;
+                }
+                $check = $conn->prepare("SELECT password FROM staff WHERE id=?");
+                $check->bind_param("i", $sId);
+                $check->execute();
+                $res = $check->get_result()->fetch_assoc();
+                if (!$res) {
+                    echo json_encode(['success' => false, 'message' => 'User not found']);
+                    break;
+                }
+                $stored_password = $res['password'];
+                $password_correct = (substr($stored_password, 0, 4) === '$2y$') ? password_verify($current, $stored_password) : ($current === $stored_password);
+                if ($password_correct) {
+                    $hashedPassword = password_hash($new, PASSWORD_DEFAULT);
+                    $upd = $conn->prepare("UPDATE staff SET password=? WHERE id=?");
+                    $upd->bind_param("si", $hashedPassword, $sId);
+                    if ($upd->execute() && $upd->affected_rows > 0) echo json_encode(['success' => true, 'message' => 'Password changed successfully']);
+                    else echo json_encode(['success' => false, 'message' => 'Failed to update password in database']);
+                } else echo json_encode(['success' => false, 'message' => 'Current password incorrect']);
+                break;
+            case 'fetch_brands':
+                $result = $conn->query("SELECT b.brand_id, b.brand_name, b.category_id, c.category_name FROM brands b LEFT JOIN categories c ON b.category_id = c.category_id ORDER BY c.category_name ASC, b.brand_name ASC");
+                $brands = [];
+                if ($result) while ($row = $result->fetch_assoc()) $brands[] = $row;
+                echo json_encode(['success' => true, 'data' => $brands]);
+                break;
+            case 'fetch_categories':
+                $result = $conn->query("SELECT category_id, category_name FROM categories ORDER BY category_name ASC");
+                $cats = [];
+                if ($result) while ($row = $result->fetch_assoc()) $cats[] = $row;
+                echo json_encode(['success' => true, 'data' => $cats]);
+                break;
+            case 'add_brand':
+                $brandName = trim($_POST['brand_name'] ?? '');
+                $categoryId = intval($_POST['category_id'] ?? 0);
+                if ($brandName === '' || $categoryId === 0) {
+                    echo json_encode(['success' => false, 'message' => 'Brand name and category are required.']);
+                    break;
+                }
+                $chk = $conn->prepare("SELECT brand_id FROM brands WHERE brand_name = ? AND category_id = ?");
+                $chk->bind_param("si", $brandName, $categoryId);
+                $chk->execute();
+                $chk->store_result();
+                if ($chk->num_rows > 0) {
+                    echo json_encode(['success' => false, 'message' => 'This brand already exists in that category.']);
+                    $chk->close(); break;
+                }
+                $chk->close();
+                $ins = $conn->prepare("INSERT INTO brands (brand_name, category_id) VALUES (?, ?)");
+                $ins->bind_param("si", $brandName, $categoryId);
+                if ($ins->execute()) echo json_encode(['success' => true, 'message' => 'Brand added successfully.', 'id' => $ins->insert_id]);
+                else echo json_encode(['success' => false, 'message' => 'Failed to add brand: ' . $conn->error]);
+                $ins->close();
+                break;
+            case 'edit_brand':
+                $brandId = intval($_POST['brand_id'] ?? 0);
+                $brandName = trim($_POST['brand_name'] ?? '');
+                $categoryId = intval($_POST['category_id'] ?? 0);
+                if ($brandId === 0 || $brandName === '' || $categoryId === 0) {
+                    echo json_encode(['success' => false, 'message' => 'Brand ID, name, and category are required.']);
+                    break;
+                }
+                $chk = $conn->prepare("SELECT brand_id FROM brands WHERE brand_name = ? AND category_id = ? AND brand_id != ?");
+                $chk->bind_param("sii", $brandName, $categoryId, $brandId);
+                $chk->execute();
+                $chk->store_result();
+                if ($chk->num_rows > 0) {
+                    echo json_encode(['success' => false, 'message' => 'Another brand with the same name exists in that category.']);
+                    $chk->close(); break;
+                }
+                $chk->close();
+                $upd = $conn->prepare("UPDATE brands SET brand_name = ?, category_id = ? WHERE brand_id = ?");
+                $upd->bind_param("sii", $brandName, $categoryId, $brandId);
+                if ($upd->execute()) echo json_encode(['success' => true, 'message' => 'Brand updated successfully.']);
+                else echo json_encode(['success' => false, 'message' => 'Failed to update brand: ' . $conn->error]);
+                $upd->close();
+                break;
+            case 'delete_brand':
+                $brandId = intval($_POST['brand_id'] ?? 0);
+                if ($brandId === 0) {
+                    echo json_encode(['success' => false, 'message' => 'Brand ID is required.']);
+                    break;
+                }
+                $del = $conn->prepare("DELETE FROM brands WHERE brand_id = ?");
+                $del->bind_param("i", $brandId);
+                if ($del->execute() && $del->affected_rows > 0) echo json_encode(['success' => true, 'message' => 'Brand deleted successfully.']);
+                else echo json_encode(['success' => false, 'message' => 'Brand not found or already deleted.']);
+                $del->close();
+                break;
+            case 'fetch_all_categories':
+                $result = $conn->query("SELECT category_id, category_name FROM categories ORDER BY category_name ASC");
+                $cats = [];
+                if ($result) while ($row = $result->fetch_assoc()) $cats[] = $row;
+                $brandCounts = [];
+                $bcRes = $conn->query("SELECT category_id, COUNT(*) AS cnt FROM brands GROUP BY category_id");
+                if ($bcRes) while ($r = $bcRes->fetch_assoc()) $brandCounts[$r['category_id']] = $r['cnt'];
+                foreach ($cats as &$c) $c['brand_count'] = $brandCounts[$c['category_id']] ?? 0;
+                unset($c);
+                echo json_encode(['success' => true, 'data' => $cats]);
+                break;
+            case 'add_category':
+                $catName = trim($_POST['category_name'] ?? '');
+                if ($catName === '') {
+                    echo json_encode(['success' => false, 'message' => 'Category name is required.']);
+                    break;
+                }
+                $chk = $conn->prepare("SELECT category_id FROM categories WHERE category_name = ?");
+                $chk->bind_param("s", $catName);
+                $chk->execute();
+                $chk->store_result();
+                if ($chk->num_rows > 0) {
+                    echo json_encode(['success' => false, 'message' => 'This category already exists.']);
+                    $chk->close(); break;
+                }
+                $chk->close();
+                $ins = $conn->prepare("INSERT INTO categories (category_name) VALUES (?)");
+                $ins->bind_param("s", $catName);
+                if ($ins->execute()) echo json_encode(['success' => true, 'message' => 'Category added successfully.', 'id' => $ins->insert_id]);
+                else echo json_encode(['success' => false, 'message' => 'Failed to add category: ' . $conn->error]);
+                $ins->close();
+                break;
+            case 'edit_category':
+                $catId = intval($_POST['category_id'] ?? 0);
+                $catName = trim($_POST['category_name'] ?? '');
+                if ($catId === 0 || $catName === '') {
+                    echo json_encode(['success' => false, 'message' => 'Category ID and name are required.']);
+                    break;
+                }
+                $chk = $conn->prepare("SELECT category_id FROM categories WHERE category_name = ? AND category_id != ?");
+                $chk->bind_param("si", $catName, $catId);
+                $chk->execute();
+                $chk->store_result();
+                if ($chk->num_rows > 0) {
+                    echo json_encode(['success' => false, 'message' => 'Another category with that name already exists.']);
+                    $chk->close(); break;
+                }
+                $chk->close();
+                $upd = $conn->prepare("UPDATE categories SET category_name = ? WHERE category_id = ?");
+                $upd->bind_param("si", $catName, $catId);
+                if ($upd->execute()) echo json_encode(['success' => true, 'message' => 'Category updated successfully.']);
+                else echo json_encode(['success' => false, 'message' => 'Failed to update category: ' . $conn->error]);
+                $upd->close();
+                break;
+            case 'delete_category':
+                $catId = intval($_POST['category_id'] ?? 0);
+                if ($catId === 0) {
+                    echo json_encode(['success' => false, 'message' => 'Category ID is required.']);
+                    break;
+                }
+                $chk = $conn->prepare("SELECT COUNT(*) AS cnt FROM brands WHERE category_id = ?");
+                $chk->bind_param("i", $catId);
+                $chk->execute();
+                $row = $chk->get_result()->fetch_assoc();
+                $chk->close();
+                if ($row['cnt'] > 0) {
+                    echo json_encode(['success' => false, 'message' => "Cannot delete: {$row['cnt']} brand(s) still use this category. Remove or reassign them first."]);
+                    break;
+                }
+                $del = $conn->prepare("DELETE FROM categories WHERE category_id = ?");
+                $del->bind_param("i", $catId);
+                if ($del->execute() && $del->affected_rows > 0) echo json_encode(['success' => true, 'message' => 'Category deleted successfully.']);
+                else echo json_encode(['success' => false, 'message' => 'Category not found or already deleted.']);
+                $del->close();
+                break;
+            default: echo json_encode(['success' => false, 'message' => 'Invalid action']);
+        }
+    } catch (Exception $e) { echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]); }
+    exit;
+}
+
 // Get user data from session
 $user_id = $_SESSION['user_id'];
 $firstName = $_SESSION['firstName'] ?? 'User';
@@ -17,15 +374,7 @@ $lastName = $_SESSION['lastName'] ?? '';
 $fullName = trim($firstName . ' ' . $lastName);
 $initials = strtoupper(substr($firstName, 0, 1) . substr($lastName, 0, 1));
 
-// Database Connection
-$conn = mysqli_connect($servername, $username, $password, $dbname);
-if ($conn->connect_error) {
-    die('Connection failed: ' . $conn->connect_error);
-}
 
-if (!$conn) {
-    die('Connection failed: ' . mysqli_connect_error());
-}
 
 function get_dashboard_analytics($conn)
 {
@@ -345,618 +694,30 @@ $all_products = get_all_products($conn);
 $all_suppliers = get_all_suppliers($conn);
 $product_count = count($all_products);
 
-// Close connection before HTML output starts
-$conn->close();
 
-$user_id = $_SESSION['user_id'];
-$firstName = $_SESSION['firstName'] ?? 'User';
-$lastName = $_SESSION['lastName'] ?? '';
-$fullName = trim($firstName . ' ' . $lastName);
-
-
-// Handle AJAX requests
-if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
-    header('Content-Type: application/json');
-
-
-    $conn = mysqli_connect($servername, $username, $password, $dbname);
-    if ($conn->connect_error) {
-        echo json_encode(['success' => false, 'message' => 'Connection failed: ' . $conn->connect_error]);
-        exit;
-    }
-
-    $action = $_GET['action'] ?? ($_POST['action'] ?? 'fetch');
-
-    try {
-
-        switch ($action) {
-            case 'fetch':
-                $query = "SELECT * FROM supplier ORDER BY registrationDate DESC";
-                $result = $conn->query($query);
-                $suppliers = [];
-
-                if ($result && $result->num_rows > 0) {
-                    while ($row = $result->fetch_assoc()) {
-                        $suppliers[] = $row;
-                    }
-                }
-
-                echo json_encode([
-                    'success' => true,
-                    'data' => $suppliers,
-                    'count' => count($suppliers)
-                ]);
-
-                break;
-
-            case 'create':
-                $data = json_decode(file_get_contents('php://input'), true);
-                if (empty($data['supplierName'])) {
-                    echo json_encode(['success' => false, 'message' => 'Supplier name is required']);
-                    break;
-                }
-                $supplierName = trim($data['supplierName']);
-                $contactPerson = trim($data['contactPerson'] ?? '');
-                $email = trim($data['email'] ?? '');
-                $phone = trim($data['phone'] ?? '');
-                $address = trim($data['address'] ?? '');
-                $city = trim($data['city'] ?? '');
-                $country = trim($data['country'] ?? '');
-
-                if (!empty($email) && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
-                    echo json_encode(['success' => false, 'message' => 'Invalid email format']);
-                    break;
-                }
-
-                $checkStmt = $conn->prepare("SELECT id FROM supplier WHERE supplierName = ?");
-                $checkStmt->bind_param("s", $supplierName);
-                $checkStmt->execute();
-                $checkResult = $checkStmt->get_result();
-
-                if ($checkResult->num_rows > 0) {
-                    echo json_encode(['success' => false, 'message' => 'Supplier with this name already exists']);
-                    $checkStmt->close();
-                    break;
-                }
-
-                $checkStmt->close();
-                $stmt = $conn->prepare("INSERT INTO supplier (supplierName, contactPerson, email, phone, address, city, country, registrationDate) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)");
-                $stmt->bind_param("sssssss", $supplierName, $contactPerson, $email, $phone, $address, $city, $country);
-                if ($stmt->execute()) {
-                    echo json_encode([
-                        'success' => true,
-                        'message' => 'Supplier created successfully',
-                        'id' => $stmt->insert_id
-                    ]);
-                } else {
-                    echo json_encode(['success' => false, 'message' => 'Failed to create supplier']);
-                }
-                $stmt->close();
-                break;
-
-            case 'fetch_orders':
-                $search = isset($_GET['search']) ? trim($_GET['search']) : '';
-                $status = isset($_GET['status']) ? trim($_GET['status']) : '';
-                $payment = isset($_GET['payment']) ? trim($_GET['payment']) : '';
-
-                $orderQuery = "SELECT id, order_reference, customer_name, customer_email,
-                               total_amount, created_at, payment_method, payment_status, order_status
-                               FROM orders WHERE order_status != 'archived'";
-                $params = [];
-                $types = '';
-
-                if ($search !== '') {
-                    $orderQuery .= " AND (customer_name LIKE ? OR order_reference LIKE ? OR customer_email LIKE ?)";
-                    $sp = '%' . $search . '%';
-                    $params[] = $sp;
-                    $params[] = $sp;
-                    $params[] = $sp;
-                    $types .= 'sss';
-                }
-                if ($status !== '') {
-                    $orderQuery .= " AND order_status = ?";
-                    $params[] = $status;
-                    $types .= 's';
-                }
-                if ($payment !== '') {
-                    $orderQuery .= " AND payment_method = ?";
-                    $params[] = $payment;
-                    $types .= 's';
-                }
-                $orderQuery .= " ORDER BY created_at DESC";
-
-                $stmt = $conn->prepare($orderQuery);
-                if (!empty($params)) {
-                    $stmt->bind_param($types, ...$params);
-                }
-                $stmt->execute();
-                $result = $stmt->get_result();
-                $orders = [];
-                while ($row = $result->fetch_assoc()) {
-                    $orders[] = $row;
-                }
-                $stmt->close();
-
-                echo json_encode(['success' => true, 'data' => $orders]);
-                break;
-
-            case 'update':
-                $data = json_decode(file_get_contents('php://input'), true);
-                if (empty($data['id']) || empty($data['supplierName'])) {
-                    echo json_encode(['success' => false, 'message' => 'Missing required fields']);
-                    break;
-                }
-
-                $id = intval($data['id']);
-                $supplierName = trim($data['supplierName']);
-                $contactPerson = trim($data['contactPerson'] ?? '');
-                $email = trim($data['email'] ?? '');
-                $phone = trim($data['phone'] ?? '');
-                $address = trim($data['address'] ?? '');
-                $city = trim($data['city'] ?? '');
-                $country = trim($data['country'] ?? '');
-
-                if (!empty($email) && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
-                    echo json_encode(['success' => false, 'message' => 'Invalid email format']);
-                    break;
-                }
-
-                $dupStmt = $conn->prepare("SELECT id FROM supplier WHERE supplierName = ? AND id != ?");
-                $dupStmt->bind_param("si", $supplierName, $id);
-                $dupStmt->execute();
-                $dupResult = $dupStmt->get_result();
-
-                if ($dupResult->num_rows > 0) {
-                    echo json_encode(['success' => false, 'message' => 'Another supplier with this name already exists']);
-                    $dupStmt->close();
-                    break;
-                }
-
-                $dupStmt->close();
-                $stmt = $conn->prepare("UPDATE supplier SET supplierName = ?, contactPerson = ?, email = ?, phone = ?, address = ?, city = ?, country = ? WHERE id = ?");
-                $stmt->bind_param("sssssssi", $supplierName, $contactPerson, $email, $phone, $address, $city, $country, $id);
-
-                if ($stmt->execute()) {
-                    echo json_encode(['success' => true, 'message' => 'Supplier updated successfully']);
-                } else {
-                    echo json_encode(['success' => false, 'message' => 'Failed to update supplier']);
-                }
-                $stmt->close();
-                break;
-
-            case 'update_inquiry_status':
-                $data = json_decode(file_get_contents('php://input'), true);
-                $id = intval($data['id']);
-                $newStatus = $data['status']; // e.g., 'read'
-
-                $stmt = $conn->prepare("UPDATE contact_messages SET status = ? WHERE id = ?");
-                $stmt->bind_param("si", $newStatus, $id);
-
-                if ($stmt->execute()) {
-                    echo json_encode(['success' => true]);
-                } else {
-                    echo json_encode(['success' => false, 'message' => 'Update failed']);
-                }
-                $stmt->close();
-                break;
-
-            case 'fetch_clients':
-                // Querying unique clients from the orders table based on email
-                $query = "SELECT 
-                            customer_name, 
-                            customer_email, 
-                            customer_phone, 
-                            customer_address, 
-                            COUNT(id) as total_orders 
-                          FROM orders 
-                          GROUP BY customer_email 
-                          ORDER BY customer_name ASC";
-
-                $result = $conn->query($query);
-                $clients = [];
-
-                if ($result) {
-                    while ($row = $result->fetch_assoc()) {
-                        $clients[] = $row;
-                    }
-                    $result->close();
-                }
-
-                echo json_encode([
-                    'success' => true,
-                    'data' => $clients
-                ]);
-                break;
-
-            case 'delete':
-                $data = json_decode(file_get_contents('php://input'), true);
-
-                if (empty($data['id'])) {
-                    echo json_encode(['success' => false, 'message' => 'Supplier ID is required']);
-                    break;
-                }
-
-                $id = intval($data['id']);
-
-                // Fetch full supplier row for archiving
-                $checkStmt = $conn->prepare("SELECT * FROM supplier WHERE id = ?");
-                $checkStmt->bind_param("i", $id);
-                $checkStmt->execute();
-                $checkResult = $checkStmt->get_result();
-
-                if ($checkResult->num_rows === 0) {
-                    echo json_encode(['success' => false, 'message' => 'Supplier not found']);
-                    $checkStmt->close();
-                    break;
-                }
-
-                $supplier = $checkResult->fetch_assoc();
-                $checkStmt->close();
-
-                // Create archived_suppliers table if it doesn't exist
-                $conn->query("CREATE TABLE IF NOT EXISTS `archived_suppliers` (
-                    `archive_id` int(11) NOT NULL AUTO_INCREMENT,
-                    `original_id` int(11) NOT NULL,
-                    `supplierName` varchar(255) NOT NULL,
-                    `contactPerson` varchar(255) DEFAULT NULL,
-                    `email` varchar(100) DEFAULT NULL,
-                    `phone` varchar(20) DEFAULT NULL,
-                    `address` text DEFAULT NULL,
-                    `city` varchar(100) DEFAULT NULL,
-                    `country` varchar(100) DEFAULT NULL,
-                    `registrationDate` timestamp NULL DEFAULT NULL,
-                    `deleted_by` int(11) DEFAULT NULL,
-                    `deleted_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                    PRIMARY KEY (`archive_id`)
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;");
-
-                // Copy supplier to archived_suppliers
-                $archStmt = $conn->prepare("INSERT INTO archived_suppliers (original_id, supplierName, contactPerson, email, phone, address, city, country, registrationDate, deleted_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-                $deleted_by = $_SESSION['user_id'] ?? null;
-                $archStmt->bind_param(
-                    "issssssssi",
-                    $supplier['id'],
-                    $supplier['supplierName'],
-                    $supplier['contactPerson'],
-                    $supplier['email'],
-                    $supplier['phone'],
-                    $supplier['address'],
-                    $supplier['city'],
-                    $supplier['country'],
-                    $supplier['registrationDate'],
-                    $deleted_by
-                );
-                $archStmt->execute();
-                $archStmt->close();
-
-                // Now delete from supplier table
-                $stmt = $conn->prepare("DELETE FROM supplier WHERE id = ?");
-                $stmt->bind_param("i", $id);
-
-                if ($stmt->execute()) {
-                    echo json_encode([
-                        'success' => true,
-                        'message' => 'Supplier archived and deleted successfully',
-                        'deletedName' => $supplier['supplierName']
-                    ]);
-                } else {
-                    echo json_encode(['success' => false, 'message' => 'Failed to delete supplier']);
-                }
-                $stmt->close();
-                break;
-            case 'update_profile':
-                $fName = $_POST['firstName'];
-                $lName = $_POST['lastName'];
-                $email = $_POST['email'];
-                $phone = $_POST['contact'];
-                $sId = $_SESSION['staff_id'];
-
-                $update = $conn->prepare("UPDATE staff SET firstName=?, lastName=?, email=?, contact_number=? WHERE id=?");
-                $update->bind_param("ssssi", $fName, $lName, $email, $phone, $sId);
-
-                if ($update->execute()) {
-                    echo json_encode(['success' => true, 'message' => 'Profile updated successfully']);
-                } else {
-                    echo json_encode(['success' => false, 'message' => 'Update failed']);
-                }
-                break;
-
-            case 'change_password':
-                $current = $_POST['currentPassword'];
-                $new = $_POST['newPassword'];
-                $sId = $_SESSION['staff_id'];
-
-                // Validate new password
-                if (strlen($new) < 8) {
-                    echo json_encode(['success' => false, 'message' => 'Password must be at least 8 characters long']);
-                    break;
-                }
-
-                // First verify current password
-                $check = $conn->prepare("SELECT password FROM staff WHERE id=?");
-                $check->bind_param("i", $sId);
-                $check->execute();
-                $res = $check->get_result()->fetch_assoc();
-
-                if (!$res) {
-                    echo json_encode(['success' => false, 'message' => 'User not found']);
-                    break;
-                }
-
-                $stored_password = $res['password'];
-                $password_correct = false;
-
-                // Check if stored password is hashed or plain text
-                if (substr($stored_password, 0, 4) === '$2y$') {
-                    // Hashed password - use password_verify
-                    $password_correct = password_verify($current, $stored_password);
-                } else {
-                    // Plain text password (old data) - compare directly
-                    $password_correct = ($current === $stored_password);
-                }
-
-                if ($password_correct) {
-                    // Hash the new password
-                    $hashedPassword = password_hash($new, PASSWORD_DEFAULT);
-
-                    // Verify hash was created successfully
-                    if (strlen($hashedPassword) < 60) {
-                        echo json_encode(['success' => false, 'message' => 'Error creating password hash']);
-                        break;
-                    }
-
-                    // Update with hashed password
-                    $upd = $conn->prepare("UPDATE staff SET password=? WHERE id=?");
-                    $upd->bind_param("si", $hashedPassword, $sId);
-
-                    if ($upd->execute() && $upd->affected_rows > 0) {
-                        echo json_encode([
-                            'success' => true,
-                            'message' => 'Password changed successfully'
-                        ]);
-                    } else {
-                        echo json_encode([
-                            'success' => false,
-                            'message' => 'Failed to update password in database'
-                        ]);
-                    }
-                } else {
-                    echo json_encode(['success' => false, 'message' => 'Current password incorrect']);
-                }
-                break;
-            // ── BRANDS: fetch all brands (joined with categories) ─────────────────
-            case 'fetch_brands':
-                $result = $conn->query("
-                    SELECT b.brand_id, b.brand_name, b.category_id,
-                           c.category_name
-                    FROM brands b
-                    LEFT JOIN categories c ON b.category_id = c.category_id
-                    ORDER BY c.category_name ASC, b.brand_name ASC
-                ");
-                $brands = [];
-                if ($result) {
-                    while ($row = $result->fetch_assoc()) $brands[] = $row;
-                }
-                echo json_encode(['success' => true, 'data' => $brands]);
-                break;
-
-            // ── BRANDS: fetch all categories ──────────────────────────────────────
-            case 'fetch_categories':
-                $result = $conn->query("SELECT category_id, category_name FROM categories ORDER BY category_name ASC");
-                $cats = [];
-                if ($result) {
-                    while ($row = $result->fetch_assoc()) $cats[] = $row;
-                }
-                echo json_encode(['success' => true, 'data' => $cats]);
-                break;
-
-            // ── BRANDS: add a new brand ────────────────────────────────────────────
-            case 'add_brand':
-                $brandName  = trim($_POST['brand_name']  ?? '');
-                $categoryId = intval($_POST['category_id'] ?? 0);
-                if ($brandName === '' || $categoryId === 0) {
-                    echo json_encode(['success' => false, 'message' => 'Brand name and category are required.']);
-                    break;
-                }
-                // Check duplicate in same category
-                $chk = $conn->prepare("SELECT brand_id FROM brands WHERE brand_name = ? AND category_id = ?");
-                $chk->bind_param("si", $brandName, $categoryId);
-                $chk->execute();
-                $chk->store_result();
-                if ($chk->num_rows > 0) {
-                    echo json_encode(['success' => false, 'message' => 'This brand already exists in that category.']);
-                    $chk->close(); break;
-                }
-                $chk->close();
-                $ins = $conn->prepare("INSERT INTO brands (brand_name, category_id) VALUES (?, ?)");
-                $ins->bind_param("si", $brandName, $categoryId);
-                if ($ins->execute()) {
-                    echo json_encode(['success' => true, 'message' => 'Brand added successfully.', 'id' => $ins->insert_id]);
-                } else {
-                    echo json_encode(['success' => false, 'message' => 'Failed to add brand: ' . $conn->error]);
-                }
-                $ins->close();
-                break;
-
-            // ── BRANDS: update a brand ────────────────────────────────────────────
-            case 'edit_brand':
-                $brandId    = intval($_POST['brand_id']    ?? 0);
-                $brandName  = trim($_POST['brand_name']    ?? '');
-                $categoryId = intval($_POST['category_id'] ?? 0);
-                if ($brandId === 0 || $brandName === '' || $categoryId === 0) {
-                    echo json_encode(['success' => false, 'message' => 'Brand ID, name, and category are required.']);
-                    break;
-                }
-                // Duplicate check (exclude self)
-                $chk = $conn->prepare("SELECT brand_id FROM brands WHERE brand_name = ? AND category_id = ? AND brand_id != ?");
-                $chk->bind_param("sii", $brandName, $categoryId, $brandId);
-                $chk->execute();
-                $chk->store_result();
-                if ($chk->num_rows > 0) {
-                    echo json_encode(['success' => false, 'message' => 'Another brand with the same name exists in that category.']);
-                    $chk->close(); break;
-                }
-                $chk->close();
-                $upd = $conn->prepare("UPDATE brands SET brand_name = ?, category_id = ? WHERE brand_id = ?");
-                $upd->bind_param("sii", $brandName, $categoryId, $brandId);
-                if ($upd->execute()) {
-                    echo json_encode(['success' => true, 'message' => 'Brand updated successfully.']);
-                } else {
-                    echo json_encode(['success' => false, 'message' => 'Failed to update brand: ' . $conn->error]);
-                }
-                $upd->close();
-                break;
-
-            // ── BRANDS: delete a brand ────────────────────────────────────────────
-            case 'delete_brand':
-                $brandId = intval($_POST['brand_id'] ?? 0);
-                if ($brandId === 0) {
-                    echo json_encode(['success' => false, 'message' => 'Brand ID is required.']);
-                    break;
-                }
-                $del = $conn->prepare("DELETE FROM brands WHERE brand_id = ?");
-                $del->bind_param("i", $brandId);
-                if ($del->execute() && $del->affected_rows > 0) {
-                    echo json_encode(['success' => true, 'message' => 'Brand deleted successfully.']);
-                } else {
-                    echo json_encode(['success' => false, 'message' => 'Brand not found or already deleted.']);
-                }
-                $del->close();
-                break;
-
-            // ── CATEGORIES: fetch all ────────────────────────────────────────────
-            case 'fetch_all_categories':
-                $result = $conn->query("SELECT category_id, category_name FROM categories ORDER BY category_name ASC");
-                $cats = [];
-                if ($result) {
-                    while ($row = $result->fetch_assoc()) $cats[] = $row;
-                }
-                // also count brands per category
-                $brandCounts = [];
-                $bcRes = $conn->query("SELECT category_id, COUNT(*) AS cnt FROM brands GROUP BY category_id");
-                if ($bcRes) {
-                    while ($r = $bcRes->fetch_assoc()) $brandCounts[$r['category_id']] = $r['cnt'];
-                }
-                foreach ($cats as &$c) {
-                    $c['brand_count'] = $brandCounts[$c['category_id']] ?? 0;
-                }
-                unset($c);
-                echo json_encode(['success' => true, 'data' => $cats]);
-                break;
-
-            // ── CATEGORIES: add ──────────────────────────────────────────────────
-            case 'add_category':
-                $catName = trim($_POST['category_name'] ?? '');
-                if ($catName === '') {
-                    echo json_encode(['success' => false, 'message' => 'Category name is required.']);
-                    break;
-                }
-                $chk = $conn->prepare("SELECT category_id FROM categories WHERE category_name = ?");
-                $chk->bind_param("s", $catName);
-                $chk->execute();
-                $chk->store_result();
-                if ($chk->num_rows > 0) {
-                    echo json_encode(['success' => false, 'message' => 'This category already exists.']);
-                    $chk->close(); break;
-                }
-                $chk->close();
-                $ins = $conn->prepare("INSERT INTO categories (category_name) VALUES (?)");
-                $ins->bind_param("s", $catName);
-                if ($ins->execute()) {
-                    echo json_encode(['success' => true, 'message' => 'Category added successfully.', 'id' => $ins->insert_id]);
-                } else {
-                    echo json_encode(['success' => false, 'message' => 'Failed to add category: ' . $conn->error]);
-                }
-                $ins->close();
-                break;
-
-            // ── CATEGORIES: edit ─────────────────────────────────────────────────
-            case 'edit_category':
-                $catId   = intval($_POST['category_id'] ?? 0);
-                $catName = trim($_POST['category_name'] ?? '');
-                if ($catId === 0 || $catName === '') {
-                    echo json_encode(['success' => false, 'message' => 'Category ID and name are required.']);
-                    break;
-                }
-                $chk = $conn->prepare("SELECT category_id FROM categories WHERE category_name = ? AND category_id != ?");
-                $chk->bind_param("si", $catName, $catId);
-                $chk->execute();
-                $chk->store_result();
-                if ($chk->num_rows > 0) {
-                    echo json_encode(['success' => false, 'message' => 'Another category with that name already exists.']);
-                    $chk->close(); break;
-                }
-                $chk->close();
-                $upd = $conn->prepare("UPDATE categories SET category_name = ? WHERE category_id = ?");
-                $upd->bind_param("si", $catName, $catId);
-                if ($upd->execute()) {
-                    echo json_encode(['success' => true, 'message' => 'Category updated successfully.']);
-                } else {
-                    echo json_encode(['success' => false, 'message' => 'Failed to update category: ' . $conn->error]);
-                }
-                $upd->close();
-                break;
-
-            // ── CATEGORIES: delete ───────────────────────────────────────────────
-            case 'delete_category':
-                $catId = intval($_POST['category_id'] ?? 0);
-                if ($catId === 0) {
-                    echo json_encode(['success' => false, 'message' => 'Category ID is required.']);
-                    break;
-                }
-                // Prevent deletion if brands are still linked
-                $chk = $conn->prepare("SELECT COUNT(*) AS cnt FROM brands WHERE category_id = ?");
-                $chk->bind_param("i", $catId);
-                $chk->execute();
-                $row = $chk->get_result()->fetch_assoc();
-                $chk->close();
-                if ($row['cnt'] > 0) {
-                    echo json_encode(['success' => false, 'message' => "Cannot delete: {$row['cnt']} brand(s) still use this category. Remove or reassign them first."]);
-                    break;
-                }
-                $del = $conn->prepare("DELETE FROM categories WHERE category_id = ?");
-                $del->bind_param("i", $catId);
-                if ($del->execute() && $del->affected_rows > 0) {
-                    echo json_encode(['success' => true, 'message' => 'Category deleted successfully.']);
-                } else {
-                    echo json_encode(['success' => false, 'message' => 'Category not found or already deleted.']);
-                }
-                $del->close();
-                break;
-
-            default:
-                echo json_encode(['success' => false, 'message' => 'Invalid action']);
-        }
-    } catch (Exception $e) {
-        echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
-    }
-    $conn->close();
-    exit;
-}
 
 // ── PRG: Handle add_product POST before any HTML output ──
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['action'] === 'add_product') {
-    $conn_post = mysqli_connect($servername, $username, $password, $dbname);
-    if ($conn_post->connect_error) {
-        $_SESSION['add_product_msg'] = 'Connection failed: ' . $conn_post->connect_error;
+    if (!$conn) {
+        $_SESSION['add_product_msg'] = 'Connection failed: Database connection not available';
         $_SESSION['add_product_msg_type'] = 'error';
     } else {
-        $category = $conn_post->real_escape_string($_POST['category'] ?? '');
-        $brand = $conn_post->real_escape_string($_POST['brand'] ?? '');
-        $productName = $conn_post->real_escape_string($_POST['product-name'] ?? '');
-        $warranty = $conn_post->real_escape_string($_POST['warranty'] ?? '');
+        $category = $conn->real_escape_string($_POST['category'] ?? '');
+        $brand = $conn->real_escape_string($_POST['brand'] ?? '');
+        $productName = $conn->real_escape_string($_POST['product-name'] ?? '');
+        $warranty = $conn->real_escape_string($_POST['warranty'] ?? '');
         $price = (float) ($_POST['price'] ?? 0);
         $stockQuantity = (int) ($_POST['stock-quantity'] ?? 0);
-        $description = $conn_post->real_escape_string($_POST['description'] ?? '');
+        $description = $conn->real_escape_string($_POST['description'] ?? '');
         $imagePath = 'path/to/uploaded/image.jpg';
 
         if (empty($category) || empty($brand) || empty($productName) || $price <= 0 || $stockQuantity < 0) {
             $_SESSION['add_product_msg'] = 'Please fill all required fields correctly.';
             $_SESSION['add_product_msg_type'] = 'error';
         } else {
-            $stmt = $conn_post->prepare("INSERT INTO product (displayName, brandName, price, category, stockQuantity, warranty, description, imagePath, postedByStaffId) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt = $conn->prepare("INSERT INTO product (displayName, brandName, price, category, stockQuantity, warranty, description, imagePath, postedByStaffId) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
             if (!$stmt) {
-                $_SESSION['add_product_msg'] = 'Database error: ' . $conn_post->error;
+                $_SESSION['add_product_msg'] = 'Database error: ' . $conn->error;
                 $_SESSION['add_product_msg_type'] = 'error';
             } else {
                 $stmt->bind_param("ssdsisssi", $productName, $brand, $price, $category, $stockQuantity, $warranty, $description, $imagePath, $user_id);
@@ -991,7 +752,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                             if (move_uploaded_file($tmpName, $targetPath)) {
                                 $relativePath = "uploads/products/$product_id/$newName";
 
-                                $imgStmt = $conn_post->prepare("
+                                $imgStmt = $conn->prepare("
                                     INSERT INTO product_images (product_id, image_path)
                                     VALUES (?, ?)
                                 ");
@@ -1013,10 +774,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 $stmt->close();
             }
         }
-        $conn_post->close();
+        $conn->close();
     }
     // PRG redirect — converts POST to GET, prevents duplicate on reload
-    header("Location: dashboard(2).php");
+    header("Location: dashboard.php");
     exit;
 }
 ?>
