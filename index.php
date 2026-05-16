@@ -50,6 +50,7 @@ $conn->close();
 
     <!-- Primary Meta Tags -->
     <title>SolarPower Energy - Smart Energy for Smarter Homes</title>
+    <link rel="icon" type="image/png" href="assets/img/icon.png">
 
     <meta name="description"
         content="Switch to SolarPower Energy Corporation, the leading solar panel provider in the Philippines. DOE-accredited solar installations for residential and commercial properties. Save up to 80% on your electricity bills today!">
@@ -122,6 +123,28 @@ $conn->close();
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            corePlugins: {
+                preflight: false,
+            },
+            theme: {
+                extend: {
+                    colors: {
+                        amber: {
+                            400: '#fbbf24',
+                            500: '#f59e0b',
+                        },
+                        slate: {
+                            800: '#1e293b',
+                            900: '#0f172a',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
     <link rel="stylesheet" href="assets/style.css">
     <style>
         /* ── Contact Us Section (minimal redesign) ── */
@@ -452,7 +475,7 @@ $conn->close();
             <div class="hero-content">
                 <!-- LEFT: HERO TEXT -->
                 <div class="hero-text" data-aos="fade-right">
-                    <h1>Solar Panel Installation Philippines - <br>Smart Energy for Smarter Homes</h1>
+                    <h1>Smart Energy for Smarter Homes</h1>
                     <p class="hero-tagline">One Stop Shop for Solar Power Mega Company</p>
                     <p>Invest in solar today - enjoy decades of energy independence and savings.</p>
                     <div class="hero-cta">
@@ -467,51 +490,286 @@ $conn->close();
         </section>
     </div>
 
-    <!-- Savings Calculator -->
-    <section class="savings-calculator">
-        <div class="container">
-            <div class="row justify-content-center">
-                <div class="col-lg-10">
-                    <div class="calculator-box collapsed" id="calculatorBox" data-aos="fade-up">
-                        <div class="savings-icon">
-                            <i class="fa-regular fa-lightbulb"></i>
+    <!-- Modernized Solar Savings Calculator Section -->
+    <section class="py-16 bg-amber-400 relative overflow-hidden" id="solarCalculator">
+        <!-- Background Pattern -->
+        <div class="absolute inset-0 opacity-10 pointer-events-none" style="background-image: radial-gradient(#000 1px, transparent 1px); background-size: 20px 20px;"></div>
+        
+        <div class="container relative z-10 mx-auto px-4 max-w-6xl">
+            <!-- Header -->
+            <div class="text-center mb-10" data-aos="fade-up">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-white text-amber-500 mb-4 shadow-lg">
+                    <i class="fa-regular fa-lightbulb text-3xl"></i>
+                </div>
+                <h2 class="text-3xl md:text-4xl font-bold text-slate-900 mb-2">Calculate Your Solar Savings</h2>
+                <p class="text-slate-800 font-medium max-w-xl mx-auto">See how much you can save by switching to solar energy. Drag the slider to match your monthly electric bill.</p>
+            </div>
+
+            <!-- Main Card -->
+            <div class="bg-white rounded-3xl shadow-2xl p-6 md:p-10 mb-12 border border-white/50 backdrop-blur-sm" data-aos="fade-up" data-aos-delay="100">
+                
+                <!-- Input Section -->
+                <div class="max-w-xl mx-auto mb-10 text-center">
+                    <label for="twBillAmount" class="block text-slate-700 font-bold mb-3">Average Monthly Electric Bill</label>
+                    <div class="relative group">
+                        <!-- Pinned Peso Sign Container -->
+                        <div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
+                            <span class="text-slate-500 font-bold text-xl">₱</span>
                         </div>
-                        <h2>Let's check how much you can save!</h2>
-                        <p>What's your monthly electric bill?</p>
-                        <div class="row justify-content-center mb-4">
-                            <div class="col-lg-4 col-md-6">
-                                <div class="input-group-custom">
-                                    <input type="number" id="billAmount" placeholder="0" min="0" step="0.01"
-                                        onfocus="expandCalculator()" onblur="shrinkCalculatorIfEmpty()">
-                                    <p>Monthly Electric Bill (₱)</p>
-                                </div>
-                            </div>
+                        <input type="text" inputmode="numeric" id="twBillAmount" value="5,000"
+                            class="block w-full pl-10 pr-4 py-4 text-2xl md:text-3xl font-bold text-slate-800 bg-slate-50 border-2 border-slate-200 rounded-2xl focus:outline-none transition-all duration-300 focus-within:ring-4 focus-within:ring-amber-500/20 focus-within:border-amber-500 text-center"
+                            placeholder="0" oninput="let raw = this.value.replace(/[^0-9]/g, ''); this.value = raw ? parseInt(raw).toLocaleString('en-US') : ''; document.getElementById('twBillSlider').value = raw; updateTwCalculator(raw)">
+                    </div>
+
+                    <!-- Range Slider -->
+                    <div class="mt-6 px-2">
+                        <input type="range" id="twBillSlider" min="2000" max="50000" step="500" value="5000"
+                            class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-amber-500 hover:accent-amber-600 transition-all duration-300"
+                            oninput="document.getElementById('twBillAmount').value = parseInt(this.value).toLocaleString('en-US'); updateTwCalculator(this.value)">
+                        <div class="flex justify-between text-xs font-semibold text-slate-400 mt-2 px-1 uppercase tracking-wider">
+                            <span>₱2,000</span>
+                            <span>₱25,000</span>
+                            <span>₱50,000+</span>
                         </div>
-                        <button class="calculate-btn" onclick="calculateSavings()">Calculate</button>
-                        <div id="errorMessage" class="error-message"></div>
-                        <div id="results" class="results">
-                            <div class="result-card">
-                                <div class="result-value" id="kwpValue">0.0</div>
-                                <div class="result-label">Required System Size (kWp)</div>
-                            </div>
-                            <div class="result-card">
-                                <div class="result-value" id="panelsValue">0</div>
-                                <div class="result-label">Solar Panels</div>
-                            </div>
-                            <div class="result-card">
-                                <div class="result-value" id="monthlySavings">0</div>
-                                <div class="result-label">Monthly Savings (₱)</div>
-                            </div>
-                            <div class="result-card">
-                                <div class="result-value" id="yearlySavings">0</div>
-                                <div class="result-label">Yearly Savings (₱)</div>
-                            </div>
+                    </div>
+                </div>
+
+                <!-- Results Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <!-- System Size -->
+                    <div class="bg-slate-50 rounded-2xl p-6 text-center border border-slate-100 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-200 group relative overflow-hidden">
+                        <div class="w-28 h-28 mx-auto mb-4 bg-white rounded-2xl shadow-sm flex items-center justify-center p-2 group-hover:scale-110 transition-transform duration-300 overflow-hidden">
+                            <img src="assets/img/system-size.png" alt="System Size" class="w-full h-full object-contain">
                         </div>
+                        <div class="text-3xl font-bold text-slate-800 mb-1" id="twKwValue">2.4</div>
+                        <div class="text-xs font-bold text-slate-500 uppercase tracking-wide">Required System (kWp)</div>
+                    </div>
+
+                    <!-- Solar Panels -->
+                    <div class="bg-slate-50 rounded-2xl p-6 text-center border border-slate-100 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-200 group relative overflow-hidden">
+                        <div class="w-28 h-28 mx-auto mb-4 bg-white rounded-2xl shadow-sm flex items-center justify-center p-2 group-hover:scale-110 transition-transform duration-300 overflow-hidden">
+                            <img src="assets/img/solar-panels.png" alt="Solar Panels" class="w-full h-full object-contain">
+                        </div>
+                        <div class="text-3xl font-bold text-slate-800 mb-1" id="twPanelsValue">6</div>
+                        <div class="text-xs font-bold text-slate-500 uppercase tracking-wide">Solar Panels</div>
+                    </div>
+
+                    <!-- Monthly Savings -->
+                    <div class="bg-green-50 rounded-2xl p-6 text-center border border-green-100 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-green-200 group relative overflow-hidden">
+                        <div class="w-28 h-28 mx-auto mb-4 bg-white rounded-2xl shadow-sm flex items-center justify-center p-2 group-hover:scale-110 transition-transform duration-300 overflow-hidden">
+                            <img src="assets/img/monthly-savings.png" alt="Monthly Savings" class="w-full h-full object-contain">
+                        </div>
+                        <div class="text-3xl font-bold text-green-600 mb-1">₱<span id="twMonthlySavings">3,500</span></div>
+                        <div class="text-xs font-bold text-green-700/70 uppercase tracking-wide">Est. Monthly Savings</div>
+                    </div>
+
+                    <!-- Yearly Savings -->
+                    <div class="bg-amber-50 rounded-2xl p-6 text-center border border-amber-100 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-amber-200 group relative overflow-hidden">
+                        <div class="w-28 h-28 mx-auto mb-4 bg-white rounded-2xl shadow-sm flex items-center justify-center p-2 group-hover:scale-110 transition-transform duration-300 overflow-hidden">
+                            <img src="assets/img/yearly-savings.png" alt="Yearly Savings" class="w-full h-full object-contain">
+                        </div>
+                        <div class="text-3xl font-bold text-amber-600 mb-1">₱<span id="twYearlySavings">42,000</span></div>
+                        <div class="text-xs font-bold text-amber-700/70 uppercase tracking-wide">Est. Yearly Savings</div>
+                    </div>
+                </div>
+
+                <!-- CTA Section -->
+                <div class="mt-10 text-center opacity-0 transition-opacity duration-700 ease-in-out translate-y-4" id="twCtaContainer">
+                    <a href="viber://chat?number=%2B639953947379" target="_blank" class="inline-flex items-center justify-center gap-3 px-8 py-4 text-base font-bold text-white !no-underline hover:text-white bg-[#7360f2] rounded-xl hover:bg-[#5e4bcf] transition-colors shadow-lg hover:shadow-xl group">
+                        <i class="fab fa-viber text-xl group-hover:scale-110 transition-transform"></i>
+                        Get a Free Detailed Quote via Viber
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Trusted Partners Marquee Section -->
+    <section class="bg-amber-500 py-6 overflow-hidden relative shadow-inner">
+        <!-- Title -->
+        <div class="text-center mb-4">
+            <h3 class="text-xs sm:text-sm font-bold text-white/90 uppercase tracking-[0.2em]">Trusted by Leading Solar Brands</h3>
+        </div>
+
+        <!-- Marquee Container -->
+        <div class="relative flex overflow-x-hidden group">
+            <!-- Left Gradient Mask -->
+            <div class="absolute top-0 left-0 w-16 md:w-32 h-full bg-gradient-to-r from-amber-500 to-transparent z-10 pointer-events-none"></div>
+            
+            <!-- Right Gradient Mask -->
+            <div class="absolute top-0 right-0 w-16 md:w-32 h-full bg-gradient-to-l from-amber-500 to-transparent z-10 pointer-events-none"></div>
+
+            <!-- Marquee Track -->
+            <div class="flex animate-marquee group-hover:animate-marquee-paused whitespace-nowrap py-2">
+                <!-- Logos Set 1 -->
+                <div class="flex items-center gap-6 px-3">
+                    <!-- Ian Solar -->
+                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
+                        <img src="assets/img/iansolar.png" alt="Ian Solar" class="w-full h-full object-contain mix-blend-multiply opacity-90">
+                    </div>
+                    <!-- LVTopsun -->
+                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
+                        <img src="assets/img/lvtopsun.png" alt="LVTopsun" class="w-full h-full object-contain mix-blend-multiply opacity-90">
+                    </div>
+                    <!-- Jinko Solar -->
+                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
+                        <img src="assets/img/jinko.png" alt="Jinko Solar" class="w-full h-full object-contain mix-blend-multiply opacity-90">
+                    </div>
+                    <!-- HyxiPower -->
+                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
+                        <img src="assets/img/hyxipower.png" alt="HyxiPower" class="w-full h-full object-contain mix-blend-multiply opacity-90">
+                    </div>
+                    <!-- Hopewind -->
+                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
+                        <img src="assets/img/Hopewind.jpg" alt="Hopewind" class="w-full h-full object-contain mix-blend-multiply opacity-90">
+                    </div>
+                    <!-- Solax -->
+                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
+                        <img src="assets/img/solax.png" alt="Solax Power" class="w-full h-full object-contain mix-blend-multiply opacity-90">
+                    </div>
+                    <!-- Aiko -->
+                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
+                        <img src="assets/img/aiko.png" alt="Aiko" class="w-full h-full object-contain mix-blend-multiply opacity-90">
+                    </div>
+                    <!-- Hoymiles -->
+                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
+                        <img src="assets/img/hoymiles.png" alt="Hoymiles" class="w-full h-full object-contain mix-blend-multiply opacity-90">
+                    </div>
+                    <!-- Trina Solar (Fallback for TW Solar) -->
+                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
+                        <img src="assets/img/trinasolar.png" alt="Trina Solar" class="w-full h-full object-contain mix-blend-multiply opacity-90">
+                    </div>
+                </div>
+
+                <!-- Logos Set 2 (Duplicate for Seamless Loop) -->
+                <div class="flex items-center gap-6 px-3" aria-hidden="true">
+                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
+                        <img src="assets/img/iansolar.png" alt="Ian Solar" class="w-full h-full object-contain mix-blend-multiply opacity-90">
+                    </div>
+                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
+                        <img src="assets/img/lvtopsun.png" alt="LVTopsun" class="w-full h-full object-contain mix-blend-multiply opacity-90">
+                    </div>
+                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
+                        <img src="assets/img/jinko.png" alt="Jinko Solar" class="w-full h-full object-contain mix-blend-multiply opacity-90">
+                    </div>
+                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
+                        <img src="assets/img/hyxipower.png" alt="HyxiPower" class="w-full h-full object-contain mix-blend-multiply opacity-90">
+                    </div>
+                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
+                        <img src="assets/img/Hopewind.jpg" alt="Hopewind" class="w-full h-full object-contain mix-blend-multiply opacity-90">
+                    </div>
+                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
+                        <img src="assets/img/solax.png" alt="Solax Power" class="w-full h-full object-contain mix-blend-multiply opacity-90">
+                    </div>
+                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
+                        <img src="assets/img/aiko.png" alt="Aiko" class="w-full h-full object-contain mix-blend-multiply opacity-90">
+                    </div>
+                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
+                        <img src="assets/img/hoymiles.png" alt="Hoymiles" class="w-full h-full object-contain mix-blend-multiply opacity-90">
+                    </div>
+                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
+                        <img src="assets/img/trinasolar.png" alt="Trina Solar" class="w-full h-full object-contain mix-blend-multiply opacity-90">
                     </div>
                 </div>
             </div>
         </div>
     </section>
+
+    <!-- Tailwind Config Additions & JS Logic for Calculator -->
+    <style>
+        @keyframes marquee {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+        .animate-marquee {
+            animation: marquee 12s linear infinite;
+        }
+        @media (min-width: 768px) {
+            .animate-marquee {
+                animation: marquee 25s linear infinite;
+            }
+        }
+        .animate-marquee-paused {
+            animation-play-state: paused;
+        }
+        
+        /* Fallback for Tailwind range input styling cross-browser */
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: #f59e0b; /* amber-500 */
+            cursor: pointer;
+            margin-top: -6px; /* You need to specify a margin in Chrome, but in Firefox and IE it is automatic */
+            box-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
+            transition: transform 0.15s ease-in-out;
+        }
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+            background: #d97706; /* amber-600 */
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 8px;
+            cursor: pointer;
+            background: #e2e8f0; /* slate-200 */
+            border-radius: 4px;
+        }
+    </style>
+    
+    <script>
+        function updateTwCalculator(val) {
+            let bill = parseFloat(val);
+            if (isNaN(bill) || bill < 0) bill = 0;
+            
+            // Basic estimation logic
+            // Assuming cost per kWh is around ₱12
+            // And 1 kWp system produces roughly 120 kWh per month
+            let kwhUsed = bill / 12;
+            let kwpRequired = kwhUsed / 120;
+            
+            // Assume 1 panel is roughly 400W (0.4 kWp)
+            let panelsNeeded = Math.ceil(kwpRequired / 0.4);
+            
+            // Calculate Savings
+            // Let's assume solar offsets 70% of the bill on average
+            let monthlySavings = bill * 0.70;
+            let yearlySavings = monthlySavings * 12;
+            
+            // Cap it if they put extreme values, or handle minimums
+            if (bill < 1000) {
+                kwpRequired = 0;
+                panelsNeeded = 0;
+                monthlySavings = 0;
+                yearlySavings = 0;
+            }
+
+            // Update DOM
+            document.getElementById('twKwValue').textContent = kwpRequired.toFixed(1);
+            document.getElementById('twPanelsValue').textContent = panelsNeeded;
+            
+            // Format Currency
+            const formatter = new Intl.NumberFormat('en-PH', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+            document.getElementById('twMonthlySavings').textContent = formatter.format(monthlySavings);
+            document.getElementById('twYearlySavings').textContent = formatter.format(yearlySavings);
+
+            // Show CTA smoothly if there's a valid calculation
+            const cta = document.getElementById('twCtaContainer');
+            if (bill > 1500) {
+                cta.classList.remove('opacity-0', 'translate-y-4');
+                cta.classList.add('opacity-100', 'translate-y-0');
+            } else {
+                cta.classList.remove('opacity-100', 'translate-y-0');
+                cta.classList.add('opacity-0', 'translate-y-4');
+            }
+        }
+
+        // Initialize on load
+        document.addEventListener('DOMContentLoaded', () => {
+            updateTwCalculator(document.getElementById('twBillAmount').value);
+        });
+    </script>
 
 
 
@@ -582,7 +840,7 @@ $conn->close();
                                     <div class="product-price">
                                         ₱<?= number_format($p['price'], 2) ?>
                                     </div>
-                                    <div class="preview-stock">
+                                    <div class="preview-stock" style="display: none;">
                                         <i class="fas fa-box"></i> Stock: <?= htmlspecialchars($p['stockQuantity']) ?> units
                                     </div>
                                     <?php if ($p['category'] === 'Panel' && intval($p['moq']) > 1): ?>
@@ -1159,75 +1417,7 @@ $conn->close();
         </div>
     </section>
 
-    <section class="featured-brands" id="featured-brands">
-        <div class="container">
-            <!-- Top Row - Scrolling LEFT -->
-            <div class="carousel-wrapper">
-                <div class="brands-scroll-list scroll-left">
-                    <div class="brand-item"><img src="assets/img/hoymiles.png" alt="Hoymiles"></div>
-                    <div class="brand-item"><img src="assets/img/solax.png" alt="Solax"></div>
-                    <div class="brand-item"><img src="assets/img/aiko.png" alt="Aiko"></div>
-                    <div class="brand-item"><img src="assets/img/iansolar.png" alt="AN Solar"></div>
-                    <div class="brand-item"><img src="assets/img/lvtopsun.png" alt="LA Topsun"></div>
-                    <div class="brand-item"><img src="assets/img/aesolar.png" alt="AE Solar"></div>
-                    <div class="brand-item"><img src="assets/img/jinko.png" alt="Jinko"></div>
-                    <div class="brand-item"><img src="assets/img/hyxipower.png" alt="Jinko"></div>
-                    <div class="brand-item"><img src="assets/img/Hopewind.jpg" alt="Hopewind"></div>
-                    <div class="brand-item"><img src="assets/img/wechat.png" alt="WeChat"></div>
-                    <div class="brand-item"><img src="assets/img/dahai.png" alt="Dahai"></div>
-                    <div class="brand-item"><img src="assets/img/nuuko.png" alt="Nuuko"></div>
-                    <div class="brand-item"><img src="assets/img/srne.png" alt="SRNE"></div>
-                    <!-- Duplicate for seamless loop -->
-                    <div class="brand-item"><img src="assets/img/hoymiles.png" alt="Hoymiles"></div>
-                    <div class="brand-item"><img src="assets/img/solax.png" alt="Solax"></div>
-                    <div class="brand-item"><img src="assets/img/aiko.png" alt="Aiko"></div>
-                    <div class="brand-item"><img src="assets/img/iansolar.png" alt="AN Solar"></div>
-                    <div class="brand-item"><img src="assets/img/lvtopsun.png" alt="LA Topsun"></div>
-                    <div class="brand-item"><img src="assets/img/aesolar.png" alt="AE Solar"></div>
-                    <div class="brand-item"><img src="assets/img/jinko.png" alt="Jinko"></div>
-                    <div class="brand-item"><img src="assets/img/hyxipower.png" alt="Hyxipower"></div>
-                    <div class="brand-item"><img src="assets/img/Hopewind.jpg" alt="Hopewind"></div>
-                    <div class="brand-item"><img src="assets/img/wechat.png" alt="WeChat"></div>
-                    <div class="brand-item"><img src="assets/img/dahai.png" alt="Dahai"></div>
-                    <div class="brand-item"><img src="assets/img/nuuko.png" alt="Nuuko"></div>
-                    <div class="brand-item"><img src="assets/img/srne.png" alt="SRNE"></div>
-                </div>
-            </div>
 
-            <!-- Bottom Row - Scrolling RIGHT -->
-            <div class="carousel-wrapper">
-                <div class="brands-scroll-list scroll-right">
-                    <div class="brand-item"><img src="assets/img/hoymiles.png" alt="Hoymiles"></div>
-                    <div class="brand-item"><img src="assets/img/solax.png" alt="Solax"></div>
-                    <div class="brand-item"><img src="assets/img/aiko.png" alt="Aiko"></div>
-                    <div class="brand-item"><img src="assets/img/iansolar.png" alt="AN Solar"></div>
-                    <div class="brand-item"><img src="assets/img/lvtopsun.png" alt="LA Topsun"></div>
-                    <div class="brand-item"><img src="assets/img/aesolar.png" alt="AE Solar"></div>
-                    <div class="brand-item"><img src="assets/img/jinko.png" alt="Jinko"></div>
-                    <div class="brand-item"><img src="assets/img/hyxipower.png" alt="Jinko"></div>
-                    <div class="brand-item"><img src="assets/img/Hopewind.jpg" alt="Hopewind"></div>
-                    <div class="brand-item"><img src="assets/img/wechat.png" alt="WeChat"></div>
-                    <div class="brand-item"><img src="assets/img/dahai.png" alt="Dahai"></div>
-                    <div class="brand-item"><img src="assets/img/nuuko.png" alt="Nuuko"></div>
-                    <div class="brand-item"><img src="assets/img/srne.png" alt="SRNE"></div>
-                    <!-- Duplicate for seamless loop -->
-                    <div class="brand-item"><img src="assets/img/hoymiles.png" alt="Hoymiles"></div>
-                    <div class="brand-item"><img src="assets/img/solax.png" alt="Solax"></div>
-                    <div class="brand-item"><img src="assets/img/aiko.png" alt="Aiko"></div>
-                    <div class="brand-item"><img src="assets/img/iansolar.png" alt="AN Solar"></div>
-                    <div class="brand-item"><img src="assets/img/lvtopsun.png" alt="LA Topsun"></div>
-                    <div class="brand-item"><img src="assets/img/aesolar.png" alt="AE Solar"></div>
-                    <div class="brand-item"><img src="assets/img/jinko.png" alt="Jinko"></div>
-                    <div class="brand-item"><img src="assets/img/hyxipower.png" alt="Hyxipower"></div>
-                    <div class="brand-item"><img src="assets/img/Hopewind.jpg" alt="Hopewind"></div>
-                    <div class="brand-item"><img src="assets/img/wechat.png" alt="WeChat"></div>
-                    <div class="brand-item"><img src="assets/img/dahai.png" alt="Dahai"></div>
-                    <div class="brand-item"><img src="assets/img/nuuko.png" alt="Nuuko"></div>
-                    <div class="brand-item"><img src="assets/img/srne.png" alt="SRNE"></div>
-                </div>
-            </div>
-        </div>
-    </section>
 
     <!-- Services Section --
     <section class="services-section">
@@ -1366,7 +1556,7 @@ $conn->close();
                     </div>
                 </div>
 
-                <!-- 03 Off-Grid — hidden as per current focus
+                <!-- 03 Off-Grid — right to left -->
                 <div class="solar-system-row" id="system-offgrid" data-aos="fade-left" data-aos-duration="900">
                     <div class="system-image-col">
                         <div class="system-img-frame">
@@ -1390,7 +1580,7 @@ $conn->close();
                         </div>
                     </div>
                 </div>
-                -->
+
 
             </div>
         </div>

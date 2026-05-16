@@ -15,8 +15,8 @@ header('Content-Type: application/json');
 // Create database connection
 $conn = mysqli_connect($servername, $username, $password, $dbname);
 
-if ($conn->connect_error) {
-    echo json_encode(['success' => false, 'error' => 'Database connection failed']);
+if (!$conn) {
+    echo json_encode(['success' => false, 'error' => 'Database connection failed: ' . mysqli_connect_error()]);
     exit();
 }
 
@@ -66,6 +66,7 @@ function get_recent_orders($conn) {
                 o.order_reference,
                 o.order_status,
                 o.customer_name,
+                o.total_amount,
                 (SELECT product_name FROM order_items WHERE order_id = o.id LIMIT 1) as product_name
               FROM orders o
               ORDER BY o.created_at DESC

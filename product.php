@@ -61,6 +61,17 @@ $conn->close();
 
     <link rel="stylesheet" href="assets/style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+    <!-- Tailwind CSS for Marquee -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            corePlugins: {
+                preflight: false,
+            }
+        }
+    </script>
+</head>
 <body>
 
     <style>
@@ -97,51 +108,105 @@ $conn->close();
         </div>
     </section>
 
-    <section class="featured-brands" id="featured-brands">
-    <div class="container">
-        <!-- Top Row - Scrolling LEFT -->
-        <div class="carousel-wrapper">
-            <div class="brands-scroll-list scroll-left">
-                <div class="brand-item"><img src="assets/img/hoymiles.png" alt="Hoymiles"></div>
-                <div class="brand-item"><img src="assets/img/solax.png" alt="Solax"></div>
-                <div class="brand-item"><img src="assets/img/aiko.png" alt="Aiko"></div>
-                <div class="brand-item"><img src="assets/img/iansolar.png" alt="AN Solar"></div>
-                <div class="brand-item"><img src="assets/img/lvtopsun.png" alt="LA Topsun"></div>
-                <div class="brand-item"><img src="assets/img/aesolar.png" alt="AE Solar"></div>
-                <div class="brand-item"><img src="assets/img/jinko.png" alt="Jinko"></div>
-                <!-- Duplicate for seamless loop -->
-                <div class="brand-item"><img src="assets/img/hoymiles.png" alt="Hoymiles"></div>
-                <div class="brand-item"><img src="assets/img/solax.png" alt="Solax"></div>
-                <div class="brand-item"><img src="assets/img/aiko.png" alt="Aiko"></div>
-                <div class="brand-item"><img src="assets/img/iansolar.png" alt="AN Solar"></div>
-                <div class="brand-item"><img src="assets/img/lvtopsun.png" alt="LA Topsun"></div>
-                <div class="brand-item"><img src="assets/img/aesolar.png" alt="AE Solar"></div>
-                <div class="brand-item"><img src="assets/img/jinko.png" alt="Jinko"></div>
+    <!-- Trusted Partners Marquee Section -->
+    <section class="bg-amber-500 py-6 overflow-hidden relative shadow-inner">
+        <!-- Title -->
+        <div class="text-center mb-4">
+            <h3 class="text-xs sm:text-sm font-bold text-white/90 uppercase tracking-[0.2em]">Trusted by Leading Solar Brands</h3>
+        </div>
+
+        <!-- Marquee Container -->
+        <div class="relative flex overflow-x-hidden group">
+            <!-- Left Gradient Mask -->
+            <div class="absolute top-0 left-0 w-16 md:w-32 h-full bg-gradient-to-r from-amber-500 to-transparent z-10 pointer-events-none"></div>
+            
+            <!-- Right Gradient Mask -->
+            <div class="absolute top-0 right-0 w-16 md:w-32 h-full bg-gradient-to-l from-amber-500 to-transparent z-10 pointer-events-none"></div>
+
+            <!-- Marquee Track -->
+            <div class="flex animate-marquee group-hover:animate-marquee-paused whitespace-nowrap py-2">
+                <!-- Logos Set 1 -->
+                <div class="flex items-center gap-6 px-3">
+                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
+                        <img src="assets/img/iansolar.png" alt="Ian Solar" class="w-full h-full object-contain mix-blend-multiply opacity-90">
+                    </div>
+                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
+                        <img src="assets/img/lvtopsun.png" alt="LVTopsun" class="w-full h-full object-contain mix-blend-multiply opacity-90">
+                    </div>
+                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
+                        <img src="assets/img/jinko.png" alt="Jinko Solar" class="w-full h-full object-contain mix-blend-multiply opacity-90">
+                    </div>
+                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
+                        <img src="assets/img/hyxipower.png" alt="HyxiPower" class="w-full h-full object-contain mix-blend-multiply opacity-90">
+                    </div>
+                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
+                        <img src="assets/img/Hopewind.jpg" alt="Hopewind" class="w-full h-full object-contain mix-blend-multiply opacity-90">
+                    </div>
+                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
+                        <img src="assets/img/solax.png" alt="Solax Power" class="w-full h-full object-contain mix-blend-multiply opacity-90">
+                    </div>
+                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
+                        <img src="assets/img/aiko.png" alt="Aiko" class="w-full h-full object-contain mix-blend-multiply opacity-90">
+                    </div>
+                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
+                        <img src="assets/img/hoymiles.png" alt="Hoymiles" class="w-full h-full object-contain mix-blend-multiply opacity-90">
+                    </div>
+                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
+                        <img src="assets/img/trinasolar.png" alt="Trina Solar" class="w-full h-full object-contain mix-blend-multiply opacity-90">
+                    </div>
+                </div>
+
+                <!-- Logos Set 2 (Duplicate for Seamless Loop) -->
+                <div class="flex items-center gap-6 px-3" aria-hidden="true">
+                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
+                        <img src="assets/img/iansolar.png" alt="Ian Solar" class="w-full h-full object-contain mix-blend-multiply opacity-90">
+                    </div>
+                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
+                        <img src="assets/img/lvtopsun.png" alt="LVTopsun" class="w-full h-full object-contain mix-blend-multiply opacity-90">
+                    </div>
+                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
+                        <img src="assets/img/jinko.png" alt="Jinko Solar" class="w-full h-full object-contain mix-blend-multiply opacity-90">
+                    </div>
+                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
+                        <img src="assets/img/hyxipower.png" alt="HyxiPower" class="w-full h-full object-contain mix-blend-multiply opacity-90">
+                    </div>
+                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
+                        <img src="assets/img/Hopewind.jpg" alt="Hopewind" class="w-full h-full object-contain mix-blend-multiply opacity-90">
+                    </div>
+                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
+                        <img src="assets/img/solax.png" alt="Solax Power" class="w-full h-full object-contain mix-blend-multiply opacity-90">
+                    </div>
+                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
+                        <img src="assets/img/aiko.png" alt="Aiko" class="w-full h-full object-contain mix-blend-multiply opacity-90">
+                    </div>
+                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
+                        <img src="assets/img/hoymiles.png" alt="Hoymiles" class="w-full h-full object-contain mix-blend-multiply opacity-90">
+                    </div>
+                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
+                        <img src="assets/img/trinasolar.png" alt="Trina Solar" class="w-full h-full object-contain mix-blend-multiply opacity-90">
+                    </div>
+                </div>
             </div>
         </div>
-        
-        <!-- Bottom Row - Scrolling RIGHT -->
-        <div class="carousel-wrapper">
-            <div class="brands-scroll-list scroll-right">
-                <div class="brand-item"><img src="assets/img/jasolar.png" alt="JA Solar"></div>
-                <div class="brand-item"><img src="assets/img/huawei.png" alt="Huawei"></div>
-                <div class="brand-item"><img src="assets/img/luxpower.png" alt="LUX Power"></div>
-                <div class="brand-item"><img src="assets/img/trinasolar.png" alt="Trina Solar"></div>
-                <div class="brand-item"><img src="assets/img/dyness.png" alt="Dyness"></div>
-                <div class="brand-item"><img src="assets/img/deye.png" alt="Deye"></div>
-                <div class="brand-item"><img src="assets/img/tigfox.png" alt="Tigfox"></div>
-                <!-- Duplicate for seamless loop -->
-                <div class="brand-item"><img src="assets/img/jasolar.png" alt="JA Solar"></div>
-                <div class="brand-item"><img src="assets/img/huawei.png" alt="Huawei"></div>
-                <div class="brand-item"><img src="assets/img/luxpower.png" alt="LUX Power"></div>
-                <div class="brand-item"><img src="assets/img/trinasolar.png" alt="Trina Solar"></div>
-                <div class="brand-item"><img src="assets/img/dyness.png" alt="Dyness"></div>
-                <div class="brand-item"><img src="assets/img/deye.png" alt="Deye"></div>
-                <div class="brand-item"><img src="assets/img/tigfox.png" alt="Tigfox"></div>
-            </div>
-        </div>
-    </div>
-</section>
+    </section>
+    
+    <style>
+        @keyframes marquee {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+        .animate-marquee {
+            animation: marquee 12s linear infinite;
+        }
+        @media (min-width: 768px) {
+            .animate-marquee {
+                animation: marquee 25s linear infinite;
+            }
+        }
+        .animate-marquee-paused {
+            animation-play-state: paused;
+        }
+    </style>
 
     <!-- ---------- CATALOG SECTION ---------- -->
  <section class="catalogs-section" id="catalogSection">
@@ -213,7 +278,7 @@ $conn->close();
                                     <div class="product-price">
                                         ₱<?= number_format($p['price'], 2) ?>
                                     </div>
-                                    <div class="preview-stock">
+                                    <div class="preview-stock" style="display: none;">
                                         <i class="fas fa-box"></i> Stock: <?= htmlspecialchars($p['stockQuantity']) ?> units
                                     </div>
                                     <?php if ($p['category'] === 'Panel' && intval($p['moq']) > 1): ?>

@@ -20,7 +20,7 @@ $sql = "SELECT
 FROM product p
 LEFT JOIN product_images pi 
     ON p.id = pi.product_id
-WHERE p.brandName IN ('Grid-Tie', 'Hybrid')
+WHERE p.brandName IN ('Grid-Tie', 'Hybrid', 'Off-Grid')
 AND pi.image_path IS NOT NULL
 GROUP BY p.id
 ORDER BY p.brandName, p.price";
@@ -124,6 +124,18 @@ $conn->close();
             font-size: 3rem;
             margin-bottom: 15px;
             color: #f39c12;
+        }
+        
+        .package-type-card img {
+            width: 80px;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+            border: 2px solid rgba(255,255,255,0.4);
         }
         
         .package-type-card h3 {
@@ -264,7 +276,7 @@ $conn->close();
         .product-image {
             position: relative; 
             width: 100%; 
-            height: 260px; 
+            height: 450px; 
             background: #ffffff; 
             display: flex; 
             align-items: center; 
@@ -277,7 +289,7 @@ $conn->close();
             width: 100%;
             height: 100%;
             object-fit: contain;
-            padding: 6px;
+            padding: 0;
             transition: transform 0.35s ease;
         }
         
@@ -288,16 +300,19 @@ $conn->close();
         .product-badge {
             position: absolute; 
             top: 12px; 
-            right: 12px; 
+            left: 12px; 
             background: #e7ad00; 
             color: white; 
-            padding: 6px 12px; 
-            border-radius: 20px; 
-            font-size: 10px; 
-            font-weight: 600; 
+            padding: 8px 16px; 
+            border-radius: 25px; 
+            font-size: 11px; 
+            font-weight: 700; 
             text-transform: uppercase; 
             letter-spacing: 0.5px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
         
         .package-kw-badge {
@@ -316,7 +331,7 @@ $conn->close();
         }
         
         .product-info {
-            padding: 20px; 
+            padding: 10px 12px; 
             flex: 1; 
             display: flex; 
             flex-direction: column; 
@@ -332,26 +347,28 @@ $conn->close();
         }
         
         .product-name {
-            font-size: 16px; 
-            font-weight: 600; 
+            font-size: 18px; 
+            font-weight: 700; 
             color: #1a1a1a; 
             line-height: 1.4; 
             display: -webkit-box; 
             -webkit-box-orient: vertical; 
             overflow: hidden;
+            margin-bottom: 4px;
         }
         
         .product-price {
-            font-size: 32px; 
+            font-size: 24px; 
             font-weight: 700; 
             color: #1a1a1a; 
-            margin-bottom: 16px; 
+            margin-bottom: 8px; 
             margin-top: auto; 
         }
         
         .preview-stock {
             font-size: 14px;
             color: #6b7280;
+            display: none;
         }
         
         .product-actions {
@@ -365,15 +382,15 @@ $conn->close();
         .btn-add-cart {
             flex: 0 0 44px; 
             height: 44px; 
-            background: #f5f5f5; 
-            border: 2px solid #e0e0e0; 
-            border-radius: 8px; 
+            background: white; 
+            border: 1px solid #d1d5db; 
+            border-radius: 4px; 
             display: flex; 
             align-items: center; 
             justify-content: center; 
             cursor: pointer; 
             transition: all 0.3s ease; 
-            font-size: 16px; 
+            font-size: 18px; 
             color: #1a1a1a; 
         }
         
@@ -466,6 +483,12 @@ $conn->close();
                     <h3>Hybrid Setup</h3>
                     <p>Grid connection with battery backup storage</p>
                 </div>
+
+                <div class="package-type-card">
+                    <img src="assets/img/offgrid.png" alt="Off-Grid Solar System">
+                    <h3>Off-Grid Setup</h3>
+                    <p>Complete energy independence with no grid connection</p>
+                </div>
             </div>
         </div>
     </section>
@@ -489,6 +512,9 @@ $conn->close();
                     </button>
                     <button class="filter-btn" data-type="Hybrid">
                         <i class="fas fa-battery-full"></i> Hybrid Setup
+                    </button>
+                    <button class="filter-btn" data-type="Off-Grid">
+                        <i class="fas fa-sun"></i> Off-Grid Setup
                     </button>
                 </div>
                 
@@ -524,7 +550,7 @@ $conn->close();
                                 <div class="product-image">
                                     <img src="<?= htmlspecialchars($p['image_path'] ?? 'assets/img/placeholder.png') ?>" 
                                          alt="<?= htmlspecialchars($p['displayName']) ?>">
-                                    <div class="product-badge"><?= htmlspecialchars($p['brandName']) ?></div>
+                                    <div class="product-badge"><i class="fas fa-tag"></i> PACKAGE</div>
                                     <?php if ($kw): ?>
                                     <?php endif; ?>
                                 </div>
@@ -535,7 +561,7 @@ $conn->close();
                                     <div class="product-price">
                                         ₱<?= number_format($p['price'], 2) ?>
                                     </div>
-                                    <div class="preview-stock">
+                                    <div class="preview-stock" style="display: none;">
                                         <i class="fas fa-box"></i> Stock: <?= htmlspecialchars($p['stockQuantity']) ?> units
                                     </div>
                                 </div>

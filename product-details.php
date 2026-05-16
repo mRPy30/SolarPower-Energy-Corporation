@@ -987,7 +987,7 @@ $conn->close();
                     </div>
 
                     <!-- Stock Status & Warranty -->
-                    <div>
+                    <div style="display: none;">
                         <?php
                         $stockQty = $product['stockQuantity'] ?? 0;
                         if ($stockQty > 10):
@@ -1014,9 +1014,9 @@ $conn->close();
                                 <span>
                                     <?= htmlspecialchars($product['warranty']) ?>
                                     <?php
-                                    // Check if brand is Hybrid or Grid-tie (case-insensitive)
                                     $brand = strtolower($product['brandName']);
-                                    if ($brand === 'hybrid' || $brand === 'grid-tie') {
+                                    $category = strtolower($product['category']);
+                                    if (strpos($category, 'package') !== false || $brand === 'hybrid' || $brand === 'grid-tie') {
                                         echo "Labor Warranty";
                                     } else {
                                         echo "Product Warranty";

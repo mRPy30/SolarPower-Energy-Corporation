@@ -921,7 +921,7 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
                             </div>
         
                             <div class="form-group">
-                                <label><i class="fas fa-shield-alt"></i> Warranty</label>
+                                <label><i class="fas fa-shield-alt"></i> <span id="edit-warranty-label-text">Warranty</span></label>
                                 <input type="text" name="warranty" id="editWarranty">
                             </div>
                         </div>
@@ -1213,7 +1213,7 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
                             <div class="form-group">
                                 <label for="warranty">
                                     <i class="fas fa-shield-alt"></i>
-                                    Warranty <span class="required">*</span>
+                                    <span id="warranty-label-text">Warranty</span> <span class="required">*</span>
                                 </label>
                                 <input type="text" id="warranty" name="warranty" placeholder="e.g., 5 years" value="5 years" required>
                             </div>
@@ -4565,7 +4565,10 @@ function openEditModal(productId) {
                 document.getElementById('editDisplayName').value = data.product.displayName;
                 document.getElementById('editBrandName').value = data.product.brandName;
                 document.getElementById('editPrice').value = data.product.price;
-                document.getElementById('editCategory').value = data.product.category;
+                const editCategory = document.getElementById('editCategory');
+                editCategory.value = data.product.category;
+                editCategory.dispatchEvent(new Event('change'));
+                
                 document.getElementById('editStockQuantity').value = data.product.stockQuantity;
                 document.getElementById('editWarranty').value = data.product.warranty;
                 document.getElementById('editDescription').value = data.product.description;
@@ -4614,14 +4617,25 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('✅ Admin Dashboard initialized');
 });
 
-// Dynamic brand loading
+// Dynamic brand loading and Warranty Label
 document.addEventListener('DOMContentLoaded', function() {
     const categorySelect = document.getElementById('category-select');
     const brandSelect = document.getElementById('brand-select');
+    const warrantyLabelText = document.getElementById('warranty-label-text');
 
     if (categorySelect && brandSelect) {
         categorySelect.addEventListener('change', function() {
             const category = this.value;
+            
+            // Dynamic Warranty Label logic
+            if (warrantyLabelText) {
+                if (category.toLowerCase() === 'package') {
+                    warrantyLabelText.textContent = 'Labor Warranty';
+                } else {
+                    warrantyLabelText.textContent = 'Warranty';
+                }
+            }
+
             brandSelect.innerHTML = '<option value="">Loading...</option>';
             brandSelect.disabled = true;
 
@@ -4647,9 +4661,19 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
         });
     }
+
+    const editCategory = document.getElementById('editCategory');
+    const editWarrantyLabelText = document.getElementById('edit-warranty-label-text');
+    if (editCategory && editWarrantyLabelText) {
+        editCategory.addEventListener('change', function() {
+            if (this.value.toLowerCase() === 'package') {
+                editWarrantyLabelText.textContent = 'Labor Warranty';
+            } else {
+                editWarrantyLabelText.textContent = 'Warranty';
+            }
+        });
+    }
 });
-
-
 
 </script>
 

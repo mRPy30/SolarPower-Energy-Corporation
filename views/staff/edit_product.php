@@ -17,7 +17,15 @@ $displayName = isset($_POST['displayName']) ? trim($_POST['displayName']) : '';
 $brandName = isset($_POST['brandName']) ? trim($_POST['brandName']) : '';
 $price = isset($_POST['price']) ? floatval($_POST['price']) : 0;
 $category = isset($_POST['category']) ? trim($_POST['category']) : '';
-$stockQuantity = isset($_POST['stockQuantity']) ? intval($_POST['stockQuantity']) : 0;
+
+// Default brand for packages if empty
+if (empty($brandName) && (stripos($category, 'Package') !== false || empty($category))) {
+    $brandName = 'Package';
+}
+
+$stockQuantity = (isset($_POST['stockQuantity']) && $_POST['stockQuantity'] !== '') ? intval($_POST['stockQuantity']) : 9999;
+if ($stockQuantity <= 0) $stockQuantity = 9999; // Ensure it's always enabled
+
 $warranty = isset($_POST['warranty']) ? trim($_POST['warranty']) : '';
 $description = isset($_POST['description']) ? trim($_POST['description']) : '';
 $delete_images = isset($_POST['delete_images']) ? $_POST['delete_images'] : '';
