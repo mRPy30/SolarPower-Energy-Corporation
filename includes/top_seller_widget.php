@@ -50,9 +50,15 @@ if (empty($_widget_img_src) && !empty($best_seller['product_id']) && $best_selle
         <div style="padding: 20px; border: 2px dashed #f1f1f1; border-radius: 10px;">
             <div style="width: 120px; height: 120px; margin: 0 auto 15px; border-radius: 10px; overflow: hidden;">
                 <?php if (!empty($_widget_img_src)): ?>
-                    <img src="<?php echo htmlspecialchars($_widget_img_src); ?>" 
-                         alt="<?php echo htmlspecialchars($best_seller['product_name']); ?>" 
-                         style="width: 100%; height: 100%; object-fit: cover; border-radius: 10px;">
+                    <div style="width: 100%; height: 100%; position: relative;">
+                        <img src="<?php echo htmlspecialchars($_widget_img_src); ?>" 
+                             alt="<?php echo htmlspecialchars($best_seller['product_name']); ?>" 
+                             style="width: 100%; height: 100%; object-fit: cover; border-radius: 10px;"
+                             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                        <div style="display: none; background: #fff9db; width: 100%; height: 100%; align-items: center; justify-content: center; border-radius: 10px; position: absolute; inset: 0;">
+                            <i class="fas fa-box" style="font-size: 40px; color: #f1c40f;"></i>
+                        </div>
+                    </div>
                 <?php else: ?>
                     <div style="background: #fff9db; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; border-radius: 10px;">
                         <i class="fas fa-box" style="font-size: 40px; color: #f1c40f;"></i>
@@ -60,14 +66,18 @@ if (empty($_widget_img_src) && !empty($best_seller['product_id']) && $best_selle
                 <?php endif; ?>
             </div>
             <h2 style="font-size: 22px; margin-bottom: 10px; color: #2c3e50;"><?php echo htmlspecialchars($best_seller['product_name']); ?></h2>
-            <div style="display: flex; justify-content: space-around; margin-top: 20px;">
+            <div style="display: flex; justify-content: space-around; margin-top: 20px; gap: 10px;">
                 <div>
-                    <p style="font-size: 20px; font-weight: bold; color: #27ae60;"><?php echo $best_seller['total_qty']; ?></p>
-                    <p style="font-size: 12px; color: #999; text-transform: uppercase;">Sold</p>
+                    <p style="font-size: 18px; font-weight: bold; color: #27ae60; margin: 0;"><?php echo $best_seller['total_qty']; ?></p>
+                    <p style="font-size: 11px; color: #999; text-transform: uppercase; margin: 5px 0 0 0;">Sold</p>
                 </div>
                 <div>
-                    <p style="font-size: 20px; font-weight: bold; color: #3498db;"><?php echo $best_seller['order_frequency']; ?></p>
-                    <p style="font-size: 12px; color: #999; text-transform: uppercase;">Orders</p>
+                    <p style="font-size: 18px; font-weight: bold; color: #3498db; margin: 0;"><?php echo $best_seller['order_frequency']; ?></p>
+                    <p style="font-size: 11px; color: #999; text-transform: uppercase; margin: 5px 0 0 0;">Orders</p>
+                </div>
+                <div>
+                    <p style="font-size: 18px; font-weight: bold; color: #e67e22; margin: 0; white-space: nowrap;">₱<?php echo number_format($best_seller['total_revenue'] ?? 0, 2); ?></p>
+                    <p style="font-size: 11px; color: #999; text-transform: uppercase; margin: 5px 0 0 0;">Revenue</p>
                 </div>
             </div>
         </div>

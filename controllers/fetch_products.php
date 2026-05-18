@@ -10,7 +10,7 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
-$result = $conn->query("SELECT * FROM product");
+$result = $conn->query("SELECT * FROM product WHERE status = 'Active'");
 $products = [];
 
 if ($result && $result->num_rows > 0) {

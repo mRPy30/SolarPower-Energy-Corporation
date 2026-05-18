@@ -21,6 +21,7 @@ FROM product p
 LEFT JOIN product_images pi 
     ON p.id = pi.product_id
 WHERE pi.image_path IS NOT NULL
+  AND p.status = 'Active'
 GROUP BY p.id
 ORDER BY 
     CASE 

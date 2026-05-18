@@ -217,6 +217,7 @@ function get_best_seller($conn) {
                   (SELECT p.id FROM product p WHERE p.displayName = oi.product_name LIMIT 1)
               ) AS product_id,
               SUM(oi.quantity) as total_qty, COUNT(oi.id) as order_frequency,
+              SUM(oi.subtotal) as total_revenue,
               COALESCE(
                   (SELECT pi.image_path FROM product_images pi WHERE pi.product_id = oi.product_id AND oi.product_id > 0 ORDER BY pi.id ASC LIMIT 1),
                   (SELECT pi.image_path FROM product_images pi JOIN product p ON pi.product_id = p.id WHERE p.displayName = oi.product_name ORDER BY pi.id ASC LIMIT 1)
@@ -232,9 +233,41 @@ function get_best_seller($conn) {
     return ($result && $result->num_rows > 0) ? $result->fetch_assoc() : null;
 }
 
+function get_monthly_revenue_trend($conn) {
+    $months = [];
+    $revenues = [];
+    
+    // Fetch last 6 months including current month
+    $query = "SELECT 
+                DATE_FORMAT(created_at, '%b %Y') AS month_name,
+                SUM(total_amount) AS monthly_revenue
+              FROM orders
+              WHERE order_status IN ('installed', 'completed', 'approved', 'delivered', 'confirmed')
+                AND created_at >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
+              GROUP BY YEAR(created_at), MONTH(created_at)
+              ORDER BY YEAR(created_at) ASC, MONTH(created_at) ASC";
+              
+    $result = $conn->query($query);
+    if ($result) {
+        while ($row = $result->fetch_assoc()) {
+            $months[] = $row['month_name'];
+            $revenues[] = (float)$row['monthly_revenue'];
+        }
+    }
+    
+    // Fallback if no data
+    if (empty($months)) {
+        $months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+        $revenues = [0, 0, 0, 0, 0, 0];
+    }
+    
+    return ['months' => $months, 'revenues' => $revenues];
+}
+
 // Call functions at the top of your file
 $recent_orders = get_recent_orders($conn);
 $best_seller = get_best_seller($conn);
+$revenue_trend = get_monthly_revenue_trend($conn);
 
 
 function get_unique_clients($conn) {
@@ -270,7 +303,7 @@ function get_dashboard_analytics($conn) {
     $sql = "
         SELECT IFNULL(SUM(total_amount), 0) AS revenue 
         FROM orders 
-        WHERE order_status IN ('installed', 'completed', 'approved')
+        WHERE order_status IN ('installed', 'completed', 'approved', 'delivered', 'confirmed')
     ";
     $data['revenue'] = $conn->query($sql)->fetch_assoc()['revenue'];
 
@@ -280,7 +313,7 @@ function get_dashboard_analytics($conn) {
         FROM orders 
         WHERE MONTH(created_at) = MONTH(CURRENT_DATE())
         AND YEAR(created_at) = YEAR(CURRENT_DATE())
-        AND order_status IN ('installed', 'completed', 'approved')
+        AND order_status IN ('installed', 'completed', 'approved', 'delivered', 'confirmed')
     ";
     $data['monthly_sales'] = $conn->query($sql)->fetch_assoc()['monthly_sales'];
 
@@ -613,6 +646,110 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
 
             <!-- Admin-specific stats row -->
             
+            <!-- Monthly Revenue Trend Chart -->
+            <div style="background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-top: 25px; margin-bottom: 25px;">
+                <h3 style="margin-bottom: 20px; color: #333; display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: 600;">
+                    <i class="fas fa-chart-line" style="color: #ffc107;"></i> Monthly Revenue Trend
+                </h3>
+                <div style="position: relative; height: 300px; width: 100%;">
+                    <canvas id="revenueTrendChart"></canvas>
+                </div>
+            </div>
+
+            <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+            <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const ctx = document.getElementById('revenueTrendChart').getContext('2d');
+                
+                const months = <?php echo json_encode($revenue_trend['months']); ?>;
+                const revenues = <?php echo json_encode($revenue_trend['revenues']); ?>;
+                
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: months,
+                        datasets: [{
+                            label: 'Monthly Revenue',
+                            data: revenues,
+                            borderColor: '#0a5c3d',
+                            backgroundColor: 'rgba(10, 92, 61, 0.08)',
+                            borderWidth: 3,
+                            fill: true,
+                            tension: 0.35,
+                            pointBackgroundColor: '#ffc107',
+                            pointBorderColor: '#0a5c3d',
+                            pointBorderWidth: 2,
+                            pointRadius: 6,
+                            pointHoverRadius: 8
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                padding: 12,
+                                cornerRadius: 8,
+                                backgroundColor: '#1e293b',
+                                titleFont: {
+                                    family: 'Segoe UI',
+                                    size: 13,
+                                    weight: 'bold'
+                                },
+                                bodyFont: {
+                                    family: 'Segoe UI',
+                                    size: 13
+                                },
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.dataset.label || '';
+                                        if (label) {
+                                            label += ': ';
+                                        }
+                                        if (context.parsed.y !== null) {
+                                            label += new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(context.parsed.y);
+                                        }
+                                        return label;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                grid: {
+                                    display: false
+                                },
+                                ticks: {
+                                    color: '#64748b',
+                                    font: {
+                                        family: 'Segoe UI',
+                                        size: 12
+                                    }
+                                }
+                            },
+                            y: {
+                                grid: {
+                                    color: 'rgba(148, 163, 184, 0.12)'
+                                },
+                                ticks: {
+                                    color: '#64748b',
+                                    font: {
+                                        family: 'Segoe UI',
+                                        size: 12
+                                    },
+                                    callback: function(value) {
+                                        return '₱' + value.toLocaleString();
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            });
+            </script>
 
 <div class="dashboard-details-container" style="display: flex; gap: 20px; margin-top: 25px; flex-wrap: wrap;">
     
@@ -624,9 +761,9 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
                 <thead>
                     <tr style="text-align: left; border-bottom: 2px solid #f4f4f4; color: #888; font-size: 13px;">
                         <th style="padding: 12px;">ID</th>
-                        <th>Customer</th>
-                        <th>Total</th>
-                        <th>Status</th>
+                        <th style="padding: 12px;">Customer</th>
+                        <th style="padding: 12px;">Total</th>
+                        <th style="padding: 12px;">Status</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -634,9 +771,9 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
                         <?php foreach ($recent_orders as $order): ?>
                         <tr style="border-bottom: 1px solid #f9f9f9; font-size: 14px;">
                             <td style="padding: 12px; font-weight: bold;">#<?php echo $order['id']; ?></td>
-                            <td><?php echo htmlspecialchars($order['customer_name']); ?></td>
-                            <td>₱<?php echo number_format($order['total_amount'], 2); ?></td>
-                            <td>
+                            <td style="padding: 12px;"><?php echo htmlspecialchars($order['customer_name']); ?></td>
+                            <td style="padding: 12px; font-weight: 600; white-space: nowrap;">₱<?php echo number_format($order['total_amount'], 2); ?></td>
+                            <td style="padding: 12px;">
                                 <span class="status-badge" style="background: #e3f2fd; color: #1976d2; padding: 4px 10px; border-radius: 20px; font-size: 11px; text-transform: uppercase; font-weight: 600;">
                                     <?php echo $order['order_status']; ?>
                                 </span>
@@ -652,24 +789,37 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
     
         <?php include '../../includes/top_seller_widget.php'; ?>
         
-        <div class="details-card" style="flex:1; min-width:300px;">
-            <h3><i class="fas fa-solar-panel"></i> Solar Metrics</h3>
+        <div class="details-card" style="flex:1; min-width:300px; padding: 20px; background: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+            <h3 style="margin-bottom: 20px; color: #333; display: flex; align-items: center; gap: 10px; font-size: 16px; font-weight: 700;">
+                <i class="fas fa-solar-panel" style="color: #0a5c3d;"></i> Solar Metrics
+            </h3>
         
-            <div class="solar-metric">
-                <span>Total Panels Sold</span>
-                <strong><?php echo $solar_stats['panels_sold']; ?></strong>
+            <div class="solar-metric" style="display: flex; align-items: center; justify-content: space-between; padding: 15px 0; border-bottom: 1px dashed #eee;">
+                <span style="display: flex; align-items: center; gap: 8px; color: #555; font-size: 14px;">
+                    <i class="fas fa-solar-panel" style="color: #ffc107; font-size: 16px; width: 20px;"></i>
+                    Total Panels Sold
+                </span>
+                <strong style="font-size: 18px; color: #2e7d32; font-weight: 700;"><?php echo number_format($solar_stats['panels_sold']); ?></strong>
             </div>
         
-            <div class="solar-metric">
-                <span>Total System Installations</span>
-                <strong><?php echo $solar_stats['installations']; ?></strong>
+            <div class="solar-metric" style="display: flex; align-items: center; justify-content: space-between; padding: 15px 0; border-bottom: 1px dashed #eee;">
+                <span style="display: flex; align-items: center; gap: 8px; color: #555; font-size: 14px;">
+                    <i class="fas fa-tools" style="color: #0a5c3d; font-size: 16px; width: 20px;"></i>
+                    System Installations
+                </span>
+                <strong style="font-size: 18px; color: #2e7d32; font-weight: 700;"><?php echo number_format($solar_stats['installations']); ?></strong>
             </div>
         
-            <div class="solar-metric">
-                <span>Estimated kW Installed</span>
-                <strong><?php echo $solar_stats['kw_installed']; ?> kW</strong>
+            <div class="solar-metric" style="display: flex; align-items: center; justify-content: space-between; padding: 15px 0; border-bottom: none;">
+                <span style="display: flex; align-items: center; gap: 8px; color: #555; font-size: 14px;">
+                    <i class="fas fa-bolt" style="color: #e67e22; font-size: 16px; width: 20px;"></i>
+                    Est. kW Installed
+                </span>
+                <strong style="font-size: 18px; color: #e67e22; font-weight: 700;"><?php echo number_format($solar_stats['kw_installed'], 2); ?> kW</strong>
             </div>
         </div>
+        
+        <?php include '../../includes/monthly-generation-widget.php'; ?>
         
         <div class="details-card" style="flex:1; min-width:300px;">
             <h3><i class="fas fa-tasks"></i> Order Status</h3>
@@ -1093,18 +1243,28 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
                 } else {
                     $category = $conn_post->real_escape_string($_POST['category'] ?? '');
                     $brand = $conn_post->real_escape_string($_POST['brand'] ?? '');
+                    
+                    // If brand is empty and it's a package, default it to "Package"
+                    if (empty($brand) && (stripos($category, 'Package') !== false || empty($category))) {
+                        $brand = 'Package';
+                    }
+                    
                     $productName = $conn_post->real_escape_string($_POST['product-name'] ?? '');
                     $warranty = $conn_post->real_escape_string($_POST['warranty'] ?? '');
                     $price = (float)($_POST['price'] ?? 0);
-                    $stockQuantity = (int)($_POST['stock-quantity'] ?? 0);
+                    // Default stock to 9999 to keep it "enabled"
+                    $stockQuantity = isset($_POST['stock-quantity']) && $_POST['stock-quantity'] !== '' ? (int)$_POST['stock-quantity'] : 9999;
                     $description = $conn_post->real_escape_string($_POST['description'] ?? '');
                     $imagePath = 'path/to/uploaded/image.jpg';
+                    $packageType = $conn_post->real_escape_string($_POST['package-type'] ?? '');
+                    $status = $conn_post->real_escape_string($_POST['status'] ?? 'Active');
+                    if (empty($packageType)) $packageType = NULL;
                     
-                    if (empty($category) || empty($brand) || empty($productName) || $price <= 0 || $stockQuantity < 0) {
+                    if (empty($category) || empty($brand) || empty($productName) || $price <= 0) {
                         $addProductMsg = "<div class='alert error'>Please fill all required fields correctly.</div>";
                     } else {
-                        $stmt = $conn_post->prepare("INSERT INTO product (displayName, brandName, price, category, stockQuantity, warranty, description, imagePath, postedByStaffId) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
-                        $stmt->bind_param("ssdsisssi", $productName, $brand, $price, $category, $stockQuantity, $warranty, $description, $imagePath, $user_id);
+                        $stmt = $conn_post->prepare("INSERT INTO product (displayName, brandName, price, category, packageType, stockQuantity, warranty, description, imagePath, postedByStaffId, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                        $stmt->bind_param("ssdssisssis", $productName, $brand, $price, $category, $packageType, $stockQuantity, $warranty, $description, $imagePath, $user_id, $status);
                         
                         if ($stmt->execute()) {
 
@@ -1192,6 +1352,19 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
                                 </select>
                             </div>
             
+                            <div class="form-group" id="package-type-group" style="display: none;">
+                                <label for="package-type-select">
+                                    <i class="fas fa-solar-panel"></i>
+                                    Package Type <span class="required">*</span>
+                                </label>
+                                <select id="package-type-select" name="package-type">
+                                    <option value="">Select Package Type</option>
+                                    <option value="On-Grid">On-Grid</option>
+                                    <option value="Hybrid">Hybrid</option>
+                                    <option value="Off-Grid">Off-Grid</option>
+                                </select>
+                            </div>
+            
                             <div class="form-group">
                                 <label for="brand-select">
                                     <i class="fas fa-trademark"></i>
@@ -1216,6 +1389,17 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
                                     <span id="warranty-label-text">Warranty</span> <span class="required">*</span>
                                 </label>
                                 <input type="text" id="warranty" name="warranty" placeholder="e.g., 5 years" value="5 years" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="status-select">
+                                    <i class="fas fa-eye"></i>
+                                    Visibility Status <span class="required">*</span>
+                                </label>
+                                <select id="status-select" name="status" required>
+                                    <option value="Active">Active (Visible)</option>
+                                    <option value="Hidden">Hidden (Draft)</option>
+                                </select>
                             </div>
             
                             <div class="form-row-group">
@@ -1247,7 +1431,7 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
                                 <textarea id="description-input" name="description" placeholder="Describe your product features, specifications, and benefits..." required></textarea>
                             </div>
             
-                            <div class="form-group">
+                            <div class="form-group" style="grid-column: 1 / -1;">
                                 <label>
                                     <i class="fas fa-image"></i>
                                     Product Images <span class="required">*</span>

@@ -17,6 +17,9 @@ $displayName = isset($_POST['displayName']) ? trim($_POST['displayName']) : '';
 $brandName = isset($_POST['brandName']) ? trim($_POST['brandName']) : '';
 $price = isset($_POST['price']) ? floatval($_POST['price']) : 0;
 $category = isset($_POST['category']) ? trim($_POST['category']) : '';
+$packageType = isset($_POST['package-type']) ? trim($_POST['package-type']) : NULL;
+if (empty($packageType)) $packageType = NULL;
+$status = isset($_POST['status']) ? trim($_POST['status']) : 'Active';
 
 // Default brand for packages if empty
 if (empty($brandName) && (stripos($category, 'Package') !== false || empty($category))) {
@@ -51,13 +54,15 @@ try {
                   brandName = ?, 
                   price = ?, 
                   category = ?, 
+                  packageType = ?,
                   stockQuantity = ?, 
                   warranty = ?, 
-                  description = ?
+                  description = ?,
+                  status = ?
               WHERE id = ?";
     
     $stmt = $conn->prepare($query);
-    $stmt->bind_param("ssdsissi", $displayName, $brandName, $price, $category, $stockQuantity, $warranty, $description, $product_id);
+    $stmt->bind_param("ssdsissssi", $displayName, $brandName, $price, $category, $packageType, $stockQuantity, $warranty, $description, $status, $product_id);
     
     if (!$stmt->execute()) {
         throw new Exception('Failed to update product details');

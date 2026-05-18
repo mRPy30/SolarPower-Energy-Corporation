@@ -19,12 +19,14 @@ FROM product p
 LEFT JOIN product_images pi 
     ON p.id = pi.product_id
 WHERE pi.image_path IS NOT NULL 
-  AND (TRIM(p.brandName) = 'Hybrid' OR TRIM(p.brandName) = 'Grid-tie')
+  AND p.status = 'Active'
+  AND (TRIM(p.brandName) = 'Hybrid' OR TRIM(p.brandName) = 'Grid-tie' OR TRIM(p.brandName) = 'Package')
 GROUP BY p.id
 ORDER BY 
     CASE 
         WHEN TRIM(p.brandName) = 'Grid-tie' THEN 0 
         WHEN TRIM(p.brandName) = 'Hybrid' THEN 1 
+        WHEN TRIM(p.brandName) = 'Package' THEN 2 
     END ASC, 
     p.id DESC";
 
@@ -79,42 +81,42 @@ $conn->close();
     <meta property="twitter:image" content="https://solarpower.com.ph/assets/img/new_logo.png">
 
     <script type="application/ld+json">
-{
-    "@context": "https://schema.org",
-    "@type": "LocalBusiness",
-    "name": "SolarPower Energy Corporation",
-    "image": "https://solarpower.com.ph/assets/img/new_logo.png",
-    "url": "https://solarpower.com.ph",
-    "telephone": "+63-995-394-7379",
-    "address": {
-        "@type": "PostalAddress",
-        "streetAddress": "Various Locations",
-        "addressLocality": "Metro Manila",
-        "addressCountry": "PH"
-    },
-    "geo": {
-        "@type": "GeoCoordinates",
-        "latitude": 14.5995,
-        "longitude": 120.9842
-    },
-    "openingHoursSpecification": {
-        "@type": "OpeningHoursSpecification",
-        "dayOfWeek": [
-            "Monday",
-            "Tuesday",
-            "Wednesday",
-            "Thursday",
-            "Friday",
-            "Saturday"
-        ],
-        "opens": "08:00",
-        "closes": "17:00"
-    },
-    "sameAs": [
-        "https://www.facebook.com/solarpowerenergycorp"
-    ]
-}
-</script>
+        {
+            "@context": "https://schema.org",
+            "@type": "LocalBusiness",
+            "name": "SolarPower Energy Corporation",
+            "image": "https://solarpower.com.ph/assets/img/new_logo.png",
+            "url": "https://solarpower.com.ph",
+            "telephone": "+63-995-394-7379",
+            "address": {
+                "@type": "PostalAddress",
+                "streetAddress": "Various Locations",
+                "addressLocality": "Metro Manila",
+                "addressCountry": "PH"
+            },
+            "geo": {
+                "@type": "GeoCoordinates",
+                "latitude": 14.5995,
+                "longitude": 120.9842
+            },
+            "openingHoursSpecification": {
+                "@type": "OpeningHoursSpecification",
+                "dayOfWeek": [
+                    "Monday",
+                    "Tuesday",
+                    "Wednesday",
+                    "Thursday",
+                    "Friday",
+                    "Saturday"
+                ],
+                "opens": "08:00",
+                "closes": "17:00"
+            },
+            "sameAs": [
+                "https://www.facebook.com/solarpowerenergycorp"
+            ]
+        }
+    </script>
 
     <!-- CSS Libraries -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
@@ -494,7 +496,7 @@ $conn->close();
     <section class="py-16 bg-amber-400 relative overflow-hidden" id="solarCalculator">
         <!-- Background Pattern -->
         <div class="absolute inset-0 opacity-10 pointer-events-none" style="background-image: radial-gradient(#000 1px, transparent 1px); background-size: 20px 20px;"></div>
-        
+
         <div class="container relative z-10 mx-auto px-4 max-w-6xl">
             <!-- Header -->
             <div class="text-center mb-10" data-aos="fade-up">
@@ -507,7 +509,7 @@ $conn->close();
 
             <!-- Main Card -->
             <div class="bg-white rounded-3xl shadow-2xl p-6 md:p-10 mb-12 border border-white/50 backdrop-blur-sm" data-aos="fade-up" data-aos-delay="100">
-                
+
                 <!-- Input Section -->
                 <div class="max-w-xl mx-auto mb-10 text-center">
                     <label for="twBillAmount" class="block text-slate-700 font-bold mb-3">Average Monthly Electric Bill</label>
@@ -548,7 +550,7 @@ $conn->close();
                     <!-- Solar Panels -->
                     <div class="bg-slate-50 rounded-2xl p-6 text-center border border-slate-100 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-200 group relative overflow-hidden">
                         <div class="w-28 h-28 mx-auto mb-4 bg-white rounded-2xl shadow-sm flex items-center justify-center p-2 group-hover:scale-110 transition-transform duration-300 overflow-hidden">
-                            <img src="assets/img/solar-panels.png" alt="Solar Panels" class="w-full h-full object-contain">
+                            <img src="assets/img/panels.png" alt="Solar Panels" class="w-full h-full object-contain">
                         </div>
                         <div class="text-3xl font-bold text-slate-800 mb-1" id="twPanelsValue">6</div>
                         <div class="text-xs font-bold text-slate-500 uppercase tracking-wide">Solar Panels</div>
@@ -588,14 +590,14 @@ $conn->close();
     <section class="bg-amber-500 py-6 overflow-hidden relative shadow-inner">
         <!-- Title -->
         <div class="text-center mb-4">
-            <h3 class="text-xs sm:text-sm font-bold text-white/90 uppercase tracking-[0.2em]">Trusted by Leading Solar Brands</h3>
+            <h3 class="text-xs sm:text-sm font-bold text-white/90 uppercase tracking-[0.2em]">Our Brand Partners</h3>
         </div>
 
         <!-- Marquee Container -->
         <div class="relative flex overflow-x-hidden group">
             <!-- Left Gradient Mask -->
             <div class="absolute top-0 left-0 w-16 md:w-32 h-full bg-gradient-to-r from-amber-500 to-transparent z-10 pointer-events-none"></div>
-            
+
             <!-- Right Gradient Mask -->
             <div class="absolute top-0 right-0 w-16 md:w-32 h-full bg-gradient-to-l from-amber-500 to-transparent z-10 pointer-events-none"></div>
 
@@ -678,65 +680,79 @@ $conn->close();
     <!-- Tailwind Config Additions & JS Logic for Calculator -->
     <style>
         @keyframes marquee {
-            0% { transform: translateX(0); }
-            100% { transform: translateX(-50%); }
+            0% {
+                transform: translateX(0);
+            }
+
+            100% {
+                transform: translateX(-50%);
+            }
         }
+
         .animate-marquee {
             animation: marquee 12s linear infinite;
         }
+
         @media (min-width: 768px) {
             .animate-marquee {
                 animation: marquee 25s linear infinite;
             }
         }
+
         .animate-marquee-paused {
             animation-play-state: paused;
         }
-        
+
         /* Fallback for Tailwind range input styling cross-browser */
         input[type=range]::-webkit-slider-thumb {
             -webkit-appearance: none;
             height: 20px;
             width: 20px;
             border-radius: 50%;
-            background: #f59e0b; /* amber-500 */
+            background: #f59e0b;
+            /* amber-500 */
             cursor: pointer;
-            margin-top: -6px; /* You need to specify a margin in Chrome, but in Firefox and IE it is automatic */
+            margin-top: -6px;
+            /* You need to specify a margin in Chrome, but in Firefox and IE it is automatic */
             box-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
             transition: transform 0.15s ease-in-out;
         }
+
         input[type=range]::-webkit-slider-thumb:hover {
             transform: scale(1.2);
-            background: #d97706; /* amber-600 */
+            background: #d97706;
+            /* amber-600 */
         }
+
         input[type=range]::-webkit-slider-runnable-track {
             width: 100%;
             height: 8px;
             cursor: pointer;
-            background: #e2e8f0; /* slate-200 */
+            background: #e2e8f0;
+            /* slate-200 */
             border-radius: 4px;
         }
     </style>
-    
+
     <script>
         function updateTwCalculator(val) {
             let bill = parseFloat(val);
             if (isNaN(bill) || bill < 0) bill = 0;
-            
+
             // Basic estimation logic
             // Assuming cost per kWh is around ₱12
             // And 1 kWp system produces roughly 120 kWh per month
             let kwhUsed = bill / 12;
             let kwpRequired = kwhUsed / 120;
-            
+
             // Assume 1 panel is roughly 400W (0.4 kWp)
             let panelsNeeded = Math.ceil(kwpRequired / 0.4);
-            
+
             // Calculate Savings
             // Let's assume solar offsets 70% of the bill on average
             let monthlySavings = bill * 0.70;
             let yearlySavings = monthlySavings * 12;
-            
+
             // Cap it if they put extreme values, or handle minimums
             if (bill < 1000) {
                 kwpRequired = 0;
@@ -748,9 +764,12 @@ $conn->close();
             // Update DOM
             document.getElementById('twKwValue').textContent = kwpRequired.toFixed(1);
             document.getElementById('twPanelsValue').textContent = panelsNeeded;
-            
+
             // Format Currency
-            const formatter = new Intl.NumberFormat('en-PH', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+            const formatter = new Intl.NumberFormat('en-PH', {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            });
             document.getElementById('twMonthlySavings').textContent = formatter.format(monthlySavings);
             document.getElementById('twYearlySavings').textContent = formatter.format(yearlySavings);
 
@@ -799,6 +818,9 @@ $conn->close();
                     </button>
                     <button class="filter-btn" data-filter="Hybrid">
                         <i class="fas fa-battery-full"></i> Hybrid
+                    </button>
+                    <button class="filter-btn" data-filter="Package">
+                        <i class="fas fa-box-open"></i> Package Deals
                     </button>
                 </div>
 
@@ -2425,7 +2447,7 @@ $conn->close();
     // ============================================
     let cart = [];
 
-    document.addEventListener('DOMContentLoaded', function () {
+    document.addEventListener('DOMContentLoaded', function() {
         console.log('🚀 Solar Power System Initialized');
 
         // Initialize all modules
@@ -2755,7 +2777,7 @@ $conn->close();
         sel.innerHTML = '<option value="">' + placeholder + '</option>';
         items
             .sort((a, b) => (a[labelKey] || '').localeCompare(b[labelKey] || ''))
-            .forEach(function (item) {
+            .forEach(function(item) {
                 const opt = document.createElement('option');
                 opt.value = item[valueKey];
                 opt.textContent = item[labelKey];
@@ -2772,7 +2794,7 @@ $conn->close();
         if (!provinceEl) return;
 
         // When province changes — load cities/municipalities
-        provinceEl.addEventListener('change', async function () {
+        provinceEl.addEventListener('change', async function() {
             const code = this.value;
 
             municipalityEl.innerHTML = '<option value="">Select City / Municipality</option>';
@@ -2800,10 +2822,10 @@ $conn->close();
 
             municipalityEl.innerHTML = '<option value="">Loading cities...</option>';
             try {
-                const cities = await psgcFetch(PSGC_BASE + '/provinces/' + code + '/cities/').catch(function () {
+                const cities = await psgcFetch(PSGC_BASE + '/provinces/' + code + '/cities/').catch(function() {
                     return [];
                 });
-                const municipalities = await psgcFetch(PSGC_BASE + '/provinces/' + code + '/municipalities/').catch(function () {
+                const municipalities = await psgcFetch(PSGC_BASE + '/provinces/' + code + '/municipalities/').catch(function() {
                     return [];
                 });
                 const combined = cities.concat(municipalities);
@@ -2816,7 +2838,7 @@ $conn->close();
         });
 
         // When municipality/city changes — load barangays
-        municipalityEl.addEventListener('change', async function () {
+        municipalityEl.addEventListener('change', async function() {
             const code = this.value;
 
             barangayEl.innerHTML = '<option value="">Select Barangay</option>';
@@ -2826,11 +2848,11 @@ $conn->close();
 
             barangayEl.innerHTML = '<option value="">Loading barangays...</option>';
             try {
-                let barangays = await psgcFetch(PSGC_BASE + '/cities/' + code + '/barangays/').catch(function () {
+                let barangays = await psgcFetch(PSGC_BASE + '/cities/' + code + '/barangays/').catch(function() {
                     return null;
                 });
                 if (!barangays || barangays.length === 0) {
-                    barangays = await psgcFetch(PSGC_BASE + '/municipalities/' + code + '/barangays/').catch(function () {
+                    barangays = await psgcFetch(PSGC_BASE + '/municipalities/' + code + '/barangays/').catch(function() {
                         return [];
                     });
                 }
@@ -2851,17 +2873,17 @@ $conn->close();
             populateSelect('province', provinces, 'code', 'name', 'Select Province');
 
             // Append NCR (Metro Manila) highly-urbanized cities as a separate group
-            const ncrCities = await psgcFetch(PSGC_BASE + '/regions/130000000/cities/').catch(function () {
+            const ncrCities = await psgcFetch(PSGC_BASE + '/regions/130000000/cities/').catch(function() {
                 return [];
             });
             if (ncrCities && ncrCities.length > 0) {
                 const optgroup = document.createElement('optgroup');
                 optgroup.label = '--- NCR (Metro Manila) ---';
                 ncrCities
-                    .sort(function (a, b) {
+                    .sort(function(a, b) {
                         return a.name.localeCompare(b.name);
                     })
-                    .forEach(function (city) {
+                    .forEach(function(city) {
                         const opt = document.createElement('option');
                         opt.value = 'NCR_' + city.code;
                         opt.textContent = city.name + ' (NCR)';
@@ -3343,7 +3365,7 @@ $conn->close();
 
             if (file.type.startsWith('image/')) {
                 const reader = new FileReader();
-                reader.onload = function (e) {
+                reader.onload = function(e) {
                     previewImg.src = e.target.result;
                     previewImg.style.display = 'block';
                 };
@@ -3421,9 +3443,9 @@ $conn->close();
         formData.append('receipt', receiptFile);
 
         fetch('controllers/ordering/create-instapay-order.php', {
-            method: 'POST',
-            body: formData
-        })
+                method: 'POST',
+                body: formData
+            })
             .then(response => {
                 // Capture raw text first so we can debug if it is not JSON
                 return response.text().then(text => {
@@ -3513,12 +3535,12 @@ $conn->close();
 
         // Call backend to create Maya payment
         fetch('process_payment.php', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(orderData)
-        })
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(orderData)
+            })
             .then(response => response.json())
             .then(data => {
                 confirmBtn.disabled = false;
@@ -3587,12 +3609,12 @@ $conn->close();
         };
 
         fetch('controllers/ordering/create-cod-order.php', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(orderData)
-        })
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(orderData)
+            })
             .then(response => response.json())
             .then(data => {
                 confirmBtn.disabled = false;
@@ -3674,7 +3696,7 @@ $conn->close();
         const billInput = document.getElementById('billAmount');
 
         if (billInput) {
-            billInput.addEventListener('keypress', function (event) {
+            billInput.addEventListener('keypress', function(event) {
                 if (event.key === 'Enter') {
                     calculateSavings();
                 }
@@ -3749,7 +3771,7 @@ $conn->close();
         }, 100);
     }
 
-    document.addEventListener('DOMContentLoaded', function () {
+    document.addEventListener('DOMContentLoaded', function() {
         setupCalculator();
 
         const calculatorBox = document.getElementById('calculatorBox');
@@ -3760,7 +3782,7 @@ $conn->close();
         // Add click handler for bulb icon with wiggle animation
         const bulbIcon = document.querySelector('.savings-icon');
         if (bulbIcon) {
-            bulbIcon.addEventListener('click', function () {
+            bulbIcon.addEventListener('click', function() {
                 // Trigger wiggle animation
                 this.style.animation = 'none';
                 setTimeout(() => {
@@ -3785,7 +3807,7 @@ $conn->close();
         const filterButtons = document.querySelectorAll('.filter-btn');
 
         filterButtons.forEach(btn => {
-            btn.addEventListener('click', function () {
+            btn.addEventListener('click', function() {
                 filterButtons.forEach(b => b.classList.remove('active'));
                 this.classList.add('active');
                 const filterValue = this.getAttribute('data-filter');
@@ -3838,7 +3860,7 @@ $conn->close();
     function initializeSort() {
         const sortSelect = document.getElementById('sortSelect');
         if (sortSelect) {
-            sortSelect.addEventListener('change', function () {
+            sortSelect.addEventListener('change', function() {
                 sortProducts(this.value);
             });
         }
@@ -3968,7 +3990,7 @@ $conn->close();
         }
     }
 
-    document.getElementById('roofTypeSelect').addEventListener('change', function () {
+    document.getElementById('roofTypeSelect').addEventListener('change', function() {
         const other = document.getElementById('roofOtherInput');
         if (this.value === 'Other') {
             other.classList.remove('d-none');
@@ -3986,7 +4008,7 @@ $conn->close();
 
         if (!inspectionForm) return;
 
-        inspectionForm.addEventListener('submit', async function (e) {
+        inspectionForm.addEventListener('submit', async function(e) {
             e.preventDefault();
 
             const submitBtn = document.getElementById('inspectionBtn');
@@ -4089,7 +4111,7 @@ $conn->close();
     }
 
     // Initialize when page loads
-    document.addEventListener('DOMContentLoaded', function () {
+    document.addEventListener('DOMContentLoaded', function() {
         initializeInspectionForm();
     });
 
@@ -4117,7 +4139,7 @@ $conn->close();
 
         if (!rtoForm) return;
 
-        rtoForm.addEventListener('submit', async function (e) {
+        rtoForm.addEventListener('submit', async function(e) {
             e.preventDefault();
 
             const submitBtn = rtoForm.querySelector('.btn-submit-rto');
@@ -4166,7 +4188,7 @@ $conn->close();
     }
 
     // Initialize Rent to Own form when page loads
-    document.addEventListener('DOMContentLoaded', function () {
+    document.addEventListener('DOMContentLoaded', function() {
         initializeRentToOwnForm();
     });
 
@@ -4218,7 +4240,7 @@ $conn->close();
     /**
      * Initialize the view more functionality on page load
      */
-    document.addEventListener('DOMContentLoaded', function () {
+    document.addEventListener('DOMContentLoaded', function() {
         const productsGrid = document.getElementById('productsGrid');
         const viewMoreContainer = document.getElementById('viewMoreContainer');
         const allProducts = document.querySelectorAll('.product-card');
@@ -4572,7 +4594,7 @@ $conn->close();
     }
 
     // Close panel when clicking outside
-    document.addEventListener('click', function (e) {
+    document.addEventListener('click', function(e) {
         const panel = document.getElementById('trackPanel');
         const btn = document.querySelector('.float-track-btn');
         if (!panel.contains(e.target) && !btn.contains(e.target)) {

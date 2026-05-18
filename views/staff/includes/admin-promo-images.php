@@ -70,6 +70,12 @@ if (file_exists($configFile)) {
 
 foreach (['main', 'top', 'bottom'] as $s) {
   $config[$s]['start'] = format_start_display((string)($config[$s]['start'] ?? ''));
+  
+  // Prepend relative prefix so it resolves correctly inside the staff directory
+  $img = $config[$s]['image'] ?? '';
+  if (!empty($img) && strpos($img, 'http') !== 0 && strpos($img, '../../') !== 0) {
+      $config[$s]['image'] = '../../' . $img;
+  }
 }
 
 
@@ -395,7 +401,7 @@ $error   = $_GET['error']  ?? false;
         </div>
         <div class="upload-card-body">
           <div class="thumb-wrap main-thumb" id="thumb-main">
-            <img src="<?= htmlspecialchars($config['main']['image']) ?>?cb=<?= time() ?>" alt="Main promo" id="preview-main">
+            <img src="<?= htmlspecialchars($config['main']['image']) ?>?cb=<?= time() ?>" alt="Main promo" id="preview-main" onerror="mgenPromoError(this)">
             <div class="thumb-overlay">
               <i class="fas fa-camera"></i>
               <span>Current image</span>
@@ -442,7 +448,7 @@ $error   = $_GET['error']  ?? false;
         </div>
         <div class="upload-card-body">
           <div class="thumb-wrap small-thumb" id="thumb-top">
-            <img src="<?= htmlspecialchars($config['top']['image']) ?>?cb=<?= time() ?>" alt="Top right promo" id="preview-top">
+            <img src="<?= htmlspecialchars($config['top']['image']) ?>?cb=<?= time() ?>" alt="Top right promo" id="preview-top" onerror="mgenPromoError(this)">
             <div class="thumb-overlay">
               <i class="fas fa-camera"></i>
               <span>Current image</span>
@@ -489,7 +495,7 @@ $error   = $_GET['error']  ?? false;
         </div>
         <div class="upload-card-body">
           <div class="thumb-wrap small-thumb" id="thumb-bottom">
-            <img src="<?= htmlspecialchars($config['bottom']['image']) ?>?cb=<?= time() ?>" alt="Bottom right promo" id="preview-bottom">
+            <img src="<?= htmlspecialchars($config['bottom']['image']) ?>?cb=<?= time() ?>" alt="Bottom right promo" id="preview-bottom" onerror="mgenPromoError(this)">
             <div class="thumb-overlay">
               <i class="fas fa-camera"></i>
               <span>Current image</span>
@@ -545,16 +551,16 @@ $error   = $_GET['error']  ?? false;
       <div class="preview-body">
         <div class="mini-promo">
           <div class="mini-card large">
-            <img src="<?= htmlspecialchars($config['main']['image']) ?>?cb=<?= time() ?>" id="preview-panel-main" alt="Main">
+            <img src="<?= htmlspecialchars($config['main']['image']) ?>?cb=<?= time() ?>" id="preview-panel-main" alt="Main" onerror="mgenPromoError(this)">
             <div class="mini-card-label">Main Banner</div>
           </div>
           <div style="display:flex;flex-direction:column;gap:8px;">
             <div class="mini-card">
-              <img src="<?= htmlspecialchars($config['top']['image']) ?>?cb=<?= time() ?>" id="preview-panel-top" alt="Top">
+               <img src="<?= htmlspecialchars($config['top']['image']) ?>?cb=<?= time() ?>" id="preview-panel-top" alt="Top" onerror="mgenPromoError(this)">
               <div class="mini-card-label">Top Right</div>
             </div>
             <div class="mini-card">
-              <img src="<?= htmlspecialchars($config['bottom']['image']) ?>?cb=<?= time() ?>" id="preview-panel-bottom" alt="Bottom">
+               <img src="<?= htmlspecialchars($config['bottom']['image']) ?>?cb=<?= time() ?>" id="preview-panel-bottom" alt="Bottom" onerror="mgenPromoError(this)">
               <div class="mini-card-label">Bottom Right</div>
             </div>
           </div>
@@ -750,6 +756,48 @@ setInterval(refreshStartInputsFromNow, 60000);
 document.querySelectorAll('form[action*="save-promo-images.php"]').forEach(form => {
   form.addEventListener('submit', handleScheduleCheckOnSubmit);
 });
+
+// Dynamic Promo Image Error Handler (Swaps broken images for vector icon)
+function mgenPromoError(img) {
+  const parent = img.parentElement;
+  if (!parent) return;
+  
+  img.style.display = 'none';
+  
+  // Check if placeholder already exists
+  if (parent.querySelector('.mgen-promo-placeholder')) return;
+  
+  const isLarge = parent.classList.contains('main-thumb') || parent.classList.contains('large');
+  const placeholder = document.createElement('div');
+  placeholder.className = 'mgen-promo-placeholder';
+  placeholder.style.display = 'flex';
+  placeholder.style.flexDirection = 'column';
+  placeholder.style.alignItems = 'center';
+  placeholder.style.justifyContent = 'center';
+  placeholder.style.background = '#f8fafc';
+  placeholder.style.border = '1px dashed #cbd5e1';
+  placeholder.style.borderRadius = '8px';
+  placeholder.style.width = '100%';
+  placeholder.style.height = '100%';
+  placeholder.style.minHeight = isLarge ? '120px' : '64px';
+  placeholder.style.color = '#94a3b8';
+  placeholder.style.gap = isLarge ? '6px' : '2px';
+  placeholder.style.padding = '8px';
+  
+  const icon = document.createElement('i');
+  icon.className = 'fas fa-images';
+  icon.style.fontSize = isLarge ? '28px' : '16px';
+  
+  const text = document.createElement('span');
+  text.textContent = 'No Image';
+  text.style.fontSize = isLarge ? '11px' : '9px';
+  text.style.fontWeight = '500';
+  
+  placeholder.appendChild(icon);
+  placeholder.appendChild(text);
+  
+  parent.insertBefore(placeholder, parent.firstChild);
+}
 </script>
 
 </div><!-- /promo-images -->

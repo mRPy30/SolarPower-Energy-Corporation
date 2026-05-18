@@ -22,6 +22,7 @@ LEFT JOIN product_images pi
     ON p.id = pi.product_id
 WHERE p.brandName IN ('Grid-Tie', 'Hybrid', 'Off-Grid')
 AND pi.image_path IS NOT NULL
+AND p.status = 'Active'
 GROUP BY p.id
 ORDER BY p.brandName, p.price";
 

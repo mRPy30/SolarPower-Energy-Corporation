@@ -110,7 +110,8 @@ try {
                    (SELECT pi.image_path FROM product_images pi WHERE pi.product_id = p.id ORDER BY pi.id ASC LIMIT 1) AS image
             FROM product p
             WHERE p.category = :category
-              AND p.stockQuantity > 0";
+              AND p.stockQuantity > 0
+              AND p.status = 'Active'";
 
     $params = ['category' => $dbCategory];
 

@@ -27,7 +27,7 @@ $sql = "SELECT
     p.stockQuantity,
     p.warranty
 FROM product p
-WHERE p.id = ?";
+WHERE p.id = ? AND p.status = 'Active'";
 
 $stmt = $conn->prepare($sql);
 $stmt->bind_param("i", $productId);
@@ -71,7 +71,7 @@ $sql = "SELECT
     pi.image_path
 FROM product p
 LEFT JOIN product_images pi ON p.id = pi.product_id
-WHERE p.category = ? AND p.id != ?
+WHERE p.category = ? AND p.id != ? AND p.status = 'Active'
 GROUP BY p.id
 LIMIT 4";
 

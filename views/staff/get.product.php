@@ -21,8 +21,10 @@ $sql = "SELECT
     p.price,
     p.stockQuantity,
     p.category,
+    p.packageType,
     p.warranty,
-    p.description
+    p.description,
+    p.status
 FROM product p
 WHERE p.id = ?";
 

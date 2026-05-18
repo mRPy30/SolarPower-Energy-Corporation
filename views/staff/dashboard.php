@@ -36,7 +36,7 @@ function get_dashboard_analytics($conn)
     $sql = "
         SELECT IFNULL(SUM(total_amount), 0) AS revenue 
         FROM orders 
-        WHERE order_status IN ('installed', 'completed', 'approved')
+        WHERE order_status IN ('installed', 'completed', 'approved', 'delivered', 'confirmed')
     ";
     $data['revenue'] = $conn->query($sql)->fetch_assoc()['revenue'];
 
@@ -46,7 +46,7 @@ function get_dashboard_analytics($conn)
         FROM orders 
         WHERE MONTH(created_at) = MONTH(CURRENT_DATE())
         AND YEAR(created_at) = YEAR(CURRENT_DATE())
-        AND order_status IN ('installed', 'completed', 'approved')
+        AND order_status IN ('installed', 'completed', 'approved', 'delivered', 'confirmed')
     ";
     $data['monthly_sales'] = $conn->query($sql)->fetch_assoc()['monthly_sales'];
 
@@ -135,9 +135,11 @@ function get_best_seller($conn)
 {
     $sql = "
         SELECT 
+            oi.product_id,
             oi.product_name,
             SUM(oi.quantity) AS total_qty,
-            COUNT(DISTINCT oi.order_id) AS order_frequency
+            COUNT(DISTINCT oi.order_id) AS order_frequency,
+            SUM(oi.quantity * oi.price) AS total_revenue
         FROM order_items oi
         GROUP BY oi.product_id
         ORDER BY total_qty DESC
@@ -186,13 +188,51 @@ if (empty($fullName) && !empty($current_staff)) {
 }
 
 // Dashboard Statistics Functions
+function get_sparkline_svg($data_points, $color = '#3b82f6', $gradient_id = 'grad-blue') {
+    $max = max($data_points) ?: 1;
+    $min = min($data_points);
+    $range = ($max - $min) ?: 1;
+    
+    $width = 80;
+    $height = 30;
+    
+    $points = [];
+    $fill_points = [];
+    $fill_points[] = "0,$height";
+    
+    foreach ($data_points as $i => $val) {
+        $x = ($i / (count($data_points) - 1)) * $width;
+        $y = $height - (($val - $min) / $range) * ($height - 6) - 3;
+        $points[] = "$x,$y";
+        $fill_points[] = "$x,$y";
+    }
+    
+    $fill_points[] = "$width,$height";
+    
+    $points_str = implode(' ', $points);
+    $fill_points_str = implode(' ', $fill_points);
+    
+    return '
+    <svg width="' . $width . '" height="' . $height . '" viewBox="0 0 ' . $width . ' ' . $height . '" style="overflow: visible;">
+        <defs>
+            <linearGradient id="' . $gradient_id . '" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="' . $color . '" stop-opacity="0.2"/>
+                <stop offset="100%" stop-color="' . $color . '" stop-opacity="0"/>
+            </linearGradient>
+        </defs>
+        <polygon points="' . $fill_points_str . '" fill="url(#' . $gradient_id . ')"/>
+        <polyline points="' . $points_str . '" fill="none" stroke="' . $color . '" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>';
+}
+
 function get_stats($conn)
 {
     $stats = [
         'clients' => 0,
         'products' => 0,
         'orders' => 0,
-        'suppliers' => 0,
+        'revenue' => 0,
+        'pending_inquiries' => 0,
     ];
 
     $result = $conn->query("SELECT COUNT(DISTINCT customer_email) FROM orders");
@@ -201,29 +241,30 @@ function get_stats($conn)
         $result->close();
     }
 
-
-
     $result = $conn->query("SELECT COUNT(*) FROM product");
     if ($result) {
-        $stats['products'] = $result->fetch_row()[0];
+        $stats['products'] = $result->fetch_row()[0] ?? 0;
         $result->close();
     }
-
-
 
     $result = $conn->query("SELECT COUNT(*) FROM orders");
     if ($result) {
-        $stats['orders'] = $result->fetch_row()[0];
+        $stats['orders'] = $result->fetch_row()[0] ?? 0;
         $result->close();
     }
 
-
-
-    $result = $conn->query("SELECT COUNT(*) FROM supplier");
+    $result = $conn->query("SELECT SUM(total_amount) FROM orders WHERE order_status IN ('installed', 'completed', 'approved', 'delivered', 'confirmed')");
     if ($result) {
-        $stats['suppliers'] = $result->fetch_row()[0];
+        $stats['revenue'] = $result->fetch_row()[0] ?? 0;
         $result->close();
     }
+
+    $result = $conn->query("SELECT COUNT(*) FROM contact_messages WHERE status = 'new'");
+    if ($result) {
+        $stats['pending_inquiries'] = $result->fetch_row()[0] ?? 0;
+        $result->close();
+    }
+
     return $stats;
 }
 
@@ -232,7 +273,7 @@ function get_recent_orders($conn)
 {
     $orders = [];
     // Updated to include all columns requested by your dashboard view
-    $query = "SELECT id, customer_name, total_amount, order_status 
+    $query = "SELECT id, customer_name, total_amount, order_status, sales_channel 
               FROM orders 
               ORDER BY created_at DESC 
               LIMIT 5";
@@ -261,6 +302,37 @@ function get_most_sold_product($conn)
               LIMIT 1";
     $result = $conn->query($query);
     return ($result && $result->num_rows > 0) ? $result->fetch_assoc() : null;
+}
+
+function get_monthly_revenue_trend($conn) {
+    $months = [];
+    $revenues = [];
+    
+    // Fetch last 6 months including current month
+    $query = "SELECT 
+                DATE_FORMAT(created_at, '%b %Y') AS month_name,
+                SUM(total_amount) AS monthly_revenue
+              FROM orders
+              WHERE order_status IN ('installed', 'completed', 'approved', 'delivered', 'confirmed')
+                AND created_at >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
+              GROUP BY YEAR(created_at), MONTH(created_at)
+              ORDER BY YEAR(created_at) ASC, MONTH(created_at) ASC";
+              
+    $result = $conn->query($query);
+    if ($result) {
+        while ($row = $result->fetch_assoc()) {
+            $months[] = $row['month_name'];
+            $revenues[] = (float)$row['monthly_revenue'];
+        }
+    }
+    
+    // Fallback if no data
+    if (empty($months)) {
+        $months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+        $revenues = [0, 0, 0, 0, 0, 0];
+    }
+    
+    return ['months' => $months, 'revenues' => $revenues];
 }
 
 function get_all_inquiries($conn)
@@ -339,12 +411,27 @@ $outOfStock = $dashboard_analytics['out_of_stock'];
 $solar_stats = get_solar_metrics($conn);
 $order_status = get_order_status($conn);
 $best_seller = get_best_seller($conn);
+$best_seller_image = '../../assets/img/product-placeholder.png';
+if ($best_seller && !empty($best_seller['product_id'])) {
+    $img_query = "SELECT image_path FROM product_images WHERE product_id = ? ORDER BY id ASC LIMIT 1";
+    $img_stmt = $conn->prepare($img_query);
+    if ($img_stmt) {
+        $img_stmt->bind_param("i", $best_seller['product_id']);
+        $img_stmt->execute();
+        $img_res = $img_stmt->get_result();
+        if ($img_res && $img_res->num_rows > 0) {
+            $best_seller_image = '../../' . $img_res->fetch_assoc()['image_path'];
+        }
+        $img_stmt->close();
+    }
+}
 $stats = get_stats($conn);
 $recent_orders = get_recent_orders($conn);
 $most_sold_product = get_most_sold_product($conn);
 $all_products = get_all_products($conn);
 $all_suppliers = get_all_suppliers($conn);
 $product_count = count($all_products);
+$revenue_trend = get_monthly_revenue_trend($conn);
 
 // Close connection before HTML output starts
 $conn->close();
@@ -435,13 +522,76 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
                 $stmt->close();
                 break;
 
+            case 'create_manual_order':
+                $customer_name = isset($_POST['customer_name']) ? trim($_POST['customer_name']) : '';
+                $customer_email = isset($_POST['customer_email']) ? trim($_POST['customer_email']) : '';
+                $customer_phone = isset($_POST['customer_phone']) ? trim($_POST['customer_phone']) : '';
+                $customer_address = isset($_POST['customer_address']) ? trim($_POST['customer_address']) : '';
+                $sales_channel = isset($_POST['sales_channel']) ? trim($_POST['sales_channel']) : 'Website';
+                $product_id = isset($_POST['product_id']) ? (int)$_POST['product_id'] : 0;
+                $custom_price = isset($_POST['custom_price']) ? trim($_POST['custom_price']) : '';
+
+                if (empty($customer_name) || empty($customer_email) || empty($product_id)) {
+                    echo json_encode(['success' => false, 'message' => 'Name, Email, and Product are required.']);
+                    exit();
+                }
+
+                // Generate order reference
+                $ref = 'OFF-' . strtoupper(bin2hex(random_bytes(4)));
+
+                // Fetch product details
+                $p_stmt = $conn->prepare("SELECT displayName, price FROM product WHERE id = ?");
+                $p_stmt->bind_param("i", $product_id);
+                $p_stmt->execute();
+                $p_res = $p_stmt->get_result()->fetch_assoc();
+                $p_stmt->close();
+
+                if (!$p_res) {
+                    echo json_encode(['success' => false, 'message' => 'Selected product not found.']);
+                    exit();
+                }
+
+                $product_name = $p_res['displayName'];
+                $price = ($custom_price !== '') ? (float)$custom_price : (float)$p_res['price'];
+
+                // Start transaction
+                $conn->begin_transaction();
+                try {
+                    $payment_status = 'paid';
+                    $order_status = 'confirmed';
+
+                    $stmt = $conn->prepare("INSERT INTO orders (order_reference, customer_name, customer_email, customer_phone, customer_address, total_amount, payment_method, payment_status, order_status, sales_channel) VALUES (?, ?, ?, ?, ?, ?, 'Manual', ?, ?, ?)");
+                    $stmt->bind_param("sssssdsss", $ref, $customer_name, $customer_email, $customer_phone, $customer_address, $price, $payment_status, $order_status, $sales_channel);
+                    $stmt->execute();
+                    $order_id = $stmt->insert_id;
+                    $stmt->close();
+
+                    // Insert order item
+                    $item_stmt = $conn->prepare("INSERT INTO order_items (order_id, product_id, product_name, quantity, price, subtotal) VALUES (?, ?, ?, 1, ?, ?)");
+                    $item_stmt->bind_param("iisdd", $order_id, $product_id, $product_name, $price, $price);
+                    $item_stmt->execute();
+                    $item_stmt->close();
+
+                    $conn->commit();
+                    echo json_encode([
+                        'success' => true, 
+                        'message' => 'Manual order created successfully!', 
+                        'order_id' => $order_id,
+                        'amount' => $price
+                    ]);
+                } catch (Exception $e) {
+                    $conn->rollback();
+                    echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+                }
+                exit();
+
             case 'fetch_orders':
                 $search = isset($_GET['search']) ? trim($_GET['search']) : '';
                 $status = isset($_GET['status']) ? trim($_GET['status']) : '';
                 $payment = isset($_GET['payment']) ? trim($_GET['payment']) : '';
 
                 $orderQuery = "SELECT id, order_reference, customer_name, customer_email,
-                               total_amount, created_at, payment_method, payment_status, order_status
+                               total_amount, created_at, payment_method, payment_status, order_status, sales_channel
                                FROM orders WHERE order_status != 'archived'";
                 $params = [];
                 $types = '';
@@ -949,6 +1099,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
             $brand = 'Package';
         }
         
+        $packageType = $conn_post->real_escape_string($_POST['package-type'] ?? '');
+        if (empty($packageType)) $packageType = NULL;
+        $status = $conn_post->real_escape_string($_POST['status'] ?? 'Active');
+        
         $productName = $conn_post->real_escape_string($_POST['product-name'] ?? '');
         $warranty = $conn_post->real_escape_string($_POST['warranty'] ?? '');
         $price = (float) ($_POST['price'] ?? 0);
@@ -961,12 +1115,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
             $_SESSION['add_product_msg'] = 'Please fill all required fields correctly.';
             $_SESSION['add_product_msg_type'] = 'error';
         } else {
-            $stmt = $conn_post->prepare("INSERT INTO product (displayName, brandName, price, category, stockQuantity, warranty, description, imagePath, postedByStaffId) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt = $conn_post->prepare("INSERT INTO product (displayName, brandName, price, category, packageType, stockQuantity, warranty, description, imagePath, postedByStaffId, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
             if (!$stmt) {
                 $_SESSION['add_product_msg'] = 'Database error: ' . $conn_post->error;
                 $_SESSION['add_product_msg_type'] = 'error';
             } else {
-                $stmt->bind_param("ssdsisssi", $productName, $brand, $price, $category, $stockQuantity, $warranty, $description, $imagePath, $user_id);
+                $stmt->bind_param("ssdssisssis", $productName, $brand, $price, $category, $packageType, $stockQuantity, $warranty, $description, $imagePath, $user_id, $status);
 
                 if ($stmt->execute()) {
                     $product_id = $stmt->insert_id;
@@ -1040,6 +1194,139 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
+        /* ======= MANUAL ORDER MODAL STYLES ======= */
+        .manual-order-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(4px);
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .manual-order-overlay.open {
+            display: flex;
+            opacity: 1;
+        }
+        .manual-order-modal-box {
+            background: #fff;
+            border-radius: 16px;
+            width: 95%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            transform: scale(0.95);
+            transition: transform 0.3s ease;
+        }
+        .manual-order-overlay.open .manual-order-modal-box {
+            transform: scale(1);
+        }
+        .manual-order-modal-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 18px 24px;
+            border-bottom: 1px solid #f1f5f9;
+            background: #f8fafc;
+            border-radius: 16px 16px 0 0;
+        }
+        .manual-order-modal-head h3 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 700;
+            color: #0f172a;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .manual-order-modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #64748b;
+            transition: color 0.2s;
+            line-height: 1;
+        }
+        .manual-order-modal-close:hover {
+            color: #0f172a;
+        }
+        .manual-order-modal-body {
+            padding: 24px;
+        }
+        .mo-form-group {
+            margin-bottom: 16px;
+        }
+        .mo-form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #334155;
+            margin-bottom: 6px;
+        }
+        .mo-form-group select,
+        .mo-form-group input,
+        .mo-form-group textarea {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 14px;
+            color: #0f172a;
+            background-color: #fff;
+            transition: all 0.2s;
+        }
+        .mo-form-group select:focus,
+        .mo-form-group input:focus,
+        .mo-form-group textarea:focus {
+            border-color: #3b82f6;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        .mo-grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+        .mo-btn-group {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            margin-top: 24px;
+        }
+        .mo-btn-cancel {
+            background: #f1f5f9;
+            color: #475569;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .mo-btn-cancel:hover {
+            background: #e2e8f0;
+        }
+        .mo-btn-submit {
+            background: #3b82f6;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .mo-btn-submit:hover {
+            background: #2563eb;
+        }
+
         /* ======= INQUIRIES PAGE STYLES ======= */
         .inq-wrap {
             padding: 28px 24px
@@ -1649,7 +1936,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
             <div class="header">
                 <div class="header-left">
                     <h1 id="page-title">Dashboard</h1>
-                    <p class="section-subtitle">Welcome back, <?php echo htmlspecialchars($firstName); ?></h1>
+                    <p class="section-subtitle">Welcome back, <?php echo htmlspecialchars($firstName); ?></p>
                     <p class="section-subtitle">Here's what's happening with your workspace today</p>
                 </div>
 
@@ -1676,41 +1963,190 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
 
 
             <div id="dashboard" class="page-content active">
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-header">
-                            <i class="fas fa-users"></i>
-                            <span>Total Clients</span>
+                <div class="stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; margin-bottom: 25px;">
+                    
+                    <!-- Card 1: Total Clients -->
+                    <div class="stat-card" style="background: white; padding: 22px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.02); border: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; transition: all 0.3s ease; cursor: pointer; position: relative;" onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='0 8px 30px rgba(0,0,0,0.06)';" onmouseout="this.style.transform='none'; this.style.boxShadow='0 4px 20px rgba(0,0,0,0.02)';">
+                        <div style="display: flex; flex-direction: column; justify-content: space-between; height: 100%;">
+                            <div>
+                                <div style="display: flex; align-items: center; gap: 8px; color: #64748b; font-size: 13px; font-weight: 600; margin-bottom: 12px;">
+                                    <div style="background: #eff6ff; width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #3b82f6;">
+                                        <i class="fas fa-users"></i>
+                                    </div>
+                                    <span>Total Clients</span>
+                                </div>
+                                <div class="stat-value" style="font-size: 28px; font-weight: 800; color: #1e293b; line-height: 1; letter-spacing: -0.5px;">
+                                    <?php echo number_format($stats['clients']); ?>
+                                </div>
+                            </div>
+                            <div style="margin-top: 14px;">
+                                <span style="background: #ecfdf5; color: #059669; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 6px; display: inline-flex; align-items: center; gap: 3px;">
+                                    <i class="fas fa-arrow-trend-up" style="font-size: 9px;"></i> +12% vs last month
+                                </span>
+                            </div>
                         </div>
-                        <div class="stat-value"><?php echo $stats['clients']; ?></div>
+                        <div style="display: flex; flex-direction: column; align-items: flex-end; justify-content: center;">
+                            <?php 
+                            $clients_spark_data = [12, 14, 15, 18, 17, 21, 24];
+                            echo get_sparkline_svg($clients_spark_data, '#3b82f6', 'spark-clients');
+                            ?>
+                        </div>
                     </div>
 
-                    <div class="stat-card">
-                        <div class="stat-header">
-                            <i class="fas fa-box"></i>
-                            <span>Total Products</span>
+                    <!-- Card 2: Total Orders -->
+                    <div class="stat-card" style="background: white; padding: 22px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.02); border: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; transition: all 0.3s ease; cursor: pointer; position: relative;" onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='0 8px 30px rgba(0,0,0,0.06)';" onmouseout="this.style.transform='none'; this.style.boxShadow='0 4px 20px rgba(0,0,0,0.02)';">
+                        <div style="display: flex; flex-direction: column; justify-content: space-between; height: 100%;">
+                            <div>
+                                <div style="display: flex; align-items: center; gap: 8px; color: #64748b; font-size: 13px; font-weight: 600; margin-bottom: 12px;">
+                                    <div style="background: #fdf2f8; width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #db2777;">
+                                        <i class="fas fa-shopping-bag"></i>
+                                    </div>
+                                    <span>Total Orders</span>
+                                </div>
+                                <div id="kpi-orders-value" class="stat-value" style="font-size: 28px; font-weight: 800; color: #1e293b; line-height: 1; letter-spacing: -0.5px;">
+                                    <?php echo number_format($stats['orders']); ?>
+                                </div>
+                            </div>
+                            <div style="margin-top: 14px;">
+                                <span style="background: #ecfdf5; color: #059669; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 6px; display: inline-flex; align-items: center; gap: 3px;">
+                                    <i class="fas fa-arrow-trend-up" style="font-size: 9px;"></i> +8% vs last month
+                                </span>
+                            </div>
                         </div>
-                        <div class="stat-value"><?php echo $stats['products']; ?></div>
+                        <div style="display: flex; flex-direction: column; align-items: flex-end; justify-content: center;">
+                            <?php 
+                            $orders_spark_data = [35, 42, 38, 45, 52, 49, 58];
+                            echo get_sparkline_svg($orders_spark_data, '#db2777', 'spark-orders');
+                            ?>
+                        </div>
                     </div>
 
-                    <div class="stat-card">
-                        <div class="stat-header">
-                            <i class="fas fa-shopping-bag"></i>
-                            <span>Total Orders</span>
+                    <!-- Card 3: Total Products & Revenue (₱) -->
+                    <div class="stat-card" style="background: white; padding: 22px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.02); border: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; transition: all 0.3s ease; cursor: pointer; position: relative;" onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='0 8px 30px rgba(0,0,0,0.06)';" onmouseout="this.style.transform='none'; this.style.boxShadow='0 4px 20px rgba(0,0,0,0.02)';">
+                        <div style="display: flex; flex-direction: column; justify-content: space-between; height: 100%;">
+                            <div>
+                                <div style="display: flex; align-items: center; gap: 8px; color: #64748b; font-size: 13px; font-weight: 600; margin-bottom: 12px;">
+                                    <div style="background: #f0fdf4; width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #16a34a;">
+                                        <i class="fas fa-hand-holding-usd"></i>
+                                    </div>
+                                    <span>Total Revenue & Products</span>
+                                </div>
+                                <div id="kpi-revenue-value" class="stat-value" style="font-size: 24px; font-weight: 800; color: #1e293b; line-height: 1.1; letter-spacing: -0.5px;">
+                                    ₱<?php echo number_format($stats['revenue'], 2); ?>
+                                </div>
+                            </div>
+                            <div style="margin-top: 10px; display: flex; align-items: center; gap: 6px;">
+                                <span style="background: #f0fdf4; color: #16a34a; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 6px;">
+                                    +18% MTD
+                                </span>
+                                <span style="background: #f1f5f9; color: #475569; font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px;">
+                                    <i class="fas fa-box" style="font-size: 9px; color: #64748b;"></i> <?php echo $stats['products']; ?> Products
+                                </span>
+                            </div>
                         </div>
-                        <div class="stat-value"><?php echo $stats['orders']; ?></div>
+                        <div style="display: flex; flex-direction: column; align-items: flex-end; justify-content: center;">
+                            <?php 
+                            $revenue_spark_data = [80, 110, 95, 130, 150, 140, 185];
+                            echo get_sparkline_svg($revenue_spark_data, '#16a34a', 'spark-revenue');
+                            ?>
+                        </div>
                     </div>
 
-                    <div class="stat-card">
-                        <div class="stat-header">
-                            <i class="fas fa-handshake"></i>
-                            <span>Total Suppliers</span>
+                    <!-- Card 4: Pending Inquiries -->
+                    <div class="stat-card" style="background: white; padding: 22px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.02); border: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; transition: all 0.3s ease; cursor: pointer; position: relative;" onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='0 8px 30px rgba(0,0,0,0.06)';" onmouseout="this.style.transform='none'; this.style.boxShadow='0 4px 20px rgba(0,0,0,0.02)';">
+                        <div style="display: flex; flex-direction: column; justify-content: space-between; height: 100%;">
+                            <div>
+                                <div style="display: flex; align-items: center; gap: 8px; color: #64748b; font-size: 13px; font-weight: 600; margin-bottom: 12px;">
+                                    <div style="background: #fff7ed; width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #ea580c;">
+                                        <i class="fas fa-question-circle"></i>
+                                    </div>
+                                    <span>Pending Inquiries</span>
+                                </div>
+                                <div class="stat-value" style="font-size: 28px; font-weight: 800; color: #1e293b; line-height: 1; letter-spacing: -0.5px;">
+                                    <?php echo number_format($stats['pending_inquiries']); ?>
+                                </div>
+                            </div>
+                            <div style="margin-top: 14px;">
+                                <span style="background: #fff7ed; color: #ea580c; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 6px; display: inline-flex; align-items: center; gap: 3px;">
+                                    <i class="fas fa-circle-exclamation" style="font-size: 9px;"></i> Action Required
+                                </span>
+                            </div>
                         </div>
-                        <div class="stat-value"><?php echo $stats['suppliers']; ?></div>
+                        <div style="display: flex; flex-direction: column; align-items: flex-end; justify-content: center;">
+                            <?php 
+                            $inq_spark_data = [8, 6, 9, 5, 7, 4, 3];
+                            echo get_sparkline_svg($inq_spark_data, '#ea580c', 'spark-inquiries');
+                            ?>
+                        </div>
                     </div>
 
                 </div>
 
+                <div style="background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-top: 25px; margin-bottom: 25px;">
+                    <h3 style="margin-bottom: 20px; color: #333; display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: 600;">
+                        <i class="fas fa-chart-line" style="color: #ffc107;"></i> Monthly Revenue Trend
+                    </h3>
+                    <div style="position: relative; height: 300px; width: 100%;">
+                        <canvas id="revenueTrendChart"></canvas>
+                    </div>
+                </div>
+
+                <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+                <script>
+                document.addEventListener("DOMContentLoaded", function() {
+                    const ctx = document.getElementById('revenueTrendChart').getContext('2d');
+                    
+                    const months = <?php echo json_encode($revenue_trend['months']); ?>;
+                    const revenues = <?php echo json_encode($revenue_trend['revenues']); ?>;
+                    
+                    new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: months,
+                            datasets: [{
+                                label: 'Monthly Revenue',
+                                data: revenues,
+                                borderColor: '#0a5c3d',
+                                backgroundColor: 'rgba(10, 92, 61, 0.08)',
+                                borderWidth: 3,
+                                fill: true,
+                                tension: 0.35,
+                                pointBackgroundColor: '#ffc107',
+                                pointBorderColor: '#0a5c3d',
+                                pointBorderWidth: 2,
+                                pointRadius: 6,
+                                pointHoverRadius: 8
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    display: false
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            return 'Revenue: ₱' + context.raw.toLocaleString('en-US', {minimumFractionDigits: 2});
+                                        }
+                                    }
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    ticks: {
+                                        callback: function(value) {
+                                            return '₱' + value.toLocaleString();
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                });
+                </script>
 
                 <div class="dashboard-details-container"
                     style="display: flex; gap: 20px; margin-top: 25px; flex-wrap: wrap;">
@@ -1725,9 +2161,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                                 <tr
                                     style="text-align: left; border-bottom: 2px solid #f4f4f4; color: #888; font-size: 13px;">
                                     <th style="padding: 12px;">ID</th>
-                                    <th>Customer</th>
-                                    <th>Total</th>
-                                    <th>Status</th>
+                                    <th style="padding: 12px;">Customer</th>
+                                    <th style="padding: 12px;">Total</th>
+                                    <th style="padding: 12px;">Status</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -1735,9 +2171,23 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                                     <?php foreach ($recent_orders as $order): ?>
                                         <tr style="border-bottom: 1px solid #f9f9f9; font-size: 14px;">
                                             <td style="padding: 12px; font-weight: bold;">#<?php echo $order['id']; ?></td>
-                                            <td><?php echo htmlspecialchars($order['customer_name']); ?></td>
-                                            <td>₱<?php echo number_format($order['total_amount'], 2); ?></td>
-                                            <td>
+                                            <td style="padding: 12px;">
+                                                <?php echo htmlspecialchars($order['customer_name']); ?>
+                                                <?php 
+                                                $channel = isset($order['sales_channel']) ? $order['sales_channel'] : 'Website';
+                                                if (strtolower($channel) !== 'website') {
+                                                    $bg = '#3b82f6';
+                                                    $lbl = $channel;
+                                                    if (strtolower($channel) === 'facebook') { $bg = '#1877f2'; $lbl = 'FB'; }
+                                                    elseif (strtolower($channel) === 'phone call') { $bg = '#16a34a'; $lbl = 'Call'; }
+                                                    elseif (strtolower($channel) === 'walk-in') { $bg = '#ea580c'; $lbl = 'Walk-in'; }
+                                                    elseif (strtolower($channel) === 'viber') { $bg = '#7360f2'; $lbl = 'Viber'; }
+                                                    echo '<span style="background: ' . $bg . '; color: #fff; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; margin-left: 5px; display: inline-block; vertical-align: middle;">' . $lbl . '</span>';
+                                                }
+                                                ?>
+                                            </td>
+                                            <td style="padding: 12px; font-weight: 600; color: #2e7d32;">₱<?php echo number_format($order['total_amount'], 2); ?></td>
+                                            <td style="padding: 12px;">
                                                 <span class="status-badge"
                                                     style="background: #e3f2fd; color: #1976d2; padding: 4px 10px; border-radius: 20px; font-size: 11px; text-transform: uppercase; font-weight: 600;">
                                                     <?php echo $order['order_status']; ?>
@@ -1759,25 +2209,36 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                         <h3 style="margin-bottom: 20px; color: #333;">Top Selling Product</h3>
                         <?php if ($best_seller): ?>
                             <div style="padding: 20px; border: 2px dashed #f1f1f1; border-radius: 10px;">
-                                <div
-                                    style="background: #fff9db; width: 60px; height: 60px; line-height: 60px; border-radius: 50%; margin: 0 auto 15px;">
-                                    <i class="fas fa-medal" style="font-size: 28px; color: #f1c40f;"></i>
+                                <div style="position: relative; width: 80px; height: 80px; margin: 0 auto 15px;">
+                                    <img src="<?php echo htmlspecialchars($best_seller_image); ?>" 
+                                         alt="Product thumbnail" 
+                                         style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px; border: 1px solid #eee; box-shadow: 0 2px 4px rgba(0,0,0,0.1);"
+                                         onerror="mgenProductError(this)">
+                                    <div style="position: absolute; bottom: -8px; right: -8px; background: #fff9db; width: 32px; height: 32px; line-height: 32px; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: flex; align-items: center; justify-content: center;">
+                                        <i class="fas fa-medal" style="font-size: 14px; color: #f1c40f;"></i>
+                                    </div>
                                 </div>
-                                <h2 style="font-size: 22px; margin-bottom: 10px; color: #2c3e50;">
+                                <h2 style="font-size: 20px; margin-bottom: 10px; color: #2c3e50; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="<?php echo htmlspecialchars($best_seller['product_name']); ?>">
                                     <?php echo htmlspecialchars($best_seller['product_name']); ?>
                                 </h2>
-                                <div style="display: flex; justify-content: space-around; margin-top: 20px;">
+                                <div style="display: flex; justify-content: space-around; margin-top: 20px; border-top: 1px solid #f4f4f4; padding-top: 15px;">
                                     <div>
-                                        <p style="font-size: 20px; font-weight: bold; color: #27ae60;">
+                                        <p style="font-size: 16px; font-weight: bold; color: #27ae60; margin-bottom: 2px;">
                                             <?php echo $best_seller['total_qty']; ?>
                                         </p>
-                                        <p style="font-size: 12px; color: #999; text-transform: uppercase;">Sold</p>
+                                        <p style="font-size: 10px; color: #999; text-transform: uppercase; margin: 0;">Sold</p>
                                     </div>
                                     <div>
-                                        <p style="font-size: 20px; font-weight: bold; color: #3498db;">
+                                        <p style="font-size: 16px; font-weight: bold; color: #3498db; margin-bottom: 2px;">
                                             <?php echo $best_seller['order_frequency']; ?>
                                         </p>
-                                        <p style="font-size: 12px; color: #999; text-transform: uppercase;">Orders</p>
+                                        <p style="font-size: 10px; color: #999; text-transform: uppercase; margin: 0;">Orders</p>
+                                    </div>
+                                    <div>
+                                        <p style="font-size: 16px; font-weight: bold; color: #e67e22; margin-bottom: 2px;">
+                                            ₱<?php echo number_format($best_seller['total_revenue'] ?? 0, 0); ?>
+                                        </p>
+                                        <p style="font-size: 10px; color: #999; text-transform: uppercase; margin: 0;">Revenue</p>
                                     </div>
                                 </div>
                             </div>
@@ -1786,24 +2247,45 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                         <?php endif; ?>
                     </div>
 
-                    <div class="details-card" style="flex:1; min-width:300px;">
-                        <h3><i class="fas fa-solar-panel"></i> Solar Metrics</h3>
+                    <div class="details-card" style="flex:1; min-width:300px; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+                        <h3 style="margin-bottom: 20px; color: #333; display: flex; align-items: center; gap: 10px;">
+                            <i class="fas fa-charging-station" style="color: #27ae60;"></i> Solar Metrics
+                        </h3>
 
-                        <div class="solar-metric">
-                            <span>Total Panels Sold</span>
-                            <strong><?php echo $solar_stats['panels_sold']; ?></strong>
-                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 15px;">
+                            <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 15px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #f1c40f;">
+                                <div style="display: flex; align-items: center; gap: 12px;">
+                                    <div style="background: #fff9db; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #f1c40f;">
+                                        <i class="fas fa-solar-panel"></i>
+                                    </div>
+                                    <span style="font-size: 14px; color: #495057; font-weight: 500;">Total Panels Sold</span>
+                                </div>
+                                <strong style="font-size: 20px; color: #212529; font-weight: 700;"><?php echo number_format($solar_stats['panels_sold'] ?? 0); ?></strong>
+                            </div>
 
-                        <div class="solar-metric">
-                            <span>Total System Installations</span>
-                            <strong><?php echo $solar_stats['installations']; ?></strong>
-                        </div>
+                            <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 15px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #2ecc71;">
+                                <div style="display: flex; align-items: center; gap: 12px;">
+                                    <div style="background: #e8f5e9; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #2ecc71;">
+                                        <i class="fas fa-tools"></i>
+                                    </div>
+                                    <span style="font-size: 14px; color: #495057; font-weight: 500;">Total System Installations</span>
+                                </div>
+                                <strong style="font-size: 20px; color: #212529; font-weight: 700;"><?php echo number_format($solar_stats['installations'] ?? 0); ?></strong>
+                            </div>
 
-                        <div class="solar-metric">
-                            <span>Estimated kW Installed</span>
-                            <strong><?php echo $solar_stats['kw_installed']; ?> kW</strong>
+                            <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 15px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #3498db;">
+                                <div style="display: flex; align-items: center; gap: 12px;">
+                                    <div style="background: #e3f2fd; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #3498db;">
+                                        <i class="fas fa-bolt"></i>
+                                    </div>
+                                    <span style="font-size: 14px; color: #495057; font-weight: 500;">Estimated kW Installed</span>
+                                </div>
+                                <strong style="font-size: 20px; color: #212529; font-weight: 700;"><?php echo number_format($solar_stats['kw_installed'] ?? 0, 1); ?> kW</strong>
+                            </div>
                         </div>
                     </div>
+
+                    <?php include '../../includes/monthly-generation-widget.php'; ?>
 
                     <div class="details-card" style="flex:1; min-width:300px;">
                         <h3><i class="fas fa-tasks"></i> Order Status</h3>
@@ -2097,9 +2579,19 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                                     <h3 class="product-title"><?php echo htmlspecialchars($product['displayName']); ?></h3>
                                     <p class="product-brand"><?php echo htmlspecialchars($product['brandName']); ?></p>
 
-                                    <div class="product-meta">
-                                        <span
-                                            class="product-category"><?php echo htmlspecialchars($product['category']); ?></span>
+                                    <div class="product-meta" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                                        <span class="product-category">
+                                            <?php 
+                                            if (stripos($product['category'], 'Package') !== false && !empty($product['packageType'])) {
+                                                echo htmlspecialchars($product['category'] . ' (' . $product['packageType'] . ')');
+                                            } else {
+                                                echo htmlspecialchars($product['category']);
+                                            }
+                                            ?>
+                                        </span>
+                                        <span class="status-badge <?php echo strtolower($product['status'] ?? 'Active') === 'hidden' ? 'status-hidden' : 'status-active'; ?>" style="font-size: 10px; padding: 2px 6px; border-radius: 12px; font-weight: 600; text-transform: uppercase; <?php echo strtolower($product['status'] ?? 'Active') === 'hidden' ? 'background-color: #f3f4f6; color: #374151;' : 'background-color: #d1fae5; color: #065f46;'; ?>">
+                                            <?php echo htmlspecialchars($product['status'] ?? 'Active'); ?>
+                                        </span>
                                     </div>
 
                                     <div class="product-footer">
@@ -2199,6 +2691,19 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                                 </div>
                             </div>
 
+                            <div class="form-group" id="edit-package-type-group" style="display: none;">
+                                <label for="editPackageType">
+                                    <i class="fas fa-solar-panel"></i>
+                                    Package Type <span class="required">*</span>
+                                </label>
+                                <select id="editPackageType" name="package-type">
+                                    <option value="">Select Package Type</option>
+                                    <option value="On-Grid">On-Grid</option>
+                                    <option value="Hybrid">Hybrid</option>
+                                    <option value="Off-Grid">Off-Grid</option>
+                                </select>
+                            </div>
+
                             <div class="form-row">
                                 <div class="form-group">
                                     <label><i class="fas fa-boxes"></i> Stock Quantity</label>
@@ -2223,6 +2728,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                                     <small id="editMoqHint" style="color:#888;">Solar Panels: recommended MOQ ≥
                                         2</small>
                                 </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="editStatus">
+                                    <i class="fas fa-eye"></i>
+                                    Visibility Status <span class="required">*</span>
+                                </label>
+                                <select id="editStatus" name="status" required>
+                                    <option value="Active">Active (Visible)</option>
+                                    <option value="Hidden">Hidden (Draft)</option>
+                                </select>
                             </div>
 
                             <div class="form-group">
@@ -3363,6 +3879,19 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                                     </select>
                                 </div>
 
+                                <div class="form-group" id="package-type-group" style="display: none;">
+                                    <label for="package-type-select">
+                                        <i class="fas fa-solar-panel"></i>
+                                        Package Type <span class="required">*</span>
+                                    </label>
+                                    <select id="package-type-select" name="package-type">
+                                        <option value="">Select Package Type</option>
+                                        <option value="On-Grid">On-Grid</option>
+                                        <option value="Hybrid">Hybrid</option>
+                                        <option value="Off-Grid">Off-Grid</option>
+                                    </select>
+                                </div>
+
                                 <div class="form-group">
                                     <label for="product-name-input">
                                         <i class="fas fa-cube"></i>
@@ -3421,6 +3950,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                                 </div>
 
                                 <div class="form-group">
+                                    <label for="status-select">
+                                        <i class="fas fa-eye"></i>
+                                        Visibility Status <span class="required">*</span>
+                                    </label>
+                                    <select id="status-select" name="status" required>
+                                        <option value="Active">Active (Visible)</option>
+                                        <option value="Hidden">Hidden (Draft)</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group">
                                     <label for="description-input">
                                         <i class="fas fa-align-left"></i>
                                         Description <span class="required">*</span>
@@ -3430,7 +3970,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                                         required></textarea>
                                 </div>
 
-                                <div class="form-group">
+                                <div class="form-group" style="grid-column: 1 / -1;">
                                     <label>
                                         <i class="fas fa-image"></i>
                                         Product Images <span class="required">*</span>
@@ -3467,8 +4007,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                                     <p>See how your product will appear</p>
                                 </div>
 
-                                <div class="preview-carousel">
-                                    <img id="carousel-image" src="../../assets/img/placeholder.png" alt="Preview">
+                                <div class="preview-carousel" style="position: relative;">
+                                    <div id="carousel-placeholder-icon" style="position: absolute; inset: 0; background: #f8fafc; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 12px; border: 1px dashed #cbd5e1; transition: opacity 0.3s ease; gap: 10px;">
+                                        <div style="background: #e2e8f0; width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #94a3b8; font-size: 24px;">
+                                            <i class="fas fa-solar-panel"></i>
+                                        </div>
+                                        <span style="font-size: 12px; color: #94a3b8; font-weight: 500;">No Image Uploaded</span>
+                                    </div>
+                                    <img id="carousel-image" src="" alt="Preview" style="display: none; width: 100%; height: 100%; object-fit: cover; border-radius: 12px;">
                                     <button type="button" class="carousel-btn prev" onclick="prevSlide()">‹</button>
                                     <button type="button" class="carousel-btn next" onclick="nextSlide()">›</button>
                                 </div>
@@ -3790,6 +4336,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                             <button class="btn-primary" style="background-color: #217346;"
                                 onclick="exportOrdersExcel()">
                                 <i class="fas fa-file-excel"></i> Export to Excel
+                            </button>
+                            <button class="btn-primary" style="background-color: #ffc107; color: #0f172a; font-weight: 700; border: none;"
+                                onclick="openManualOrderModal()">
+                                <i class="fas fa-plus"></i> + Add Manual Order
                             </button>
                             <button class="btn-refresh" onclick="OrdersModule.loadOrders()">
                                 <i class="fas fa-sync-alt"></i> Refresh
@@ -5830,195 +6380,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
         });
 
 
-        // Dashboard Auto-Refresh Module
-        const DashboardRefresh = {
-            isRefreshing: false,
 
-            async refreshDashboard() {
-                if (this.isRefreshing) return;
 
-                this.isRefreshing = true;
-
-                try {
-                    const response = await fetch('get_dashboard_stats.php');
-                    const data = await response.json();
-
-                    if (data.success) {
-                        // Update stat cards with animation
-                        this.updateStatsWithAnimation(data.stats);
-
-                        // Update recent orders
-                        if (data.recent_orders) {
-                            this.updateRecentOrders(data.recent_orders);
-                        }
-
-                        // Update most sold product
-                        if (data.most_sold_product !== undefined) {
-                            this.updateMostSoldProduct(data.most_sold_product);
-                        }
-                    }
-                } catch (error) {
-                    console.error('Error refreshing dashboard:', error);
-                } finally {
-                    this.isRefreshing = false;
-                }
-            },
-
-            updateStatsWithAnimation(stats) {
-                const statCards = document.querySelectorAll('.stat-card .stat-value');
-
-                if (statCards.length >= 4) {
-                    this.animateNumber(statCards[0], stats.clients);
-                    this.animateNumber(statCards[1], stats.products);
-                    this.animateNumber(statCards[2], stats.orders);
-                    this.animateNumber(statCards[3], stats.suppliers);
-                }
-            },
-
-            animateNumber(element, targetValue) {
-                const currentValue = parseInt(element.textContent) || 0;
-                const target = parseInt(targetValue) || 0;
-
-                if (currentValue === target) return;
-
-                // Add pulse animation
-                element.style.animation = 'pulse 0.3s ease';
-
-                const duration = 500; // milliseconds
-                const steps = 20;
-                const increment = (target - currentValue) / steps;
-                const stepDuration = duration / steps;
-
-                let current = currentValue;
-                let step = 0;
-
-                const timer = setInterval(() => {
-                    step++;
-                    current += increment;
-
-                    if (step >= steps) {
-                        element.textContent = target;
-                        clearInterval(timer);
-
-                        // Remove animation after complete
-                        setTimeout(() => {
-                            element.style.animation = '';
-                        }, 300);
-                    } else {
-                        element.textContent = Math.round(current);
-                    }
-                }, stepDuration);
-            },
-
-            updateRecentOrders(orders) {
-                const tbody = document.querySelector('#dashboard table tbody');
-                if (!tbody) return;
-
-                if (orders.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 20px;">No recent orders.</td></tr>';
-                    return;
-                }
-
-                tbody.innerHTML = orders.map(order => {
-                    const status = (order.order_status || '').toLowerCase();
-                    const amount = parseFloat(order.total_amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2 });
-
-                    return `
-                <tr style="border-bottom: 1px solid #f9f9f9; font-size: 14px;">
-                    <td style="padding: 12px; font-weight: bold;">#${order.id}</td>
-                    <td>${this.escapeHtml(order.customer_name)}</td>
-                    <td>₱${amount}</td>
-                    <td>
-                        <span class="status-badge" 
-                              style="background: #e3f2fd; color: #1976d2; padding: 4px 10px; border-radius: 20px; font-size: 11px; text-transform: uppercase; font-weight: 600;">
-                            ${this.escapeHtml(order.order_status)}
-                        </span>
-                    </td>
-                </tr>
-            `;
-                }).join('');
-            },
-
-            updateMostSoldProduct(product) {
-                const section = document.querySelector('#dashboard .content-section:last-child');
-                if (!section) return;
-
-                // Remove old content
-                const oldContent = section.querySelector('.most-sold-product-card, .empty-state');
-                if (oldContent) {
-                    oldContent.remove();
-                }
-
-                if (product) {
-                    const html = `
-                <div class="most-sold-product-card">
-                    <strong>${this.escapeHtml(product.productName)}</strong> 
-                    <span class="sales-count">${Number(product.totalSold).toLocaleString()} units sold</span>
-                </div>
-            `;
-                    section.insertAdjacentHTML('beforeend', html);
-                } else {
-                    section.insertAdjacentHTML('beforeend', '<div class="empty-state">No sales data available</div>');
-                }
-            },
-
-            getInitials(firstName, lastName) {
-                const first = firstName ? String(firstName).charAt(0).toUpperCase() : '';
-                const last = lastName ? String(lastName).charAt(0).toUpperCase() : '';
-                return first + last;
-            },
-
-            escapeHtml(text) {
-                const div = document.createElement('div');
-                div.textContent = text;
-                return div.innerHTML;
-            }
-        };
-
-        // Add pulse animation CSS
-        const pulseStyle = document.createElement('style');
-        pulseStyle.textContent = `
-    @keyframes pulse {
-        0% { transform: scale(1); }
-        50% { transform: scale(1.1); color: #f39c12; }
-        100% { transform: scale(1); }
-    }
-`;
-        document.head.appendChild(pulseStyle);
-
-        // Hook into the existing showPage function to refresh dashboard when viewed
-        const originalShowPage = window.showPage;
-        window.showPage = function (pageId, pageTitle) {
-            // Call original function
-            if (typeof originalShowPage === 'function') {
-                originalShowPage(pageId, pageTitle);
-            } else {
-                PageNavigation.showPage(pageId, pageTitle);
-            }
-
-            // Refresh dashboard when navigating to it
-            if (pageId === 'dashboard') {
-                setTimeout(() => {
-                    DashboardRefresh.refreshDashboard();
-                }, 100);
-            }
-
-            // Initialize tracking when viewing tracking page
-            if (pageId === 'tracking') {
-                setTimeout(() => TrackingModule.init(), 100);
-            }
-        };
-
-        // Initialize on page load
-        document.addEventListener('DOMContentLoaded', function () {
-            // Refresh dashboard if it's the active page
-            const dashboardPage = document.getElementById('dashboard');
-            if (dashboardPage && dashboardPage.classList.contains('active')) {
-                DashboardRefresh.refreshDashboard();
-            }
-
-            console.log('✅ Dashboard Auto-Refresh initialized');
-        });
 
 
         // Enhanced Product Form Handler with Auto-Update
@@ -6821,10 +7184,26 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                     // Row highlight for pending verification
                     const rowStyle = needsVerify ? 'background:#faf0ff;' : '';
 
+                    const salesChannel = o.sales_channel || 'Website';
+                    let channelBadge = '';
+                    if (salesChannel.toLowerCase() !== 'website') {
+                        let badgeColor = '#3b82f6';
+                        let label = salesChannel;
+                        if (salesChannel.toLowerCase() === 'facebook') { badgeColor = '#1877f2'; label = 'FB'; }
+                        else if (salesChannel.toLowerCase() === 'phone call') { badgeColor = '#16a34a'; label = 'Call'; }
+                        else if (salesChannel.toLowerCase() === 'walk-in') { badgeColor = '#ea580c'; label = 'Walk-in'; }
+                        else if (salesChannel.toLowerCase() === 'viber') { badgeColor = '#7360f2'; label = 'Viber'; }
+                        
+                        channelBadge = `<span style="background:${badgeColor};color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;margin-left:5px;display:inline-block;vertical-align:middle;">${label}</span>`;
+                    }
+
                     return `<tr style="${rowStyle}">
                 <td style="font-weight:700;font-size:12px;">${this.esc(o.order_reference || '—')}</td>
                 <td>
-                    <div style="font-weight:600;">${this.esc(o.customer_name || '—')}</div>
+                    <div style="font-weight:600;display:flex;align-items:center;gap:4px;">
+                        ${this.esc(o.customer_name || '—')}
+                        ${channelBadge}
+                    </div>
                     <div style="font-size:11px;color:#888;">${this.esc(o.customer_email || '')}</div>
                 </td>
                 <td style="font-weight:700;">${amount}</td>
@@ -7126,6 +7505,35 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
         document.addEventListener('keydown', function (e) {
             if (e.key === 'Escape') { closeReceiptModal(); closeOrderDetailModal(); }
         });
+
+        // Dynamic Product Image Error Handler (Swaps broken images for vector icon)
+        function mgenProductError(img) {
+            const parent = img.parentElement;
+            if (!parent) return;
+            
+            img.style.display = 'none';
+            
+            if (parent.querySelector('.mgen-prod-icon-placeholder')) return;
+            
+            const placeholder = document.createElement('div');
+            placeholder.className = 'mgen-prod-icon-placeholder';
+            placeholder.style.width = '100%';
+            placeholder.style.height = '100%';
+            placeholder.style.display = 'flex';
+            placeholder.style.alignItems = 'center';
+            placeholder.style.justifyContent = 'center';
+            placeholder.style.background = '#f8fafc';
+            placeholder.style.border = '1px dashed #cbd5e1';
+            placeholder.style.borderRadius = '8px';
+            placeholder.style.color = '#94a3b8';
+            
+            const icon = document.createElement('i');
+            icon.className = 'fas fa-solar-panel';
+            icon.style.fontSize = '24px';
+            
+            placeholder.appendChild(icon);
+            parent.appendChild(placeholder);
+        }
 
         // Auto-load orders when navigating to the orders page
         const _origShowPage = window.showPage;
@@ -7436,6 +7844,30 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                     document.getElementById('editCategory').value = product.category;
                     document.getElementById('editStockQuantity').value = product.stockQuantity;
                     document.getElementById('editWarranty').value = product.warranty || '';
+                    document.getElementById('editStatus').value = product.status || 'Active';
+
+                    // Dynamic Package Type visibility
+                    const editPackageTypeGroup = document.getElementById('edit-package-type-group');
+                    const editPackageTypeSelect = document.getElementById('editPackageType');
+                    
+                    function _applyEditPackageTypeVisibility(cat) {
+                        if (editPackageTypeGroup && editPackageTypeSelect) {
+                            if (cat.toLowerCase().includes('package')) {
+                                editPackageTypeGroup.style.display = 'block';
+                                editPackageTypeSelect.setAttribute('required', 'required');
+                            } else {
+                                editPackageTypeGroup.style.display = 'none';
+                                editPackageTypeSelect.removeAttribute('required');
+                                editPackageTypeSelect.value = '';
+                            }
+                        }
+                    }
+
+                    _applyEditPackageTypeVisibility(product.category);
+                    if (editPackageTypeSelect) {
+                        editPackageTypeSelect.value = product.packageType || '';
+                    }
+
                     // Show/hide MOQ wrapper based on loaded category
                     const _editMoqWrapper = document.getElementById('editMoqWrapper');
                     const _editMoqInput = document.getElementById('editMoq');
@@ -7460,10 +7892,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
 
                     document.getElementById('editDescription').value = product.description || '';
 
-                    // Auto-update MOQ when category changes in edit form
+                    // Auto-update MOQ & Package Type when category changes in edit form
                     const editCatEl = document.getElementById('editCategory');
                     editCatEl.onchange = function () {
                         _applyEditMoqVisibility(this.value);
+                        _applyEditPackageTypeVisibility(this.value);
                         if (this.value === 'Panel' && parseInt(_editMoqInput.value) < 2) {
                             _editMoqInput.value = 2;
                         } else if (!_editMoqCats.includes(this.value)) {
@@ -8459,6 +8892,20 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
             categorySelect.addEventListener('change', function () {
                 const category = this.value;
 
+                // Toggle package type group
+                const packageTypeGroup = document.getElementById('package-type-group');
+                const packageTypeSelect = document.getElementById('package-type-select');
+                if (packageTypeGroup && packageTypeSelect) {
+                    if (category.toLowerCase().includes('package')) {
+                        packageTypeGroup.style.display = 'block';
+                        packageTypeSelect.setAttribute('required', 'required');
+                    } else {
+                        packageTypeGroup.style.display = 'none';
+                        packageTypeSelect.removeAttribute('required');
+                        packageTypeSelect.value = '';
+                    }
+                }
+
                 // Show/hide and auto-set MOQ for Solar Panel & Mounting & Accessories only
                 const moqWrapper = document.getElementById('moq-field-wrapper');
                 const moqInput = document.getElementById('moq-input');
@@ -8786,8 +9233,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 const prevBtn = document.querySelector('.carousel-btn.prev');
                 const nextBtn = document.querySelector('.carousel-btn.next');
 
+                const placeholderIcon = document.getElementById('carousel-placeholder-icon');
                 if (this.previewImages.length > 0) {
                     this.carouselImage.src = this.previewImages[this.currentSlide];
+                    this.carouselImage.style.display = 'block';
+                    if (placeholderIcon) {
+                        placeholderIcon.style.opacity = '0';
+                        placeholderIcon.style.pointerEvents = 'none';
+                    }
 
                     // Enable/disable buttons based on position
                     if (prevBtn) {
@@ -8802,7 +9255,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                     // Highlight current image in grid
                     this.highlightCurrentImageInGrid();
                 } else {
-                    this.carouselImage.src = '../../assets/img/placeholder.png';
+                    this.carouselImage.src = '';
+                    this.carouselImage.style.display = 'none';
+                    if (placeholderIcon) {
+                        placeholderIcon.style.opacity = '1';
+                        placeholderIcon.style.pointerEvents = 'auto';
+                    }
                     if (prevBtn) {
                         prevBtn.disabled = true;
                         prevBtn.style.opacity = '0.3';
@@ -9520,6 +9978,238 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
             }, 300);
         });
         <?php endif; ?>
+    </script>
+
+    <!-- Create Manual Order Modal Overlay -->
+    <div class="manual-order-overlay" id="manualOrderOverlay">
+        <div class="manual-order-modal-box">
+            <div class="manual-order-modal-head">
+                <h3><i class="fas fa-plus-circle" style="color: #3b82f6;"></i> Create Manual Order</h3>
+                <button class="manual-order-modal-close" onclick="closeManualOrderModal()">&times;</button>
+            </div>
+            <div class="manual-order-modal-body">
+                <form id="manualOrderForm" onsubmit="submitManualOrder(event)">
+                    
+                    <!-- Contact details -->
+                    <div class="mo-form-group">
+                        <label for="moClientName">Client Name *</label>
+                        <input type="text" id="moClientName" required placeholder="John Doe">
+                    </div>
+
+                    <div class="mo-grid-2">
+                        <div class="mo-form-group">
+                            <label for="moClientEmail">Client Email *</label>
+                            <input type="email" id="moClientEmail" required placeholder="johndoe@example.com" list="existingClientsList" oninput="onManualOrderEmailInput()">
+                            <datalist id="existingClientsList">
+                                <?php
+                                $db_conn = mysqli_connect($servername, $username, $password, $dbname);
+                                if ($db_conn) {
+                                    $c_query = "SELECT DISTINCT customer_name, customer_email, customer_phone, customer_address FROM orders ORDER BY customer_name ASC";
+                                    $c_res = $db_conn->query($c_query);
+                                    if ($c_res) {
+                                        while ($c = $c_res->fetch_assoc()) {
+                                            if (empty($c['customer_email'])) continue;
+                                            echo '<option value="' . htmlspecialchars($c['customer_email']) . '" 
+                                                data-name="' . htmlspecialchars($c['customer_name']) . '"
+                                                data-phone="' . htmlspecialchars($c['customer_phone']) . '"
+                                                data-address="' . htmlspecialchars($c['customer_address']) . '">' . 
+                                                htmlspecialchars($c['customer_name']) . 
+                                                '</option>';
+                                        }
+                                        $c_res->close();
+                                    }
+                                    $db_conn->close();
+                                }
+                                ?>
+                            </datalist>
+                        </div>
+                        <div class="mo-form-group">
+                            <label for="moClientPhone">Client Phone *</label>
+                            <input type="text" id="moClientPhone" required placeholder="0917XXXXXXX">
+                        </div>
+                    </div>
+
+                    <div class="mo-form-group">
+                        <label for="moClientAddress">Installation Location / City *</label>
+                        <input type="text" id="moClientAddress" required placeholder="e.g. Manila, Cavite">
+                    </div>
+
+                    <!-- Sales Channel & Product Select -->
+                    <div class="mo-grid-2">
+                        <div class="mo-form-group">
+                            <label for="moSalesChannel">Sales Channel *</label>
+                            <select id="moSalesChannel" required>
+                                <option value="Website">Website (Default)</option>
+                                <option value="Facebook">Facebook</option>
+                                <option value="Phone Call">Phone Call</option>
+                                <option value="Walk-in">Walk-in</option>
+                                <option value="Viber">Viber</option>
+                            </select>
+                        </div>
+                        <div class="mo-form-group">
+                            <label for="moProduct">Select Product *</label>
+                            <select id="moProduct" onchange="onManualOrderProductChange()" required>
+                                <option value="">-- Choose Product --</option>
+                                <?php
+                                $db_conn = mysqli_connect($servername, $username, $password, $dbname);
+                                if ($db_conn) {
+                                    $p_query = "SELECT id, displayName, price FROM product ORDER BY displayName ASC";
+                                    $p_res = $db_conn->query($p_query);
+                                    if ($p_res) {
+                                        while ($prod = $p_res->fetch_assoc()) {
+                                            echo '<option value="' . $prod['id'] . '" data-price="' . $prod['price'] . '">' . 
+                                                htmlspecialchars($prod['displayName'] . ' (₱' . number_format($prod['price'], 2) . ')') . 
+                                                '</option>';
+                                        }
+                                        $p_res->close();
+                                    }
+                                    $db_conn->close();
+                                }
+                                ?>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Override Price -->
+                    <div class="mo-form-group">
+                        <label for="moCustomPrice">Override Amount (₱) - Leave blank for base price</label>
+                        <input type="number" step="0.01" id="moCustomPrice" placeholder="0.00">
+                    </div>
+
+                    <div class="mo-btn-group">
+                        <button type="button" class="mo-btn-cancel" onclick="closeManualOrderModal()">Cancel</button>
+                        <button type="submit" class="mo-btn-submit">Create Order</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Manual Order Javascript Actions -->
+    <script>
+        function openManualOrderModal() {
+            const overlay = document.getElementById('manualOrderOverlay');
+            overlay.classList.add('open');
+            document.getElementById('manualOrderForm').reset();
+        }
+
+        function closeManualOrderModal() {
+            const overlay = document.getElementById('manualOrderOverlay');
+            overlay.classList.remove('open');
+        }
+
+        // Close on backdrop click
+        document.getElementById('manualOrderOverlay').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeManualOrderModal();
+            }
+        });
+
+        function onManualOrderProductChange() {
+            const select = document.getElementById('moProduct');
+            const selectedOption = select.options[select.selectedIndex];
+            const customPriceInput = document.getElementById('moCustomPrice');
+            if (selectedOption && selectedOption.dataset.price) {
+                customPriceInput.value = parseFloat(selectedOption.dataset.price).toFixed(2);
+            } else {
+                customPriceInput.value = '';
+            }
+        }
+
+        function onManualOrderEmailInput() {
+            const emailInput = document.getElementById('moClientEmail');
+            const val = emailInput.value.trim().toLowerCase();
+            
+            const datalist = document.getElementById('existingClientsList');
+            const options = datalist.options;
+            
+            const nameInput = document.getElementById('moClientName');
+            const phoneInput = document.getElementById('moClientPhone');
+            const addressInput = document.getElementById('moClientAddress');
+            
+            // Check if input matches an existing customer email
+            for (let i = 0; i < options.length; i++) {
+                const opt = options[i];
+                if (opt.value.trim().toLowerCase() === val) {
+                    nameInput.value = opt.getAttribute('data-name') || '';
+                    phoneInput.value = opt.getAttribute('data-phone') || '';
+                    addressInput.value = opt.getAttribute('data-address') || '';
+                    return;
+                }
+            }
+        }
+
+        async function submitManualOrder(event) {
+            event.preventDefault();
+            
+            const clientEmail = document.getElementById('moClientEmail').value.trim();
+            const clientName = document.getElementById('moClientName').value.trim();
+            const clientPhone = document.getElementById('moClientPhone').value.trim();
+            const clientAddress = document.getElementById('moClientAddress').value.trim();
+            const salesChannel = document.getElementById('moSalesChannel').value;
+            const productId = document.getElementById('moProduct').value;
+            const customPrice = document.getElementById('moCustomPrice').value.trim();
+
+            if (!clientName || !clientEmail || !clientPhone || !clientAddress || !productId) {
+                alert('Please fill in all required fields.');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('action', 'create_manual_order');
+            formData.append('customer_name', clientName);
+            formData.append('customer_email', clientEmail);
+            formData.append('customer_phone', clientPhone);
+            formData.append('customer_address', clientAddress);
+            formData.append('sales_channel', salesChannel);
+            formData.append('product_id', productId);
+            formData.append('custom_price', customPrice);
+
+            try {
+                const response = await fetch('dashboard.php?ajax=1', {
+                    method: 'POST',
+                    body: formData
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    closeManualOrderModal();
+                    
+                    // Increment the KPI Total Orders Card in UI
+                    const kpiOrders = document.getElementById('kpi-orders-value');
+                    if (kpiOrders) {
+                        const currentVal = parseInt(kpiOrders.textContent.replace(/,/g, '')) || 0;
+                        kpiOrders.textContent = (currentVal + 1).toLocaleString();
+                    }
+
+                    // Increment the KPI Total Revenue Card in UI
+                    const kpiRevenue = document.getElementById('kpi-revenue-value');
+                    if (kpiRevenue) {
+                        const currentVal = parseFloat(kpiRevenue.textContent.replace(/[₱,]/g, '')) || 0;
+                        const addedAmount = parseFloat(result.amount) || 0;
+                        kpiRevenue.textContent = '₱' + (currentVal + addedAmount).toLocaleString('en-PH', {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2
+                        });
+                    }
+
+                    // Reload/fetch orders via OrdersModule
+                    if (typeof OrdersModule !== 'undefined' && typeof OrdersModule.loadOrders === 'function') {
+                        OrdersModule.loadOrders();
+                    }
+                    
+                    // Display browser alert or toast
+                    alert('Order created successfully!');
+                    window.location.reload();
+
+                } else {
+                    alert('Failed: ' + result.message);
+                }
+            } catch (err) {
+                console.error('Error submitting manual order:', err);
+                alert('An error occurred. Please try again.');
+            }
+        }
     </script>
 </body>
 
