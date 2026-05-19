@@ -7,18 +7,7 @@ $phone = $_GET['phone'] ?? '';
 $orderRef = $_GET['order_ref'] ?? '';
 $email = $_GET['email'] ?? '';
 
-// Database connection
-$servername = "localhost";
-$username = "root";
-$password = "";
-$dbname = "solar_power";
-
-$conn = new mysqli($servername, $username, $password, $dbname);
-
-if ($conn->connect_error) {
-    echo json_encode(['success' => false, 'message' => 'Database connection failed']);
-    exit;
-}
+require_once __DIR__ . '/../config/dbconn.php';
 
 // MODE 1: Search by Phone (Order History)
 if (!empty($phone)) {

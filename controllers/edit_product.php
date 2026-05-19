@@ -6,10 +6,7 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'staff') {
     exit;
 }
 
-$conn = new mysqli("localhost", "root", "", "solar_power");
-if ($conn->connect_error) {
-    die("Connection failed");
-}
+require_once __DIR__ . '/../config/dbconn.php';
 
 $product_id     = intval($_POST['product_id']);
 $displayName    = $_POST['displayName'];

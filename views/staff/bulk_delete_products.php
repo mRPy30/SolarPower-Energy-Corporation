@@ -9,14 +9,7 @@ include "../../config/dbconn.php";
 
 // Check if form was submitted
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['product_ids'])) {
-    $conn = mysqli_connect($servername, $username, $password, $dbname);
-    
-    if ($conn->connect_error) {
-        $_SESSION['message'] = "Connection failed: " . $conn->connect_error;
-        $_SESSION['message_type'] = "error";
-        header("Location: dashboard.php");
-        exit;
-    }
+
 
     // Get the comma-separated product IDs
     $product_ids = $_POST['product_ids'];

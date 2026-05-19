@@ -1,14 +1,6 @@
 <?php
 header('Content-Type: application/json');
-$servername = "localhost";
-$username = "root";
-$password = "";
-$dbname = "solar_power";
-
-$conn = mysqli_connect($servername, $username, $password, $dbname);
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
+require_once __DIR__ . '/../config/dbconn.php';
 
 try {
     // We select from 'orders' as shown in your phpMyAdmin screenshot

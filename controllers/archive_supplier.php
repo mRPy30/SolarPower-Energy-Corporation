@@ -13,12 +13,7 @@ if (!isset($_SESSION['user_id'])) {
 
 include __DIR__ . "/../config/dbconn.php";
 
-$conn = mysqli_connect($servername, $username, $password, $dbname);
-if ($conn->connect_error) {
-    http_response_code(500);
-    echo json_encode(['success' => false, 'message' => 'Database connection failed']);
-    exit;
-}
+
 
 // Create archived_suppliers table if it doesn't exist
 $conn->query("CREATE TABLE IF NOT EXISTS `archived_suppliers` (

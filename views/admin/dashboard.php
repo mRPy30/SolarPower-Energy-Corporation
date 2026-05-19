@@ -8,11 +8,7 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
 }
 
 include "../../config/dbconn.php";
-$conn = mysqli_connect($servername, $username, $password, $dbname);
 
-if (!$conn) {
-    die('Connection failed: ' . mysqli_connect_error());
-}
 
 // Fetch current admin data
 $user_id = $_SESSION['user_id'];
@@ -1237,10 +1233,7 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
             <?php
             $addProductMsg = '';
             if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['action'] === 'add_product') {
-                $conn_post = mysqli_connect($servername, $username, $password, $dbname);
-                if ($conn_post->connect_error) {
-                     $addProductMsg = "<div class='alert error'>Connection failed: " . $conn_post->connect_error . "</div>";
-                } else {
+                $conn_post = $conn;
                     $category = $conn_post->real_escape_string($_POST['category'] ?? '');
                     $brand = $conn_post->real_escape_string($_POST['brand'] ?? '');
                     
@@ -1319,8 +1312,7 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
                         }
                         $stmt->close();
                     }
-                    $conn_post->close();
-                }
+
             }
             ?>
             <style>
@@ -2467,7 +2459,7 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 // 3. Get your order data from PHP
 const orders = <?php 
     // Fetch orders with addresses
-    $conn = mysqli_connect($servername, $username, $password, $dbname);
+
     $res = $conn->query("SELECT customer_name, customer_address, total_amount FROM orders WHERE customer_address IS NOT NULL LIMIT 10");
     $data = [];
     while($row = $res->fetch_assoc()) { $data[] = $row; }

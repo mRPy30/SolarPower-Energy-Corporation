@@ -12,12 +12,7 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 
-// Database connection
-$conn = mysqli_connect($servername, $username, $password, $dbname);
-if ($conn->connect_error) {
-    echo json_encode(['success' => false, 'message' => 'Connection failed: ' . $conn->connect_error]);
-    exit;
-}
+
 
 $staff_id = $_SESSION['user_id'];
 $input = json_decode(file_get_contents('php://input'), true);

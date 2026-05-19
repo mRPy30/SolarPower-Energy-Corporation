@@ -21,12 +21,7 @@ $lastName = $_SESSION['lastName'] ?? '';
 $fullName = trim($firstName . ' ' . $lastName);
 $initials = strtoupper(substr($firstName, 0, 1) . substr($lastName, 0, 1));
 
-// Database Connection
-$conn = mysqli_connect($servername, $username, $password, $dbname);
 
-if (!$conn) {
-    die('Connection failed: ' . mysqli_connect_error());
-}
 
 function get_dashboard_analytics($conn)
 {
@@ -433,8 +428,7 @@ $all_suppliers = get_all_suppliers($conn);
 $product_count = count($all_products);
 $revenue_trend = get_monthly_revenue_trend($conn);
 
-// Close connection before HTML output starts
-$conn->close();
+// HTML output starts below (connection kept open for AJAX handlers if any)
 
 $user_id = $_SESSION['user_id'];
 $firstName = $_SESSION['firstName'] ?? 'User';
@@ -447,11 +441,7 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
     header('Content-Type: application/json');
 
 
-    $conn = mysqli_connect($servername, $username, $password, $dbname);
-    if (!$conn) {
-        echo json_encode(['success' => false, 'message' => 'Connection failed: ' . mysqli_connect_error()]);
-        exit;
-    }
+
 
     $action = $_GET['action'] ?? ($_POST['action'] ?? 'fetch');
 
@@ -4235,7 +4225,179 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
             </div>
 
             <div id="quotation" class="page-content">
-                <div class="quotation-container">
+                <!-- HTML2PDF CDN -->
+                <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+                <!-- CUSTOM SCOPED CSS FOR QUOTATION BUILDER (Replaces Tailwind CDN) -->
+                <style id="qb-custom-styles">
+                    #quotationBuilderView { font-family: sans-serif; background-color: #f8fafc; padding: 1.5rem; min-height: calc(100vh - 80px); box-sizing: border-box; }
+                    #quotationBuilderView * { box-sizing: border-box; }
+                    #quotationBuilderView .hidden { display: none !important; }
+                    #quotationBuilderView .flex { display: flex; }
+                    #quotationBuilderView .flex-col { flex-direction: column; }
+                    #quotationBuilderView .items-center { align-items: center; }
+                    #quotationBuilderView .justify-between { justify-content: space-between; }
+                    #quotationBuilderView .justify-center { justify-content: center; }
+                    #quotationBuilderView .gap-8 { gap: 2rem; }
+                    #quotationBuilderView .gap-4 { gap: 1rem; }
+                    #quotationBuilderView .gap-2 { gap: 0.5rem; }
+                    
+                    #quotationBuilderView .w-full { width: 100%; }
+                    #quotationBuilderView .w-6 { width: 1.5rem; }
+                    #quotationBuilderView .h-6 { height: 1.5rem; }
+                    #quotationBuilderView .w-5 { width: 1.25rem; }
+                    #quotationBuilderView .w-1\/2 { width: 50%; }
+                    @media (min-width: 1024px) {
+                        #quotationBuilderView .lg\:flex-row { flex-direction: row; }
+                        #quotationBuilderView .lg\:w-3\/5 { width: 60%; }
+                        #quotationBuilderView .lg\:w-2\/5 { width: 40%; }
+                    }
+                    
+                    #quotationBuilderView .grid { display: grid; }
+                    #quotationBuilderView .grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+                    @media (min-width: 768px) {
+                        #quotationBuilderView .md\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+                    }
+                    
+                    #quotationBuilderView .space-y-6 > * + * { margin-top: 1.5rem; }
+                    #quotationBuilderView .space-y-2 > * + * { margin-top: 0.5rem; }
+                    #quotationBuilderView .space-y-3 > * + * { margin-top: 0.75rem; }
+                    
+                    #quotationBuilderView .m-0 { margin: 0; }
+                    #quotationBuilderView .mt-1 { margin-top: 0.25rem; }
+                    #quotationBuilderView .mt-2 { margin-top: 0.5rem; }
+                    #quotationBuilderView .mt-3 { margin-top: 0.75rem; }
+                    #quotationBuilderView .mt-4 { margin-top: 1rem; }
+                    #quotationBuilderView .mb-1 { margin-bottom: 0.25rem; }
+                    #quotationBuilderView .mb-2 { margin-bottom: 0.5rem; }
+                    #quotationBuilderView .mb-4 { margin-bottom: 1rem; }
+                    #quotationBuilderView .mb-6 { margin-bottom: 1.5rem; }
+                    #quotationBuilderView .mb-10 { margin-bottom: 2.5rem; }
+                    #quotationBuilderView .mr-1 { margin-right: 0.25rem; }
+                    #quotationBuilderView .mr-2 { margin-right: 0.5rem; }
+                    
+                    #quotationBuilderView .p-0 { padding: 0; }
+                    #quotationBuilderView .p-2 { padding: 0.5rem; }
+                    #quotationBuilderView .p-3 { padding: 0.75rem; }
+                    #quotationBuilderView .p-6 { padding: 1.5rem; }
+                    #quotationBuilderView .pt-1 { padding-top: 0.25rem; }
+                    #quotationBuilderView .pt-3 { padding-top: 0.75rem; }
+                    #quotationBuilderView .pt-4 { padding-top: 1rem; }
+                    #quotationBuilderView .pb-4 { padding-bottom: 1rem; }
+                    #quotationBuilderView .px-2 { padding-left: 0.5rem; padding-right: 0.5rem; }
+                    #quotationBuilderView .py-1 { padding-top: 0.25rem; padding-bottom: 0.25rem; }
+                    #quotationBuilderView .py-2 { padding-top: 0.5rem; padding-bottom: 0.5rem; }
+                    #quotationBuilderView .py-3 { padding-top: 0.75rem; padding-bottom: 0.75rem; }
+                    
+                    #quotationBuilderView .text-2xl { font-size: 1.5rem; line-height: 2rem; }
+                    #quotationBuilderView .text-xl { font-size: 1.25rem; line-height: 1.75rem; }
+                    #quotationBuilderView .text-lg { font-size: 1.125rem; line-height: 1.75rem; }
+                    #quotationBuilderView .text-sm { font-size: 0.875rem; line-height: 1.25rem; }
+                    #quotationBuilderView .text-xs { font-size: 0.75rem; line-height: 1rem; }
+                    
+                    #quotationBuilderView .font-medium { font-weight: 500; }
+                    #quotationBuilderView .font-semibold { font-weight: 600; }
+                    #quotationBuilderView .font-bold { font-weight: 700; }
+                    #quotationBuilderView .font-black { font-weight: 900; }
+                    
+                    #quotationBuilderView .uppercase { text-transform: uppercase; }
+                    #quotationBuilderView .tracking-tight { letter-spacing: -0.025em; }
+                    #quotationBuilderView .tracking-wider { letter-spacing: 0.05em; }
+                    #quotationBuilderView .text-center { text-align: center; }
+                    #quotationBuilderView .text-right { text-align: right; }
+                    
+                    #quotationBuilderView .bg-white { background-color: #ffffff; }
+                    #quotationBuilderView .bg-slate-50 { background-color: #f8fafc; }
+                    #quotationBuilderView .bg-slate-100 { background-color: #f1f5f9; }
+                    #quotationBuilderView .bg-slate-800 { background-color: #1e293b; }
+                    #quotationBuilderView .bg-emerald-50 { background-color: #ecfdf5; }
+                    #quotationBuilderView .bg-emerald-100 { background-color: #d1fae5; }
+                    #quotationBuilderView .bg-amber-500 { background-color: #f59e0b; }
+                    #quotationBuilderView .bg-transparent { background-color: transparent; }
+                    #quotationBuilderView .bg-blue-50 { background-color: #eff6ff; }
+                    #quotationBuilderView .bg-blue-100 { background-color: #dbeafe; }
+                    #quotationBuilderView .bg-amber-100 { background-color: #fef3c7; }
+                    #quotationBuilderView .bg-black\/60 { background-color: rgba(0, 0, 0, 0.6); }
+                    #quotationBuilderView .bg-slate-800\/80 { background-color: rgba(30, 41, 59, 0.8); }
+                    
+                    #quotationBuilderView .text-white { color: #ffffff; }
+                    #quotationBuilderView .text-slate-400 { color: #94a3b8; }
+                    #quotationBuilderView .text-slate-500 { color: #64748b; }
+                    #quotationBuilderView .text-slate-600 { color: #475569; }
+                    #quotationBuilderView .text-slate-700 { color: #334155; }
+                    #quotationBuilderView .text-slate-800 { color: #1e293b; }
+                    #quotationBuilderView .text-emerald-600 { color: #059669; }
+                    #quotationBuilderView .text-emerald-700 { color: #047857; }
+                    #quotationBuilderView .text-emerald-800 { color: #065f46; }
+                    #quotationBuilderView .text-amber-500 { color: #f59e0b; }
+                    #quotationBuilderView .text-amber-600 { color: #d97706; }
+                    #quotationBuilderView .text-red-500 { color: #ef4444; }
+                    #quotationBuilderView .text-blue-400 { color: #60a5fa; }
+                    #quotationBuilderView .text-blue-600 { color: #2563eb; }
+                    
+                    #quotationBuilderView .hover\:text-slate-900:hover { color: #0f172a; }
+                    #quotationBuilderView .hover\:text-blue-700:hover { color: #1d4ed8; }
+                    #quotationBuilderView .hover\:bg-amber-600:hover { background-color: #d97706; }
+                    #quotationBuilderView .hover\:bg-slate-900:hover { background-color: #0f172a; }
+                    #quotationBuilderView .hover\:bg-slate-50:hover { background-color: #f8fafc; }
+                    
+                    #quotationBuilderView .border { border-width: 1px; border-style: solid; }
+                    #quotationBuilderView .border-t { border-top-width: 1px; border-top-style: solid; }
+                    #quotationBuilderView .border-b { border-bottom-width: 1px; border-bottom-style: solid; }
+                    #quotationBuilderView .border-none { border-style: none; }
+                    
+                    #quotationBuilderView .border-slate-100 { border-color: #f1f5f9; }
+                    #quotationBuilderView .border-slate-200 { border-color: #e2e8f0; }
+                    #quotationBuilderView .border-slate-300 { border-color: #cbd5e1; }
+                    #quotationBuilderView .border-emerald-300 { border-color: #6ee7b7; }
+                    
+                    #quotationBuilderView .rounded { border-radius: 0.25rem; }
+                    #quotationBuilderView .rounded-lg { border-radius: 0.5rem; }
+                    #quotationBuilderView .rounded-xl { border-radius: 0.75rem; }
+                    #quotationBuilderView .rounded-full { border-radius: 9999px; }
+                    
+                    #quotationBuilderView .shadow-sm { box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); }
+                    #quotationBuilderView .shadow-lg { box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); }
+                    
+                    #quotationBuilderView .transition-colors { transition-property: background-color, border-color, color, fill, stroke; transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); transition-duration: 150ms; }
+                    #quotationBuilderView .transition-all { transition-property: all; transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); transition-duration: 150ms; }
+                    
+                    #quotationBuilderView .outline-none { outline: 2px solid transparent; outline-offset: 2px; }
+                    #quotationBuilderView input:focus, #quotationBuilderView select:focus, #quotationBuilderView textarea:focus { box-shadow: 0 0 0 2px #fbbf24; border-color: #fbbf24; }
+                    #quotationBuilderView #qb_kw:focus { box-shadow: 0 0 0 2px #34d399; border-color: #34d399; }
+                    
+                    #quotationBuilderView .sticky { position: sticky; }
+                    #quotationBuilderView .top-0 { top: 0px; }
+                    #quotationBuilderView .overflow-y-auto { overflow-y: auto; }
+                    #quotationBuilderView .overflow-hidden { overflow: hidden; }
+                    #quotationBuilderView .list-none { list-style-type: none; }
+                    #quotationBuilderView .cursor-pointer { cursor: pointer; }
+                    #quotationBuilderView .cursor-not-allowed { cursor: not-allowed; }
+                    
+                    #quotationBuilderView .opacity-50 { opacity: 0.5; }
+                    #quotationBuilderView .opacity-0 { opacity: 0; }
+                    
+                    #quotationBuilderView .relative { position: relative; }
+                    #quotationBuilderView .absolute { position: absolute; }
+                    #quotationBuilderView .inset-0 { top: 0; right: 0; bottom: 0; left: 0; }
+                    #quotationBuilderView .top-2 { top: 0.5rem; }
+                    #quotationBuilderView .left-2 { left: 0.5rem; }
+                    #quotationBuilderView .z-10 { z-index: 10; }
+                    
+                    #quotationBuilderView .object-cover { object-fit: cover; }
+                    #quotationBuilderView .backdrop-blur-sm { backdrop-filter: blur(4px); }
+                    #quotationBuilderView .shrink-0 { flex-shrink: 0; }
+                    #quotationBuilderView .leading-none { line-height: 1; }
+                    
+                    @media (min-width: 768px) {
+                        #quotationBuilderView .md\:col-span-2 { grid-column: span 2 / span 2; }
+                        #quotationBuilderView .md\:flex-row { flex-direction: row; }
+                        #quotationBuilderView .md\:w-1\/2 { width: 50%; }
+                    }
+                </style>
+
+                <!-- LIST VIEW -->
+                <div id="quotationListView" class="quotation-container">
                     <div class="quotation-stats">
                         <div class="stat-box">
                             <h4>TOTAL QUOTATIONS</h4>
@@ -4293,8 +4455,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                     </div>
 
                     <div class="quotation-header">
-                        <button class="btn-primary" onclick="openQuotationModal()">
-                            <i class="fas fa-plus"></i> New Quotation
+                        <button class="btn-primary" onclick="toggleQuotationBuilder(true)">
+                            <i class="fas fa-plus"></i> Create Quotation
                         </button>
                     </div>
 
@@ -4320,8 +4482,568 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                             </tbody>
                         </table>
                     </div>
-                </div>
+                </div> <!-- END LIST VIEW -->
+
+                <!-- BUILDER VIEW -->
+                <div id="quotationBuilderView" class="hidden font-sans p-6 bg-slate-50 min-h-[calc(100vh-80px)]" style="display: none;">
+                    <div class="mb-6 flex items-center justify-between">
+                        <button onclick="toggleQuotationBuilder(false)" class="flex items-center text-slate-600 hover:text-slate-900 font-semibold transition-colors bg-transparent border-none cursor-pointer">
+                            <i class="fas fa-arrow-left mr-2"></i> Back to Quotation List
+                        </button>
+                        <h2 class="text-2xl font-bold text-slate-800 m-0">Quotation Builder</h2>
+                    </div>
+                    
+                    <div class="flex flex-col lg:flex-row gap-8">
+                        <!-- LEFT: FORM (60%) -->
+                        <div class="w-full lg:w-3/5 space-y-6 overflow-y-auto" style="max-height: calc(100vh - 150px); padding-right: 10px;">
+                            
+                            <!-- Step 1: Client & Site Info -->
+                            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 box-border">
+                                <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center m-0"><span class="bg-emerald-100 text-emerald-700 w-6 h-6 flex items-center justify-center rounded-full text-sm mr-2">1</span> Client & Site Info</h3>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-slate-700 mb-1">Full Name</label>
+                                        <input type="text" id="qb_clientName" class="w-full box-border border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-amber-400 focus:border-amber-400 outline-none transition-all" oninput="updatePreview()">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-slate-700 mb-1">Email Address</label>
+                                        <input type="email" id="qb_email" class="w-full box-border border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-amber-400 outline-none transition-all" oninput="updatePreview()">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-slate-700 mb-1">Contact Number</label>
+                                        <input type="text" id="qb_contact" class="w-full box-border border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-amber-400 outline-none transition-all" oninput="updatePreview()">
+                                    </div>
+                                    <div class="md:col-span-2">
+                                        <label class="block text-sm font-medium text-slate-700 mb-1">Installation Address</label>
+                                        <input type="text" id="qb_address" class="w-full box-border border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-amber-400 outline-none transition-all" oninput="updatePreview(); if(this.value.length > 5) document.getElementById('qb_solar_trigger_btn').classList.remove('opacity-50', 'cursor-not-allowed'); else document.getElementById('qb_solar_trigger_btn').classList.add('opacity-50', 'cursor-not-allowed');">
+                                        
+                                        <button type="button" id="qb_solar_trigger_btn" onclick="triggerSolarAnalysis()" class="mt-2 flex items-center text-sm font-medium text-blue-600 hover:text-blue-700 bg-blue-50 px-3 py-1.5 rounded-md border border-blue-200 transition-all opacity-50 cursor-not-allowed" style="cursor: pointer;">
+                                            <i class="fas fa-satellite-dish mr-2"></i> Analyze Roof Potential via Google Solar
+                                        </button>
+                                        
+                                        <div id="qb_solar_analysis_container" class="hidden mt-3 border border-slate-200 rounded-lg overflow-hidden bg-white shadow-inner flex flex-col md:flex-row">
+                                            <div class="md:w-1/2 bg-slate-100 flex items-center justify-center p-0 relative min-h-[150px]">
+                                                <div id="qb_solar_loading" class="absolute inset-0 flex flex-col items-center justify-center bg-slate-800/80 text-white z-10 transition-opacity duration-300">
+                                                    <i class="fas fa-circle-notch fa-spin text-2xl mb-2 text-blue-400"></i>
+                                                    <span class="text-xs font-semibold tracking-wider">CONNECTING TO GOOGLE SOLAR API...</span>
+                                                </div>
+                                                <img src="../../assets/img/mock_solar_roof_3d.png" alt="Google Solar 3D Map" class="w-full h-full object-cover" style="min-height: 180px;">
+                                                <div class="absolute top-2 left-2 bg-black/60 text-white text-[10px] px-2 py-1 rounded backdrop-blur-sm flex items-center">
+                                                    <i class="fab fa-google mr-1"></i> Project Sunroof Data (3D Enhanced)
+                                                </div>
+                                            </div>
+                                            <div class="md:w-1/2 p-4 flex flex-col justify-center">
+                                                <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 m-0">Site Solar Potential</h4>
+                                                
+                                                <div class="space-y-3">
+                                                    <div class="flex items-start">
+                                                        <div class="bg-amber-100 text-amber-600 w-6 h-6 rounded-full flex items-center justify-center shrink-0 mt-0.5 mr-2">
+                                                            <i class="fas fa-sun text-xs"></i>
+                                                        </div>
+                                                        <div>
+                                                            <div class="text-[10px] text-slate-500 font-medium leading-none mb-1">Max Annual Sunlight</div>
+                                                            <div class="text-sm font-bold text-slate-800 leading-none">1,650 kWh/m² /yr</div>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <div class="flex items-start">
+                                                        <div class="bg-blue-100 text-blue-600 w-6 h-6 rounded-full flex items-center justify-center shrink-0 mt-0.5 mr-2">
+                                                            <i class="fas fa-ruler-combined text-xs"></i>
+                                                        </div>
+                                                        <div>
+                                                            <div class="text-[10px] text-slate-500 font-medium leading-none mb-1">Usable Roof Area</div>
+                                                            <div class="text-sm font-bold text-slate-800 leading-none">84 m² available for panels</div>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <div class="flex items-start">
+                                                        <div class="bg-emerald-100 text-emerald-600 w-6 h-6 rounded-full flex items-center justify-center shrink-0 mt-0.5 mr-2">
+                                                            <i class="fas fa-check text-xs"></i>
+                                                        </div>
+                                                        <div>
+                                                            <div class="text-[10px] text-slate-500 font-medium leading-none mb-1">Shading Risk Level</div>
+                                                            <div class="text-sm font-bold text-emerald-700 leading-none">Low Shading (Highly Optimal)</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-slate-700 mb-1">Phase Type</label>
+                                        <select id="qb_phase" class="w-full box-border border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-amber-400 outline-none transition-all" onchange="updatePreview()">
+                                            <option value="Single Phase">Single Phase</option>
+                                            <option value="Three Phase">Three Phase</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-slate-700 mb-1">Roof Type</label>
+                                        <select id="qb_roof" class="w-full box-border border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-amber-400 outline-none transition-all" onchange="updatePreview()">
+                                            <option value="G.I. Sheet/Yero">G.I. Sheet / Yero</option>
+                                            <option value="Tile Roof">Tile Roof</option>
+                                            <option value="Concrete Slab">Concrete Slab</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Step 2: Energy Assessment & System Sizing -->
+                            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 box-border">
+                                <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center m-0"><span class="bg-emerald-100 text-emerald-700 w-6 h-6 flex items-center justify-center rounded-full text-sm mr-2">2</span> Energy Assessment</h3>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-slate-700 mb-1">Average Monthly Bill (₱)</label>
+                                        <input type="number" id="qb_monthlyBill" class="w-full box-border border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-amber-400 outline-none transition-all" placeholder="e.g. 5000" oninput="autoCalculateSystem()">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-slate-700 mb-1">System Type</label>
+                                        <select id="qb_sysType" class="w-full box-border border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-amber-400 outline-none transition-all" onchange="toggleBatteryDropdown(); autoCalculateSystem();">
+                                            <option value="On-Grid">On-Grid</option>
+                                            <option value="Hybrid">Hybrid</option>
+                                            <option value="Off-Grid">Off-Grid</option>
+                                            <option value="Supply Only">Supply Only</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-slate-700 mb-1">Recommended System Size (kW)</label>
+                                        <input type="number" step="0.1" id="qb_kw" class="w-full box-border border border-emerald-300 bg-emerald-50 rounded-lg p-2 font-bold text-emerald-800 focus:ring-2 focus:ring-emerald-400 outline-none transition-all" oninput="updatePreview(); validateCapacity();">
+                                        <div id="qb_kw_warning" class="hidden mt-1 text-xs font-medium"></div>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-slate-700 mb-1">Base Package Cost (₱)</label>
+                                        <input type="number" id="qb_baseCost" class="w-full box-border border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-amber-400 outline-none transition-all" oninput="updatePreview()">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Step 3: Component Customization -->
+                            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 box-border">
+                                <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center m-0"><span class="bg-emerald-100 text-emerald-700 w-6 h-6 flex items-center justify-center rounded-full text-sm mr-2">3</span> Components</h3>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-slate-700 mb-1">Solar Panel Brand</label>
+                                        <select id="qb_panel" class="w-full box-border border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-amber-400 outline-none transition-all" onchange="updatePreview()">
+                                            <option value="longi">Longi</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-slate-700 mb-1">Inverter Brand</label>
+                                        <select id="qb_inverter" class="w-full box-border border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-amber-400 outline-none transition-all" onchange="updatePreview()">
+                                            <option value="Growatt">Growatt</option>
+                                            <option value="Huawei">Huawei</option>
+                                            <option value="Solis">Solis</option>
+                                            <option value="Fronius">Fronius</option>
+                                            <option value="SolarEdge">SolarEdge</option>
+                                        </select>
+                                    </div>
+                                    <div id="qb_battery_container" class="hidden">
+                                        <label class="block text-sm font-medium text-slate-700 mb-1">Battery Brand</label>
+                                        <select id="qb_battery" class="w-full box-border border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-amber-400 outline-none transition-all" onchange="updatePreview()">
+                                            <option value="BYD">BYD</option>
+                                            <option value="Pylontech">Pylontech</option>
+                                            <option value="Holymiles">Holymiles</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Step 4: Pricing, Discounts & Remarks -->
+                            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 mb-10 box-border">
+                                <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center m-0"><span class="bg-emerald-100 text-emerald-700 w-6 h-6 flex items-center justify-center rounded-full text-sm mr-2">4</span> Pricing & Terms</h3>
+                                <div class="grid grid-cols-1 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-slate-700 mb-1">Discount Amount (₱)</label>
+                                        <input type="number" id="qb_discount" value="0" class="w-full box-border border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-amber-400 outline-none transition-all" oninput="checkDiscount(); updatePreview();">
+                                        <p id="qb_discountWarning" class="text-red-500 text-xs mt-1 hidden m-0 pt-1"><i class="fas fa-exclamation-triangle"></i> Warning: Discount exceeds 10% staff threshold.</p>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-slate-700 mb-1">Payment Term</label>
+                                        <select id="qb_paymentTerm" class="w-full box-border border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-amber-400 outline-none transition-all" onchange="updatePreview()">
+                                            <option value="Spot Cash with 5% Discount">Spot Cash with 5% Discount</option>
+                                            <option value="Progress Billing: 50% DP / 40% Delivery / 10% Turn-over">Progress Billing: 50% DP / 40% Delivery / 10% Turn-over</option>
+                                            <option value="Bank Financing">Bank Financing</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-slate-700 mb-1">Remarks / Notes</label>
+                                        <textarea id="qb_remarks" class="w-full box-border border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-amber-400 outline-none transition-all" rows="2"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- RIGHT: PREVIEW (40%) -->
+                        <div class="w-full lg:w-2/5 box-border">
+                            <div class="sticky top-0 bg-white p-6 rounded-xl shadow-lg border border-slate-200">
+                                <div id="qb_pdf_content" style="background: white; padding: 10px;">
+                                    <div class="border-b border-slate-200 pb-4 mb-4">
+                                    <div class="flex justify-between items-center">
+                                        <img src="../../assets/img/new_logo.png" alt="SolarPower Logo" style="height: 35px; width: auto; object-fit: contain; margin: 0;">
+                                        <span id="prev_qid" class="text-sm font-mono text-slate-500 bg-slate-100 px-2 py-1 rounded">Q20260000</span>
+                                    </div>
+                                    <div class="mt-4 text-sm text-slate-600">
+                                        <p class="font-bold text-slate-800 m-0" id="prev_clientName">Client Name</p>
+                                        <p class="m-0 mt-1" id="prev_address">Installation Address</p>
+                                        <p class="m-0 mt-1" id="prev_contact">Contact / Email</p>
+                                    </div>
+                                </div>
+
+                                <div class="mb-4">
+                                    <h5 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 m-0">System Details</h5>
+                                    <div class="bg-slate-50 p-3 rounded-lg text-sm border border-slate-100">
+                                        <div class="flex justify-between mb-1">
+                                            <span class="text-slate-600">System Type:</span>
+                                            <span class="font-bold text-emerald-600" id="prev_sysType">GRID TIE HYBRID</span>
+                                        </div>
+                                        <div class="flex justify-between mb-1">
+                                            <span class="text-slate-600">Capacity:</span>
+                                            <span class="font-bold text-slate-800"><span id="prev_kw">0.0</span> kWp</span>
+                                        </div>
+                                        <div class="flex justify-between m-0">
+                                            <span class="text-slate-600">Phase & Roof:</span>
+                                            <span class="font-medium text-slate-700"><span id="prev_phase">Single</span> | <span id="prev_roof">G.I. Sheet</span></span>
+                                        </div>
+                                        <div class="flex justify-between mt-1 pt-1 border-t border-slate-200/50 m-0 hidden" id="prev_solar_score_row">
+                                            <span class="text-slate-600 text-xs font-semibold">Solar Score:</span>
+                                            <span class="font-bold text-emerald-600 text-xs">A+ (92% Exposure Rate)</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mb-4">
+                                    <h5 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 m-0">Components</h5>
+                                    <ul class="text-sm text-slate-600 space-y-2 list-none p-0 m-0">
+                                        <li><i class="fas fa-solar-panel w-5 text-amber-500 text-center"></i> Panel: <span class="font-medium text-slate-800" id="prev_panel">Longi</span></li>
+                                        <li><i class="fas fa-bolt w-5 text-amber-500 text-center"></i> Inverter: <span class="font-medium text-slate-800" id="prev_inverter">Growatt</span></li>
+                                        <li id="prev_battery_item" class="hidden"><i class="fas fa-car-battery w-5 text-amber-500 text-center"></i> Battery: <span class="font-medium text-slate-800" id="prev_battery">BYD</span></li>
+                                    </ul>
+                                </div>
+
+                                <div class="border-t border-slate-200 pt-4 mb-6">
+                                    <div class="flex justify-between text-sm mb-1">
+                                        <span class="text-slate-600">Base Cost:</span>
+                                        <span class="text-slate-800">₱<span id="prev_baseCost">0.00</span></span>
+                                    </div>
+                                    <div class="flex justify-between text-sm mb-2 text-red-500">
+                                        <span>Discount:</span>
+                                        <span>-₱<span id="prev_discount">0.00</span></span>
+                                    </div>
+                                    <div class="flex justify-between items-center mt-3 pt-3 border-t border-slate-100">
+                                        <span class="font-bold text-slate-800">GRAND TOTAL</span>
+                                        <span class="text-2xl font-black text-emerald-600">₱<span id="prev_total">0.00</span></span>
+                                    </div>
+                                    <div class="mt-2 text-xs text-slate-500 text-right">
+                                        Payment: <span id="prev_paymentTerm">Spot Cash</span>
+                                    </div>
+                                </div>
+
+                                <!-- TERMS AND SCOPE (Small Print) -->
+                                <div class="mt-4 pt-4 border-t border-slate-200 mb-6" style="font-size: 10px; line-height: 1.2;">
+                                    <div class="font-bold text-center py-1 mb-1" style="background-color: #dbeafe; color: #1e3a8a;">TERMS OF PAYMENT</div>
+                                    <table class="w-full border-collapse mb-4" style="border: 1px solid #e2e8f0; font-size: 10px;">
+                                        <tr style="border-bottom: 1px solid #e2e8f0;">
+                                            <td class="font-bold p-1 w-1/3" style="border-right: 1px solid #e2e8f0;">LABOR & MATERIALS</td>
+                                            <td class="p-1">
+                                                50% DOWNPAYMENT FOR TOTAL CONTRACT AMOUNT<br>
+                                                30% BEFORE INSTALLATION & UPON SIGNING OF INSTALLTION PLAN<br>
+                                                20% UPON COMMISSIONING & TESTING
+                                            </td>
+                                        </tr>
+                                        <tr style="border-bottom: 1px solid #e2e8f0;">
+                                            <td class="font-bold p-1" style="border-right: 1px solid #e2e8f0;">STOCKS & DELIVERY</td>
+                                            <td class="p-1">15-30 DAYS LEAD TIME FOR MATERIALS / DELIVERY AFTER 3-5 DAYS</td>
+                                        </tr>
+                                        <tr style="border-bottom: 1px solid #e2e8f0;">
+                                            <td class="font-bold p-1" style="border-right: 1px solid #e2e8f0;">BANK DETAILS</td>
+                                            <td class="p-1">
+                                                <b>Acct Name: SOLARPOWER ENERGY CORPORATION</b><br>
+                                                <b>Bank: Unionbank of The Philippines</b><br>
+                                                <b>Acct Number: 0021-8002-7200</b>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td class="font-bold p-1" style="border-right: 1px solid #e2e8f0;">INSTALLMENT & PAYMENT OPTIONS</td>
+                                            <td class="p-1">
+                                                50% Downpayment<br>
+                                                Up to 12 Months Installment<br>
+                                                12% Interest<br>
+                                                Install Now, Pay Later<br>
+                                                We accept all major credit cards
+                                            </td>
+                                        </tr>
+                                    </table>
+
+                                    <div class="font-bold text-center py-1 mb-1" style="background-color: #dbeafe; color: #1e3a8a;">SCOPE OF WORKS</div>
+                                    <div class="p-2 border" style="border-color: #e2e8f0; border-style: solid; border-width: 1px;">
+                                        <p id="prev_scope_main" class="font-bold mb-1 m-0">1. SUPPLY AND INSTALL OF SOLAR PANELS & ACCESORIES ONLY</p>
+                                        <p class="font-bold mt-2 mb-1 m-0">NOTES</p>
+                                        <ul class="pl-0 m-0 list-none" style="padding-left: 0;">
+                                            <li>*FIRST COME, FIRST SERVE</li>
+                                            <li>*PRICES ARE SUBJECT TO CHANGE WITHOUT PRIOR NOTICE.</li>
+                                            <li>*OTHER MATERIALS NOT SPECIFIED IN THE QUOTATION IS SUBJECT FOR ADDITIONAL ORDER.</li>
+                                            <li>*GATE PASS, PERMITS, AND OTHER RELATED MATTER IS IN THE CARE OF THE CLIENT.</li>
+                                            <li>*QUOTATION PRICE IS VALID FOR 15 DAYS FROM THE DATE OF SENDING</li>
+                                            <li>*CHECK PAYMENTS MUST BE CLEARED PRIOR TO DELIVERY HENCE A PERIOD OF 3 BANKING DAYS IS REQUIRED FOR THIS PURPOSE.</li>
+                                            <li>*ORDERED ITEMS WILL BE DELIVERED WITHIN THE NEGOTIATED TIMELINE OF DELIVERY DEPENDING ON THE AVAILABILITY OF THE STOCKS.</li>
+                                            <li>*THIS QUOTATION IS VAT INCLUSIVE</li>
+                                        </ul>
+                                        <p class="font-bold mt-2 mb-1 m-0">*PRODUCT WARRANTIES</p>
+                                        <ul class="pl-0 m-0 list-none" style="padding-left: 0;">
+                                            <li>SOLAR PANEL - 12 YEARS</li>
+                                            <li>INVERTER - 5 YEARS</li>
+                                            <li>WORKMANSHIP - 2 YEARS</li>
+                                        </ul>
+                                        <p class="font-bold mt-2 mb-1 m-0">*MAINTENANCE AND CLEANING</p>
+                                        <ul class="pl-0 m-0 list-none" style="padding-left: 0;">
+                                            <li class="mb-1"><b>PANEL CLEANING:</b> 2 Free CLEANING FOR THE FIRST YEAR Removing dirt, dust, bird droppings, or pollen, which can significantly reduce energy production (especially in dusty or low-rain areas).</li>
+                                            <li class="mb-1"><b>PREVENTIVE INSPECTIONS:</b> Periodic checks every 6months to visually inspect the panels for cracks, check the mounting hardware for security, and inspect the wiring for any signs of wear, chewing (from pests), or loose connections.</li>
+                                            <li><b>INVERTER HEALTH CHECK:</b> Since the inverter is the most complex electronic component, service includes checking its operational performance and firmware updates.</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                </div> <!-- END qb_pdf_content -->
+
+                                <div class="space-y-3 flex flex-col gap-2">
+                                    <button onclick="qb_saveAndPublish()" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 rounded-lg shadow-sm transition-colors flex justify-center items-center border-none cursor-pointer text-base">
+                                        <i class="fas fa-check-circle mr-2"></i> Save & Publish Quotation
+                                    </button>
+                                    <div class="flex gap-2 w-full">
+                                        <button onclick="qb_generatePDF()" class="w-1/2 bg-slate-800 hover:bg-slate-900 text-white font-medium py-2 rounded-lg text-sm transition-colors border-none cursor-pointer">
+                                            <i class="fas fa-file-pdf mr-1"></i> Generate PDF
+                                        </button>
+                                        <button onclick="qb_copyLink()" class="w-1/2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 font-medium py-2 rounded-lg text-sm transition-colors cursor-pointer">
+                                            <i class="fas fa-link mr-1"></i> Copy Link
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div> <!-- END BUILDER VIEW -->
+
+                <script>
+                    function toggleQuotationBuilder(show) {
+                        if (show) {
+                            document.getElementById('quotationListView').style.display = 'none';
+                            document.getElementById('quotationBuilderView').style.display = 'block';
+                            document.getElementById('quotationBuilderView').classList.remove('hidden');
+                            const id = 'Q2026' + Math.floor(1000 + Math.random() * 9000);
+                            document.getElementById('prev_qid').textContent = id;
+                            autoCalculateSystem();
+                        } else {
+                            document.getElementById('quotationListView').style.display = 'block';
+                            document.getElementById('quotationBuilderView').style.display = 'none';
+                            document.getElementById('quotationBuilderView').classList.add('hidden');
+                        }
+                    }
+
+                    function triggerSolarAnalysis() {
+                        const btn = document.getElementById('qb_solar_trigger_btn');
+                        if (btn.classList.contains('cursor-not-allowed')) return;
+                        
+                        const container = document.getElementById('qb_solar_analysis_container');
+                        container.classList.remove('hidden');
+                        
+                        // Simulate API loading
+                        setTimeout(() => {
+                            document.getElementById('qb_solar_loading').style.opacity = '0';
+                            setTimeout(() => {
+                                document.getElementById('qb_solar_loading').classList.add('hidden');
+                                document.getElementById('prev_solar_score_row').classList.remove('hidden'); // Show score in preview
+                            }, 300);
+                        }, 1500);
+                    }
+
+                    function validateCapacity() {
+                        const kwInput = document.getElementById('qb_kw');
+                        const warningBox = document.getElementById('qb_kw_warning');
+                        const kw = parseFloat(kwInput.value) || 0;
+                        const maxKw = 15.0; // Based on mock 84 m2 roof
+                        
+                        if (kw <= 0) {
+                            warningBox.classList.add('hidden');
+                            return;
+                        }
+                        
+                        warningBox.classList.remove('hidden');
+                        if (kw <= maxKw) {
+                            warningBox.className = 'mt-1 text-xs font-medium text-emerald-600';
+                            warningBox.innerHTML = '✓ This system easily fits the client\'s roof footprint.';
+                        } else {
+                            warningBox.className = 'mt-1 text-xs font-medium text-orange-500';
+                            warningBox.innerHTML = '⚠️ Warning: System size exceeds estimated usable roof area footprint.';
+                        }
+                    }
+
+                    function toggleBatteryDropdown() {
+                        const sysType = document.getElementById('qb_sysType').value;
+                        const container = document.getElementById('qb_battery_container');
+                        const prevItem = document.getElementById('prev_battery_item');
+                        if (sysType === 'Hybrid') {
+                            container.classList.remove('hidden');
+                            prevItem.classList.remove('hidden');
+                        } else {
+                            container.classList.add('hidden');
+                            prevItem.classList.add('hidden');
+                        }
+                    }
+
+                    function autoCalculateSystem() {
+                        const bill = parseFloat(document.getElementById('qb_monthlyBill').value) || 0;
+                        if (bill <= 0) {
+                            document.getElementById('qb_kw').value = '';
+                            document.getElementById('qb_baseCost').value = '';
+                            updatePreview();
+                            return;
+                        }
+                        
+                        const sysType = document.getElementById('qb_sysType').value;
+                        let kw = Math.max(1.5, Math.ceil((bill / 12 / 120) * 10) / 10);
+                        
+                        let perKwCost = 65000;
+                        if (sysType === 'Hybrid') perKwCost = 95000;
+                        if (sysType === 'Off-Grid') perKwCost = 45000;
+                        if (sysType === 'Supply Only') perKwCost = 35000; // Raw product bundle pricing without labor markup
+                        
+                        const baseCost = kw * perKwCost;
+                        
+                        document.getElementById('qb_kw').value = kw;
+                        document.getElementById('qb_baseCost').value = baseCost;
+                        
+                        updatePreview();
+                        validateCapacity();
+                    }
+
+                    function checkDiscount() {
+                        const baseCost = parseFloat(document.getElementById('qb_baseCost').value) || 0;
+                        const discount = parseFloat(document.getElementById('qb_discount').value) || 0;
+                        const maxDiscount = baseCost * 0.10;
+                        
+                        if (discount > maxDiscount && baseCost > 0) {
+                            document.getElementById('qb_discountWarning').classList.remove('hidden');
+                        } else {
+                            document.getElementById('qb_discountWarning').classList.add('hidden');
+                        }
+                    }
+
+                    function updatePreview() {
+                        document.getElementById('prev_clientName').textContent = document.getElementById('qb_clientName').value || 'Client Name';
+                        document.getElementById('prev_address').textContent = document.getElementById('qb_address').value || 'Installation Address';
+                        
+                        const contact = document.getElementById('qb_contact').value;
+                        const email = document.getElementById('qb_email').value;
+                        document.getElementById('prev_contact').textContent = (contact || email) ? (contact + (email ? ' / ' + email : '')) : 'Contact / Email';
+                        
+                        document.getElementById('prev_sysType').textContent = document.getElementById('qb_sysType').value;
+                        document.getElementById('prev_kw').textContent = document.getElementById('qb_kw').value || '0.0';
+                        document.getElementById('prev_phase').textContent = document.getElementById('qb_phase').value.split(' ')[0];
+                        document.getElementById('prev_roof').textContent = document.getElementById('qb_roof').value;
+                        
+                        document.getElementById('prev_panel').textContent = document.getElementById('qb_panel').value;
+                        document.getElementById('prev_inverter').textContent = document.getElementById('qb_inverter').value;
+                        document.getElementById('prev_battery').textContent = document.getElementById('qb_battery').value;
+                        
+                        const baseCost = parseFloat(document.getElementById('qb_baseCost').value) || 0;
+                        const discount = parseFloat(document.getElementById('qb_discount').value) || 0;
+                        const total = Math.max(0, baseCost - discount);
+                        
+                        const formatter = new Intl.NumberFormat('en-PH');
+                        document.getElementById('prev_baseCost').textContent = formatter.format(baseCost);
+                        document.getElementById('prev_discount').textContent = formatter.format(discount);
+                        document.getElementById('prev_total').textContent = formatter.format(total);
+                        
+                        document.getElementById('prev_paymentTerm').textContent = document.getElementById('qb_paymentTerm').value.split(' ')[0];
+                        
+                        const sysType = document.getElementById('qb_sysType').value;
+                        const scopeMain = document.getElementById('prev_scope_main');
+                        if(sysType === 'Supply Only') {
+                            scopeMain.innerHTML = '1. SUPPLY OF SOLAR PANELS & ACCESORIES ONLY <span class="text-red-500">(INSTALLATION NOT INCLUDED)</span>';
+                        } else {
+                            scopeMain.textContent = '1. SUPPLY AND INSTALL OF SOLAR PANELS & ACCESORIES ONLY';
+                        }
+                        
+                        checkDiscount();
+                    }
+
+                    async function qb_saveAndPublish() {
+                        const clientName = document.getElementById('qb_clientName').value;
+                        const email = document.getElementById('qb_email').value;
+                        const contact = document.getElementById('qb_contact').value;
+                        const address = document.getElementById('qb_address').value;
+                        const sysType = document.getElementById('qb_sysType').value;
+                        const kw = document.getElementById('qb_kw').value;
+                        const remarks = document.getElementById('qb_remarks').value;
+                        
+                        if(!clientName || !sysType || !kw) {
+                            alert("Please fill in Client Name, System Type, and Recommended kW.");
+                            return;
+                        }
+                        
+                        const formData = new FormData();
+                        formData.append('action', 'create');
+                        formData.append('clientName', clientName);
+                        formData.append('email', email);
+                        formData.append('contact', contact);
+                        formData.append('location', address);
+                        formData.append('systemType', sysType);
+                        formData.append('kw', kw);
+                        formData.append('officer', '<?= addslashes($fullName) ?>'); 
+                        formData.append('status', 'ONGOING');
+                        formData.append('remarks', remarks);
+                        
+                        try {
+                            const response = await fetch('quotation_api.php', {
+                                method: 'POST',
+                                body: formData
+                            });
+                            const result = await response.json();
+                            
+                            if (result.success) {
+                                alert('Quotation saved and published successfully!');
+                                // Hide the builder and show the main quotation list again
+                                toggleQuotationBuilder(false);
+                                // Refresh the quotation list data
+                                QuotationModule.init(); 
+                                toggleQuotationBuilder(false);
+                            } else {
+                                alert('Failed to save quotation: ' + (result.error || 'Unknown error'));
+                            }
+                        } catch (err) {
+                            console.error(err);
+                            alert('Error communicating with server.');
+                        }
+                    }
+
+                    function qb_generatePDF() {
+                        const element = document.getElementById('qb_pdf_content');
+                        let clientName = document.getElementById('qb_clientName').value.trim();
+                        if (!clientName) clientName = 'SolarPower';
+                        const filename = clientName + ' - Quotation.pdf';
+                        
+                        const opt = {
+                            margin:       0.2,
+                            filename:     filename,
+                            image:        { type: 'jpeg', quality: 0.98 },
+                            html2canvas:  { scale: 2, useCORS: true },
+                            jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+                        };
+                        
+                        // html2pdf().set(opt).from(element).save();
+                        if (typeof html2pdf !== 'undefined') {
+                            html2pdf().set(opt).from(element).save();
+                        } else {
+                            alert("PDF library is still loading. Please try again in a few seconds.");
+                        }
+                    }
+
+                    function qb_copyLink() {
+                        const qid = document.getElementById('prev_qid').textContent;
+                        navigator.clipboard.writeText("https://solarpower.com.ph/quote/" + qid);
+                        alert("Link copied to clipboard!");
+                    }
+                </script>
             </div>
+
 
             <div id="orders" class="page-content">
                 <div class="orders-container">

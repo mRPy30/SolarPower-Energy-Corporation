@@ -6,10 +6,7 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'staff') {
     exit;
 }
 
-$conn = new mysqli("localhost", "root", "", "solar_power");
-if ($conn->connect_error) {
-    die("Connection failed");
-}
+require_once __DIR__ . '/../config/dbconn.php';
 
 // Create archived_products table if it doesn't exist
 $conn->query("CREATE TABLE IF NOT EXISTS `archived_products` (

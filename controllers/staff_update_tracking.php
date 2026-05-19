@@ -51,18 +51,7 @@ if (!in_array($paymentStatus, $validPaymentStatuses)) {
     exit;
 }
 
-// Database connection
-$servername = "localhost";
-$username = "root";
-$password = "";
-$dbname = "solar_power";
-
-$conn = new mysqli($servername, $username, $password, $dbname);
-
-if ($conn->connect_error) {
-    echo json_encode(['success' => false, 'message' => 'Database connection failed']);
-    exit;
-}
+require_once __DIR__ . '/../config/dbconn.php';
 
 // Get current order details before update
 $orderStmt = $conn->prepare("SELECT * FROM orders WHERE id = ?");

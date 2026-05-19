@@ -8,12 +8,7 @@ header('Content-Type: application/json');
 
 include __DIR__ . '/../config/dbconn.php';
 
-$conn = mysqli_connect($servername, $username, $password, $dbname);
-if ($conn->connect_error) {
-    http_response_code(500);
-    echo json_encode(["error" => "Database connection failed"]);
-    exit;
-}
+
 
 $category = trim($_GET['category'] ?? '');
 $brands   = [];

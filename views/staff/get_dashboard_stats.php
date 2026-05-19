@@ -12,13 +12,7 @@ include "../../config/dbconn.php";
 
 header('Content-Type: application/json');
 
-// Create database connection
-$conn = mysqli_connect($servername, $username, $password, $dbname);
 
-if (!$conn) {
-    echo json_encode(['success' => false, 'error' => 'Database connection failed: ' . mysqli_connect_error()]);
-    exit();
-}
 
 // Function to get statistics
 function get_stats($conn) {

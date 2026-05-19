@@ -11,11 +11,7 @@ $lastName = $_SESSION['lastName'] ?? '';
 $fullName = trim($firstName . ' ' . $lastName);
 $initials = strtoupper(substr($firstName, 0, 1) . substr($lastName, 0, 1));
 
-// Database Connection
-$conn = mysqli_connect($servername, $username, $password, $dbname);
-if ($conn->connect_error) {
-    die('Connection failed: ' . $conn->connect_error);
-}
+
 
 // Dashboard Statistics Functions
 function get_stats($conn) {
@@ -104,8 +100,7 @@ $all_products = get_all_products($conn);
 $all_suppliers = get_all_suppliers($conn);
 $product_count = count($all_products);
 
-// Close connection before HTML output starts
-$conn->close();
+// HTML output starts below (connection kept open for AJAX handlers if any)
 
 $user_id = $_SESSION['user_id'];
 $firstName = $_SESSION['firstName'] ?? 'User';
@@ -116,11 +111,7 @@ $fullName = trim($firstName . ' ' . $lastName);
 if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
     header('Content-Type: application/json');
     
-    $conn = mysqli_connect($servername, $username, $password, $dbname);
-    if ($conn->connect_error) {
-        echo json_encode(['success' => false, 'message' => 'Connection failed: ' . $conn->connect_error]);
-        exit;
-    }
+
     
     $action = $_GET['action'] ?? ($_POST['action'] ?? 'fetch');
     

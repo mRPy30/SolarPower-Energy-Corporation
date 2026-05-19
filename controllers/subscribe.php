@@ -2,23 +2,7 @@
 // controllers/subscribe.php
 header('Content-Type: application/json');
 
-// Database configuration
-$servername = "localhost";
-$username = "root";
-$password = "";
-$dbname = "solar_power";
-
-// Create connection
-$conn = new mysqli($servername, $username, $password, $dbname);
-
-// Check connection
-if ($conn->connect_error) {
-    echo json_encode([
-        'status' => 'error',
-        'message' => 'Database connection failed. Please try again later.'
-    ]);
-    exit();
-}
+require_once __DIR__ . '/../config/dbconn.php';
 
 // Get email from POST request
 $email = isset($_POST['email']) ? trim($_POST['email']) : '';

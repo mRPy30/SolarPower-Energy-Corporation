@@ -389,7 +389,7 @@ $error   = $_GET['error']  ?? false;
     <?php endif; ?>
 
     <!-- Card 1: Main (Large Left) -->
-    <form method="POST" action="/SolarPower-Energy-Corporation/views/staff/includes/save-promo-images.php" enctype="multipart/form-data" id="form-main">
+    <form method="POST" action="save-promo-images.php" enctype="multipart/form-data" id="form-main">
       <input type="hidden" name="slot" value="main">
       <div class="upload-card" id="card-main">
         <div class="upload-card-header">
@@ -436,7 +436,7 @@ $error   = $_GET['error']  ?? false;
     </form>
 
     <!-- Card 2: Top Right -->
-    <form method="POST" action="/SolarPower-Energy-Corporation/views/staff/includes/save-promo-images.php" enctype="multipart/form-data" id="form-top">
+    <form method="POST" action="save-promo-images.php" enctype="multipart/form-data" id="form-top">
       <input type="hidden" name="slot" value="top">
       <div class="upload-card" id="card-top">
         <div class="upload-card-header">
@@ -483,7 +483,7 @@ $error   = $_GET['error']  ?? false;
     </form>
 
     <!-- Card 3: Bottom Right -->
-    <form method="POST" action="/SolarPower-Energy-Corporation/views/staff/includes/save-promo-images.php" enctype="multipart/form-data" id="form-bottom">
+    <form method="POST" action="save-promo-images.php" enctype="multipart/form-data" id="form-bottom">
       <input type="hidden" name="slot" value="bottom">
       <div class="upload-card" id="card-bottom">
         <div class="upload-card-header">

@@ -7,11 +7,7 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'staff') {
     exit;
 }
 
-$conn = new mysqli("localhost", "root", "", "solar_power");
-if ($conn->connect_error) {
-    echo json_encode(['error' => 'DB connection failed']);
-    exit;
-}
+require_once __DIR__ . '/../config/dbconn.php';
 
 $id = intval($_GET['id'] ?? 0);
 
