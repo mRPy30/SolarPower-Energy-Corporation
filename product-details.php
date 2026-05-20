@@ -20,7 +20,7 @@ $productImages = [];
 $sql = "SELECT 
     p.id,
     p.displayName,
-    p.brandName,
+    CASE WHEN TRIM(p.brandName) = 'Hybrid' THEN 'Package' ELSE TRIM(p.brandName) END AS brandName,
     p.price,
     p.category,
     p.description,
@@ -64,7 +64,7 @@ $relatedProducts = [];
 $sql = "SELECT 
     p.id,
     p.displayName,
-    p.brandName,
+    CASE WHEN TRIM(p.brandName) = 'Hybrid' THEN 'Package' ELSE TRIM(p.brandName) END AS brandName,
     p.price,
     p.stockQuantity,
     p.category,
@@ -1041,7 +1041,15 @@ $conn->close();
                     <div class="description-section">
                         <h2 class="section-heading">Description</h2>
                         <p class="description-text">
-                            <?= nl2br(htmlspecialchars($product['description'] ?? 'No description available for this product.')) ?>
+                            <?php
+                            $desc = $product['description'] ?? 'No description available for this product.';
+                            $cleanDesc = str_replace(
+                                ['\r\n', '\r', '\n', '\\r\\n', '\\r', '\\n', '/n/n', '/n'], 
+                                "\n", 
+                                $desc
+                            );
+                            echo nl2br(htmlspecialchars($cleanDesc));
+                            ?>
                         </p>
                     </div>
 

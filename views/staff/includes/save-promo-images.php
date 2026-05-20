@@ -1,10 +1,10 @@
 <?php
 /**
  * save-promo-images.php
- * Handles uploaded promotional images from admin-promo-images.php
+ * Handles uploaded promotional images from staff-promo-images.php
  * 
- * Place this file in the SAME directory as admin-promo-images.php
- * (i.e. your website root or admin folder).
+ * Place this file in the SAME directory as staff-promo-images.php
+ * (i.e. your website root or staff folder).
  */
 
 date_default_timezone_set('Asia/Manila');

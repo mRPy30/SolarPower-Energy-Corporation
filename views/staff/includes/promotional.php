@@ -2,7 +2,7 @@
 /**
  * promotional.php  (include file)
  * Include this in your main page: <?php include 'promotional.php'; ?>
- * Images are now managed via admin-promo-images.php — no code edits needed.
+ * Images are now managed via staff-promo-images.php — no code edits needed.
  */
 
 // Load dynamic image paths (falls back to originals if no overrides yet)

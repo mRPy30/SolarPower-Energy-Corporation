@@ -9,7 +9,7 @@ $products = [];
 $sql = "SELECT 
     p.id,
     p.displayName,
-    p.brandName,
+    CASE WHEN TRIM(p.brandName) = 'Hybrid' THEN 'Package' ELSE TRIM(p.brandName) END AS brandName,
     p.price,
     p.stockQuantity,
     p.category,
@@ -20,15 +20,9 @@ LEFT JOIN product_images pi
     ON p.id = pi.product_id
 WHERE pi.image_path IS NOT NULL 
   AND p.status = 'Active'
-  AND (TRIM(p.brandName) = 'Hybrid' OR TRIM(p.brandName) = 'Grid-tie' OR TRIM(p.brandName) = 'Package')
+  AND (TRIM(p.brandName) = 'Hybrid' OR TRIM(p.brandName) = 'Package')
 GROUP BY p.id
-ORDER BY 
-    CASE 
-        WHEN TRIM(p.brandName) = 'Grid-tie' THEN 0 
-        WHEN TRIM(p.brandName) = 'Hybrid' THEN 1 
-        WHEN TRIM(p.brandName) = 'Package' THEN 2 
-    END ASC, 
-    p.id DESC";
+ORDER BY p.id DESC";
 
 $stmt = $conn->prepare($sql);
 if ($stmt) {
@@ -808,6 +802,7 @@ $conn->close();
             <?php include "includes/product-search-bar.php" ?>
 
             <!-- Filter Bar -->
+            <!-- Filter Bar commented out
             <div class="filter-bar" data-aos="fade-up">
                 <div class="filter-buttons" id="categoryFilters">
                     <button class="filter-btn active" data-filter="all">
@@ -815,9 +810,6 @@ $conn->close();
                     </button>
                     <button class="filter-btn" data-filter="Grid-tie">
                         <i class="fas fa-solar-panel"></i> Grid-tie
-                    </button>
-                    <button class="filter-btn" data-filter="Hybrid">
-                        <i class="fas fa-battery-full"></i> Hybrid
                     </button>
                     <button class="filter-btn" data-filter="Package">
                         <i class="fas fa-box-open"></i> Package Deals
@@ -835,6 +827,7 @@ $conn->close();
                     </select>
                 </div>
             </div>
+            -->
 
             <!-- Products Grid - FIXED onclick handlers -->
             <div class="products-grid" id="productsGrid">

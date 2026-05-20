@@ -1065,6 +1065,43 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
                 $del->close();
                 break;
 
+            case 'bulk_update_status':
+                $productIds = $_POST['product_ids'] ?? '';
+                $status = $_POST['status'] ?? '';
+                
+                if (empty($productIds) || !in_array($status, ['Active', 'Hidden'])) {
+                    echo json_encode(['success' => false, 'message' => 'Invalid parameters']);
+                    break;
+                }
+                
+                $ids = explode(',', $productIds);
+                $ids = array_map('intval', $ids);
+                $ids = array_filter($ids, function($id) { return $id > 0; });
+                
+                if (empty($ids)) {
+                    echo json_encode(['success' => false, 'message' => 'No valid products selected']);
+                    break;
+                }
+                
+                $placeholders = implode(',', array_fill(0, count($ids), '?'));
+                $types = str_repeat('i', count($ids));
+                
+                $sql = "UPDATE product SET status = ? WHERE id IN ($placeholders)";
+                $stmt = $conn->prepare($sql);
+                
+                if ($stmt) {
+                    $stmt->bind_param("s" . $types, $status, ...$ids);
+                    if ($stmt->execute()) {
+                        echo json_encode(['success' => true, 'message' => 'Successfully updated status.']);
+                    } else {
+                        echo json_encode(['success' => false, 'message' => 'Error updating products: ' . $stmt->error]);
+                    }
+                    $stmt->close();
+                } else {
+                    echo json_encode(['success' => false, 'message' => 'Error preparing statement: ' . $conn->error]);
+                }
+                break;
+
             default:
                 echo json_encode(['success' => false, 'message' => 'Invalid action']);
         }
@@ -2473,15 +2510,24 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                     </div>
 
                     <div class="bulk-actions-right">
+                        <button class="btn-bulk-active" id="bulkActiveBtn">
+                            <i class="fas fa-eye"></i> Active Product
+                        </button>
+
+                        <button class="btn-bulk-hidden" id="bulkHiddenBtn">
+                            <i class="fas fa-eye-slash"></i> Hide Product
+                        </button>
+
                         <button class="btn-bulk-edit" id="bulkEditBtn">
-                            <i class="fas fa-edit"></i> Edit Selected
+                            <i class="fas fa-edit"></i> Edit
                         </button>
 
                         <button class="btn-bulk-delete" id="bulkDeleteBtn">
                             <i class="fas fa-trash"></i> Archived
                         </button>
+
                         <button class="btn-deselect" id="deselectAllBtn">
-                            <i class="fas fa-times"></i> Deselect All
+                            <i class="fas fa-times"></i> Deselect
                         </button>
                     </div>
                 </div>
@@ -2591,12 +2637,99 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                                         </span>
                                     </div>
                                 </div>
+
+                                <div class="product-actions-btn-group">
+                                    <button class="btn-card-edit" title="Edit Product">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                </div>
                             </div>
                         <?php endforeach; ?>
                     <?php else: ?>
                         <p class="empty-state" style="text-align: center; padding: 20px;">No products found in the database.
                         </p>
                     <?php endif; ?>
+                </div>
+            </div>
+
+            <!-- Product Review Modal -->
+            <div id="productReviewModal" class="modal">
+                <div class="modal-content review-modal-content">
+                    <span class="close" onclick="closeProductReviewModal()">&times;</span>
+                    
+                    <div class="review-header">
+                        <h2><i class="fas fa-eye"></i> Product Review</h2>
+                    </div>
+                    
+                    <div class="review-body">
+                        <!-- Carousel Section -->
+                        <div class="review-carousel-container">
+                            <div class="review-carousel-main">
+                                <button class="carousel-nav-btn prev-btn" id="reviewCarouselPrev"><i class="fas fa-chevron-left"></i></button>
+                                <img id="reviewCarouselImg" src="../../assets/img/product-placeholder.png" alt="Product Image">
+                                <button class="carousel-nav-btn next-btn" id="reviewCarouselNext"><i class="fas fa-chevron-right"></i></button>
+                                
+                                <span class="review-status-badge" id="reviewStatusBadge">Active</span>
+                                <span class="review-index-badge" id="reviewIndexBadge">1/1</span>
+                            </div>
+                            
+                            <!-- Thumbnail gallery -->
+                            <div class="review-thumbnail-gallery" id="reviewThumbnailGallery">
+                                <!-- Thumbnails will be populated dynamically -->
+                            </div>
+                        </div>
+                        
+                        <!-- Details Section -->
+                        <div class="review-details">
+                            <div class="review-sku-container">
+                                <span class="review-sku-label">Product ID:</span>
+                                <span class="review-sku-value" id="reviewSku">--</span>
+                            </div>
+                            
+                            <h1 class="review-title" id="reviewTitle">Product Title</h1>
+                            
+                            <div class="review-brand-container">
+                                <i class="fas fa-trademark"></i>
+                                <span id="reviewBrand">Brand Name</span>
+                            </div>
+                            
+                            <div class="review-price-box">
+                                <div class="price-label">PRICE</div>
+                                <div class="price-value" id="reviewPrice">₱0.00</div>
+                            </div>
+                            
+                            <div class="review-meta-grid">
+                                <div class="meta-item">
+                                    <div class="meta-icon"><i class="fas fa-boxes"></i></div>
+                                    <div class="meta-info">
+                                        <div class="meta-label">Stock Quantity</div>
+                                        <div class="meta-value" id="reviewStock">0 pcs</div>
+                                    </div>
+                                </div>
+                                <div class="meta-item">
+                                    <div class="meta-icon"><i class="fas fa-shield-alt"></i></div>
+                                    <div class="meta-info">
+                                        <div class="meta-label">Warranty</div>
+                                        <div class="meta-value" id="reviewWarranty">None</div>
+                                    </div>
+                                </div>
+                                <div class="meta-item">
+                                    <div class="meta-icon"><i class="fas fa-tag"></i></div>
+                                    <div class="meta-info">
+                                        <div class="meta-label">Category</div>
+                                        <div class="meta-value" id="reviewCategory">--</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="review-description-section">
+                                <h3>Description</h3>
+                                <div class="review-description-text" id="reviewDescription">
+                                    No description provided.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -2672,11 +2805,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                                 <div class="form-group">
                                     <label><i class="fas fa-tag"></i> Category</label>
                                     <select name="category" id="editCategory" required>
-                                        <option value="Panel">Solar Panel</option>
-                                        <option value="Battery">Battery</option>
-                                        <option value="Inverter">Inverter</option>
-                                        <option value="Mounting & Accessories">Mounting & Accessories</option>
-                                        <option value="Package">Package</option>
+                                        <option value="">Loading categories…</option>
                                     </select>
                                 </div>
                             </div>
@@ -4035,7 +4164,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
 
 
 
-            <?php include_once __DIR__ . '/includes/admin-promo-images.php'; ?>
+            <?php include_once __DIR__ . '/includes/staff-promo-images.php'; ?>
 
             <div id="tracking" class="page-content">
                 <div class="tracking-page-container">
@@ -7226,35 +7355,61 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 }
 
                 productList.innerHTML = products.map(product => {
-                    const displayPrice = Number(product.price).toFixed(2);
+                    const displayPrice = Number(product.price).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                     const stockClass = product.stockQuantity <= 5 ? 'low-stock' : 'in-stock';
+                    const categoryText = (product.category.toLowerCase().includes('package') && product.packageType) 
+                        ? `${product.category} (${product.packageType})` 
+                        : product.category;
+                    const statusText = product.status || 'Active';
+                    const statusClass = statusText.toLowerCase() === 'hidden' ? 'status-hidden' : 'status-active';
+                    const statusStyle = statusText.toLowerCase() === 'hidden' 
+                        ? 'background-color: #f3f4f6; color: #374151;' 
+                        : 'background-color: #d1fae5; color: #065f46;';
 
                     return `
-                <div class="product-item" data-product-id="${product.id}">
-                    <div class="product-checkbox">
-                        <input type="checkbox" class="product-checkbox-input" data-product-id="${product.id}">
-                    </div>
-                    <div class="product-main-info">
-                        <div class="product-info-section">
-                            <span class="product-label">Display Name</span>
-                            <div class="product-title">${this.escapeHtml(product.displayName)}</div>
-                            <span class="product-label" style="margin-top: 6px;">Brand Name</span>
-                            <div class="product-subtitle">${this.escapeHtml(product.brandName)}</div>
-                        </div>
-                        <div class="product-info-section">
-                            <span class="product-label">Price</span>
-                            <div class="product-price">₱${displayPrice}</div>
-                            <span class="product-label" style="margin-top: 6px;">Category</span>
-                            <div class="product-subtitle">${this.escapeHtml(product.category)}</div>
-                        </div>
-                        <div class="product-info-section">
-                            <span class="product-label">Stock</span>
-                            <div class="product-price ${stockClass}">${this.escapeHtml(product.stockQuantity)}</div>
-                        </div>
-                    </div>
-                </div>
-            `;
+                             <div class="product-card" data-product-id="${product.id}">
+                                 <div class="product-select">
+                                     <input type="checkbox" class="product-checkbox-input"
+                                         data-product-id="${product.id}">
+                                 </div>
+
+                                 <div class="product-image">
+                                     <img src="../../assets/img/product-placeholder.png"
+                                         alt="${this.escapeHtml(product.displayName)}"
+                                         onerror="this.src='../../assets/img/product-placeholder.png'">
+                                 </div>
+
+                                 <div class="product-content">
+                                     <h3 class="product-title">${this.escapeHtml(product.displayName)}</h3>
+                                     <p class="product-brand">${this.escapeHtml(product.brandName)}</p>
+
+                                     <div class="product-meta" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                                         <span class="product-category">${this.escapeHtml(categoryText)}</span>
+                                         <span class="status-badge ${statusClass}" style="font-size: 10px; padding: 2px 6px; border-radius: 12px; font-weight: 600; text-transform: uppercase; ${statusStyle}">
+                                             ${this.escapeHtml(statusText)}
+                                         </span>
+                                     </div>
+
+                                     <div class="product-footer">
+                                         <span class="product-price">₱${displayPrice}</span>
+                                         <span class="product-stock ${stockClass}" style="display: none;">
+                                             ${product.stockQuantity} in stock
+                                         </span>
+                                     </div>
+                                 </div>
+                                 <div class="product-actions-btn-group">
+                                     <button class="btn-card-edit" title="Edit Product">
+                                         <i class="fas fa-edit"></i>
+                                     </button>
+                                 </div>
+                             </div>
+                    `;
                 }).join('');
+
+                // Load images for these new cards
+                if (typeof loadProductCardImages === 'function') {
+                    loadProductCardImages();
+                }
 
                 // Re-initialize bulk actions for new checkboxes
                 BulkActions.init();
@@ -8402,6 +8557,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 if (menuItem) {
                     menuItem.classList.add('active');
                 }
+
+                // Dynamically populate categories when showing add-product
+                if (pageId === 'add-product' && typeof fetchAndPopulateCategories === 'function') {
+                    fetchAndPopulateCategories();
+                }
             }
         };
 
@@ -8413,25 +8573,32 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
         // Product Filtering Functionality
         document.addEventListener('DOMContentLoaded', function () {
             const filterButtons = document.querySelectorAll('.filter-btn');
-            const productCards = document.querySelectorAll('.product-card');
             const productCountElement = document.getElementById('displayedProductCount');
             const searchInput = document.getElementById('productSearchInput');
 
             let currentCategory = 'all';
             let currentSearchTerm = '';
 
-            // Make product cards clickable to edit
-            productCards.forEach(card => {
-                card.addEventListener('click', function (e) {
-                    // Don't open modal if clicking checkbox
-                    if (e.target.type === 'checkbox') {
+            // Make product cards clickable to view details, and edit button clickable to edit
+            const productListContainer = document.querySelector('.product-list');
+            if (productListContainer) {
+                productListContainer.addEventListener('click', function (e) {
+                    // Don't open modal if clicking checkbox or its container
+                    if (e.target.type === 'checkbox' || e.target.closest('.product-select')) {
                         return;
                     }
-                    const productId = this.getAttribute('data-product-id');
-                    openEditModal(productId);
+                    const editBtn = e.target.closest('.btn-card-edit');
+                    const card = e.target.closest('.product-card');
+                    if (card) {
+                        const productId = card.getAttribute('data-product-id');
+                        if (editBtn) {
+                            openEditModal(productId);
+                        } else {
+                            openProductReviewModal(productId);
+                        }
+                    }
                 });
-                card.style.cursor = 'pointer';
-            });
+            }
 
             // Load first image for each product
             loadProductCardImages();
@@ -8464,12 +8631,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
             // Main filter function
             function applyFilters() {
                 let visibleCount = 0;
+                const dynamicProductCards = document.querySelectorAll('.product-card');
 
-                productCards.forEach(card => {
+                dynamicProductCards.forEach(card => {
                     const productContent = card.querySelector('.product-content');
-                    const productTitle = productContent.querySelector('.product-title').textContent.toLowerCase();
-                    const productBrand = productContent.querySelector('.product-brand').textContent.toLowerCase();
-                    const productCategory = productContent.querySelector('.product-category').textContent.trim();
+                    if (!productContent) return;
+                    const productTitle = (productContent.querySelector('.product-title')?.textContent || '').toLowerCase();
+                    const productBrand = (productContent.querySelector('.product-brand')?.textContent || '').toLowerCase();
+                    const productCategory = (productContent.querySelector('.product-category')?.textContent || '').trim();
 
                     // Check category match
                     let categoryMatch = false;
@@ -8545,6 +8714,138 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
             }
         }
 
+        // PRODUCT REVIEW MODAL LOGIC
+        let reviewImages = [];
+        let currentReviewImageIndex = 0;
+
+        async function openProductReviewModal(productId) {
+            try {
+                const response = await fetch(`get.product.php?id=${productId}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    const product = data.product;
+
+                    // Set texts
+                    document.getElementById('reviewSku').textContent = product.id;
+                    document.getElementById('reviewTitle').textContent = product.displayName;
+                    document.getElementById('reviewBrand').textContent = product.brandName;
+                    
+                    const priceFormatted = Number(product.price).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                    document.getElementById('reviewPrice').textContent = `₱${priceFormatted}`;
+                    
+                    document.getElementById('reviewStock').textContent = `${product.stockQuantity} pcs`;
+                    document.getElementById('reviewWarranty').textContent = product.warranty || 'No Warranty';
+                    
+                    const categoryText = (product.category.toLowerCase().includes('package') && product.packageType) 
+                        ? `${product.category} (${product.packageType})` 
+                        : product.category;
+                    document.getElementById('reviewCategory').textContent = categoryText;
+                    
+                    document.getElementById('reviewDescription').textContent = product.description || 'No description provided.';
+
+                    // Status Badge styling
+                    const statusBadge = document.getElementById('reviewStatusBadge');
+                    const statusText = product.status || 'Active';
+                    statusBadge.textContent = statusText;
+                    if (statusText.toLowerCase() === 'hidden') {
+                        statusBadge.style.backgroundColor = '#f3f4f6';
+                        statusBadge.style.color = '#374151';
+                    } else {
+                        statusBadge.style.backgroundColor = '#d1fae5';
+                        statusBadge.style.color = '#065f46';
+                    }
+
+                    // Setup Images Carousel
+                    reviewImages = product.images || [];
+                    currentReviewImageIndex = 0;
+                    updateReviewCarousel();
+
+                    // Show modal
+                    document.getElementById('productReviewModal').style.display = 'block';
+                } else {
+                    alert('Failed to load product details.');
+                }
+            } catch (error) {
+                console.error('Error fetching product details:', error);
+                alert('An error occurred while loading product details.');
+            }
+        }
+
+        function closeProductReviewModal() {
+            document.getElementById('productReviewModal').style.display = 'none';
+        }
+
+        function updateReviewCarousel() {
+            const imgElement = document.getElementById('reviewCarouselImg');
+            const indexBadge = document.getElementById('reviewIndexBadge');
+            const galleryContainer = document.getElementById('reviewThumbnailGallery');
+            
+            // Clear gallery
+            galleryContainer.innerHTML = '';
+
+            if (reviewImages.length === 0) {
+                imgElement.src = '../../assets/img/product-placeholder.png';
+                indexBadge.textContent = '1/1';
+                document.getElementById('reviewCarouselPrev').style.display = 'none';
+                document.getElementById('reviewCarouselNext').style.display = 'none';
+                return;
+            }
+
+            // Show/hide arrows
+            if (reviewImages.length <= 1) {
+                document.getElementById('reviewCarouselPrev').style.display = 'none';
+                document.getElementById('reviewCarouselNext').style.display = 'none';
+            } else {
+                document.getElementById('reviewCarouselPrev').style.display = 'flex';
+                document.getElementById('reviewCarouselNext').style.display = 'flex';
+            }
+
+            // Set main image
+            imgElement.src = reviewImages[currentReviewImageIndex].image_path;
+            indexBadge.textContent = `${currentReviewImageIndex + 1}/${reviewImages.length}`;
+
+            // Populate thumbnails
+            reviewImages.forEach((img, idx) => {
+                const thumb = document.createElement('img');
+                thumb.className = `review-thumb ${idx === currentReviewImageIndex ? 'active' : ''}`;
+                thumb.src = img.image_path;
+                thumb.alt = `Thumbnail ${idx + 1}`;
+                thumb.onerror = function() { this.src = '../../assets/img/product-placeholder.png'; };
+                thumb.onclick = function() {
+                    currentReviewImageIndex = idx;
+                    updateReviewCarousel();
+                };
+                galleryContainer.appendChild(thumb);
+            });
+        }
+
+        // Initialize Carousel Navigation event listeners
+        document.addEventListener('DOMContentLoaded', () => {
+            const prevBtn = document.getElementById('reviewCarouselPrev');
+            const nextBtn = document.getElementById('reviewCarouselNext');
+            
+            if (prevBtn) {
+                prevBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    if (reviewImages.length > 1) {
+                        currentReviewImageIndex = (currentReviewImageIndex - 1 + reviewImages.length) % reviewImages.length;
+                        updateReviewCarousel();
+                    }
+                });
+            }
+            
+            if (nextBtn) {
+                nextBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    if (reviewImages.length > 1) {
+                        currentReviewImageIndex = (currentReviewImageIndex + 1) % reviewImages.length;
+                        updateReviewCarousel();
+                    }
+                });
+            }
+        });
+
         // Open edit modal and fetch product data
         let imagesToDelete = [];
 
@@ -8552,6 +8853,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
             imagesToDelete = []; // Reset deletion array
 
             try {
+                // Populate category options before fetching and setting the product category
+                if (typeof fetchAndPopulateCategories === 'function') {
+                    await fetchAndPopulateCategories();
+                }
+
                 const response = await fetch(`get.product.php?id=${productId}`);
                 const data = await response.json();
 
@@ -9070,6 +9376,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
             const editModal = document.getElementById('editProductModal');
             const deleteModal = document.getElementById('deleteProductModal');
             const bulkDeleteModal = document.getElementById('bulkDeleteModal');
+            const reviewModal = document.getElementById('productReviewModal');
 
             if (event.target === editModal) {
                 closeEditModal();
@@ -9080,33 +9387,56 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
             if (event.target === bulkDeleteModal) {
                 closeBulkDeleteModal();
             }
+            if (event.target === reviewModal) {
+                closeProductReviewModal();
+            }
         }
 
         // BULK ACTIONS MODULE
         const BulkActions = {
+            initialized: false,
             init() {
-                this.checkboxes = document.querySelectorAll('.product-checkbox-input');
                 this.bulkActionsBar = document.getElementById('bulkActionsBar');
                 this.selectedCountSpan = document.getElementById('selectedCount');
                 this.deselectAllBtn = document.getElementById('deselectAllBtn');
                 this.bulkEditBtn = document.getElementById('bulkEditBtn');
                 this.bulkDeleteBtn = document.getElementById('bulkDeleteBtn');
+                this.bulkActiveBtn = document.getElementById('bulkActiveBtn');
+                this.bulkHiddenBtn = document.getElementById('bulkHiddenBtn');
 
-                this.checkboxes.forEach(checkbox => {
-                    checkbox.addEventListener('change', () => this.updateBulkActions());
-                });
+                if (!this.initialized) {
+                    const productListContainer = document.querySelector('.product-list');
+                    if (productListContainer) {
+                        productListContainer.addEventListener('change', (e) => {
+                            if (e.target.classList.contains('product-checkbox-input')) {
+                                this.updateBulkActions();
+                            }
+                        });
+                    }
 
-                if (this.deselectAllBtn) {
-                    this.deselectAllBtn.addEventListener('click', () => this.deselectAll());
+                    if (this.deselectAllBtn) {
+                        this.deselectAllBtn.addEventListener('click', () => this.deselectAll());
+                    }
+
+                    if (this.bulkEditBtn) {
+                        this.bulkEditBtn.addEventListener('click', () => this.handleBulkEdit());
+                    }
+
+                    if (this.bulkActiveBtn) {
+                        this.bulkActiveBtn.addEventListener('click', () => this.handleBulkStatusChange('Active'));
+                    }
+
+                    if (this.bulkHiddenBtn) {
+                        this.bulkHiddenBtn.addEventListener('click', () => this.handleBulkStatusChange('Hidden'));
+                    }
+
+                    if (this.bulkDeleteBtn) {
+                        this.bulkDeleteBtn.addEventListener('click', () => this.showBulkDeleteModal());
+                    }
+                    this.initialized = true;
                 }
 
-                if (this.bulkEditBtn) {
-                    this.bulkEditBtn.addEventListener('click', () => this.handleBulkEdit());
-                }
-
-                if (this.bulkDeleteBtn) {
-                    this.bulkDeleteBtn.addEventListener('click', () => this.showBulkDeleteModal());
-                }
+                this.updateBulkActions();
             },
 
             updateBulkActions() {
@@ -9114,17 +9444,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 const count = selectedCheckboxes.length;
 
                 if (count > 0) {
-                    this.bulkActionsBar.style.display = 'flex';
-                    this.selectedCountSpan.textContent = count;
+                    if (this.bulkActionsBar) this.bulkActionsBar.style.display = 'flex';
+                    if (this.selectedCountSpan) this.selectedCountSpan.textContent = count;
                     this.highlightSelectedProducts();
                 } else {
-                    this.bulkActionsBar.style.display = 'none';
+                    if (this.bulkActionsBar) this.bulkActionsBar.style.display = 'none';
                     this.removeAllHighlights();
                 }
             },
 
             highlightSelectedProducts() {
-                document.querySelectorAll('.product-item').forEach(item => {
+                document.querySelectorAll('.product-card').forEach(item => {
                     const checkbox = item.querySelector('.product-checkbox-input');
                     if (checkbox && checkbox.checked) {
                         item.classList.add('selected');
@@ -9135,13 +9465,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
             },
 
             removeAllHighlights() {
-                document.querySelectorAll('.product-item').forEach(item => {
+                document.querySelectorAll('.product-card').forEach(item => {
                     item.classList.remove('selected');
                 });
             },
 
             deselectAll() {
-                this.checkboxes.forEach(checkbox => {
+                document.querySelectorAll('.product-checkbox-input').forEach(checkbox => {
                     checkbox.checked = false;
                 });
                 this.updateBulkActions();
@@ -9155,6 +9485,44 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                     openEditModal(selectedIds[0]);
                 } else {
                     alert(`Bulk editing ${selectedIds.length} products at once is not supported yet. Please select only one product to edit.`);
+                }
+            },
+
+            async handleBulkStatusChange(status) {
+                const selectedCheckboxes = document.querySelectorAll('.product-checkbox-input:checked');
+                const selectedIds = Array.from(selectedCheckboxes).map(cb => cb.dataset.productId);
+
+                if (selectedIds.length === 0) return;
+
+                if (!confirm(`Are you sure you want to set status of ${selectedIds.length} selected product(s) to ${status}?`)) {
+                    return;
+                }
+
+                try {
+                    const formData = new FormData();
+                    formData.append('ajax', '1');
+                    formData.append('action', 'bulk_update_status');
+                    formData.append('product_ids', selectedIds.join(','));
+                    formData.append('status', status);
+
+                    const res = await fetch('dashboard.php', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const data = await res.json();
+
+                    if (data.success) {
+                        alert(data.message || `Successfully updated product status to ${status}.`);
+                        this.deselectAll();
+                        if (typeof ProductFormHandler !== 'undefined' && typeof ProductFormHandler.reloadProductList === 'function') {
+                            ProductFormHandler.reloadProductList();
+                        }
+                    } else {
+                        alert(data.message || 'Error updating product status.');
+                    }
+                } catch (e) {
+                    console.error(e);
+                    alert('An error occurred during bulk status update.');
                 }
             },
 
@@ -9585,6 +9953,51 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
             console.log('✅ Staff Dashboard initialized successfully');
         });
 
+        async function fetchAndPopulateCategories() {
+            const categorySelect = document.getElementById('category-select');
+            const editCategorySelect = document.getElementById('editCategory');
+            
+            if (!categorySelect && !editCategorySelect) return;
+
+            try {
+                const response = await fetch('dashboard.php?ajax=1&action=fetch_categories');
+                const data = await response.json();
+                
+                if (data.success && data.data && data.data.length > 0) {
+                    if (categorySelect) {
+                        const currentVal = categorySelect.value;
+                        categorySelect.innerHTML = '<option value="">Select a category</option>';
+                        data.data.forEach(cat => {
+                            const opt = document.createElement('option');
+                            opt.value = cat.category_name;
+                            opt.textContent = cat.category_name;
+                            categorySelect.appendChild(opt);
+                        });
+                        categorySelect.value = currentVal;
+                    }
+                    
+                    if (editCategorySelect) {
+                        const currentVal = editCategorySelect.value;
+                        editCategorySelect.innerHTML = '<option value="">Select a category</option>';
+                        data.data.forEach(cat => {
+                            const opt = document.createElement('option');
+                            opt.value = cat.category_name;
+                            opt.textContent = cat.category_name;
+                            editCategorySelect.appendChild(opt);
+                        });
+                        editCategorySelect.value = currentVal;
+                    }
+                } else {
+                    if (categorySelect) categorySelect.innerHTML = '<option value="">No categories found</option>';
+                    if (editCategorySelect) editCategorySelect.innerHTML = '<option value="">No categories found</option>';
+                }
+            } catch (error) {
+                console.error('Error fetching categories:', error);
+                if (categorySelect) categorySelect.innerHTML = '<option value="">Failed to load categories</option>';
+                if (editCategorySelect) editCategorySelect.innerHTML = '<option value="">Failed to load categories</option>';
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', function () {
             const categorySelect = document.getElementById('category-select');
             const brandSelect = document.getElementById('brand-select');
@@ -9592,24 +10005,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
             if (!categorySelect || !brandSelect) return;
 
             // ── Populate category dropdown from database ──────────────────────────
-            fetch('dashboard.php?ajax=1&action=fetch_categories')
-                .then(r => r.json())
-                .then(data => {
-                    if (data.success && data.data.length > 0) {
-                        categorySelect.innerHTML = '<option value="">Select a category</option>';
-                        data.data.forEach(cat => {
-                            const opt = document.createElement('option');
-                            opt.value = cat.category_name;      // stored as plain name in products table
-                            opt.textContent = cat.category_name;
-                            categorySelect.appendChild(opt);
-                        });
-                    } else {
-                        categorySelect.innerHTML = '<option value="">No categories found</option>';
-                    }
-                })
-                .catch(() => {
-                    categorySelect.innerHTML = '<option value="">Failed to load categories</option>';
-                });
+            fetchAndPopulateCategories();
 
             categorySelect.addEventListener('change', function () {
                 const category = this.value;
