@@ -37,10 +37,21 @@ if (!array_key_exists($slot, $slotMap)) {
 // Get other fields
 $link  = $_POST['link'] ?? '';
 $start = $_POST['start'] ?? '';
+$end   = $_POST['end'] ?? '';
+$run_indefinitely = $_POST['run_indefinitely'] ?? '';
 
 $start = normalize_start_schedule($start);
 if ($start === null) {
     redirect_error('Invalid Start Posting format. Use MM/DD/YYYY HH:MM am/pm.');
+}
+
+if ($run_indefinitely === '1' || empty(trim($end)) || trim($end) === 'indefinite') {
+    $end = 'indefinite';
+} else {
+    $end = normalize_start_schedule($end);
+    if ($end === null) {
+        redirect_error('Invalid End Posting format. Use MM/DD/YYYY HH:MM am/pm.');
+    }
 }
 
 // ── Update JSON config ────────────────────────────────────────────────────────
@@ -56,7 +67,7 @@ if (!isset($config[$slot]) || is_string($config[$slot])) {
 
 $config[$slot]['link']  = $link;
 $config[$slot]['start'] = $start;
-unset($config[$slot]['end']);
+$config[$slot]['end']   = $end;
 
 
 // ── Handle Optional Image Upload ─────────────────────────────────────────────

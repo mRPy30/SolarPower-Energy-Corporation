@@ -71,6 +71,13 @@ if (file_exists($configFile)) {
 foreach (['main', 'top', 'bottom'] as $s) {
   $config[$s]['start'] = format_start_display((string)($config[$s]['start'] ?? ''));
   
+  $endVal = (string)($config[$s]['end'] ?? 'indefinite');
+  if ($endVal !== 'indefinite' && trim($endVal) !== '') {
+    $config[$s]['end'] = format_start_display($endVal);
+  } else {
+    $config[$s]['end'] = 'indefinite';
+  }
+  
   // Prepend relative prefix so it resolves correctly inside the staff directory
   $img = $config[$s]['image'] ?? '';
   if (!empty($img) && strpos($img, 'http') !== 0 && strpos($img, '../../') !== 0) {
@@ -82,722 +89,973 @@ foreach (['main', 'top', 'bottom'] as $s) {
 $success = $_GET['saved'] ?? false;
 $error   = $_GET['error']  ?? false;
 ?>
-<div id="promo-images" class="page-content promo-images-page">
-<style>
-  .promo-images-page {
-    --sun: #F5A623;
-    --sun-light: #FFF3DC;
-    --solar: #1A3C5E;
-    --solar-mid: #2D6A9F;
-    --surface: #F7F9FC;
-    --card: #FFFFFF;
-    --border: #E2E8F0;
-    --text: #1A202C;
-    --muted: #718096;
-    --success: #38A169;
-    --danger: #E53E3E;
-    --radius: 14px;
-    --shadow: 0 4px 20px rgba(26,60,94,.09);
-    font-family: 'DM Sans', sans-serif;
-    color: var(--text);
-  }
+<div id="promo-images" class="page-content promo-images-page bg-slate-50 min-h-screen">
+  <!-- Tailwind CSS CDN Integration and Core Plugins Configuration -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      corePlugins: {
+        preflight: false,
+        container: false,
+      }
+    }
+  </script>
+  
+  <!-- Custom Scoped Styles for animations and popover -->
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Syne:wght@700;800&display=swap');
+    
+    .promo-images-page {
+      font-family: 'DM Sans', sans-serif;
+    }
+    .promo-images-page .font-syne {
+      font-family: 'Syne', sans-serif;
+    }
+    
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-slideup {
+      animation: slideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    
+    .active-tab-border {
+      position: relative;
+    }
+    .active-tab-border::after {
+      content: '';
+      position: absolute;
+      bottom: -6px;
+      left: 16px;
+      right: 16px;
+      height: 3px;
+      background-color: #f59e0b;
+      border-radius: 99px;
+    }
+    
+    /* Calendar popover button highlights */
+    .cal-day:hover {
+      background-color: #f1f5f9;
+    }
+    .cal-day.selected {
+      background-color: #0f172a !important;
+      color: #ffffff !important;
+    }
+    .cal-day.today {
+      border: 1.5px solid #d97706;
+    }
+    .cal-day.muted {
+      color: #cbd5e1;
+    }
+    
+    /* Pulse effects */
+    .live-dot {
+      animation: livePulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+    @keyframes livePulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: .4; }
+    }
+  </style>
 
-  /* ── Layout ── */
-  .promo-images-page .workspace {
-    display: grid;
-    grid-template-columns: 1fr 380px;
-    gap: 28px;
-    max-width: 1180px;
-    margin: 20px auto;
-    padding: 0 24px 48px;
-  }
-  @media (max-width: 900px) {
-    .promo-images-page .workspace { grid-template-columns: 1fr; }
-  }
-
-  /* ── Section heading ── */
-  .promo-images-page .section-label {
-    font-family: 'Syne', sans-serif;
-    font-weight: 700;
-    font-size: .72rem;
-    letter-spacing: 1.4px;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin-bottom: 18px;
-  }
-
-  /* ── Alert ── */
-  .alert-strip {
-    border-radius: var(--radius);
-    padding: 14px 20px;
-    font-size: .88rem;
-    font-weight: 500;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 22px;
-  }
-  .alert-strip.success { background:#F0FFF4; border:1px solid #9AE6B4; color: var(--success); }
-  .alert-strip.error   { background:#FFF5F5; border:1px solid #FC8181; color: var(--danger); }
-
-  /* ── Upload card ── */
-  .upload-card {
-    background: var(--card);
-    border-radius: var(--radius);
-    box-shadow: var(--shadow);
-    border: 1px solid var(--border);
-    overflow: hidden;
-    margin-bottom: 20px;
-    transition: box-shadow .25s;
-  }
-  .upload-card:hover { box-shadow: 0 8px 32px rgba(26,60,94,.13); }
-
-  .upload-card-header {
-    padding: 16px 22px;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-  .slot-badge {
-    width: 28px; height: 28px;
-    border-radius: 8px;
-    display: grid; place-items: center;
-    font-size: .8rem; font-weight: 700;
-    flex-shrink: 0;
-  }
-  .slot-badge.main   { background: var(--sun-light); color: var(--sun); }
-  .slot-badge.top    { background: #EBF8FF; color: #2B6CB0; }
-  .slot-badge.bottom { background: #F0FFF4; color: #276749; }
-
-  .upload-card-title { font-family:'Syne',sans-serif; font-weight:700; font-size:.95rem; }
-  .upload-card-desc  { font-size:.78rem; color:var(--muted); margin-top:1px; }
-
-  .upload-card-body { padding: 20px 22px; }
-
-  /* Drop zone */
-  .drop-zone {
-    border: 2px dashed var(--border);
-    border-radius: 10px;
-    padding: 20px 16px;
-    text-align: center;
-    cursor: pointer;
-    transition: border-color .2s, background .2s;
-    position: relative;
-    background: var(--surface);
-  }
-  .drop-zone:hover, .drop-zone.dragover {
-    border-color: var(--solar-mid);
-    background: #EBF4FF;
-  }
-  .drop-zone input[type=file] {
-    position: absolute; inset: 0;
-    opacity: 0; cursor: pointer; width:100%; height:100%;
-  }
-  .drop-icon { font-size: 1.6rem; color: var(--muted); margin-bottom: 6px; }
-  .drop-text { font-size: .82rem; color: var(--muted); line-height: 1.5; }
-  .drop-text strong { color: var(--solar); font-weight:600; }
-
-  /* Thumb preview */
-  .thumb-wrap {
-    position: relative;
-    border-radius: 8px;
-    overflow: hidden;
-    background: #eee;
-    margin-bottom: 14px;
-  }
-  .thumb-wrap img {
-    width: 100%; display: block;
-    object-fit: cover;
-    transition: opacity .3s;
-  }
-  .thumb-wrap.main-thumb   { height: 160px; }
-  .thumb-wrap.small-thumb  { height: 100px; }
-
-  .thumb-overlay {
-    position: absolute; inset: 0;
-    background: rgba(0,0,0,.55);
-    display: flex; flex-direction:column;
-    align-items: center; justify-content: center;
-    gap: 6px; opacity: 0;
-    transition: opacity .22s;
-  }
-  .thumb-wrap:hover .thumb-overlay { opacity: 1; }
-  .thumb-overlay span {
-    color: #fff; font-size: .78rem; font-weight:500;
-  }
-  .thumb-overlay i { color: #fff; font-size:1.2rem; }
-
-  /* Save button */
-  .btn-save {
-    width: 100%;
-    background: var(--solar);
-    color: #fff;
-    border: none;
-    border-radius: 10px;
-    padding: 11px;
-    font-family: 'Syne', sans-serif;
-    font-weight: 700;
-    font-size: .9rem;
-    letter-spacing: .3px;
-    cursor: pointer;
-    display: flex; align-items:center; justify-content:center; gap:8px;
-    transition: background .2s, transform .15s;
-    margin-top: 12px;
-  }
-  .btn-save:hover { background: #0f2540; transform: translateY(-1px); }
-  .btn-save:active { transform: translateY(0); }
-  .btn-save.loading { opacity:.7; pointer-events:none; }
-
-  .save-all-wrap {
-    margin-top: 6px;
-    padding-top: 24px;
-    border-top: 1px dashed var(--border);
-  }
-  .btn-save-all {
-    width: 100%;
-    background: linear-gradient(135deg, var(--sun), #e0921b);
-    color: #fff;
-    border: none;
-    border-radius: 10px;
-    padding: 13px;
-    font-family: 'Syne', sans-serif;
-    font-weight: 800;
-    font-size: .95rem;
-    letter-spacing: .5px;
-    cursor: pointer;
-    display: flex; align-items:center; justify-content:center; gap:8px;
-    transition: filter .2s, transform .15s;
-    box-shadow: 0 4px 14px rgba(245,166,35,.35);
-  }
-  .btn-save-all:hover { filter: brightness(1.06); transform: translateY(-2px); }
-
-  /* ── Live preview panel ── */
-  .preview-panel {
-    position: sticky;
-    top: 88px;
-    align-self: start;
-  }
-  .preview-shell {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    box-shadow: var(--shadow);
-    overflow: hidden;
-  }
-  .preview-topbar {
-    background: #f0f2f5;
-    padding: 10px 16px;
-    display: flex; align-items: center; gap: 8px;
-    border-bottom: 1px solid var(--border);
-  }
-  .preview-topbar-dot { width:8px;height:8px;border-radius:50%; }
-  .preview-topbar-label {
-    margin-left: auto;
-    font-size:.7rem; font-weight:600;
-    color:var(--muted); letter-spacing:.8px; text-transform:uppercase;
-  }
-  .preview-body { padding: 16px; }
-
-  /* Mini promo layout replicating the actual section */
-  .mini-promo {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-  }
-  .mini-card {
-    border-radius: 8px; overflow:hidden; position:relative;
-    box-shadow: 0 2px 8px rgba(0,0,0,.1);
-  }
-  .mini-card img {
-    width:100%; display:block; object-fit:cover;
-  }
-  .mini-card.large { grid-row: span 2; }
-  .mini-card.large img { height: 200px; }
-  .mini-card:not(.large) img { height: 96px; }
-  .mini-card-label {
-    position:absolute; bottom:0; left:0; right:0;
-    padding: 6px 8px;
-    background: linear-gradient(transparent, rgba(0,0,0,.65));
-    color:#fff; font-size:.65rem; font-weight:600;
-  }
-
-  .preview-hint {
-    margin-top: 12px;
-    font-size: .73rem;
-    color: var(--muted);
-    text-align: center;
-    line-height: 1.5;
-  }
-
-  /* ── Info box ── */
-  .info-box {
-    background: var(--sun-light);
-    border: 1px solid #F6D07A;
-    border-radius: 10px;
-    padding: 14px 16px;
-    font-size: .8rem;
-    color: #7B5E00;
-    line-height: 1.6;
-    margin-top: 20px;
-  }
-  .info-box strong { font-weight:600; }
-
-  /* ── Filename indicator ── */
-  .file-indicator {
-    font-size: .75rem;
-    color: var(--muted);
-    margin-top: 8px;
-    display: flex; align-items:center; gap:5px;
-  }
-  .file-indicator.chosen { color: var(--success); }
-  .file-indicator i { font-size:.75rem; }
-
-  /* ── New Form Fields ── */
-  .form-group { margin-top: 15px; }
-  .form-group label {
-    display: block; font-size: .75rem; font-weight: 700; color: var(--muted);
-    text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px;
-  }
-  .form-control {
-    width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border);
-    font-size: .85rem; font-family: inherit; transition: border-color .2s;
-  }
-  .form-control:focus { outline: none; border-color: var(--solar-mid); }
-  .form-row { display: grid; grid-template-columns: 1fr; gap: 12px; margin-top: 15px; }
-</style>
-
-
-
-
-
-
-<div class="workspace">
-  <!-- Left: Upload Forms -->
-  <div>
-    <div class="section-label">Manage Promotional Images</div>
-
+  <div class="max-w-[1360px] mx-auto p-4 sm:p-6 lg:p-8 animate-slideup">
+    
+    <!-- Top Alert Messages -->
     <?php if ($success): ?>
-    <div class="alert-strip success">
-      <i class="fas fa-check-circle"></i> Images updated successfully! Changes are now live on the website.
+    <div class="mb-6 p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 flex items-center gap-3 text-sm shadow-sm">
+      <i class="fas fa-check-circle text-lg text-emerald-500"></i>
+      <div>
+        <span class="font-bold">Success!</span> Promotional banners have been updated and are now live on the public website.
+      </div>
     </div>
     <?php endif; ?>
     <?php if ($error): ?>
-    <div class="alert-strip error">
-      <i class="fas fa-exclamation-circle"></i> <?= htmlspecialchars(urldecode($error)) ?>
+    <div class="mb-6 p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 flex items-center gap-3 text-sm shadow-sm">
+      <i class="fas fa-exclamation-circle text-lg text-rose-500"></i>
+      <div>
+        <span class="font-bold">Error:</span> <?= htmlspecialchars(urldecode($error)) ?>
+      </div>
     </div>
     <?php endif; ?>
 
-    <!-- Card 1: Main (Large Left) -->
-    <form method="POST" action="includes/save-promo-images.php" enctype="multipart/form-data" id="form-main">
-      <input type="hidden" name="slot" value="main">
-      <div class="upload-card" id="card-main">
-        <div class="upload-card-header">
-          <div class="slot-badge main"><i class="fas fa-star"></i></div>
+    <!-- Layout Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      
+      <!-- LEFT COLUMN (60% Width) - ACTIVE CONFIGURATOR -->
+      <div class="lg:col-span-7 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        
+        <!-- Header -->
+        <div class="p-6 border-b border-slate-100 bg-slate-50/50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <div class="upload-card-title">Main Banner</div>
-            <div class="upload-card-desc">Large left image — highest visual impact</div>
+            <h1 class="text-xl font-bold text-slate-900 font-syne tracking-tight">Promo Banners Configurator</h1>
+            <p class="text-xs text-slate-500 mt-1">Upload and manage banners for the public homepage hero grid</p>
+          </div>
+          
+          <!-- Unified Slot Tab Selectors -->
+          <div class="flex bg-slate-100 p-1 rounded-xl border border-slate-200/50 self-start sm:self-auto shadow-inner">
+            <button type="button" onclick="switchSlotTab('main')" id="tab-btn-main" class="px-4 py-2 rounded-lg text-xs font-bold transition-all duration-200 flex items-center gap-1.5 shadow-sm bg-white text-slate-800">
+              <i class="fas fa-star text-amber-500"></i> Main
+            </button>
+            <button type="button" onclick="switchSlotTab('top')" id="tab-btn-top" class="px-4 py-2 rounded-lg text-xs font-bold transition-all duration-200 flex items-center gap-1.5 text-slate-500 hover:text-slate-900">
+              <i class="fas fa-arrow-up text-blue-500"></i> Top Right
+            </button>
+            <button type="button" onclick="switchSlotTab('bottom')" id="tab-btn-bottom" class="px-4 py-2 rounded-lg text-xs font-bold transition-all duration-200 flex items-center gap-1.5 text-slate-500 hover:text-slate-900">
+              <i class="fas fa-arrow-down text-emerald-500"></i> Bottom Right
+            </button>
           </div>
         </div>
-        <div class="upload-card-body">
-          <div class="thumb-wrap main-thumb" id="thumb-main">
-            <img src="<?= htmlspecialchars($config['main']['image']) ?>?cb=<?= time() ?>" alt="Main promo" id="preview-main" onerror="mgenPromoError(this)">
-            <div class="thumb-overlay">
-              <i class="fas fa-camera"></i>
-              <span>Current image</span>
-            </div>
-          </div>
-          <div class="drop-zone" id="dz-main">
-            <input type="file" name="image" accept="image/*" onchange="previewImage(this,'preview-main','preview-panel-main','indicator-main')">
-            <div class="drop-icon"><i class="fas fa-cloud-upload-alt"></i></div>
-            <div class="drop-text"><strong>Click or drag</strong> to replace<br>JPG, PNG, WebP — max 5MB</div>
-          </div>
-          <div class="file-indicator" id="indicator-main"><i class="fas fa-image"></i> No file chosen</div>
-          
-          <div class="form-group">
-            <label><i class="fas fa-link"></i> Destination Link</label>
-            <input type="url" name="link" class="form-control" placeholder="https://facebook.com/..." value="<?= htmlspecialchars($config['main']['link']) ?>">
-          </div>
-          
-          <div class="form-row">
-            <div class="form-group">
-              <label><i class="fas fa-calendar-alt"></i> Start Posting</label>
-              <input type="text" name="start" class="form-control start-posting-input" placeholder="MM/DD/YYYY HH:MM am/pm" value="<?= date('m/d/Y h:i a') ?>" autocomplete="off" inputmode="text">
-            </div>
-          </div>
 
+        <!-- Inner Configurator Content -->
+        <div class="p-6">
+          
+          <!-- SLOT: MAIN BANNER FORM -->
+          <form method="POST" action="includes/save-promo-images.php" enctype="multipart/form-data" id="form-slot-main" class="slot-form-block flex flex-col gap-6">
+            <input type="hidden" name="slot" value="main">
+            
+            <!-- Header slot info & Live indicator status -->
+            <div class="flex items-center justify-between border-b border-slate-100 pb-4">
+              <div class="flex items-center gap-2.5">
+                <span class="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center font-bold text-xs"><i class="fas fa-star"></i></span>
+                <div>
+                  <h3 class="font-bold text-slate-900 text-sm">Main Left Banner</h3>
+                  <p class="text-xs text-slate-500">Largest banner slot — primary focus</p>
+                </div>
+              </div>
+              <span id="badge-main" class="px-2.5 py-1 rounded-full text-[11px] font-bold border flex items-center gap-1.5 bg-slate-100 text-slate-600 border-slate-200">
+                <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span> Calculating Status
+              </span>
+            </div>
 
-          <button type="submit" class="btn-save" onclick="setLoading(this)">
-            <i class="fas fa-save"></i> Save Changes
-          </button>
+            <!-- Upload drag & drop zone -->
+            <div class="flex flex-col md:flex-row gap-6 items-center">
+              <div class="w-full md:w-1/3 flex flex-col gap-2">
+                <label class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Current Banner Cover</label>
+                <div class="relative w-full aspect-[16/9] md:aspect-square bg-slate-100 rounded-xl overflow-hidden border border-slate-200 group">
+                  <img src="<?= htmlspecialchars($config['main']['image']) ?>?cb=<?= time() ?>" id="preview-main" class="w-full h-full object-cover" onerror="mgenPromoError(this)">
+                  <div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center text-white text-xs gap-1 transition duration-200">
+                    <i class="fas fa-camera text-base"></i>
+                    <span>Currently Active</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="w-full md:w-2/3 flex flex-col gap-2">
+                <label class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Upload New Banner Image</label>
+                <div id="dropzone-main" class="dropzone-container relative border-2 border-dashed border-slate-200 hover:border-blue-400 hover:bg-slate-50/50 rounded-xl p-6 text-center cursor-pointer transition-all duration-200 flex flex-col items-center justify-center gap-2 group min-h-[144px]">
+                  <input type="file" name="image" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onchange="handleFileSelect(this, 'main')">
+                  <div class="w-10 h-10 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center group-hover:scale-110 group-hover:bg-blue-50 group-hover:text-blue-500 transition duration-200">
+                    <i class="fas fa-cloud-upload-alt text-lg"></i>
+                  </div>
+                  <div>
+                    <p class="text-xs text-slate-700 font-bold"><span class="text-blue-600">Click to upload</span> or drag image here</p>
+                    <p class="text-[10px] text-slate-400 mt-1">Recommended dimension: 1920x600px (JPG, PNG, WebP up to 5MB)</p>
+                  </div>
+                </div>
+                <!-- Selection reset state -->
+                <div id="file-select-banner-main" class="hidden items-center justify-between p-2.5 rounded-lg border border-emerald-100 bg-emerald-50/50 text-xs text-emerald-800">
+                  <span class="flex items-center gap-1.5 font-semibold"><i class="fas fa-check-circle text-emerald-500"></i> <span id="filename-main">No file</span></span>
+                  <button type="button" onclick="clearFileSelection('main')" class="px-2 py-1 rounded bg-white hover:bg-rose-50 hover:text-rose-600 font-bold text-[10px] text-slate-500 border border-slate-200 transition">Remove</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Inputs -->
+            <div class="flex flex-col gap-4">
+              <div>
+                <label class="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1.5 flex items-center gap-1"><i class="fas fa-link text-slate-400"></i> Destination Redirect Link</label>
+                <input type="url" name="link" class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition-all" placeholder="e.g. https://facebook.com/solarpowercorp/posts/..." value="<?= htmlspecialchars($config['main']['link']) ?>" oninput="syncLiveText('main', this.value)">
+              </div>
+              
+              <!-- Date Range Schedulers -->
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="relative">
+                  <label class="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1.5 flex items-center gap-1"><i class="fas fa-clock text-slate-400"></i> Start Posting Date & Time</label>
+                  <div class="relative cursor-pointer" onclick="triggerCalendarPicker('start-main')">
+                    <input type="text" name="start" id="start-main" class="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition-all cursor-pointer" placeholder="MM/DD/YYYY HH:MM am/pm" value="<?= htmlspecialchars($config['main']['start']) ?>" readonly>
+                    <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 text-xs">
+                      <i class="fas fa-calendar-alt"></i>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label class="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1.5 flex items-center gap-1"><i class="fas fa-ban text-slate-400"></i> Expiration Date & Time</label>
+                  <div class="relative cursor-pointer" id="end-container-main" onclick="triggerCalendarPicker('end-main')">
+                    <input type="text" name="end" id="end-main" class="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition-all cursor-pointer" placeholder="MM/DD/YYYY HH:MM am/pm" value="<?= htmlspecialchars($config['main']['end'] ?? 'indefinite') ?>" readonly>
+                    <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 text-xs">
+                      <i class="fas fa-calendar-times"></i>
+                    </div>
+                  </div>
+                  <!-- Run Indefinitely Toggle -->
+                  <div class="flex items-center gap-2 mt-2">
+                    <input type="checkbox" name="run_indefinitely" value="1" id="indefinite-main" class="w-4.5 h-4.5 accent-amber-500 rounded border-slate-300 focus:ring-0 focus:ring-offset-0" onchange="toggleIndefinite('main', this.checked)" <?= ($config['main']['end'] === 'indefinite' || empty($config['main']['end'])) ? 'checked' : '' ?>>
+                    <label for="indefinite-main" class="text-xs text-slate-500 font-semibold cursor-pointer select-none">Run Indefinitely (Never Expire)</label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Submit Button -->
+            <button type="submit" class="mt-4 w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3.5 px-6 rounded-xl text-sm transition-all duration-200 shadow-sm flex items-center justify-center gap-2 font-syne uppercase tracking-wider">
+              <i class="fas fa-save text-amber-400"></i> Save Main Banner Configuration
+            </button>
+          </form>
+
+          <!-- SLOT: TOP RIGHT FORM -->
+          <form method="POST" action="includes/save-promo-images.php" enctype="multipart/form-data" id="form-slot-top" class="slot-form-block flex flex-col gap-6 hidden">
+            <input type="hidden" name="slot" value="top">
+            
+            <!-- Header slot info & Live indicator status -->
+            <div class="flex items-center justify-between border-b border-slate-100 pb-4">
+              <div class="flex items-center gap-2.5">
+                <span class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-xs"><i class="fas fa-arrow-up"></i></span>
+                <div>
+                  <h3 class="font-bold text-slate-900 text-sm">Top Right Banner Card</h3>
+                  <p class="text-xs text-slate-500">Upper small card banner — supporting focus</p>
+                </div>
+              </div>
+              <span id="badge-top" class="px-2.5 py-1 rounded-full text-[11px] font-bold border flex items-center gap-1.5 bg-slate-100 text-slate-600 border-slate-200">
+                <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span> Calculating Status
+              </span>
+            </div>
+
+            <!-- Upload drag & drop zone -->
+            <div class="flex flex-col md:flex-row gap-6 items-center">
+              <div class="w-full md:w-1/3 flex flex-col gap-2">
+                <label class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Current Banner Cover</label>
+                <div class="relative w-full aspect-[16/9] md:aspect-square bg-slate-100 rounded-xl overflow-hidden border border-slate-200 group">
+                  <img src="<?= htmlspecialchars($config['top']['image']) ?>?cb=<?= time() ?>" id="preview-top" class="w-full h-full object-cover" onerror="mgenPromoError(this)">
+                  <div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center text-white text-xs gap-1 transition duration-200">
+                    <i class="fas fa-camera text-base"></i>
+                    <span>Currently Active</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="w-full md:w-2/3 flex flex-col gap-2">
+                <label class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Upload New Banner Image</label>
+                <div id="dropzone-top" class="dropzone-container relative border-2 border-dashed border-slate-200 hover:border-blue-400 hover:bg-slate-50/50 rounded-xl p-6 text-center cursor-pointer transition-all duration-200 flex flex-col items-center justify-center gap-2 group min-h-[144px]">
+                  <input type="file" name="image" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onchange="handleFileSelect(this, 'top')">
+                  <div class="w-10 h-10 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center group-hover:scale-110 group-hover:bg-blue-50 group-hover:text-blue-500 transition duration-200">
+                    <i class="fas fa-cloud-upload-alt text-lg"></i>
+                  </div>
+                  <div>
+                    <p class="text-xs text-slate-700 font-bold"><span class="text-blue-600">Click to upload</span> or drag image here</p>
+                    <p class="text-[10px] text-slate-400 mt-1">Recommended dimension: 800x800px (JPG, PNG, WebP up to 5MB)</p>
+                  </div>
+                </div>
+                <!-- Selection reset state -->
+                <div id="file-select-banner-top" class="hidden items-center justify-between p-2.5 rounded-lg border border-emerald-100 bg-emerald-50/50 text-xs text-emerald-800">
+                  <span class="flex items-center gap-1.5 font-semibold"><i class="fas fa-check-circle text-emerald-500"></i> <span id="filename-top">No file</span></span>
+                  <button type="button" onclick="clearFileSelection('top')" class="px-2 py-1 rounded bg-white hover:bg-rose-50 hover:text-rose-600 font-bold text-[10px] text-slate-500 border border-slate-200 transition">Remove</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Inputs -->
+            <div class="flex flex-col gap-4">
+              <div>
+                <label class="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1.5 flex items-center gap-1"><i class="fas fa-link text-slate-400"></i> Destination Redirect Link</label>
+                <input type="url" name="link" class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition-all" placeholder="e.g. https://facebook.com/solarpowercorp/posts/..." value="<?= htmlspecialchars($config['top']['link']) ?>" oninput="syncLiveText('top', this.value)">
+              </div>
+              
+              <!-- Date Range Schedulers -->
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="relative">
+                  <label class="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1.5 flex items-center gap-1"><i class="fas fa-clock text-slate-400"></i> Start Posting Date & Time</label>
+                  <div class="relative cursor-pointer" onclick="triggerCalendarPicker('start-top')">
+                    <input type="text" name="start" id="start-top" class="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition-all cursor-pointer" placeholder="MM/DD/YYYY HH:MM am/pm" value="<?= htmlspecialchars($config['top']['start']) ?>" readonly>
+                    <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 text-xs">
+                      <i class="fas fa-calendar-alt"></i>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label class="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1.5 flex items-center gap-1"><i class="fas fa-ban text-slate-400"></i> Expiration Date & Time</label>
+                  <div class="relative cursor-pointer" id="end-container-top" onclick="triggerCalendarPicker('end-top')">
+                    <input type="text" name="end" id="end-top" class="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition-all cursor-pointer" placeholder="MM/DD/YYYY HH:MM am/pm" value="<?= htmlspecialchars($config['top']['end'] ?? 'indefinite') ?>" readonly>
+                    <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 text-xs">
+                      <i class="fas fa-calendar-times"></i>
+                    </div>
+                  </div>
+                  <!-- Run Indefinitely Toggle -->
+                  <div class="flex items-center gap-2 mt-2">
+                    <input type="checkbox" name="run_indefinitely" value="1" id="indefinite-top" class="w-4.5 h-4.5 accent-amber-500 rounded border-slate-300 focus:ring-0 focus:ring-offset-0" onchange="toggleIndefinite('top', this.checked)" <?= ($config['top']['end'] === 'indefinite' || empty($config['top']['end'])) ? 'checked' : '' ?>>
+                    <label for="indefinite-top" class="text-xs text-slate-500 font-semibold cursor-pointer select-none">Run Indefinitely (Never Expire)</label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Submit Button -->
+            <button type="submit" class="mt-4 w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3.5 px-6 rounded-xl text-sm transition-all duration-200 shadow-sm flex items-center justify-center gap-2 font-syne uppercase tracking-wider">
+              <i class="fas fa-save text-amber-400"></i> Save Top Right Card Configuration
+            </button>
+          </form>
+
+          <!-- SLOT: BOTTOM RIGHT FORM -->
+          <form method="POST" action="includes/save-promo-images.php" enctype="multipart/form-data" id="form-slot-bottom" class="slot-form-block flex flex-col gap-6 hidden">
+            <input type="hidden" name="slot" value="bottom">
+            
+            <!-- Header slot info & Live indicator status -->
+            <div class="flex items-center justify-between border-b border-slate-100 pb-4">
+              <div class="flex items-center gap-2.5">
+                <span class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-xs"><i class="fas fa-arrow-down"></i></span>
+                <div>
+                  <h3 class="font-bold text-slate-900 text-sm">Bottom Right Banner Card</h3>
+                  <p class="text-xs text-slate-500">Lower small card banner — supporting focus</p>
+                </div>
+              </div>
+              <span id="badge-bottom" class="px-2.5 py-1 rounded-full text-[11px] font-bold border flex items-center gap-1.5 bg-slate-100 text-slate-600 border-slate-200">
+                <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span> Calculating Status
+              </span>
+            </div>
+
+            <!-- Upload drag & drop zone -->
+            <div class="flex flex-col md:flex-row gap-6 items-center">
+              <div class="w-full md:w-1/3 flex flex-col gap-2">
+                <label class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Current Banner Cover</label>
+                <div class="relative w-full aspect-[16/9] md:aspect-square bg-slate-100 rounded-xl overflow-hidden border border-slate-200 group">
+                  <img src="<?= htmlspecialchars($config['bottom']['image']) ?>?cb=<?= time() ?>" id="preview-bottom" class="w-full h-full object-cover" onerror="mgenPromoError(this)">
+                  <div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center text-white text-xs gap-1 transition duration-200">
+                    <i class="fas fa-camera text-base"></i>
+                    <span>Currently Active</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="w-full md:w-2/3 flex flex-col gap-2">
+                <label class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Upload New Banner Image</label>
+                <div id="dropzone-bottom" class="dropzone-container relative border-2 border-dashed border-slate-200 hover:border-blue-400 hover:bg-slate-50/50 rounded-xl p-6 text-center cursor-pointer transition-all duration-200 flex flex-col items-center justify-center gap-2 group min-h-[144px]">
+                  <input type="file" name="image" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onchange="handleFileSelect(this, 'bottom')">
+                  <div class="w-10 h-10 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center group-hover:scale-110 group-hover:bg-blue-50 group-hover:text-blue-500 transition duration-200">
+                    <i class="fas fa-cloud-upload-alt text-lg"></i>
+                  </div>
+                  <div>
+                    <p class="text-xs text-slate-700 font-bold"><span class="text-blue-600">Click to upload</span> or drag image here</p>
+                    <p class="text-[10px] text-slate-400 mt-1">Recommended dimension: 800x800px (JPG, PNG, WebP up to 5MB)</p>
+                  </div>
+                </div>
+                <!-- Selection reset state -->
+                <div id="file-select-banner-bottom" class="hidden items-center justify-between p-2.5 rounded-lg border border-emerald-100 bg-emerald-50/50 text-xs text-emerald-800">
+                  <span class="flex items-center gap-1.5 font-semibold"><i class="fas fa-check-circle text-emerald-500"></i> <span id="filename-bottom">No file</span></span>
+                  <button type="button" onclick="clearFileSelection('bottom')" class="px-2 py-1 rounded bg-white hover:bg-rose-50 hover:text-rose-600 font-bold text-[10px] text-slate-500 border border-slate-200 transition">Remove</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Inputs -->
+            <div class="flex flex-col gap-4">
+              <div>
+                <label class="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1.5 flex items-center gap-1"><i class="fas fa-link text-slate-400"></i> Destination Redirect Link</label>
+                <input type="url" name="link" class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition-all" placeholder="e.g. https://facebook.com/solarpowercorp/posts/..." value="<?= htmlspecialchars($config['bottom']['link']) ?>" oninput="syncLiveText('bottom', this.value)">
+              </div>
+              
+              <!-- Date Range Schedulers -->
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="relative">
+                  <label class="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1.5 flex items-center gap-1"><i class="fas fa-clock text-slate-400"></i> Start Posting Date & Time</label>
+                  <div class="relative cursor-pointer" onclick="triggerCalendarPicker('start-bottom')">
+                    <input type="text" name="start" id="start-bottom" class="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition-all cursor-pointer" placeholder="MM/DD/YYYY HH:MM am/pm" value="<?= htmlspecialchars($config['bottom']['start']) ?>" readonly>
+                    <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 text-xs">
+                      <i class="fas fa-calendar-alt"></i>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label class="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1.5 flex items-center gap-1"><i class="fas fa-ban text-slate-400"></i> Expiration Date & Time</label>
+                  <div class="relative cursor-pointer" id="end-container-bottom" onclick="triggerCalendarPicker('end-bottom')">
+                    <input type="text" name="end" id="end-bottom" class="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition-all cursor-pointer" placeholder="MM/DD/YYYY HH:MM am/pm" value="<?= htmlspecialchars($config['bottom']['end'] ?? 'indefinite') ?>" readonly>
+                    <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 text-xs">
+                      <i class="fas fa-calendar-times"></i>
+                    </div>
+                  </div>
+                  <!-- Run Indefinitely Toggle -->
+                  <div class="flex items-center gap-2 mt-2">
+                    <input type="checkbox" name="run_indefinitely" value="1" id="indefinite-bottom" class="w-4.5 h-4.5 accent-amber-500 rounded border-slate-300 focus:ring-0 focus:ring-offset-0" onchange="toggleIndefinite('bottom', this.checked)" <?= ($config['bottom']['end'] === 'indefinite' || empty($config['bottom']['end'])) ? 'checked' : '' ?>>
+                    <label for="indefinite-bottom" class="text-xs text-slate-500 font-semibold cursor-pointer select-none">Run Indefinitely (Never Expire)</label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Submit Button -->
+            <button type="submit" class="mt-4 w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3.5 px-6 rounded-xl text-sm transition-all duration-200 shadow-sm flex items-center justify-center gap-2 font-syne uppercase tracking-wider">
+              <i class="fas fa-save text-amber-400"></i> Save Bottom Right Card Configuration
+            </button>
+          </form>
+
+        </div>
+        
+        <!-- Bottom Tips -->
+        <div class="p-6 border-t border-slate-100 bg-slate-50/30 text-xs text-slate-500 flex flex-col gap-1.5">
+          <span class="font-bold text-slate-700 flex items-center gap-1"><i class="fas fa-info-circle text-amber-500"></i> Helpful CMS Tips:</span>
+          <p>• Banner redirects are linked immediately when users click them on the homepage.</p>
+          <p>• The active status determines if the banner is visible right now, queued for later, or past its expiration range.</p>
         </div>
 
       </div>
-    </form>
 
-    <!-- Card 2: Top Right -->
-    <form method="POST" action="includes/save-promo-images.php" enctype="multipart/form-data" id="form-top">
-      <input type="hidden" name="slot" value="top">
-      <div class="upload-card" id="card-top">
-        <div class="upload-card-header">
-          <div class="slot-badge top"><i class="fas fa-arrow-up"></i></div>
-          <div>
-            <div class="upload-card-title">Top Right Card</div>
-            <div class="upload-card-desc">Upper smaller card on the right column</div>
-          </div>
-        </div>
-        <div class="upload-card-body">
-          <div class="thumb-wrap small-thumb" id="thumb-top">
-            <img src="<?= htmlspecialchars($config['top']['image']) ?>?cb=<?= time() ?>" alt="Top right promo" id="preview-top" onerror="mgenPromoError(this)">
-            <div class="thumb-overlay">
-              <i class="fas fa-camera"></i>
-              <span>Current image</span>
-            </div>
-          </div>
-          <div class="drop-zone" id="dz-top">
-            <input type="file" name="image" accept="image/*" onchange="previewImage(this,'preview-top','preview-panel-top','indicator-top')">
-            <div class="drop-icon"><i class="fas fa-cloud-upload-alt"></i></div>
-            <div class="drop-text"><strong>Click or drag</strong> to replace<br>JPG, PNG, WebP — max 5MB</div>
-          </div>
-          <div class="file-indicator" id="indicator-top"><i class="fas fa-image"></i> No file chosen</div>
+      <!-- RIGHT COLUMN (40% Width) - STICKY LIVE PREVIEW -->
+      <div class="lg:col-span-5 lg:sticky lg:top-8 flex flex-col gap-6">
+        
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden font-sans">
           
-          <div class="form-group">
-            <label><i class="fas fa-link"></i> Destination Link</label>
-            <input type="url" name="link" class="form-control" placeholder="https://facebook.com/..." value="<?= htmlspecialchars($config['top']['link']) ?>">
+          <!-- Viewport Header -->
+          <div class="bg-slate-900 p-4 flex items-center justify-between border-b border-slate-800">
+            <div class="flex items-center gap-1.5 flex-shrink-0">
+              <span class="w-3 h-3 rounded-full bg-rose-500"></span>
+              <span class="w-3 h-3 rounded-full bg-amber-500"></span>
+              <span class="w-3 h-3 rounded-full bg-emerald-500"></span>
+            </div>
+            
+            <div class="bg-slate-800 rounded-lg px-6 py-1.5 text-[10px] text-slate-400 font-medium select-none text-center min-w-[200px] border border-slate-700/50 truncate mx-2">
+              solarpower.com.ph/preview
+            </div>
+            
+            <span class="text-[10px] font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-400/20 font-syne uppercase tracking-wider select-none flex-shrink-0">Live Mock</span>
+          </div>
+
+          <!-- Mock Homepage Promo Section -->
+          <div class="p-4 bg-[#f8fafc] flex flex-col gap-4">
+            
+            <div class="text-center pb-2 border-b border-slate-200/50">
+              <h2 class="text-xs font-bold text-slate-400 uppercase tracking-widest font-syne">Homepage Banner Preview</h2>
+              <p class="text-[10px] text-slate-400">Click a banner card below to instantly edit it</p>
+            </div>
+            
+            <!-- Real-time Responsive Homepage Grid layout -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 min-h-[300px]">
+              
+              <!-- Left Big Banner card -->
+              <div onclick="switchSlotTab('main')" id="mock-main" class="md:col-span-2 cursor-pointer relative overflow-hidden rounded-xl border-2 border-slate-200 bg-white shadow-sm hover:shadow-md transition-all duration-300 group flex flex-col select-none">
+                <img src="<?= htmlspecialchars($config['main']['image']) ?>?cb=<?= time() ?>" id="preview-panel-main" class="w-full h-full object-cover min-h-[180px] md:min-h-full transition duration-300 group-hover:scale-[1.02]" onerror="mgenPromoError(this)">
+                
+                <!-- Info Overlay mimics main banner tags -->
+                <div class="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-900/10 to-transparent p-4 flex flex-col justify-end">
+                  <div class="flex items-center justify-between">
+                    <span class="bg-amber-400 text-slate-950 text-[9px] font-extrabold uppercase px-2 py-0.5 rounded tracking-wide font-syne">Main Banner</span>
+                    <span id="mock-status-main" class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-500 text-white">Live</span>
+                  </div>
+                  <p id="mock-link-main" class="text-[9px] text-slate-300 font-mono mt-1 break-all truncate max-w-full"><i class="fas fa-link mr-1"></i><?= htmlspecialchars($config['main']['link']) ?: 'No link set' ?></p>
+                </div>
+                
+                <!-- Hover outline/edit banner -->
+                <div class="absolute inset-0 bg-slate-900/30 opacity-0 group-hover:opacity-100 flex items-center justify-center transition duration-200">
+                  <span class="bg-white/95 text-slate-900 text-xs font-bold py-1.5 px-3.5 rounded-lg shadow-sm border border-slate-200 flex items-center gap-1.5"><i class="fas fa-edit text-amber-500"></i> Configure Slot</span>
+                </div>
+              </div>
+
+              <!-- Right stacked column -->
+              <div class="grid grid-rows-2 gap-3 md:col-span-1">
+                
+                <!-- Top Right Card -->
+                <div onclick="switchSlotTab('top')" id="mock-top" class="cursor-pointer relative overflow-hidden rounded-xl border-2 border-slate-200 bg-white shadow-sm hover:shadow-md transition-all duration-300 group flex flex-col select-none h-[142px]">
+                  <img src="<?= htmlspecialchars($config['top']['image']) ?>?cb=<?= time() ?>" id="preview-panel-top" class="w-full h-full object-cover transition duration-300 group-hover:scale-[1.02]" onerror="mgenPromoError(this)">
+                  
+                  <div class="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-900/10 to-transparent p-3.5 flex flex-col justify-end">
+                    <div class="flex items-center justify-between">
+                      <span class="bg-blue-500 text-white text-[9px] font-extrabold uppercase px-2 py-0.5 rounded tracking-wide font-syne">Top Right</span>
+                      <span id="mock-status-top" class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-500 text-white">Live</span>
+                    </div>
+                    <p id="mock-link-top" class="text-[9px] text-slate-300 font-mono mt-1 break-all truncate max-w-full"><i class="fas fa-link mr-1"></i><?= htmlspecialchars($config['top']['link']) ?: 'No link set' ?></p>
+                  </div>
+                  
+                  <div class="absolute inset-0 bg-slate-900/30 opacity-0 group-hover:opacity-100 flex items-center justify-center transition duration-200">
+                    <span class="bg-white/95 text-slate-900 text-xs font-bold py-1.5 px-3.5 rounded-lg shadow-sm border border-slate-200 flex items-center gap-1.5"><i class="fas fa-edit text-blue-500"></i> Configure</span>
+                  </div>
+                </div>
+
+                <!-- Bottom Right Card -->
+                <div onclick="switchSlotTab('bottom')" id="mock-bottom" class="cursor-pointer relative overflow-hidden rounded-xl border-2 border-slate-200 bg-white shadow-sm hover:shadow-md transition-all duration-300 group flex flex-col select-none h-[142px]">
+                  <img src="<?= htmlspecialchars($config['bottom']['image']) ?>?cb=<?= time() ?>" id="preview-panel-bottom" class="w-full h-full object-cover transition duration-300 group-hover:scale-[1.02]" onerror="mgenPromoError(this)">
+                  
+                  <div class="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-900/10 to-transparent p-3.5 flex flex-col justify-end">
+                    <div class="flex items-center justify-between">
+                      <span class="bg-emerald-500 text-white text-[9px] font-extrabold uppercase px-2 py-0.5 rounded tracking-wide font-syne">Bottom Right</span>
+                      <span id="mock-status-bottom" class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-500 text-white">Live</span>
+                    </div>
+                    <p id="mock-link-bottom" class="text-[9px] text-slate-300 font-mono mt-1 break-all truncate max-w-full"><i class="fas fa-link mr-1"></i><?= htmlspecialchars($config['bottom']['link']) ?: 'No link set' ?></p>
+                  </div>
+                  
+                  <div class="absolute inset-0 bg-slate-900/30 opacity-0 group-hover:opacity-100 flex items-center justify-center transition duration-200">
+                    <span class="bg-white/95 text-slate-900 text-xs font-bold py-1.5 px-3.5 rounded-lg shadow-sm border border-slate-200 flex items-center gap-1.5"><i class="fas fa-edit text-emerald-500"></i> Configure</span>
+                  </div>
+                </div>
+
+              </div>
+              
+            </div>
+
+            <!-- Preview indicator -->
+            <div class="text-center py-2 text-[10px] text-slate-500 font-semibold flex items-center justify-center gap-1.5">
+              <span class="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 live-dot"></span> Reactive Live Preview active
+            </div>
+            
           </div>
           
-          <div class="form-row">
-            <div class="form-group">
-              <label><i class="fas fa-calendar-alt"></i> Start Posting</label>
-              <input type="text" name="start" class="form-control start-posting-input" placeholder="MM/DD/YYYY HH:MM am/pm" value="<?= date('m/d/Y h:i a') ?>" autocomplete="off" inputmode="text">
-            </div>
-          </div>
-
-
-          <button type="submit" class="btn-save" onclick="setLoading(this)">
-            <i class="fas fa-save"></i> Save Changes
-          </button>
         </div>
 
       </div>
-    </form>
 
-    <!-- Card 3: Bottom Right -->
-    <form method="POST" action="includes/save-promo-images.php" enctype="multipart/form-data" id="form-bottom">
-      <input type="hidden" name="slot" value="bottom">
-      <div class="upload-card" id="card-bottom">
-        <div class="upload-card-header">
-          <div class="slot-badge bottom"><i class="fas fa-arrow-down"></i></div>
-          <div>
-            <div class="upload-card-title">Bottom Right Card</div>
-            <div class="upload-card-desc">Lower smaller card on the right column</div>
-          </div>
-        </div>
-        <div class="upload-card-body">
-          <div class="thumb-wrap small-thumb" id="thumb-bottom">
-            <img src="<?= htmlspecialchars($config['bottom']['image']) ?>?cb=<?= time() ?>" alt="Bottom right promo" id="preview-bottom" onerror="mgenPromoError(this)">
-            <div class="thumb-overlay">
-              <i class="fas fa-camera"></i>
-              <span>Current image</span>
-            </div>
-          </div>
-          <div class="drop-zone" id="dz-bottom">
-            <input type="file" name="image" accept="image/*" onchange="previewImage(this,'preview-bottom','preview-panel-bottom','indicator-bottom')">
-            <div class="drop-icon"><i class="fas fa-cloud-upload-alt"></i></div>
-            <div class="drop-text"><strong>Click or drag</strong> to replace<br>JPG, PNG, WebP — max 5MB</div>
-          </div>
-          <div class="file-indicator" id="indicator-bottom"><i class="fas fa-image"></i> No file chosen</div>
-          
-          <div class="form-group">
-            <label><i class="fas fa-link"></i> Destination Link</label>
-            <input type="url" name="link" class="form-control" placeholder="https://facebook.com/..." value="<?= htmlspecialchars($config['bottom']['link']) ?>">
-          </div>
-          
-          <div class="form-row">
-            <div class="form-group">
-              <label><i class="fas fa-calendar-alt"></i> Start Posting</label>
-              <input type="text" name="start" class="form-control start-posting-input" placeholder="MM/DD/YYYY HH:MM am/pm" value="<?= date('m/d/Y h:i a') ?>" autocomplete="off" inputmode="text">
-            </div>
-          </div>
-
-
-          <button type="submit" class="btn-save" onclick="setLoading(this)">
-            <i class="fas fa-save"></i> Save Changes
-          </button>
-        </div>
-
-      </div>
-    </form>
-
-    <div class="info-box">
-      <strong><i class="fas fa-lightbulb"></i> Tips for best results:</strong><br>
-      • Main banner: landscape ratio (16:9 or wider) works best<br>
-      • Right cards: square or portrait (1:1 to 4:5) recommended<br>
-      • Keep file size under 5MB for fast page loads<br>
-      • Images replace immediately — no backup is made automatically
     </div>
+
   </div>
 
-  <!-- Right: Live Preview Panel -->
-  <div class="preview-panel">
-    <div class="section-label">Live Preview</div>
-    <div class="preview-shell">
-      <div class="preview-topbar">
-        <div class="preview-topbar-dot" style="background:#ff5f57"></div>
-        <div class="preview-topbar-dot" style="background:#febc2e"></div>
-        <div class="preview-topbar-dot" style="background:#28c840"></div>
-        <span class="preview-topbar-label">Section Preview</span>
-      </div>
-      <div class="preview-body">
-        <div class="mini-promo">
-          <div class="mini-card large">
-            <img src="<?= htmlspecialchars($config['main']['image']) ?>?cb=<?= time() ?>" id="preview-panel-main" alt="Main" onerror="mgenPromoError(this)">
-            <div class="mini-card-label">Main Banner</div>
-          </div>
-          <div style="display:flex;flex-direction:column;gap:8px;">
-            <div class="mini-card">
-               <img src="<?= htmlspecialchars($config['top']['image']) ?>?cb=<?= time() ?>" id="preview-panel-top" alt="Top" onerror="mgenPromoError(this)">
-              <div class="mini-card-label">Top Right</div>
-            </div>
-            <div class="mini-card">
-               <img src="<?= htmlspecialchars($config['bottom']['image']) ?>?cb=<?= time() ?>" id="preview-panel-bottom" alt="Bottom" onerror="mgenPromoError(this)">
-              <div class="mini-card-label">Bottom Right</div>
-            </div>
-          </div>
+  <!-- ==========================================
+       GLOBAL REUSABLE CALENDAR DATE-TIME PICKER
+       ========================================== -->
+  <div id="promo-datepicker-popover" class="absolute z-50 bg-white border border-slate-200 rounded-xl shadow-xl p-4 w-[280px] hidden text-slate-800 flex flex-col gap-3 font-sans animate-slideup border border-slate-200/80">
+    
+    <!-- Popover Header -->
+    <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+      <button type="button" onclick="navigateCalendarMonth(-1)" class="w-7 h-7 rounded-lg hover:bg-slate-100 flex items-center justify-center text-slate-500 transition"><i class="fas fa-chevron-left text-xs"></i></button>
+      <span id="cal-month-year-label" class="font-bold text-slate-800 text-sm">Month Year</span>
+      <button type="button" onclick="navigateCalendarMonth(1)" class="w-7 h-7 rounded-lg hover:bg-slate-100 flex items-center justify-center text-slate-500 transition"><i class="fas fa-chevron-right text-xs"></i></button>
+    </div>
 
-        </div>
-        <p class="preview-hint"><i class="fas fa-eye" style="margin-right:4px;"></i>Preview updates instantly when you choose a file</p>
+    <!-- Calendar Weekday names -->
+    <div class="grid grid-cols-7 gap-1 text-[10px] font-bold text-slate-400 text-center uppercase tracking-wider">
+      <span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span>
+    </div>
+
+    <!-- Days Grid -->
+    <div id="cal-days-grid" class="grid grid-cols-7 gap-1 text-xs">
+      <!-- Generated Day Buttons dynamically -->
+    </div>
+
+    <!-- Time Selection Row -->
+    <div class="flex items-center justify-between bg-slate-50 p-2 rounded-lg border border-slate-200/50 mt-1">
+      <div class="flex items-center gap-1 text-slate-700">
+        <i class="fas fa-clock text-xs text-slate-400 mr-1"></i>
+        <!-- Hours -->
+        <select id="cal-hour-select" class="bg-white border border-slate-200 rounded px-1.5 py-1 text-xs font-semibold focus:outline-none">
+          <?php for($h=1; $h<=12; $h++): ?>
+            <option value="<?= str_pad($h, 2, '0', STR_PAD_LEFT) ?>"><?= str_pad($h, 2, '0', STR_PAD_LEFT) ?></option>
+          <?php endfor; ?>
+        </select>
+        <span class="font-bold text-xs">:</span>
+        <!-- Minutes -->
+        <select id="cal-minute-select" class="bg-white border border-slate-200 rounded px-1.5 py-1 text-xs font-semibold focus:outline-none">
+          <?php for($m=0; $m<=59; $m+=5): ?>
+            <option value="<?= str_pad($m, 2, '0', STR_PAD_LEFT) ?>"><?= str_pad($m, 2, '0', STR_PAD_LEFT) ?></option>
+          <?php endfor; ?>
+        </select>
+        <!-- AM/PM -->
+        <select id="cal-meridiem-select" class="bg-white border border-slate-200 rounded px-1 py-1 text-xs font-semibold focus:outline-none ml-1">
+          <option value="am">am</option>
+          <option value="pm">pm</option>
+        </select>
       </div>
     </div>
+
+    <!-- Actions -->
+    <div class="flex gap-2 mt-2 pt-2 border-t border-slate-100">
+      <button type="button" onclick="closeCalendarPicker()" class="flex-1 py-2 text-xs font-bold text-slate-500 hover:bg-slate-50 rounded-lg transition border border-slate-200">Cancel</button>
+      <button type="button" onclick="confirmCalendarSelection()" class="flex-1 py-2 text-xs font-bold bg-slate-900 hover:bg-slate-800 text-white rounded-lg transition">Apply</button>
+    </div>
+
   </div>
 
-</div><!-- /workspace -->
-
-<script>
-function nowInPHT() {
-  const now = new Date();
-  const phtNowText = new Intl.DateTimeFormat('en-US', {
-    timeZone: 'Asia/Manila',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: true
-  }).format(now);
-
-  const parts = phtNowText.match(/^(\d{2})\/(\d{2})\/(\d{4}),?\s(\d{2}):(\d{2})\s([AP]M)$/i);
-  if (!parts) return '';
-  return `${parts[1]}/${parts[2]}/${parts[3]} ${parts[4]}:${parts[5]} ${parts[6].toLowerCase()}`;
-}
-
-function parseHumanDateTimePHT(value) {
-  const m = value.trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})\s(\d{1,2}):(\d{2})\s([ap]m)$/i);
-  if (!m) return null;
-
-  const month = parseInt(m[1], 10);
-  const day = parseInt(m[2], 10);
-  const year = parseInt(m[3], 10);
-  let hour = parseInt(m[4], 10);
-  const minute = parseInt(m[5], 10);
-  const meridiem = m[6].toLowerCase();
-
-  if (month < 1 || month > 12 || day < 1 || day > 31 || hour < 1 || hour > 12 || minute < 0 || minute > 59) {
-    return null;
-  }
-
-  if (meridiem === 'pm' && hour !== 12) hour += 12;
-  if (meridiem === 'am' && hour === 12) hour = 0;
-
-  const utcMs = Date.UTC(year, month - 1, day, hour - 8, minute, 0);
-  const dt = new Date(utcMs);
-
-  // Validate exact date components after normalization.
-  const phtParts = new Intl.DateTimeFormat('en-US', {
-    timeZone: 'Asia/Manila',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: true
-  }).format(dt).match(/^(\d{2})\/(\d{2})\/(\d{4}),?\s(\d{2}):(\d{2})\s([AP]M)$/i);
-
-  if (!phtParts) return null;
-  const cmp = `${phtParts[1]}/${phtParts[2]}/${phtParts[3]} ${phtParts[4]}:${phtParts[5]} ${phtParts[6].toLowerCase()}`;
-  const normInput = `${String(month).padStart(2, '0')}/${String(day).padStart(2, '0')}/${year} ${String(((hour % 12) || 12)).padStart(2, '0')}:${String(minute).padStart(2, '0')} ${meridiem}`;
-  return cmp === normInput ? dt : null;
-}
-
-function formatDateToHumanPHT(dateObj) {
-  const txt = new Intl.DateTimeFormat('en-US', {
-    timeZone: 'Asia/Manila',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: true
-  }).format(dateObj);
-
-  const m = txt.match(/^(\d{2})\/(\d{2})\/(\d{4}),?\s(\d{2}):(\d{2})\s([AP]M)$/i);
-  if (!m) return txt;
-  return `${m[1]}/${m[2]}/${m[3]} ${m[4]}:${m[5]} ${m[6].toLowerCase()}`;
-}
-
-function handleScheduleCheckOnSubmit(e) {
-  e.preventDefault();
-  const form = e.target;
-  const startInput = form.querySelector('input[name="start"]');
-  if (!startInput) return;
-
-  // Use current PHT as default when empty.
-  if (!startInput.value.trim()) {
-    startInput.value = nowInPHT();
-  }
-
-  const parsed = parseHumanDateTimePHT(startInput.value);
-  if (!parsed) {
-    alert('Please use this format: MM/DD/YYYY HH:MM am/pm');
-    startInput.focus();
-    return;
-  }
-
-  // Normalize before submit.
-  startInput.value = formatDateToHumanPHT(parsed);
-
-  const nowPht = parseHumanDateTimePHT(nowInPHT());
-  if (!nowPht) return;
-
-  const selectedMs = parsed.getTime();
-  const nowMs = nowPht.getTime();
-
-  if (selectedMs < nowMs) {
-    const msg = 'This time has already passed. Would you like to update it to now or a future time?\n\nPress OK to set it to now, or Cancel to edit it.';
-    const useNow = window.confirm(msg);
-    if (useNow) {
-      startInput.value = nowInPHT();
-      form.submit();
-    } else {
-      startInput.focus();
+  <!-- Reactivity, Calendars and Dropzones scripts -->
+  <script>
+  let activeTabSlot = 'main';
+  
+  // Date Picker Globals
+  let activeDatePickerInputId = null;
+  let pickerCurrentMonth = new Date().getMonth();
+  let pickerCurrentYear = new Date().getFullYear();
+  let pickerSelectedDate = new Date();
+  
+  // Initial configs from PHP
+  const slotsConfigData = {
+    main: {
+      image: "<?= htmlspecialchars($config['main']['image']) ?>",
+      link: "<?= htmlspecialchars($config['main']['link']) ?>",
+      start: "<?= htmlspecialchars($config['main']['start']) ?>",
+      end: "<?= htmlspecialchars($config['main']['end'] ?? 'indefinite') ?>"
+    },
+    top: {
+      image: "<?= htmlspecialchars($config['top']['image']) ?>",
+      link: "<?= htmlspecialchars($config['top']['link']) ?>",
+      start: "<?= htmlspecialchars($config['top']['start']) ?>",
+      end: "<?= htmlspecialchars($config['top']['end'] ?? 'indefinite') ?>"
+    },
+    bottom: {
+      image: "<?= htmlspecialchars($config['bottom']['image']) ?>",
+      link: "<?= htmlspecialchars($config['bottom']['link']) ?>",
+      start: "<?= htmlspecialchars($config['bottom']['start']) ?>",
+      end: "<?= htmlspecialchars($config['bottom']['end'] ?? 'indefinite') ?>"
     }
-    return;
-  }
-
-  const confirmMsg = `Your post is scheduled for ${startInput.value} PHT.\n\nPress OK to continue.`;
-  if (window.confirm(confirmMsg)) {
-    form.submit();
-  } else {
-    startInput.focus();
-  }
-}
-
-function previewImage(input, cardImgId, panelImgId, indicatorId) {
-  const file = input.files[0];
-  if (!file) return;
-
-  // Validate size (5MB)
-  if (file.size > 5 * 1024 * 1024) {
-    alert('File is too large. Please choose an image under 5MB.');
-    input.value = '';
-    return;
-  }
-
-  const reader = new FileReader();
-  reader.onload = e => {
-    const src = e.target.result;
-    document.getElementById(cardImgId).src  = src;
-    document.getElementById(panelImgId).src = src;
-
-    const ind = document.getElementById(indicatorId);
-    ind.innerHTML = `<i class="fas fa-check-circle"></i> ${file.name}`;
-    ind.className = 'file-indicator chosen';
   };
-  reader.readAsDataURL(file);
-}
 
-function setLoading(btn) {
-  btn.classList.add('loading');
-  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving…';
-}
+  function nowInPHT() {
+    const now = new Date();
+    const phtNowText = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'Asia/Manila',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    }).format(now);
 
+    const parts = phtNowText.match(/^(\d{2})\/(\d{2})\/(\d{4}),?\s(\d{2}):(\d{2})\s([AP]M)$/i);
+    if (!parts) return '';
+    return `${parts[1]}/${parts[2]}/${parts[3]} ${parts[4]}:${parts[5]} ${parts[6].toLowerCase()}`;
+  }
 
-// Drag-and-drop visual feedback
-document.querySelectorAll('.drop-zone').forEach(dz => {
-  dz.addEventListener('dragover',  e => { e.preventDefault(); dz.classList.add('dragover'); });
-  dz.addEventListener('dragleave', () => dz.classList.remove('dragover'));
-  dz.addEventListener('drop',      e => { e.preventDefault(); dz.classList.remove('dragover'); });
-});
+  function parseHumanDateTimePHT(value) {
+    if (!value || value === 'indefinite') return null;
+    const m = value.trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})\s(\d{1,2}):(\d{2})\s([ap]m)$/i);
+    if (!m) return null;
 
-// Keep Start Posting synced to current PHT every minute until user edits manually.
-const startInputs = document.querySelectorAll('.start-posting-input');
+    const month = parseInt(m[1], 10);
+    const day = parseInt(m[2], 10);
+    const year = parseInt(m[3], 10);
+    let hour = parseInt(m[4], 10);
+    const minute = parseInt(m[5], 10);
+    const meridiem = m[6].toLowerCase();
 
-function refreshStartInputsFromNow() {
-  const nowText = nowInPHT();
-  if (!nowText) return;
+    if (month < 1 || month > 12 || day < 1 || day > 31 || hour < 1 || hour > 12 || minute < 0 || minute > 59) {
+      return null;
+    }
 
-  startInputs.forEach(input => {
-    if (input.dataset.userEdited === '1') return;
-    input.value = nowText;
+    if (meridiem === 'pm' && hour !== 12) hour += 12;
+    if (meridiem === 'am' && hour === 12) hour = 0;
+
+    return new Date(year, month - 1, day, hour, minute, 0);
+  }
+
+  // 1. Reactive Status Indicator & Badges Generator
+  function recalculatePromoState(slot) {
+    const startStr = document.getElementById(`start-${slot}`).value.trim();
+    const isIndefinite = document.getElementById(`indefinite-${slot}`).checked;
+    const endStr = isIndefinite ? 'indefinite' : document.getElementById(`end-${slot}`).value.trim();
+    
+    const now = new Date();
+    const startDate = parseHumanDateTimePHT(startStr);
+    const endDate = isIndefinite ? null : parseHumanDateTimePHT(endStr);
+    
+    let statusText = 'Live';
+    let badgeClass = 'bg-emerald-50 text-emerald-700 border-emerald-200';
+    let dotClass = 'bg-emerald-500 live-dot';
+    
+    if (startDate && now < startDate) {
+      statusText = 'Scheduled';
+      badgeClass = 'bg-amber-50 text-amber-700 border-amber-200';
+      dotClass = 'bg-amber-500';
+    } else if (!isIndefinite && endDate && now > endDate) {
+      statusText = 'Expired';
+      badgeClass = 'bg-slate-100 text-slate-600 border-slate-200';
+      dotClass = 'bg-slate-400';
+    }
+    
+    // Configurator Badge
+    const badgeEl = document.getElementById(`badge-${slot}`);
+    if (badgeEl) {
+      badgeEl.className = `px-2.5 py-1 rounded-full text-[11px] font-bold border flex items-center gap-1.5 ${badgeClass}`;
+      badgeEl.innerHTML = `<span class="w-1.5 h-1.5 rounded-full ${dotClass}"></span> ${statusText}`;
+    }
+    
+    // Live Mock Card Badge
+    const mockBadgeEl = document.getElementById(`mock-status-${slot}`);
+    if (mockBadgeEl) {
+      mockBadgeEl.innerText = statusText;
+      let bg = 'bg-emerald-500';
+      if (statusText === 'Scheduled') bg = 'bg-amber-500';
+      if (statusText === 'Expired') bg = 'bg-slate-500';
+      mockBadgeEl.className = `text-[9px] font-bold px-1.5 py-0.5 rounded ${bg} text-white`;
+    }
+  }
+
+  // Unified Tab Switching Controller
+  function switchSlotTab(slot) {
+    activeTabSlot = slot;
+    
+    // 1. Reset forms visibility
+    document.querySelectorAll('.slot-form-block').forEach(el => el.classList.add('hidden'));
+    document.getElementById(`form-slot-${slot}`).classList.remove('hidden');
+    
+    // 2. Tab button UI toggle
+    document.querySelectorAll('[id^="tab-btn-"]').forEach(btn => {
+      btn.className = "px-4 py-2 rounded-lg text-xs font-bold transition-all duration-200 flex items-center gap-1.5 text-slate-500 hover:text-slate-900";
+    });
+    
+    const activeBtn = document.getElementById(`tab-btn-${slot}`);
+    activeBtn.className = `px-4 py-2 rounded-lg text-xs font-bold transition-all duration-200 flex items-center gap-1.5 shadow-sm bg-white text-slate-800 active-tab-border`;
+    
+    // 3. Highlight Mock Card on the right
+    document.querySelectorAll('[id^="mock-"]').forEach(el => {
+      el.classList.remove('border-amber-400', 'ring-4', 'ring-amber-400/20');
+      el.classList.add('border-slate-200');
+    });
+    
+    const activeMock = document.getElementById(`mock-${slot}`);
+    if (activeMock) {
+      activeMock.classList.remove('border-slate-200');
+      activeMock.classList.add('border-amber-400', 'ring-4', 'ring-amber-400/20');
+    }
+    
+    recalculatePromoState(slot);
+  }
+
+  // Real-time link description sync
+  function syncLiveText(slot, val) {
+    const el = document.getElementById(`mock-link-${slot}`);
+    if (el) {
+      el.innerHTML = `<i class="fas fa-link mr-1"></i>${val.trim() || 'No link set'}`;
+    }
+  }
+
+  // Toggle Expiration input enabled/disabled
+  function toggleIndefinite(slot, checked) {
+    const container = document.getElementById(`end-container-${slot}`);
+    const input = document.getElementById(`end-${slot}`);
+    
+    if (checked) {
+      input.value = 'indefinite';
+      container.style.opacity = '0.5';
+      container.style.pointerEvents = 'none';
+    } else {
+      input.value = nowInPHT();
+      container.style.opacity = '1';
+      container.style.pointerEvents = 'auto';
+    }
+    recalculatePromoState(slot);
+  }
+
+  // Handles drag zone styling during dragover
+  document.querySelectorAll('.dropzone-container').forEach(dz => {
+    dz.addEventListener('dragover',  e => { e.preventDefault(); dz.classList.add('dz-dragover'); });
+    dz.addEventListener('dragleave', () => dz.classList.remove('dz-dragover'));
+    dz.addEventListener('drop',      e => { e.preventDefault(); dz.classList.remove('dz-dragover'); });
   });
-}
 
-startInputs.forEach(input => {
-  input.dataset.userEdited = '0';
-  input.addEventListener('input', () => {
-    input.dataset.userEdited = '1';
-  });
-});
+  // Local File Upload Handlers (Previews immediately)
+  function handleFileSelect(input, slot) {
+    const file = input.files[0];
+    if (!file) return;
 
-refreshStartInputsFromNow();
-setInterval(refreshStartInputsFromNow, 60000);
+    if (file.size > 5 * 1024 * 1024) {
+      alert('File is too large. Maximum allowed size is 5MB.');
+      input.value = '';
+      return;
+    }
 
-// Attach handler to any form that posts to our save endpoint (robust selector)
-document.querySelectorAll('form[action*="save-promo-images.php"]').forEach(form => {
-  form.addEventListener('submit', handleScheduleCheckOnSubmit);
-});
+    const reader = new FileReader();
+    reader.onload = e => {
+      const src = e.target.result;
+      document.getElementById(`preview-${slot}`).style.display = 'block';
+      document.getElementById(`preview-${slot}`).src = src;
+      document.getElementById(`preview-panel-${slot}`).style.display = 'block';
+      document.getElementById(`preview-panel-${slot}`).src = src;
 
-// Dynamic Promo Image Error Handler (Swaps broken images for vector icon)
-function mgenPromoError(img) {
-  const parent = img.parentElement;
-  if (!parent) return;
-  
-  img.style.display = 'none';
-  
-  // Check if placeholder already exists
-  if (parent.querySelector('.mgen-promo-placeholder')) return;
-  
-  const isLarge = parent.classList.contains('main-thumb') || parent.classList.contains('large');
-  const placeholder = document.createElement('div');
-  placeholder.className = 'mgen-promo-placeholder';
-  placeholder.style.display = 'flex';
-  placeholder.style.flexDirection = 'column';
-  placeholder.style.alignItems = 'center';
-  placeholder.style.justifyContent = 'center';
-  placeholder.style.background = '#f8fafc';
-  placeholder.style.border = '1px dashed #cbd5e1';
-  placeholder.style.borderRadius = '8px';
-  placeholder.style.width = '100%';
-  placeholder.style.height = '100%';
-  placeholder.style.minHeight = isLarge ? '120px' : '64px';
-  placeholder.style.color = '#94a3b8';
-  placeholder.style.gap = isLarge ? '6px' : '2px';
-  placeholder.style.padding = '8px';
-  
-  const icon = document.createElement('i');
-  icon.className = 'fas fa-images';
-  icon.style.fontSize = isLarge ? '28px' : '16px';
-  
-  const text = document.createElement('span');
-  text.textContent = 'No Image';
-  text.style.fontSize = isLarge ? '11px' : '9px';
-  text.style.fontWeight = '500';
-  
-  placeholder.appendChild(icon);
-  placeholder.appendChild(text);
-  
-  parent.insertBefore(placeholder, parent.firstChild);
-}
-</script>
+      // Remove existing vector placeholders if any
+      const parentCard = document.getElementById(`preview-${slot}`).parentElement;
+      const parentMock = document.getElementById(`preview-panel-${slot}`).parentElement;
+      parentCard.querySelectorAll('.mgen-promo-placeholder').forEach(el => el.remove());
+      parentMock.querySelectorAll('.mgen-promo-placeholder').forEach(el => el.remove());
 
+      // Show indicator
+      document.getElementById(`filename-${slot}`).innerText = file.name;
+      document.getElementById(`file-select-banner-${slot}`).classList.remove('hidden');
+      document.getElementById(`file-select-banner-${slot}`).classList.add('flex');
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function clearFileSelection(slot) {
+    const form = document.getElementById(`form-slot-${slot}`);
+    const fileInput = form.querySelector('input[type="file"]');
+    if (fileInput) fileInput.value = '';
+    
+    // Restore original saved image
+    const origImage = slotsConfigData[slot].image;
+    document.getElementById(`preview-${slot}`).src = origImage;
+    document.getElementById(`preview-panel-${slot}`).src = origImage;
+    
+    // Hide indicator
+    document.getElementById(`file-select-banner-${slot}`).classList.add('hidden');
+    document.getElementById(`file-select-banner-${slot}`).classList.remove('flex');
+  }
+
+  // ===============================================
+  // CALENDAR WIDGET IMPLEMENTATION
+  // ===============================================
+  
+  function triggerCalendarPicker(inputId) {
+    activeDatePickerInputId = inputId;
+    const input = document.getElementById(inputId);
+    const popover = document.getElementById('promo-datepicker-popover');
+    
+    // Parse current date
+    const parsed = parseHumanDateTimePHT(input.value);
+    pickerSelectedDate = parsed || new Date();
+    pickerCurrentMonth = pickerSelectedDate.getMonth();
+    pickerCurrentYear = pickerSelectedDate.getFullYear();
+    
+    // Populate selectors
+    let h = pickerSelectedDate.getHours();
+    let m = pickerSelectedDate.getMinutes();
+    let meridiem = 'am';
+    
+    if (h >= 12) {
+      meridiem = 'pm';
+      if (h > 12) h -= 12;
+    }
+    if (h === 0) h = 12;
+    
+    // Round minutes to closest 5
+    m = Math.round(m / 5) * 5;
+    if (m >= 60) m = 55;
+    
+    document.getElementById('cal-hour-select').value = String(h).padStart(2, '0');
+    document.getElementById('cal-minute-select').value = String(m).padStart(2, '0');
+    document.getElementById('cal-meridiem-select').value = meridiem;
+
+    // Render calendar grid
+    renderCalendarUI();
+
+    // Position popover
+    const rect = input.getBoundingClientRect();
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+    
+    popover.style.top = `${rect.bottom + scrollTop + 6}px`;
+    popover.style.left = `${rect.left + scrollLeft}px`;
+    popover.classList.remove('hidden');
+    
+    // Click outside handler
+    setTimeout(() => {
+      document.addEventListener('click', closeOnOutsideClick);
+    }, 10);
+  }
+
+  function renderCalendarUI() {
+    const grid = document.getElementById('cal-days-grid');
+    grid.innerHTML = '';
+
+    const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    document.getElementById('cal-month-year-label').innerText = `${monthNames[pickerCurrentMonth]} ${pickerCurrentYear}`;
+
+    // First day of current month
+    const firstDay = new Date(pickerCurrentYear, pickerCurrentMonth, 1).getDay();
+    // Total days in current month
+    const totalDays = new Date(pickerCurrentYear, pickerCurrentMonth + 1, 0).getDate();
+    // Total days in previous month
+    const prevMonthDays = new Date(pickerCurrentYear, pickerCurrentMonth, 0).getDate();
+
+    // 1. Render previous month padded days
+    for (let x = firstDay; x > 0; x--) {
+      const dayNum = prevMonthDays - x + 1;
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'cal-day p-2 text-center rounded-lg text-slate-300 pointer-events-none';
+      btn.innerText = dayNum;
+      grid.appendChild(btn);
+    }
+
+    // 2. Render current month days
+    const today = new Date();
+    for (let d = 1; d <= totalDays; d++) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.innerText = d;
+      
+      let classes = 'cal-day p-2 text-center rounded-lg font-semibold transition ';
+      
+      // Highlight selected
+      if (pickerSelectedDate.getDate() === d && pickerSelectedDate.getMonth() === pickerCurrentMonth && pickerSelectedDate.getFullYear() === pickerCurrentYear) {
+        classes += 'selected bg-slate-900 text-white ';
+      } else if (today.getDate() === d && today.getMonth() === pickerCurrentMonth && today.getFullYear() === pickerCurrentYear) {
+        classes += 'today border border-amber-500 text-amber-600 ';
+      } else {
+        classes += 'text-slate-700 hover:bg-slate-100 ';
+      }
+
+      btn.className = classes;
+      btn.onclick = () => {
+        pickerSelectedDate.setDate(d);
+        pickerSelectedDate.setMonth(pickerCurrentMonth);
+        pickerSelectedDate.setYear(pickerCurrentYear);
+        renderCalendarUI();
+      };
+      grid.appendChild(btn);
+    }
+  }
+
+  function navigateCalendarMonth(dir) {
+    pickerCurrentMonth += dir;
+    if (pickerCurrentMonth > 11) {
+      pickerCurrentMonth = 0;
+      pickerCurrentYear++;
+    } else if (pickerCurrentMonth < 0) {
+      pickerCurrentMonth = 11;
+      pickerCurrentYear--;
+    }
+    renderCalendarUI();
+  }
+
+  function confirmCalendarSelection() {
+    let hour = parseInt(document.getElementById('cal-hour-select').value, 10);
+    const min = document.getElementById('cal-minute-select').value;
+    const meridiem = document.getElementById('cal-meridiem-select').value;
+    
+    // Format to PHT human string: MM/DD/YYYY hh:mm am/pm
+    const m = String(pickerSelectedDate.getMonth() + 1).padStart(2, '0');
+    const d = String(pickerSelectedDate.getDate()).padStart(2, '0');
+    const y = pickerSelectedDate.getFullYear();
+    
+    const formatted = `${m}/${d}/${y} ${String(hour).padStart(2, '0')}:${min} ${meridiem}`;
+    
+    if (activeDatePickerInputId) {
+      document.getElementById(activeDatePickerInputId).value = formatted;
+      recalculatePromoState(activeDatePickerInputId.split('-')[1]);
+    }
+    closeCalendarPicker();
+  }
+
+  function closeCalendarPicker() {
+    document.getElementById('promo-datepicker-popover').classList.add('hidden');
+    document.removeEventListener('click', closeOnOutsideClick);
+  }
+
+  function closeOnOutsideClick(e) {
+    const popover = document.getElementById('promo-datepicker-popover');
+    const activeInput = document.getElementById(activeDatePickerInputId);
+    
+    if (!popover.contains(e.target) && !activeInput.contains(e.target)) {
+      closeCalendarPicker();
+    }
+  }
+
+  // Pre-load all status badges
+  setTimeout(() => {
+    switchSlotTab('main');
+    recalculatePromoState('main');
+    recalculatePromoState('top');
+    recalculatePromoState('bottom');
+  }, 100);
+
+  // Dynamic Promo Image Error Handler (Swaps broken images for vector icon)
+  function mgenPromoError(img) {
+    const parent = img.parentElement;
+    if (!parent) return;
+    
+    img.style.display = 'none';
+    
+    if (parent.querySelector('.mgen-promo-placeholder')) return;
+    
+    const placeholder = document.createElement('div');
+    placeholder.className = 'mgen-promo-placeholder flex flex-col items-center justify-center bg-slate-100/50 border border-dashed border-slate-300 rounded-xl w-full h-full text-slate-400 gap-1.5 p-4';
+    placeholder.innerHTML = `<i class="fas fa-images text-xl"></i><span class="text-[10px] font-bold uppercase tracking-wider">No Image Set</span>`;
+    
+    parent.insertBefore(placeholder, parent.firstChild);
+  }
+  </script>
 </div><!-- /promo-images -->

@@ -1221,6 +1221,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
+        /* ======= GLOBAL BODY STYLES ======= */
+        body {
+            margin-right: 0;
+            overflow-x: hidden;
+        }
+        
         /* ======= MANUAL ORDER MODAL STYLES ======= */
         .manual-order-overlay {
             display: none;
@@ -1920,6 +1926,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 <span>Promo Banners</span>
             </div>
 
+            <div class="menu-item" onclick="showPage('portfolio', 'Project Portfolio')" data-tooltip="Project Portfolio">
+                <i class="fas fa-solar-panel"></i>
+                <span>Project Portfolio</span>
+            </div>
 
             <div class="menu-label">SALES & TRANSACTIONS</div>
             <div class="menu-item" onclick="showPage('tracking', 'Tracking')" data-tooltip="Tracking">
@@ -4165,6 +4175,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
 
 
             <?php include_once __DIR__ . '/includes/staff-promo-images.php'; ?>
+            <?php include_once __DIR__ . '/includes/staff-portfolio-management.php'; ?>
 
             <div id="tracking" class="page-content">
                 <div class="tracking-page-container">
@@ -4650,48 +4661,67 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                                             <i class="fas fa-satellite-dish mr-2"></i> Analyze Roof Potential via Google Solar
                                         </button>
                                         
-                                        <div id="qb_solar_analysis_container" class="hidden mt-3 border border-slate-200 rounded-lg overflow-hidden bg-white shadow-inner flex flex-col md:flex-row">
-                                            <div class="md:w-1/2 bg-slate-100 flex items-center justify-center p-0 relative min-h-[150px]">
-                                                <div id="qb_solar_loading" class="absolute inset-0 flex flex-col items-center justify-center bg-slate-800/80 text-white z-10 transition-opacity duration-300">
-                                                    <i class="fas fa-circle-notch fa-spin text-2xl mb-2 text-blue-400"></i>
-                                                    <span class="text-xs font-semibold tracking-wider">CONNECTING TO GOOGLE SOLAR API...</span>
+                                        <div id="qb_solar_analysis_container" class="hidden mt-4 border border-slate-200 rounded-xl overflow-hidden bg-white shadow-md flex flex-col">
+                                            <!-- Map Container -->
+                                            <div class="w-full bg-slate-100 relative" style="min-height: 350px;">
+                                                <div id="qb_solar_loading" class="absolute inset-0 flex flex-col items-center justify-center bg-slate-800 text-white z-10 transition-opacity duration-300" style="background-color: rgba(30, 41, 59, 0.8);">
+                                                    <i class="fas fa-circle-notch fa-spin text-3xl mb-3 text-blue-400"></i>
+                                                    <span class="text-xs font-bold tracking-widest text-slate-200 uppercase">Connecting to Google Maps...</span>
                                                 </div>
-                                                <img src="../../assets/img/mock_solar_roof_3d.png" alt="Google Solar 3D Map" class="w-full h-full object-cover" style="min-height: 180px;">
-                                                <div class="absolute top-2 left-2 bg-black/60 text-white text-[10px] px-2 py-1 rounded backdrop-blur-sm flex items-center">
-                                                    <i class="fab fa-google mr-1"></i> Project Sunroof Data (3D Enhanced)
+                                                <div id="qb_solar_map_canvas" class="w-full h-full absolute inset-0"></div>
+                                                
+                                                <!-- Map Floating UI -->
+                                                <div class="absolute top-3 left-3 text-slate-800 text-xs font-bold px-3 py-2 rounded-md shadow-sm flex items-center z-10 border border-slate-200" style="background-color: rgba(255, 255, 255, 0.95);">
+                                                    <i class="fab fa-google text-blue-600 mr-2 text-sm"></i> <span>Satellite Roof View</span>
+                                                </div>
+                                                
+                                                <div class="hidden" id="qb_solar_heatmap_toggle_container" style="position: absolute; bottom: 12px; right: 12px; z-index: 999;">
+                                                    <button type="button" onclick="toggleSolarHeatmap()" class="text-white text-xs font-bold px-4 py-2 rounded-lg shadow transition-all flex items-center" style="background-color: #f59e0b; cursor: pointer; border: none;">
+                                                        <i class="fas fa-fire mr-2"></i> <span id="qb_heatmap_toggle_text">Show Solar Heatmap</span>
+                                                    </button>
                                                 </div>
                                             </div>
-                                            <div class="md:w-1/2 p-4 flex flex-col justify-center">
-                                                <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 m-0">Site Solar Potential</h4>
+                                            
+                                            <!-- Stats Container -->
+                                            <div class="w-full bg-slate-50 border-t border-slate-200 p-4">
+                                                <div class="flex items-center justify-between mb-3 px-1">
+                                                    <h4 class="text-xs font-bold text-slate-500 uppercase tracking-widest m-0 flex items-center">
+                                                        <i class="fas fa-chart-pie mr-2 text-blue-400"></i> Site Solar Potential
+                                                    </h4>
+                                                </div>
                                                 
-                                                <div class="space-y-3">
-                                                    <div class="flex items-start">
-                                                        <div class="bg-amber-100 text-amber-600 w-6 h-6 rounded-full flex items-center justify-center shrink-0 mt-0.5 mr-2">
-                                                            <i class="fas fa-sun text-xs"></i>
+                                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                                                    <!-- Stat Card 1 -->
+                                                    <div class="bg-white rounded-lg border border-slate-200 p-3 shadow-sm flex items-center transition-all hover:shadow-md hover:border-amber-300">
+                                                        <div class="bg-amber-100 text-amber-600 rounded-full flex items-center justify-center shrink-0 mr-3 shadow-inner" style="width: 40px; height: 40px;">
+                                                            <i class="fas fa-sun text-lg"></i>
                                                         </div>
-                                                        <div>
-                                                            <div class="text-[10px] text-slate-500 font-medium leading-none mb-1">Max Annual Sunlight</div>
-                                                            <div class="text-sm font-bold text-slate-800 leading-none">1,650 kWh/m² /yr</div>
-                                                        </div>
-                                                    </div>
-                                                    
-                                                    <div class="flex items-start">
-                                                        <div class="bg-blue-100 text-blue-600 w-6 h-6 rounded-full flex items-center justify-center shrink-0 mt-0.5 mr-2">
-                                                            <i class="fas fa-ruler-combined text-xs"></i>
-                                                        </div>
-                                                        <div>
-                                                            <div class="text-[10px] text-slate-500 font-medium leading-none mb-1">Usable Roof Area</div>
-                                                            <div class="text-sm font-bold text-slate-800 leading-none">84 m² available for panels</div>
+                                                        <div class="flex flex-col">
+                                                            <div class="text-xs text-slate-400 font-bold tracking-wide uppercase mb-1">Max Sunlight</div>
+                                                            <div id="solar_max_sunlight" class="text-sm font-bold text-slate-700 leading-normal">...</div>
                                                         </div>
                                                     </div>
                                                     
-                                                    <div class="flex items-start">
-                                                        <div class="bg-emerald-100 text-emerald-600 w-6 h-6 rounded-full flex items-center justify-center shrink-0 mt-0.5 mr-2">
-                                                            <i class="fas fa-check text-xs"></i>
+                                                    <!-- Stat Card 2 -->
+                                                    <div class="bg-white rounded-lg border border-slate-200 p-3 shadow-sm flex items-center transition-all hover:shadow-md hover:border-blue-300">
+                                                        <div class="bg-blue-100 text-blue-600 rounded-full flex items-center justify-center shrink-0 mr-3 shadow-inner" style="width: 40px; height: 40px;">
+                                                            <i class="fas fa-ruler-combined text-lg"></i>
                                                         </div>
-                                                        <div>
-                                                            <div class="text-[10px] text-slate-500 font-medium leading-none mb-1">Shading Risk Level</div>
-                                                            <div class="text-sm font-bold text-emerald-700 leading-none">Low Shading (Highly Optimal)</div>
+                                                        <div class="flex flex-col">
+                                                            <div class="text-xs text-slate-400 font-bold tracking-wide uppercase mb-1">Usable Roof Area</div>
+                                                            <div id="solar_roof_area" class="text-sm font-bold text-slate-700 leading-normal">...</div>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <!-- Stat Card 3 -->
+                                                    <div class="bg-white rounded-lg border border-emerald-200 p-3 shadow-sm flex items-center transition-all hover:shadow-md hover:border-emerald-400 relative overflow-hidden">
+                                                        <div class="absolute right-0 top-0 bottom-0 bg-emerald-400" style="width: 4px;"></div>
+                                                        <div class="bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center shrink-0 mr-3 shadow-inner" style="width: 40px; height: 40px;">
+                                                            <i class="fas fa-solar-panel text-lg"></i>
+                                                        </div>
+                                                        <div class="flex flex-col">
+                                                            <div class="text-xs text-slate-400 font-bold tracking-wide uppercase mb-1">Max Panels</div>
+                                                            <div id="solar_max_panels" class="text-base font-bold text-emerald-600 leading-normal">...</div>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -4966,22 +4996,376 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                         }
                     }
 
+                    let solarMap;
+                    let solarMarker;
+                    let solarHeatmapOverlay = null;
+                    let heatmapVisible = false;
+                    let currentFluxUrl = null;
+                    let currentMaskUrl = null;
+                    let currentSolarBounds = null;
+
+                    function hslToRgb(h, s, l) {
+                        let r, g, b;
+                        if (s === 0) {
+                            r = g = b = l; 
+                        } else {
+                            const hue2rgb = (p, q, t) => {
+                                if (t < 0) t += 1;
+                                if (t > 1) t -= 1;
+                                if (t < 1/6) return p + (q - p) * 6 * t;
+                                if (t < 1/2) return q;
+                                if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+                                return p;
+                            };
+                            const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+                            const p = 2 * l - q;
+                            r = hue2rgb(p, q, h + 1/3);
+                            g = hue2rgb(p, q, h);
+                            b = hue2rgb(p, q, h - 1/3);
+                        }
+                        return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
+                    }
+
+                    function mercatorToLatLng(x, y) {
+                        const R = 6378137.0;
+                        const lng = (x / R) * (180.0 / Math.PI);
+                        const lat = (2.0 * Math.atan(Math.exp(y / R)) - Math.PI / 2.0) * (180.0 / Math.PI);
+                        return { lat, lng };
+                    }
+
+                    async function renderSolarHeatmap(fluxUrl, maskUrl, map, apiBounds) {
+                        try {
+                            const GeoTIFFObj = window.GeoTIFF || window.geotiff;
+                            if (typeof GeoTIFFObj === 'undefined') {
+                                console.error("GeoTIFF library is not loaded.");
+                                alert("Failed to render heatmap: geotiff.js is not loaded properly.");
+                                return null;
+                            }
+
+                            // 1. Fetch GeoTIFF files
+                            const [fluxRes, maskRes] = await Promise.all([
+                                fetch(fluxUrl),
+                                fetch(maskUrl)
+                            ]);
+
+                            if (!fluxRes.ok || !maskRes.ok) {
+                                console.error("Failed to fetch GeoTIFF layers.");
+                                alert("Failed to fetch Google Solar API data layers.");
+                                return null;
+                            }
+
+                            const fluxBuffer = await fluxRes.arrayBuffer();
+                            const maskBuffer = await maskRes.arrayBuffer();
+
+                            // 2. Parse the GeoTIFF files
+                            const tiffFlux = await GeoTIFFObj.fromArrayBuffer(fluxBuffer);
+                            const imageFlux = await tiffFlux.getImage();
+                            const fluxRaster = await imageFlux.readRasters();
+                            const fluxData = fluxRaster[0];
+                            const width = imageFlux.getWidth();
+                            const height = imageFlux.getHeight();
+
+                            const tiffMask = await GeoTIFFObj.fromArrayBuffer(maskBuffer);
+                            const imageMask = await tiffMask.getImage();
+                            const maskRaster = await imageMask.readRasters();
+                            const maskData = maskRaster[0];
+
+                            // 3. Convert raster values to colored canvas overlay
+                            const canvas = document.createElement('canvas');
+                            canvas.width = width;
+                            canvas.height = height;
+                            const ctx = canvas.getContext('2d');
+                            const imgData = ctx.createImageData(width, height);
+
+                            let hasActiveMask = false;
+                            if (maskData) {
+                                for (let i = 0; i < maskData.length; i++) {
+                                    if (maskData[i] > 0) {
+                                        hasActiveMask = true;
+                                        break;
+                                    }
+                                }
+                            }
+
+                            for (let i = 0; i < fluxData.length; i++) {
+                                const val = fluxData[i];
+                                const m = (maskData && hasActiveMask) ? maskData[i] : 1;
+                                const idx = i * 4;
+
+                                if (m === 0 || val <= 0 || val === -9999) {
+                                    imgData.data[idx + 3] = 0; // Transparent for non-roof or invalid data
+                                } else {
+                                    // User's specific heatmap coloring (Red -> Yellow)
+                                    // Scale val down slightly to prevent pure yellow overflow, wrap correctly
+                                    imgData.data[idx] = 255;       // Red
+                                    imgData.data[idx + 1] = Math.min(255, val / 4); // Green adjustment
+                                    imgData.data[idx + 2] = 0;       // Blue
+                                    imgData.data[idx + 3] = 180;     // Opacity/Alpha
+                                }
+                            }
+                            ctx.putImageData(imgData, 0, 0);
+
+                            // 4. Calculate Bounding Box
+                            let bounds;
+                            if (apiBounds && apiBounds.sw && apiBounds.ne) {
+                                // Attach to the precise pinpointed bounds provided by the API search
+                                bounds = new google.maps.LatLngBounds(
+                                    new google.maps.LatLng(apiBounds.sw.latitude, apiBounds.sw.longitude),
+                                    new google.maps.LatLng(apiBounds.ne.latitude, apiBounds.ne.longitude)
+                                );
+                            } else {
+                                // Fallback to GeoTIFF extraction
+                                const bbox = imageFlux.getBoundingBox(); 
+                                if (Math.abs(bbox[0]) > 180 || Math.abs(bbox[1]) > 90) {
+                                    const sw = mercatorToLatLng(bbox[0], Math.min(bbox[1], bbox[3]));
+                                    const ne = mercatorToLatLng(bbox[2], Math.max(bbox[1], bbox[3]));
+                                    bounds = new google.maps.LatLngBounds(
+                                        new google.maps.LatLng(sw.lat, sw.lng),
+                                        new google.maps.LatLng(ne.lat, ne.lng)
+                                    );
+                                } else {
+                                    bounds = new google.maps.LatLngBounds(
+                                        new google.maps.LatLng(Math.min(bbox[1], bbox[3]), Math.min(bbox[0], bbox[2])),
+                                        new google.maps.LatLng(Math.max(bbox[1], bbox[3]), Math.max(bbox[0], bbox[2]))
+                                    );
+                                }
+                            }
+
+                            // 5. Create Ground Overlay
+                            const overlay = new google.maps.GroundOverlay(canvas.toDataURL(), bounds);
+                            overlay.setMap(map);
+                            return overlay;
+                        } catch (e) {
+                            console.error('Heatmap generation failed:', e);
+                            alert('Failed to generate heatmap layers: ' + e.message);
+                            return null;
+                        }
+                    }
+
+                    async function toggleSolarHeatmap() {
+                        const toggleText = document.getElementById('qb_heatmap_toggle_text');
+                        const toggleBtn = document.getElementById('qb_solar_heatmap_toggle_container').querySelector('button');
+
+                        if (heatmapVisible) {
+                            // Hide heatmap
+                            if (solarHeatmapOverlay) {
+                                solarHeatmapOverlay.setMap(null);
+                            }
+                            heatmapVisible = false;
+                            toggleText.textContent = "Show Solar Heatmap";
+                            toggleBtn.style.backgroundColor = "#f59e0b"; // amber-500
+                        } else {
+                            // Show heatmap
+                            if (!solarHeatmapOverlay && currentFluxUrl && currentMaskUrl) {
+                                toggleText.textContent = "Loading Heatmap...";
+                                solarHeatmapOverlay = await renderSolarHeatmap(currentFluxUrl, currentMaskUrl, solarMap, currentSolarBounds);
+                            }
+                            
+                            if (solarHeatmapOverlay) {
+                                solarHeatmapOverlay.setMap(solarMap);
+                                heatmapVisible = true;
+                                toggleText.textContent = "Hide Solar Heatmap";
+                                toggleBtn.style.backgroundColor = "#e11d48"; // rose-600
+                            } else {
+                                toggleText.textContent = "Show Solar Heatmap";
+                                alert("Failed to render heatmap.");
+                            }
+                        }
+                    }
+
                     function triggerSolarAnalysis() {
-                        const btn = document.getElementById('qb_solar_trigger_btn');
-                        if (btn.classList.contains('cursor-not-allowed')) return;
-                        
                         const container = document.getElementById('qb_solar_analysis_container');
                         container.classList.remove('hidden');
                         
-                        // Simulate API loading
-                        setTimeout(() => {
+                        const address = document.getElementById('qb_address').value;
+                        if (!address || address.length < 5) return;
+
+                        // Hide heatmap toggle initially until new layers are loaded
+                        document.getElementById('qb_solar_heatmap_toggle_container').classList.add('hidden');
+                        if (solarHeatmapOverlay) {
+                            solarHeatmapOverlay.setMap(null);
+                            solarHeatmapOverlay = null;
+                        }
+                        heatmapVisible = false;
+                        document.getElementById('qb_heatmap_toggle_text').textContent = "Show Solar Heatmap";
+
+                        document.getElementById('qb_solar_loading').style.opacity = '1';
+                        document.getElementById('qb_solar_loading').classList.remove('hidden');
+
+                        if (typeof google === 'undefined' || typeof google.maps === 'undefined') {
+                            alert("Google Maps API is not loaded yet or API key is invalid.");
+                            document.getElementById('qb_solar_loading').classList.add('hidden');
+                            return;
+                        }
+
+                        const geocoder = new google.maps.Geocoder();
+                        geocoder.geocode({ 'address': address }, function(results, status) {
                             document.getElementById('qb_solar_loading').style.opacity = '0';
-                            setTimeout(() => {
-                                document.getElementById('qb_solar_loading').classList.add('hidden');
-                                document.getElementById('prev_solar_score_row').classList.remove('hidden'); // Show score in preview
-                            }, 300);
-                        }, 1500);
+                            setTimeout(() => { document.getElementById('qb_solar_loading').classList.add('hidden'); }, 300);
+                            
+                            if (status === 'OK') {
+                                const location = results[0].geometry.location;
+                                
+                                if (!solarMap) {
+                                    solarMap = new google.maps.Map(document.getElementById('qb_solar_map_canvas'), {
+                                        zoom: 20,
+                                        center: location,
+                                        mapTypeId: 'satellite',
+                                        tilt: 0
+                                    });
+                                    solarMarker = new google.maps.Marker({
+                                        map: solarMap,
+                                        position: location
+                                    });
+                                } else {
+                                    solarMap.setCenter(location);
+                                    solarMarker.setPosition(location);
+                                }
+                                
+                                // Fetch data from Google Solar API
+                                const scriptTag = document.querySelector('script[src*="maps.googleapis.com"]');
+                                let apiKey = 'AIzaSyDx7Kl-QcYnjjQrIbVxQxPQOA-peYn2UoU';
+                                if (scriptTag) {
+                                    const match = scriptTag.src.match(/key=([^&]+)/);
+                                    if (match) apiKey = match[1];
+                                }
+                                
+                                // Fetch building insights
+                                fetch(`https://solar.googleapis.com/v1/buildingInsights:findClosest?location.latitude=${location.lat()}&location.longitude=${location.lng()}&requiredQuality=LOW&key=${apiKey}`)
+                                    .then(response => {
+                                        if (!response.ok) {
+                                            return response.json().then(errData => { throw errData; }).catch(() => { throw new Error('HTTP ' + response.status); });
+                                        }
+                                        return response.json();
+                                    })
+                                    .then(data => {
+                                        if (data.solarPotential) {
+                                            currentSolarBounds = data.boundingBox;
+                                            const potential = data.solarPotential;
+                                            document.getElementById('solar_max_sunlight').textContent = Math.round(potential.maxSunshineHoursPerYear || 0) + ' hours/yr';
+                                            
+                                            let roofArea = 'N/A';
+                                            if (potential.wholeRoofStats && potential.wholeRoofStats.areaMeters2) {
+                                                roofArea = Math.round(potential.wholeRoofStats.areaMeters2) + ' m²';
+                                            }
+                                            document.getElementById('solar_roof_area').textContent = roofArea;
+                                            
+                                            document.getElementById('solar_max_panels').textContent = (potential.maxArrayPanelsCount || 0) + ' panels';
+                                            
+                                            // Update maxKw based on real data
+                                            const estKw = ((potential.maxArrayPanelsCount || 0) * 0.4).toFixed(1); // Assuming 400W panels
+                                            document.getElementById('prev_solar_score_row').classList.remove('hidden');
+                                            
+                                            // Try to fetch Data Layers for Heatmap
+                                            return fetch(`https://solar.googleapis.com/v1/dataLayers:get?location.latitude=${location.lat()}&location.longitude=${location.lng()}&radiusMeters=20&requiredQuality=LOW&key=${apiKey}`);
+                                        } else {
+                                            document.getElementById('solar_max_sunlight').textContent = 'No Solar data found.';
+                                            document.getElementById('solar_roof_area').textContent = '--';
+                                            document.getElementById('solar_max_panels').textContent = '--';
+                                            return null;
+                                        }
+                                    })
+                                    .then(dlResponse => {
+                                        if (!dlResponse) return;
+                                        if (!dlResponse.ok) return; // Silent ignore, just don't show heatmap toggle
+                                        return dlResponse.json();
+                                    })
+                                    .then(dlData => {
+                                        if (dlData && dlData.annualFluxUrl && dlData.maskUrl) {
+                                            // Append key safely to prevent malformed URLs or 403 Forbidden
+                                            currentFluxUrl = dlData.annualFluxUrl + (dlData.annualFluxUrl.includes('?') ? '&' : '?') + `key=${apiKey}`;
+                                            currentMaskUrl = dlData.maskUrl + (dlData.maskUrl.includes('?') ? '&' : '?') + `key=${apiKey}`;
+                                            // Show Heatmap Toggle button
+                                            document.getElementById('qb_solar_heatmap_toggle_container').classList.remove('hidden');
+                                            
+                                            // Auto-render heatmap layers
+                                            heatmapVisible = false;
+                                            if (solarHeatmapOverlay) {
+                                                solarHeatmapOverlay.setMap(null);
+                                                solarHeatmapOverlay = null;
+                                            }
+                                            toggleSolarHeatmap();
+                                        }
+                                    })
+                                    .catch(err => {
+                                        console.error('Error fetching Solar API:', err);
+                                        
+                                        const sunlightEl = document.getElementById('solar_max_sunlight');
+                                        sunlightEl.classList.add('text-rose-500');
+                                        
+                                        if (err && err.error && err.error.code === 404) {
+                                            sunlightEl.textContent = 'Location not covered by Solar API';
+                                        } else if (err && err.error && err.error.message) {
+                                            sunlightEl.textContent = err.error.message;
+                                            sunlightEl.style.fontSize = '0.70rem';
+                                        } else if (err instanceof TypeError) {
+                                            sunlightEl.textContent = 'Network/CORS Error (Check API restrictions)';
+                                            sunlightEl.style.fontSize = '0.70rem';
+                                        } else {
+                                            sunlightEl.textContent = err.toString();
+                                            sunlightEl.style.fontSize = '0.70rem';
+                                        }
+                                        
+                                        document.getElementById('solar_roof_area').textContent = 'Error';
+                                        document.getElementById('solar_max_panels').textContent = 'Error';
+                                    });
+                            } else {
+                                alert('Could not find this address on Google Maps: ' + status);
+                            }
+                        });
                     }
+
+                    // Google Places Autocomplete and Debounced manual typing trigger
+                    let addressDebounceTimeout = null;
+
+                    function initAutocomplete() {
+                        const input = document.getElementById('qb_address');
+                        if (!input) return;
+                        
+                        if (typeof google === 'undefined' || typeof google.maps === 'undefined' || typeof google.maps.places === 'undefined') {
+                            setTimeout(initAutocomplete, 500);
+                            return;
+                        }
+                        
+                        const autocomplete = new google.maps.places.Autocomplete(input, {
+                            types: ['geocode', 'address']
+                        });
+                        
+                        autocomplete.addListener('place_changed', function() {
+                            const place = autocomplete.getPlace();
+                            if (!place.geometry) return;
+                            
+                            // Immediately run preview update and solar analysis on select
+                            updatePreview();
+                            triggerSolarAnalysis();
+                        });
+
+                        // Set up typing debounce
+                        input.addEventListener('input', function() {
+                            const val = this.value;
+                            
+                            // Enable/disable trigger button UI state
+                            const btn = document.getElementById('qb_solar_trigger_btn');
+                            if (val.length > 5) {
+                                btn.classList.remove('opacity-50', 'cursor-not-allowed');
+                            } else {
+                                btn.classList.add('opacity-50', 'cursor-not-allowed');
+                            }
+                            
+                            // Debounce for 1.2s to automatically analyze typed address
+                            clearTimeout(addressDebounceTimeout);
+                            if (val.length > 10) {
+                                addressDebounceTimeout = setTimeout(() => {
+                                    if (document.getElementById('qb_address').value === val) {
+                                        triggerSolarAnalysis();
+                                    }
+                                }, 1200);
+                            }
+                        });
+                    }
+
+                    // Run Autocomplete initializer
+                    initAutocomplete();
 
                     function validateCapacity() {
                         const kwInput = document.getElementById('qb_kw');
@@ -11154,15 +11538,48 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
 
                     <!-- Sales Channel & Product Select -->
                     <div class="mo-grid-2">
-                        <div class="mo-form-group">
+                        <div class="mo-form-group relative" id="salesChannelDropdownContainer">
                             <label for="moSalesChannel">Sales Channel *</label>
-                            <select id="moSalesChannel" required>
+                            
+                            <!-- Hidden actual select for form logic -->
+                            <select id="moSalesChannel" required style="display: none;">
                                 <option value="Website">Website (Default)</option>
                                 <option value="Facebook">Facebook</option>
+                                <option value="Shopee">Shopee</option>
                                 <option value="Phone Call">Phone Call</option>
                                 <option value="Walk-in">Walk-in</option>
                                 <option value="Viber">Viber</option>
                             </select>
+                            
+                            <!-- Custom UI Trigger -->
+                            <div id="scCustomTrigger" tabindex="0" onblur="setTimeout(function(){ document.getElementById('scCustomOptions').classList.add('hidden'); }, 200);" onclick="document.getElementById('scCustomOptions').classList.toggle('hidden');" style="border: 1px solid #cbd5e1; padding: 0.5rem 0.75rem; border-radius: 0.375rem; cursor: pointer; display: flex; align-items: center; justify-content: space-between; background-color: #fff; transition: border-color 0.2s; outline: none;">
+                                <div id="scSelectedDisplay" style="display: flex; align-items: center; font-size: 0.875rem; color: #334155; pointer-events: none;">
+                                    <i class="fas fa-globe text-blue-500 mr-2 text-center" style="width: 1.25rem;"></i> Website (Default)
+                                </div>
+                                <i class="fas fa-chevron-down text-slate-400" style="font-size: 0.75rem; pointer-events: none;"></i>
+                            </div>
+                            
+                            <!-- Custom UI Options -->
+                            <div id="scCustomOptions" class="hidden" style="position: absolute; top: 100%; left: 0; right: 0; margin-top: 4px; background-color: #fff; border: 1px solid #e2e8f0; border-radius: 0.375rem; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); z-index: 9999; overflow: hidden;">
+                                <div onclick="document.getElementById('moSalesChannel').value='Website'; document.getElementById('scSelectedDisplay').innerHTML=this.innerHTML; document.getElementById('scCustomOptions').classList.add('hidden');" onmouseover="this.style.backgroundColor='#eff6ff'" onmouseout="this.style.backgroundColor='transparent'" style="padding: 0.6rem 0.75rem; cursor: pointer; display: flex; align-items: center; font-size: 0.875rem; color: #334155; border-bottom: 1px solid #f1f5f9; transition: background-color 0.2s;">
+                                    <i class="fas fa-globe text-blue-500 mr-2 text-center" style="width: 1.25rem; font-size: 1.1rem;"></i> Website (Default)
+                                </div>
+                                <div onclick="document.getElementById('moSalesChannel').value='Facebook'; document.getElementById('scSelectedDisplay').innerHTML=this.innerHTML; document.getElementById('scCustomOptions').classList.add('hidden');" onmouseover="this.style.backgroundColor='#eff6ff'" onmouseout="this.style.backgroundColor='transparent'" style="padding: 0.6rem 0.75rem; cursor: pointer; display: flex; align-items: center; font-size: 0.875rem; color: #334155; border-bottom: 1px solid #f1f5f9; transition: background-color 0.2s;">
+                                    <i class="fab fa-facebook text-blue-600 mr-2 text-center" style="width: 1.25rem; font-size: 1.1rem;"></i> Facebook
+                                </div>
+                                <div onclick="document.getElementById('moSalesChannel').value='Shopee'; document.getElementById('scSelectedDisplay').innerHTML=this.innerHTML; document.getElementById('scCustomOptions').classList.add('hidden');" onmouseover="this.style.backgroundColor='#eff6ff'" onmouseout="this.style.backgroundColor='transparent'" style="padding: 0.6rem 0.75rem; cursor: pointer; display: flex; align-items: center; font-size: 0.875rem; color: #334155; border-bottom: 1px solid #f1f5f9; transition: background-color 0.2s;">
+                                    <i class="fas fa-shopping-bag text-orange-500 mr-2 text-center" style="width: 1.25rem; font-size: 1.1rem;"></i> Shopee
+                                </div>
+                                <div onclick="document.getElementById('moSalesChannel').value='Phone Call'; document.getElementById('scSelectedDisplay').innerHTML=this.innerHTML; document.getElementById('scCustomOptions').classList.add('hidden');" onmouseover="this.style.backgroundColor='#eff6ff'" onmouseout="this.style.backgroundColor='transparent'" style="padding: 0.6rem 0.75rem; cursor: pointer; display: flex; align-items: center; font-size: 0.875rem; color: #334155; border-bottom: 1px solid #f1f5f9; transition: background-color 0.2s;">
+                                    <i class="fas fa-phone-alt text-emerald-500 mr-2 text-center" style="width: 1.25rem; font-size: 1.1rem;"></i> Phone Call
+                                </div>
+                                <div onclick="document.getElementById('moSalesChannel').value='Walk-in'; document.getElementById('scSelectedDisplay').innerHTML=this.innerHTML; document.getElementById('scCustomOptions').classList.add('hidden');" onmouseover="this.style.backgroundColor='#eff6ff'" onmouseout="this.style.backgroundColor='transparent'" style="padding: 0.6rem 0.75rem; cursor: pointer; display: flex; align-items: center; font-size: 0.875rem; color: #334155; border-bottom: 1px solid #f1f5f9; transition: background-color 0.2s;">
+                                    <i class="fas fa-walking text-slate-600 mr-2 text-center" style="width: 1.25rem; font-size: 1.1rem;"></i> Walk-in
+                                </div>
+                                <div onclick="document.getElementById('moSalesChannel').value='Viber'; document.getElementById('scSelectedDisplay').innerHTML=this.innerHTML; document.getElementById('scCustomOptions').classList.add('hidden');" onmouseover="this.style.backgroundColor='#eff6ff'" onmouseout="this.style.backgroundColor='transparent'" style="padding: 0.6rem 0.75rem; cursor: pointer; display: flex; align-items: center; font-size: 0.875rem; color: #334155; transition: background-color 0.2s;">
+                                    <i class="fab fa-viber text-purple-600 mr-2 text-center" style="width: 1.25rem; font-size: 1.1rem;"></i> Viber
+                                </div>
+                            </div>
                         </div>
                         <div class="mo-form-group">
                             <label for="moProduct">Select Product *</label>
@@ -11329,6 +11746,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
             }
         }
     </script>
+    <!-- GeoTIFF parser library for Google Solar API Heatmap -->
+    <script src="https://cdn.jsdelivr.net/npm/geotiff@2.1.1/dist-browser/geotiff.js"></script>
+    <!-- Google Maps API for Roof Assessment -->
+    <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDx7Kl-QcYnjjQrIbVxQxPQOA-peYn2UoU&libraries=places"></script>
 </body>
 
 </html>

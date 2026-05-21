@@ -1,3 +1,16 @@
+<?php
+require_once 'config/dbconn.php';
+
+// Fetch all projects from the database, newest first
+$portfolio_result = mysqli_query($conn, "SELECT * FROM portfolio_projects ORDER BY created_at DESC");
+$portfolio_projects = [];
+while ($row = mysqli_fetch_assoc($portfolio_result)) {
+    $portfolio_projects[] = $row;
+}
+
+// Fallback: if the DB is empty, show the hardcoded sample projects instead
+$use_fallback = empty($portfolio_projects);
+?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -604,6 +617,9 @@
             </div>
 
             <div class="row g-4" id="projectsContainer">
+
+                <?php if ($use_fallback): ?>
+                <!-- FALLBACK: DB is empty, show hardcoded sample cards -->
                 <div class="col-12 col-xl-6" data-aos="fade-up">
                     <div class="project-card" data-pm-title="BF Homes Parañaque"
                         data-pm-subtitle="Residential Installation"
@@ -625,139 +641,92 @@
                             <ul class="project-detail-list">
                                 <li class="project-detail-item">
                                     <div class="detail-icon-wrap"><i class="fas fa-map-marker-alt"></i></div>
-                                    <div class="detail-text-wrap">
-                                        <span class="detail-value">Parañaque City</span>
-                                        <span class="detail-label">Location</span>
-                                    </div>
+                                    <div class="detail-text-wrap"><span class="detail-value">Parañaque City</span><span class="detail-label">Location</span></div>
                                 </li>
                                 <li class="project-detail-item">
                                     <div class="detail-icon-wrap"><i class="fas fa-solar-panel"></i></div>
-                                    <div class="detail-text-wrap">
-                                        <span class="detail-value">12kW Hybrid</span>
-                                        <span class="detail-label">System Size</span>
-                                    </div>
+                                    <div class="detail-text-wrap"><span class="detail-value">12kW Hybrid</span><span class="detail-label">System Size</span></div>
                                 </li>
                                 <li class="project-detail-item">
                                     <div class="detail-icon-wrap"><i class="fas fa-smog"></i></div>
-                                    <div class="detail-text-wrap">
-                                        <span class="detail-value">470.80 t</span>
-                                        <span class="detail-label">CO₂ Emissions Saved</span>
-                                    </div>
+                                    <div class="detail-text-wrap"><span class="detail-value">470.80 t</span><span class="detail-label">CO₂ Emissions Saved</span></div>
                                 </li>
                                 <li class="project-detail-item">
                                     <div class="detail-icon-wrap"><i class="fas fa-tree"></i></div>
-                                    <div class="detail-text-wrap">
-                                        <span class="detail-value">14.10 K</span>
-                                        <span class="detail-label">Equivalent Trees Planted</span>
-                                    </div>
+                                    <div class="detail-text-wrap"><span class="detail-value">14.10 K</span><span class="detail-label">Equivalent Trees Planted</span></div>
                                 </li>
                             </ul>
                         </div>
                     </div>
                 </div>
+                <?php else: ?>
+                <!-- DYNAMIC: Render all projects from the database -->
+                <?php foreach ($portfolio_projects as $i => $p):
+                    $isExtra = $i >= 2; // First 2 cards are always visible, rest are hidden
+                    $delay   = $i * 120;
+                    
+                    // Decode images array
+                    $images_arr = json_decode($p['image_url'], true);
+                    if (!is_array($images_arr) || empty($images_arr)) {
+                        $images_arr = [$p['image_url'] ?: 'assets/img/product-placeholder.png'];
+                    }
+                    $imgSrc  = htmlspecialchars($images_arr[0]);
+                    $images_json = json_encode($images_arr);
 
-                <div class="col-12 col-xl-6" data-aos="fade-up" data-aos-delay="120">
-                    <div class="project-card" data-pm-title="ACE Admin Building"
-                        data-pm-subtitle="Commercial Installation"
-                        data-pm-images='["assets/img/paran2.jpg","assets/img/paran3.jpg","assets/img/demo-solar4.jpg"]'
-                        data-pm-metrics='[
-                           {"icon":"fa-map-marker-alt","value":"Sucat, Parañaque City","label":"Location"},
-                           {"icon":"fa-solar-panel","value":"6kW Hybrid","label":"System Size"},
-                           {"icon":"fa-smog","value":"235.40 t","label":"CO₂ Emissions Saved"},
-                           {"icon":"fa-tree","value":"7.05 K","label":"Equivalent Trees Planted"}
-                         ]'>
+                    $title   = htmlspecialchars($p['project_name']);
+                    $subtitle = htmlspecialchars($p['subtitle']);
+                    $loc     = htmlspecialchars($p['location']);
+                    $sys     = htmlspecialchars($p['system_type']);
+                    $co2     = htmlspecialchars($p['co2_reduction']);
+                    $eff     = htmlspecialchars($p['efficiency_rate']);
+                    $status  = htmlspecialchars($p['status']);
+
+                    // Build the metrics JSON for the modal popup
+                    $metrics = json_encode([
+                        ['icon' => 'fa-map-marker-alt', 'value' => $loc,    'label' => 'Location'],
+                        ['icon' => 'fa-solar-panel',    'value' => $sys,    'label' => 'System Size'],
+                        ['icon' => 'fa-smog',           'value' => $co2,    'label' => 'CO₂ Emissions Saved'],
+                        ['icon' => 'fa-tree',           'value' => $eff,    'label' => 'Equivalent Trees Planted'],
+                    ]);
+                ?>
+                <div class="col-12 col-xl-6<?= $isExtra ? ' hidden-project project-extra' : '' ?>" data-aos="fade-up" data-aos-delay="<?= $delay ?>">
+                    <div class="project-card"
+                        data-pm-title="<?= $title ?>"
+                        data-pm-subtitle="<?= $subtitle ?>"
+                        data-pm-images='<?= htmlspecialchars($images_json, ENT_QUOTES, 'UTF-8') ?>'
+                        data-pm-metrics='<?= htmlspecialchars($metrics) ?>'>
                         <div class="card-img-panel">
-                            <img src="assets/img/sucat.jpg" alt="Ace Admin Building Center">
+                            <img src="<?= $imgSrc ?>" alt="<?= $title ?>">
                         </div>
                         <div class="card-info-panel">
                             <div>
-                                <h4 class="card-project-title">ACE ADMIN BUILDING</h4>
-                                <p class="card-project-subtitle">COMMERCIAL INSTALLATION</p>
+                                <h4 class="card-project-title"><?= strtoupper($title) ?></h4>
+                                <p class="card-project-subtitle"><?= strtoupper($subtitle) ?></p>
                             </div>
                             <ul class="project-detail-list">
                                 <li class="project-detail-item">
                                     <div class="detail-icon-wrap"><i class="fas fa-map-marker-alt"></i></div>
-                                    <div class="detail-text-wrap">
-                                        <span class="detail-value">Sucat, Parañaque City</span>
-                                        <span class="detail-label">Location</span>
-                                    </div>
+                                    <div class="detail-text-wrap"><span class="detail-value"><?= $loc ?></span><span class="detail-label">Location</span></div>
                                 </li>
                                 <li class="project-detail-item">
                                     <div class="detail-icon-wrap"><i class="fas fa-solar-panel"></i></div>
-                                    <div class="detail-text-wrap">
-                                        <span class="detail-value">6kW Hybrid</span>
-                                        <span class="detail-label">System Size</span>
-                                    </div>
+                                    <div class="detail-text-wrap"><span class="detail-value"><?= $sys ?></span><span class="detail-label">System Size</span></div>
                                 </li>
                                 <li class="project-detail-item">
                                     <div class="detail-icon-wrap"><i class="fas fa-smog"></i></div>
-                                    <div class="detail-text-wrap">
-                                        <span class="detail-value">235.40 t</span>
-                                        <span class="detail-label">CO₂ Emissions Saved</span>
-                                    </div>
+                                    <div class="detail-text-wrap"><span class="detail-value"><?= $co2 ?></span><span class="detail-label">CO₂ Emissions Saved</span></div>
                                 </li>
                                 <li class="project-detail-item">
                                     <div class="detail-icon-wrap"><i class="fas fa-tree"></i></div>
-                                    <div class="detail-text-wrap">
-                                        <span class="detail-value">7.05 K</span>
-                                        <span class="detail-label">Equivalent Trees Planted</span>
-                                    </div>
+                                    <div class="detail-text-wrap"><span class="detail-value"><?= $eff ?></span><span class="detail-label">Equivalent Trees Planted</span></div>
                                 </li>
                             </ul>
                         </div>
                     </div>
                 </div>
+                <?php endforeach; ?>
+                <?php endif; ?>
 
-                <div class="col-12 col-xl-6 hidden-project project-extra" data-aos="fade-up" data-aos-delay="240">
-                    <div class="project-card" data-pm-title="Bacoor Residential" data-pm-subtitle="Maintenance Service"
-                        data-pm-images='["assets/img/bacoor.jpg","assets/img/bacoor2.jpg","assets/img/bacoor3.jpg"]'
-                        data-pm-metrics='[
-                           {"icon":"fa-map-marker-alt","value":"Bacoor City, Cavite","label":"Location"},
-                           {"icon":"fa-tools","value":"Preventive Maintenance","label":"Service Type"},
-                           {"icon":"fa-check-circle","value":"Completed","label":"Status"},
-                           {"icon":"fa-bolt","value":"+15% Efficiency","label":"Performance Optimized"}
-                         ]'>
-                        <div class="card-img-panel">
-                            <img src="assets/img/bacoor.jpg" alt="Bacoor City Preventive Maintenance">
-                        </div>
-                        <div class="card-info-panel">
-                            <div>
-                                <h4 class="card-project-title">BACOOR RESIDENTIAL</h4>
-                                <p class="card-project-subtitle">MAINTENANCE SERVICE</p>
-                            </div>
-                            <ul class="project-detail-list">
-                                <li class="project-detail-item">
-                                    <div class="detail-icon-wrap"><i class="fas fa-map-marker-alt"></i></div>
-                                    <div class="detail-text-wrap">
-                                        <span class="detail-value">Bacoor City, Cavite</span>
-                                        <span class="detail-label">Location</span>
-                                    </div>
-                                </li>
-                                <li class="project-detail-item">
-                                    <div class="detail-icon-wrap"><i class="fas fa-tools"></i></div>
-                                    <div class="detail-text-wrap">
-                                        <span class="detail-value">Preventive Maintenance</span>
-                                        <span class="detail-label">Service Type</span>
-                                    </div>
-                                </li>
-                                <li class="project-detail-item">
-                                    <div class="detail-icon-wrap"><i class="fas fa-check-circle"></i></div>
-                                    <div class="detail-text-wrap">
-                                        <span class="detail-value">Completed</span>
-                                        <span class="detail-label">Status</span>
-                                    </div>
-                                </li>
-                                <li class="project-detail-item">
-                                    <div class="detail-icon-wrap"><i class="fas fa-bolt"></i></div>
-                                    <div class="detail-text-wrap">
-                                        <span class="detail-value">+15% Efficiency</span>
-                                        <span class="detail-label">Performance Optimized</span>
-                                    </div>
-                                </li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
             </div>
 
             <div class="row mt-5">
