@@ -55,8 +55,14 @@
   .pm-table tr:last-child td { border-bottom: none; }
   .pm-table-img { width: 60px; height: 40px; border-radius: 6px; object-fit: cover; }
   .pm-status-badge { padding: 4px 10px; border-radius: 20px; font-size: .7rem; font-weight: 700; text-transform: uppercase; }
-  .pm-status-badge.completed { background: #F0FFF4; color: var(--success); }
-  .pm-status-badge.maintenance { background: #FFF3DC; color: #b7791f; }
+  .pm-status-badge.badge-assessment { background: #EBF8FF; color: #2B6CB0; }
+  .pm-status-badge.badge-supply-install { background: #F0FFF4; color: #2F855A; }
+  .pm-status-badge.badge-install-only { background: #E6FFFA; color: #234E52; }
+  .pm-status-badge.badge-net-metering { background: #FAF5FF; color: #6B46C1; }
+  .pm-status-badge.badge-upgrade { background: #FFFAF0; color: #DD6B20; }
+  .pm-status-badge.badge-maintenance { background: #FFFDF0; color: #B7791F; }
+  .pm-status-badge.badge-repair { background: #FFF5F5; color: #C53030; }
+  .pm-status-badge.badge-default { background: #EDF2F7; color: #4A5568; }
   .pm-action-btn { background: none; border: none; color: var(--muted); cursor: pointer; padding: 6px; transition: 0.2s; font-size: 1rem; }
   .pm-action-btn:hover { color: var(--solar-mid); }
   .pm-action-btn.delete:hover { color: var(--danger); }
@@ -178,7 +184,7 @@
             <th>Project Name</th>
             <th>Location</th>
             <th>System Type</th>
-            <th>Status</th>
+            <th>Service Type</th>
             <th style="text-align: right;">Actions</th>
           </tr>
         </thead>
@@ -220,11 +226,15 @@
                 <input type="text" id="pf-location" name="location" class="pm-form-control" placeholder="e.g. Parañaque City" required oninput="updateLivePreview()">
               </div>
               <div class="pm-form-group">
-                <label>Status</label>
-                <select id="pf-status" name="status" class="pm-form-control" onchange="updateLivePreview()">
-                  <option value="Completed">Completed</option>
-                  <option value="Maintenance">Preventive Maintenance</option>
-                  <option value="Ongoing">Ongoing</option>
+                <label>Service Type</label>
+                <select id="pf-service-type" name="service_type" class="pm-form-control" onchange="onServiceTypeChange()">
+                  <option value="Site Assessment">Site Assessment</option>
+                  <option value="Supply and Install">Supply and Install</option>
+                  <option value="Install Only">Install Only</option>
+                  <option value="Net Metering Application">Net Metering Application</option>
+                  <option value="System Upgrade / Expansion">System Upgrade / Expansion</option>
+                  <option value="Preventive Maintenance">Preventive Maintenance</option>
+                  <option value="Troubleshooting & Repair">Troubleshooting & Repair</option>
                 </select>
               </div>
             </div>
@@ -235,7 +245,7 @@
             </div>
           </div>
 
-          <div class="pm-form-card">
+          <div class="pm-form-card" id="pf-metrics-card">
             <h4 style="margin: 0 0 16px 0; font-size: 1rem;">Performance Metrics</h4>
             <div class="pm-form-row">
               <div class="pm-form-group">
@@ -256,12 +266,28 @@
           </div>
 
           <div class="pm-form-card">
-            <h4 style="margin: 0 0 16px 0; font-size: 1rem;">Project Images (Max 10)</h4>
-            <div class="pm-drop-zone" id="pf-drop-zone">
-              <input type="file" id="pf-image" name="images[]" accept="image/*" multiple onchange="handlePortfolioImageUpload(this)">
-              <div style="font-size: 2rem; color: var(--muted); margin-bottom: 10px;"><i class="fas fa-cloud-upload-alt"></i></div>
-              <div style="font-size: .85rem; color: var(--muted);"><strong id="pf-img-label">Click or drag</strong> to upload up to 10 files<br>JPG, PNG, WebP — max 5MB each</div>
+            <h4 style="margin: 0 0 16px 0; font-size: 1rem;">Main Project Image</h4>
+            <div class="pm-drop-zone" id="pf-main-drop-zone">
+              <input type="file" id="pf-main-image" name="main_image" accept="image/*" onchange="handleMainImageUpload(this)">
+              <div style="font-size: 2rem; color: var(--muted); margin-bottom: 10px;"><i class="fas fa-image"></i></div>
+              <div style="font-size: .85rem; color: var(--muted);"><strong>Click or drag</strong> to upload main image<br>JPG, PNG, WebP — max 20MB</div>
             </div>
+            <div id="pf-main-preview" style="margin-top: 12px;"></div>
+          </div>
+
+          <div class="pm-form-card">
+            <h4 style="margin: 0 0 16px 0; font-size: 1rem;">Gallery Images (Max 9 additional)</h4>
+            <div class="pm-drop-zone" id="pf-gallery-drop-zone">
+              <input type="file" id="pf-gallery-images" name="gallery_images[]" accept="image/*" multiple onchange="handleGalleryImagesUpload(this)">
+              <div style="font-size: 2rem; color: var(--muted); margin-bottom: 10px;"><i class="fas fa-images"></i></div>
+              <div style="font-size: .85rem; color: var(--muted);"><strong id="pf-gallery-label">Click or drag</strong> to upload up to 9 additional images<br>JPG, PNG, WebP — max 20MB each</div>
+            </div>
+            <div id="pf-gallery-preview" style="margin-top: 12px;"></div>
+          </div>
+
+          <div class="pm-form-card" id="pf-existing-images-card" style="display: none;">
+            <h4 style="margin: 0 0 16px 0; font-size: 1rem;">Current Images</h4>
+            <div id="pf-existing-images" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 10px;"></div>
           </div>
 
           <button type="submit" class="pm-btn-primary" id="pf-save-btn" style="width: 100%; justify-content: center; font-size: 1rem; padding: 14px;">
@@ -299,21 +325,21 @@
                               <span class="live-detail-label">Location</span>
                           </div>
                       </li>
-                      <li class="live-project-detail-item">
+                      <li class="live-project-detail-item" id="live-metric-system-item">
                           <div class="live-detail-icon-wrap"><i class="fas fa-solar-panel"></i></div>
                           <div class="live-detail-text-wrap">
                               <span class="live-detail-value" id="live-system">-</span>
                               <span class="live-detail-label">System Size</span>
                           </div>
                       </li>
-                      <li class="live-project-detail-item">
+                      <li class="live-project-detail-item" id="live-metric-co2-item">
                           <div class="live-detail-icon-wrap"><i class="fas fa-smog"></i></div>
                           <div class="live-detail-text-wrap">
                               <span class="live-detail-value" id="live-co2">-</span>
                               <span class="live-detail-label">CO₂ Emissions Saved</span>
                           </div>
                       </li>
-                      <li class="live-project-detail-item">
+                      <li class="live-project-detail-item" id="live-metric-efficiency-item">
                           <div class="live-detail-icon-wrap"><i class="fas fa-tree"></i></div>
                           <div class="live-detail-text-wrap">
                               <span class="live-detail-value" id="live-efficiency">-</span>
@@ -369,7 +395,7 @@ function renderPortfolioTable() {
     if(proj.subtitle && proj.subtitle.toLowerCase().includes('commercial')) comCount++;
     else resCount++;
 
-    let badgeClass = proj.status === 'Completed' ? 'completed' : 'maintenance';
+    let badgeClass = getServiceTypeBadgeClass(proj.service_type);
     
     // Parse images JSON array
     let images = [];
@@ -388,7 +414,7 @@ function renderPortfolioTable() {
         <td><strong>${proj.project_name}</strong></td>
         <td>${proj.location}</td>
         <td>${proj.system_type}</td>
-        <td><span class="pm-status-badge ${badgeClass}">${proj.status}</span></td>
+        <td><span class="pm-status-badge ${badgeClass}">${proj.service_type || 'Supply and Install'}</span></td>
         <td style="text-align: right;">
           <button class="pm-action-btn" onclick="editProject('${proj.id}')"><i class="fas fa-edit"></i></button>
           <button class="pm-action-btn delete" onclick="deleteProject('${proj.id}')"><i class="fas fa-trash"></i></button>
@@ -402,17 +428,59 @@ function renderPortfolioTable() {
   document.getElementById('stat-commercial').innerText = comCount;
 }
 
+function getServiceTypeBadgeClass(type) {
+  switch(type) {
+    case 'Site Assessment': return 'badge-assessment';
+    case 'Supply and Install': return 'badge-supply-install';
+    case 'Install Only': return 'badge-install-only';
+    case 'Net Metering Application': return 'badge-net-metering';
+    case 'System Upgrade / Expansion': return 'badge-upgrade';
+    case 'Preventive Maintenance': return 'badge-maintenance';
+    case 'Troubleshooting & Repair': return 'badge-repair';
+    default: return 'badge-default';
+  }
+}
+
+function onServiceTypeChange() {
+  const serviceType = document.getElementById('pf-service-type').value;
+  const metricsCard = document.getElementById('pf-metrics-card');
+  const pfSystem = document.getElementById('pf-system');
+  const pfCo2 = document.getElementById('pf-co2');
+  const pfEfficiency = document.getElementById('pf-efficiency');
+  
+  const showMetrics = (serviceType === 'Supply and Install' || serviceType === 'Install Only');
+  
+  if (showMetrics) {
+    metricsCard.style.display = 'block';
+    pfSystem.required = true;
+    pfCo2.required = true;
+  } else {
+    metricsCard.style.display = 'none';
+    pfSystem.required = false;
+    pfCo2.required = false;
+    pfSystem.value = '';
+    pfCo2.value = '';
+    pfEfficiency.value = '';
+  }
+  
+  updateLivePreview();
+}
+
 /* Modal Toggles */
 function openPortfolioModal() {
   document.getElementById('portfolio-form').reset();
   document.getElementById('pf-id').value = '';
   document.getElementById('portfolio-form-title').innerText = 'Add New Project';
   document.getElementById('live-img').src = '../../assets/img/product-placeholder.png';
-  document.getElementById('pf-img-label').innerHTML = 'Click or drag';
-  updateLivePreview();
+  document.getElementById('pf-main-preview').innerHTML = '';
+  document.getElementById('pf-gallery-preview').innerHTML = '';
+  document.getElementById('pf-existing-images-card').style.display = 'none';
+  document.getElementById('pf-main-image').value = '';
+  document.getElementById('pf-gallery-images').value = '';
+  onServiceTypeChange();
   
   document.getElementById('portfolioModal').classList.add('active');
-  document.body.style.overflow = 'hidden'; // prevent background scrolling
+  document.body.style.overflow = 'hidden';
 }
 
 function closePortfolioModal() {
@@ -427,13 +495,29 @@ function updateLivePreview() {
   const sys = document.getElementById('pf-system').value || '-';
   const co2 = document.getElementById('pf-co2').value || '-';
   const eff = document.getElementById('pf-efficiency').value || '-';
+  const serviceType = document.getElementById('pf-service-type').value;
 
   document.getElementById('live-title').innerText = title.toUpperCase();
   document.getElementById('live-subtitle').innerText = subtitle.toUpperCase();
   document.getElementById('live-location').innerText = loc;
-  document.getElementById('live-system').innerText = sys;
-  document.getElementById('live-co2').innerText = co2;
-  document.getElementById('live-efficiency').innerText = eff;
+
+  const showMetrics = (serviceType === 'Supply and Install' || serviceType === 'Install Only');
+  const sysItem = document.getElementById('live-metric-system-item');
+  const co2Item = document.getElementById('live-metric-co2-item');
+  const effItem = document.getElementById('live-metric-efficiency-item');
+
+  if (showMetrics) {
+    sysItem.style.display = 'flex';
+    co2Item.style.display = 'flex';
+    effItem.style.display = 'flex';
+    document.getElementById('live-system').innerText = sys || '-';
+    document.getElementById('live-co2').innerText = co2 || '-';
+    document.getElementById('live-efficiency').innerText = eff || '-';
+  } else {
+    sysItem.style.display = 'none';
+    co2Item.style.display = 'none';
+    effItem.style.display = 'none';
+  }
 }
 
 /* Auto Generate Metrics based on Capacity */
@@ -454,36 +538,92 @@ function autoGenerateMetrics() {
   updateLivePreview();
 }
 
-function handlePortfolioImageUpload(input) {
+function handleMainImageUpload(input) {
   const files = Array.from(input.files);
   if (files.length === 0) return;
-  if (files.length > 10) {
-    alert('You can only upload up to 10 images.');
+  
+  const invalidFile = files.find(file => file.size > 20 * 1024 * 1024);
+  if (invalidFile) {
+    alert('File exceeds the 20MB limit.');
+    input.value = '';
+    return;
+  }
+
+  const file = files[0];
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById('live-img').src = e.target.result;
+    const preview = `<div style="position: relative; width: 120px;">
+      <img src="${e.target.result}" style="width: 100%; height: 100px; border-radius: 6px; object-fit: cover; border: 2px solid var(--success);">
+      <span style="position: absolute; top: 4px; right: 4px; background: var(--success); color: white; padding: 2px 6px; border-radius: 12px; font-size: 0.6rem; font-weight: 700;">MAIN</span>
+      <button type="button" onclick="clearMainImage()" style="position: absolute; bottom: -24px; left: 50%; transform: translateX(-50%); background: var(--danger); color: white; border: none; border-radius: 4px; padding: 4px 8px; font-size: 0.7rem; cursor: pointer; width: 100%;">Remove</button>
+    </div>`;
+    document.getElementById('pf-main-preview').innerHTML = preview;
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearMainImage() {
+  document.getElementById('pf-main-image').value = '';
+  document.getElementById('pf-main-preview').innerHTML = '';
+  document.getElementById('live-img').src = '../../assets/img/product-placeholder.png';
+}
+
+function handleGalleryImagesUpload(input) {
+  const files = Array.from(input.files);
+  if (files.length === 0) return;
+  
+  if (files.length > 9) {
+    alert('You can only upload up to 9 gallery images.');
     input.value = '';
     return;
   }
   
-  const invalidFile = files.find(file => file.size > 5 * 1024 * 1024);
+  const invalidFile = files.find(file => file.size > 20 * 1024 * 1024);
   if (invalidFile) {
-    alert('One of the files exceeds the 5MB limit.');
+    alert('One of the files exceeds the 20MB limit.');
     input.value = '';
     return;
   }
 
   let loadedCount = 0;
   const previews = [];
-  files.forEach(file => {
+  const label = document.getElementById('pf-gallery-label');
+  
+  label.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Loading ${files.length} image(s)...`;
+  
+  files.forEach((file, idx) => {
     const reader = new FileReader();
     reader.onload = e => {
-      previews.push(e.target.result);
+      previews[idx] = e.target.result;
       loadedCount++;
+      
       if (loadedCount === files.length) {
-        document.getElementById('live-img').src = previews[0];
-        document.getElementById('pf-img-label').innerHTML = `<i class="fas fa-check-circle text-green-500"></i> ${files.length} images selected`;
+        let previewHTML = '<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 8px;">';
+        previews.forEach((thumb, i) => {
+          previewHTML += `<div style="position: relative;">
+            <img src="${thumb}" style="width: 100%; height: 80px; border-radius: 6px; object-fit: cover; border: 2px solid var(--solar-mid);">
+            <button type="button" onclick="removeGalleryPreview(${i})" style="position: absolute; top: 2px; right: 2px; background: var(--danger); color: white; border: none; border-radius: 50%; width: 20px; height: 20px; cursor: pointer; font-size: 0.8rem; display: flex; align-items: center; justify-content: center;">×</button>
+          </div>`;
+        });
+        previewHTML += '</div>';
+        document.getElementById('pf-gallery-preview').innerHTML = previewHTML;
+        label.innerHTML = `<i class="fas fa-check-circle" style="color: var(--success);"></i> <strong>${files.length} images selected</strong>`;
       }
     };
     reader.readAsDataURL(file);
   });
+}
+
+function removeGalleryPreview(idx) {
+  const input = document.getElementById('pf-gallery-images');
+  const dt = new DataTransfer();
+  const files = Array.from(input.files);
+  files.forEach((file, i) => {
+    if (i !== idx) dt.items.add(file);
+  });
+  input.files = dt.files;
+  handleGalleryImagesUpload(input);
 }
 
 function editProject(id) {
@@ -497,7 +637,8 @@ function editProject(id) {
   document.getElementById('pf-system').value = p.system_type;
   document.getElementById('pf-co2').value = p.co2_reduction;
   document.getElementById('pf-efficiency').value = p.efficiency_rate;
-  document.getElementById('pf-status').value = p.status;
+  document.getElementById('pf-service-type').value = p.service_type || 'Supply and Install';
+  onServiceTypeChange();
   
   // Parse images JSON array
   let images = [];
@@ -507,17 +648,76 @@ function editProject(id) {
   } catch(e) {
     images = [p.image_url];
   }
+  
+  // Show existing images
+  if (images.length > 0) {
+    document.getElementById('pf-existing-images-card').style.display = 'block';
+    let existingHTML = '<div style="display: flex; gap: 10px; overflow-x: auto; padding-bottom: 8px;">';
+    images.forEach((img, i) => {
+      const imagePath = (img.startsWith('uploads') || img.startsWith('assets')) ? '../../' + img : img;
+      const isMain = i === 0 ? 'MAIN' : '';
+      existingHTML += `<div style="position: relative; flex-shrink: 0;">
+        <img src="${imagePath}" style="width: 100px; height: 100px; border-radius: 6px; object-fit: cover; border: 2px solid var(--solar-mid); cursor: pointer;" onclick="previewExistingImage('${imagePath}')">
+        ${isMain ? '<span style="position: absolute; top: 2px; left: 2px; background: var(--success); color: white; padding: 2px 4px; border-radius: 3px; font-size: 0.6rem; font-weight: 700;">MAIN</span>' : ''}
+        <button type="button" onclick="deleteExistingImage(${p.id}, ${i})" style="position: absolute; top: 2px; right: 2px; background: var(--danger); color: white; border: none; border-radius: 50%; width: 20px; height: 20px; cursor: pointer; font-size: 0.8rem; display: flex; align-items: center; justify-content: center;">×</button>
+      </div>`;
+    });
+    existingHTML += '</div>';
+    document.getElementById('pf-existing-images').innerHTML = existingHTML;
+  }
+  
+  // Show main image preview
   let firstImg = images[0] || 'assets/img/product-placeholder.png';
   let imageSrc = (firstImg.startsWith('uploads') || firstImg.startsWith('assets')) ? '../../' + firstImg : firstImg;
   
   document.getElementById('live-img').src = imageSrc;
-  document.getElementById('pf-img-label').innerHTML = `<i class="fas fa-images text-blue-500"></i> ${images.length} images set`;
+  
+  // Clear new upload inputs
+  document.getElementById('pf-main-image').value = '';
+  document.getElementById('pf-gallery-images').value = '';
+  document.getElementById('pf-main-preview').innerHTML = '';
+  document.getElementById('pf-gallery-preview').innerHTML = '';
   
   document.getElementById('portfolio-form-title').innerText = 'Edit Project';
   updateLivePreview();
   
   document.getElementById('portfolioModal').classList.add('active');
   document.body.style.overflow = 'hidden';
+}
+
+function previewExistingImage(imagePath) {
+  const modal = document.createElement('div');
+  modal.style.cssText = 'position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 10000;';
+  modal.onclick = () => modal.remove();
+  
+  const img = document.createElement('img');
+  img.src = imagePath;
+  img.style.cssText = 'max-width: 90%; max-height: 90%; border-radius: 8px; cursor: pointer;';
+  
+  modal.appendChild(img);
+  document.body.appendChild(modal);
+}
+
+function deleteExistingImage(projectId, imageIndex) {
+  if (!confirm('Delete this image?')) return;
+  
+  const fd = new FormData();
+  fd.append('action', 'delete_image');
+  fd.append('project_id', projectId);
+  fd.append('image_index', imageIndex);
+  
+  fetch('../../controllers/portfolio_api.php', { method: 'POST', body: fd })
+    .then(r => r.json())
+    .then(json => {
+      if (json.status === 'success') {
+        alert('Image deleted successfully');
+        fetchPortfolioProjects();
+        editProject(projectId);
+      } else {
+        alert('Error: ' + json.message);
+      }
+    })
+    .catch(e => alert('Error deleting image'));
 }
 
 async function deleteProject(id) {
@@ -547,25 +747,61 @@ async function savePortfolioProject(e) {
   const fd = new FormData(form);
   
   const btn = document.getElementById('pf-save-btn');
-  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+  const originalHTML = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading images...';
   btn.style.opacity = '0.7';
   
   try {
-      const res = await fetch('../../controllers/portfolio_api.php', { method: 'POST', body: fd });
-      const json = await res.json();
+      // Add longer timeout for large file uploads (5 minutes)
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 300000);
+      
+      const res = await fetch('../../controllers/portfolio_api.php', { 
+          method: 'POST', 
+          body: fd,
+          signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (!res.ok) {
+          throw new Error(`HTTP Error: ${res.status}`);
+      }
+      
+      const text = await res.text();
+      let json;
+      try {
+          json = JSON.parse(text);
+      } catch(parseErr) {
+          console.error('Response was not JSON:', text);
+          throw new Error('Server error: Invalid response. Check browser console.');
+      }
       
       if(json.status === 'success') {
-          closePortfolioModal();
-          fetchPortfolioProjects();
+          btn.innerHTML = '<i class="fas fa-check-circle"></i> Saved! Refreshing...';
+          btn.style.backgroundColor = 'var(--success)';
+          setTimeout(() => {
+              closePortfolioModal();
+              fetchPortfolioProjects();
+          }, 800);
       } else {
-          alert("Error: " + json.message);
+          btn.innerHTML = originalHTML;
+          btn.disabled = false;
+          btn.style.opacity = '1';
+          alert("Error saving project:\n\n" + (json.message || 'Unknown error'));
       }
   } catch (err) {
-      console.error(err);
-      alert('Error saving project.');
-  } finally {
-      btn.innerHTML = '<i class="fas fa-save"></i> Save Project Configuration';
+      console.error('Save error:', err);
+      btn.innerHTML = originalHTML;
+      btn.disabled = false;
       btn.style.opacity = '1';
+      
+      if (err.name === 'AbortError') {
+          alert('Upload took too long. Please try uploading fewer or smaller images.');
+      } else {
+          alert('Error saving project:\n\n' + err.message + '\n\nCheck browser console for details.');
+      }
   }
 }
 
@@ -583,10 +819,32 @@ document.getElementById('portfolioModal').addEventListener('click', function(e) 
   }
 });
 
-// Drag and drop cosmetics
-const dz = document.getElementById('pf-drop-zone');
-dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('dragover'); });
-dz.addEventListener('dragleave', e => { dz.classList.remove('dragover'); });
-dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('dragover'); });
+// Drag and drop for main image
+const mainDZ = document.getElementById('pf-main-drop-zone');
+if (mainDZ) {
+  mainDZ.addEventListener('dragover', e => { e.preventDefault(); mainDZ.classList.add('dragover'); });
+  mainDZ.addEventListener('dragleave', e => { mainDZ.classList.remove('dragover'); });
+  mainDZ.addEventListener('drop', e => {
+    e.preventDefault();
+    mainDZ.classList.remove('dragover');
+    const mainInput = document.getElementById('pf-main-image');
+    mainInput.files = e.dataTransfer.files;
+    handleMainImageUpload(mainInput);
+  });
+}
+
+// Drag and drop for gallery images
+const galleryDZ = document.getElementById('pf-gallery-drop-zone');
+if (galleryDZ) {
+  galleryDZ.addEventListener('dragover', e => { e.preventDefault(); galleryDZ.classList.add('dragover'); });
+  galleryDZ.addEventListener('dragleave', e => { galleryDZ.classList.remove('dragover'); });
+  galleryDZ.addEventListener('drop', e => {
+    e.preventDefault();
+    galleryDZ.classList.remove('dragover');
+    const galleryInput = document.getElementById('pf-gallery-images');
+    galleryInput.files = e.dataTransfer.files;
+    handleGalleryImagesUpload(galleryInput);
+  });
+}
 
 </script>

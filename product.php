@@ -22,9 +22,9 @@ LEFT JOIN product_images pi
     ON p.id = pi.product_id
 WHERE pi.image_path IS NOT NULL
   AND p.status = 'Active'
-  AND (TRIM(p.brandName) = 'Hybrid' OR TRIM(p.brandName) = 'Package')
+  AND TRIM(p.brandName) = 'Hybrid'
 GROUP BY p.id
-ORDER BY p.id DESC";
+ORDER BY p.price ASC";
 
 $stmt = $conn->prepare($sql);
 if ($stmt) {

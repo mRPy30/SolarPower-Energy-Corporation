@@ -20,9 +20,9 @@ LEFT JOIN product_images pi
     ON p.id = pi.product_id
 WHERE pi.image_path IS NOT NULL 
   AND p.status = 'Active'
-  AND (TRIM(p.brandName) = 'Hybrid' OR TRIM(p.brandName) = 'Package')
+  AND TRIM(p.brandName) = 'Hybrid'
 GROUP BY p.id
-ORDER BY p.id DESC";
+ORDER BY p.price ASC";
 
 $stmt = $conn->prepare($sql);
 if ($stmt) {
@@ -48,68 +48,107 @@ $conn->close();
     <title>SolarPower Energy - Smart Energy for Smarter Homes</title>
     <link rel="icon" type="image/png" href="assets/img/icon.png">
 
-    <meta name="description"
-        content="Switch to SolarPower Energy Corporation, the leading solar panel provider in the Philippines. DOE-accredited solar installations for residential and commercial properties. Save up to 80% on your electricity bills today!">
-    <meta name="keywords"
-        content="Solar Power Philippines, Solar Panel Installation, Smart Energy, Renewable Energy PH, SolarPower Energy Corporation, Grid-tie Solar, Hybrid Solar System, DOE Accredited Solar">
-    <meta name="author" content="SolarPower Energy Corporation">
-    <meta name="robots" content="index, follow">
-    <link rel="canonical" href="https://solarpower.com.ph">
-
+    <meta name="theme-color" content="#f59e0b" />
+ 
+    <meta name="description" content="SolarPower Energy Corporation is the Philippines' leading DOE-accredited solar panel provider. Get hybrid and On-grid solar installations for homes and businesses. Save up to 80% on electricity bills. Serving Metro Manila and nationwide." />
+    <meta name="keywords" content="SolarPower Energy Corporation, solar panel Philippines, solar installation Philippines, DOE accredited solar, hybrid solar system Philippines, On-grid solar Philippines, renewable energy Philippines, solar power Manila, solar panels for home Philippines, commercial solar Philippines, save electricity bills Philippines, smart energy Philippines" />
+    <meta name="author" content="SolarPower Energy Corporation" />
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
+    <meta name="google-adsense-account" content="ca-pub-8363297627454600" />
+    <link rel="canonical" href="https://solarpower.com.ph/" />
+    
+    <!-- Geo Tags -->
+    <meta name="geo.region" content="PH" />
+    <meta name="geo.placename" content="Metro Manila, Philippines" />
+    <meta name="geo.position" content="14.5995;120.9842" />
+    <meta name="ICBM" content="14.5995, 120.9842" />
+    
     <!-- Open Graph / Facebook -->
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://solarpower.com.ph">
-    <meta property="og:title" content="SolarPower Energy - Smart Energy for Smarter Homes">
-    <meta property="og:description"
-        content="Join the renewable revolution! Get professional solar installations with flexible payment plans. Switch to SolarPower Energy today.">
-
-    <meta property="og:image" content="https://solarpower.com.ph/assets/img/new_logo.png">
-
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://solarpower.com.ph/" />
+    <meta property="og:title" content="SolarPower Energy Corporation | Solar Panel Seller, Distributor, and Installer in the Philippines" />
+    <meta property="og:description" content="Philippines' leading DOE-accredited solar provider. Hybrid and On-grid solar installations for homes and businesses. Save up to 80% on electricity bills. Get a free quote today!" />
+    <meta property="og:image" content="https://solarpower.com.ph/assets/img/new_logo.png" />
+    <meta property="og:image:alt" content="SolarPower Energy Corporation Logo" />
+    <meta property="og:site_name" content="SolarPower Energy Corporation" />
+    <meta property="og:locale" content="en_PH" />
+    
     <!-- Twitter -->
-    <meta property="twitter:card" content="summary_large_image">
-
-    <meta property="twitter:url" content="https://solarpower.com.ph">
-    <meta property="twitter:title" content="SolarPower Energy - Solar Panel Installation Philippines">
-    <meta property="twitter:description"
-        content="DOE-accredited solar provider. Save on electricity bills with our Hybrid and Grid-tie solar solutions.">
-    <meta property="twitter:image" content="https://solarpower.com.ph/assets/img/new_logo.png">
-
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content="https://solarpower.com.ph/" />
+    <meta name="twitter:title" content="SolarPower Energy Corporation | Solar Panel Seller, Distributor, and Installer in the Philippines" />
+    <meta name="twitter:description" content="DOE-accredited solar provider. Save on electricity bills with our Hybrid and On-grid solar solutions across the Philippines." />
+    <meta name="twitter:image" content="https://solarpower.com.ph/assets/img/new_logo.png" />
+    <meta name="twitter:image:alt" content="SolarPower Energy Corporation Logo" />
+    
+    <!-- Schema.org Structured Data -->
     <script type="application/ld+json">
-        {
-            "@context": "https://schema.org",
-            "@type": "LocalBusiness",
-            "name": "SolarPower Energy Corporation",
-            "image": "https://solarpower.com.ph/assets/img/new_logo.png",
-            "url": "https://solarpower.com.ph",
-            "telephone": "+63-995-394-7379",
-            "address": {
-                "@type": "PostalAddress",
-                "streetAddress": "Various Locations",
-                "addressLocality": "Metro Manila",
-                "addressCountry": "PH"
-            },
-            "geo": {
-                "@type": "GeoCoordinates",
-                "latitude": 14.5995,
-                "longitude": 120.9842
-            },
-            "openingHoursSpecification": {
-                "@type": "OpeningHoursSpecification",
-                "dayOfWeek": [
-                    "Monday",
-                    "Tuesday",
-                    "Wednesday",
-                    "Thursday",
-                    "Friday",
-                    "Saturday"
-                ],
-                "opens": "08:00",
-                "closes": "17:00"
-            },
-            "sameAs": [
-                "https://www.facebook.com/solarpowerenergycorp"
-            ]
+    {
+      "@context": "https://schema.org",
+      "@type": "LocalBusiness",
+      "name": "SolarPower Energy Corporation",
+      "alternateName": ["SolarPower Energy", "SolarPower PH"],
+      "image": "https://solarpower.com.ph/assets/img/new_logo.png",
+      "url": "https://solarpower.com.ph",
+      "telephone": "+63-995-394-7379",
+      "description": "SolarPower Energy Corporation is the Philippines' leading DOE-accredited solar panel provider offering hybrid and on-grid solar installations for residential and commercial properties.",
+      "address": {
+        "@type": "PostalAddress",
+        "addressLocality": "Metro Manila",
+        "addressRegion": "NCR",
+        "addressCountry": "PH"
+      },
+      "geo": {
+        "@type": "GeoCoordinates",
+        "latitude": 14.5995,
+        "longitude": 120.9842
+      },
+      "openingHoursSpecification": {
+        "@type": "OpeningHoursSpecification",
+        "dayOfWeek": ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"],
+        "opens": "08:00",
+        "closes": "17:00"
+      },
+      "serviceType": ["Solar Panel Installation", "Hybrid Solar System", "On-grid Solar System", "Residential Solar", "Commercial Solar", "Solar Maintenance"],
+      "areaServed": {
+        "@type": "Country",
+        "name": "Philippines"
+      },
+      "hasCredential": "DOE Accredited Solar Provider",
+      "sameAs": [
+        "https://www.facebook.com/solarpowerenergycorp"
+      ]
+    }
+    </script>
+    
+    <!-- CSS Libraries -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        corePlugins: {
+          preflight: false,
+        },
+        theme: {
+          extend: {
+            colors: {
+              amber: {
+                400: '#fbbf24',
+                500: '#f59e0b',
+              },
+              slate: {
+                800: '#1e293b',
+                900: '#0f172a',
+              }
+            }
+          }
         }
+      }
     </script>
 
     <!-- CSS Libraries -->
@@ -969,7 +1008,7 @@ $conn->close();
     <section class="rent-to-own-section" id="rentToOwnSection">
         <div class="container">
             <div class="rto-wrapper">
-                <!-- Left: Form --
+               Left: Form --
                 <div class="rto-form-container">
                     <div class="rto-header">
                         <h2>Rent to Own Solar System</h2>

@@ -1,11 +1,11 @@
 -- phpMyAdmin SQL Dump
--- version 5.2.2
+-- version 5.2.1
 -- https://www.phpmyadmin.net/
 --
--- Host: localhost:3306
--- Generation Time: May 20, 2026 at 08:02 PM
--- Server version: 10.6.24-MariaDB-cll-lve
--- PHP Version: 8.4.21
+-- Host: 127.0.0.1
+-- Generation Time: May 22, 2026 at 02:31 AM
+-- Server version: 10.4.32-MariaDB
+-- PHP Version: 8.2.12
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -488,6 +488,25 @@ CREATE TABLE `password_resets` (
   `user_role` enum('staff','client') NOT NULL,
   `expiry_date` datetime NOT NULL,
   `used` tinyint(1) DEFAULT 0,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `portfolio_projects`
+--
+
+CREATE TABLE `portfolio_projects` (
+  `id` int(11) NOT NULL,
+  `project_name` varchar(255) NOT NULL,
+  `subtitle` varchar(255) NOT NULL,
+  `location` varchar(255) NOT NULL,
+  `system_type` varchar(255) NOT NULL,
+  `co2_reduction` varchar(100) NOT NULL,
+  `efficiency_rate` varchar(100) NOT NULL,
+  `status` varchar(50) DEFAULT 'Completed',
+  `image_url` text NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
@@ -1062,6 +1081,12 @@ ALTER TABLE `password_resets`
   ADD UNIQUE KEY `email` (`email`);
 
 --
+-- Indexes for table `portfolio_projects`
+--
+ALTER TABLE `portfolio_projects`
+  ADD PRIMARY KEY (`id`);
+
+--
 -- Indexes for table `product`
 --
 ALTER TABLE `product`
@@ -1205,6 +1230,12 @@ ALTER TABLE `order_tracking_history`
 --
 ALTER TABLE `password_resets`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `portfolio_projects`
+--
+ALTER TABLE `portfolio_projects`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT for table `product`

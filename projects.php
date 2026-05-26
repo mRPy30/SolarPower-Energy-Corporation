@@ -7,9 +7,6 @@ $portfolio_projects = [];
 while ($row = mysqli_fetch_assoc($portfolio_result)) {
     $portfolio_projects[] = $row;
 }
-
-// Fallback: if the DB is empty, show the hardcoded sample projects instead
-$use_fallback = empty($portfolio_projects);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -618,58 +615,30 @@ $use_fallback = empty($portfolio_projects);
 
             <div class="row g-4" id="projectsContainer">
 
-                <?php if ($use_fallback): ?>
-                <!-- FALLBACK: DB is empty, show hardcoded sample cards -->
-                <div class="col-12 col-xl-6" data-aos="fade-up">
-                    <div class="project-card" data-pm-title="BF Homes Parañaque"
-                        data-pm-subtitle="Residential Installation"
-                        data-pm-images='["assets/img/projects1.png","assets/img/bfhomes2.jpg","assets/img/bfhomes3.png"]'
-                        data-pm-metrics='[
-                           {"icon":"fa-map-marker-alt","value":"Parañaque City","label":"Location"},
-                           {"icon":"fa-solar-panel","value":"12kW Hybrid","label":"System Size"},
-                           {"icon":"fa-smog","value":"470.80 t","label":"CO₂ Emissions Saved"},
-                           {"icon":"fa-tree","value":"14.10 K","label":"Equivalent Trees Planted"}
-                         ]'>
-                        <div class="card-img-panel">
-                            <img src="assets/img/projects1.png" alt="BF Homes Parañaque">
-                        </div>
-                        <div class="card-info-panel">
-                            <div>
-                                <h4 class="card-project-title">BF HOMES PARAÑAQUE</h4>
-                                <p class="card-project-subtitle">RESIDENTIAL INSTALLATION</p>
-                            </div>
-                            <ul class="project-detail-list">
-                                <li class="project-detail-item">
-                                    <div class="detail-icon-wrap"><i class="fas fa-map-marker-alt"></i></div>
-                                    <div class="detail-text-wrap"><span class="detail-value">Parañaque City</span><span class="detail-label">Location</span></div>
-                                </li>
-                                <li class="project-detail-item">
-                                    <div class="detail-icon-wrap"><i class="fas fa-solar-panel"></i></div>
-                                    <div class="detail-text-wrap"><span class="detail-value">12kW Hybrid</span><span class="detail-label">System Size</span></div>
-                                </li>
-                                <li class="project-detail-item">
-                                    <div class="detail-icon-wrap"><i class="fas fa-smog"></i></div>
-                                    <div class="detail-text-wrap"><span class="detail-value">470.80 t</span><span class="detail-label">CO₂ Emissions Saved</span></div>
-                                </li>
-                                <li class="project-detail-item">
-                                    <div class="detail-icon-wrap"><i class="fas fa-tree"></i></div>
-                                    <div class="detail-text-wrap"><span class="detail-value">14.10 K</span><span class="detail-label">Equivalent Trees Planted</span></div>
-                                </li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-                <?php else: ?>
-                <!-- DYNAMIC: Render all projects from the database -->
                 <?php foreach ($portfolio_projects as $i => $p):
                     $isExtra = $i >= 2; // First 2 cards are always visible, rest are hidden
                     $delay   = $i * 120;
                     
-                    // Decode images array
+                    // Decode images array from database
                     $images_arr = json_decode($p['image_url'], true);
                     if (!is_array($images_arr) || empty($images_arr)) {
                         $images_arr = [$p['image_url'] ?: 'assets/img/product-placeholder.png'];
                     }
+                    
+                    // Fix image paths - ensure they work from root
+                    $images_arr = array_map(function($img) {
+                        // If it's already a full URL, leave it
+                        if (filter_var($img, FILTER_VALIDATE_URL)) {
+                            return $img;
+                        }
+                        // If it starts with /, leave it
+                        if (str_starts_with($img, '/')) {
+                            return $img;
+                        }
+                        // Otherwise, it's a relative path - make sure it's correct
+                        return $img; // Already in format like 'uploads/portfolio/...'
+                    }, $images_arr);
+                    
                     $imgSrc  = htmlspecialchars($images_arr[0]);
                     $images_json = json_encode($images_arr);
 
@@ -679,24 +648,29 @@ $use_fallback = empty($portfolio_projects);
                     $sys     = htmlspecialchars($p['system_type']);
                     $co2     = htmlspecialchars($p['co2_reduction']);
                     $eff     = htmlspecialchars($p['efficiency_rate']);
-                    $status  = htmlspecialchars($p['status']);
+                    $service_type = htmlspecialchars($p['service_type']);
+
+                    $showMetrics = ($service_type === 'Supply and Install' || $service_type === 'Install Only');
 
                     // Build the metrics JSON for the modal popup
-                    $metrics = json_encode([
-                        ['icon' => 'fa-map-marker-alt', 'value' => $loc,    'label' => 'Location'],
-                        ['icon' => 'fa-solar-panel',    'value' => $sys,    'label' => 'System Size'],
-                        ['icon' => 'fa-smog',           'value' => $co2,    'label' => 'CO₂ Emissions Saved'],
-                        ['icon' => 'fa-tree',           'value' => $eff,    'label' => 'Equivalent Trees Planted'],
-                    ]);
+                    $metricsArray = [
+                        ['icon' => 'fa-map-marker-alt', 'value' => $loc, 'label' => 'Location']
+                    ];
+                    if ($showMetrics) {
+                        $metricsArray[] = ['icon' => 'fa-solar-panel', 'value' => $sys, 'label' => 'System Size'];
+                        $metricsArray[] = ['icon' => 'fa-smog', 'value' => $co2, 'label' => 'CO₂ Emissions Saved'];
+                        $metricsArray[] = ['icon' => 'fa-tree', 'value' => $eff, 'label' => 'Equivalent Trees Planted'];
+                    }
+                    $metrics = json_encode($metricsArray);
                 ?>
                 <div class="col-12 col-xl-6<?= $isExtra ? ' hidden-project project-extra' : '' ?>" data-aos="fade-up" data-aos-delay="<?= $delay ?>">
                     <div class="project-card"
-                        data-pm-title="<?= $title ?>"
-                        data-pm-subtitle="<?= $subtitle ?>"
-                        data-pm-images='<?= htmlspecialchars($images_json, ENT_QUOTES, 'UTF-8') ?>'
-                        data-pm-metrics='<?= htmlspecialchars($metrics) ?>'>
+                         data-pm-title="<?= $title ?>"
+                         data-pm-subtitle="<?= $subtitle ?>"
+                         data-pm-images='<?= htmlspecialchars($images_json, ENT_QUOTES, 'UTF-8') ?>'
+                         data-pm-metrics='<?= htmlspecialchars($metrics) ?>'>
                         <div class="card-img-panel">
-                            <img src="<?= $imgSrc ?>" alt="<?= $title ?>">
+                            <img src="<?= $imgSrc ?>" alt="<?= $title ?>" loading="lazy">
                         </div>
                         <div class="card-info-panel">
                             <div>
@@ -708,6 +682,7 @@ $use_fallback = empty($portfolio_projects);
                                     <div class="detail-icon-wrap"><i class="fas fa-map-marker-alt"></i></div>
                                     <div class="detail-text-wrap"><span class="detail-value"><?= $loc ?></span><span class="detail-label">Location</span></div>
                                 </li>
+                                <?php if ($showMetrics): ?>
                                 <li class="project-detail-item">
                                     <div class="detail-icon-wrap"><i class="fas fa-solar-panel"></i></div>
                                     <div class="detail-text-wrap"><span class="detail-value"><?= $sys ?></span><span class="detail-label">System Size</span></div>
@@ -720,12 +695,12 @@ $use_fallback = empty($portfolio_projects);
                                     <div class="detail-icon-wrap"><i class="fas fa-tree"></i></div>
                                     <div class="detail-text-wrap"><span class="detail-value"><?= $eff ?></span><span class="detail-label">Equivalent Trees Planted</span></div>
                                 </li>
+                                <?php endif; ?>
                             </ul>
                         </div>
                     </div>
                 </div>
                 <?php endforeach; ?>
-                <?php endif; ?>
 
             </div>
 
