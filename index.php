@@ -1,5 +1,173 @@
 <?php
 session_start();
+
+// Handle Estimate Form Submission POST Request
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'submit_estimate') {
+    header('Content-Type: application/json');
+    require_once __DIR__ . '/config/db_pdo.php';
+    try {
+        $db = getPDO();
+        
+        // Auto-create estimates table if it doesn't exist
+        $db->exec("CREATE TABLE IF NOT EXISTS `estimates` (
+            `id` INT AUTO_INCREMENT PRIMARY KEY,
+            `full_name` VARCHAR(255) NOT NULL,
+            `email_address` VARCHAR(255) NOT NULL,
+            `contact_number` VARCHAR(50) NOT NULL,
+            `property_type` VARCHAR(50) NOT NULL,
+            `complete_address` TEXT NOT NULL,
+            `inspection_date` DATE NOT NULL,
+            `monthly_bill` DECIMAL(10, 2) NOT NULL,
+            `roof_type` VARCHAR(100) NOT NULL,
+            `additional_notes` TEXT NULL,
+            `status` VARCHAR(50) NOT NULL DEFAULT 'Pending',
+            `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+        
+        $fullname = trim($_POST['fullname'] ?? '');
+        $email = trim($_POST['email'] ?? '');
+        $phone = trim($_POST['phone'] ?? '');
+        $phone_full = trim($_POST['phone_full'] ?? $phone);
+        if (strpos($phone_full, '+63') === false && !empty($phone_full)) {
+            $phone_full = '+63' . ltrim($phone_full, '0');
+        }
+        $property_type = trim($_POST['property_type'] ?? '');
+        $address = trim($_POST['address'] ?? '');
+        $inspection_date = trim($_POST['inspection_date'] ?? '');
+        $bill = floatval($_POST['bill'] ?? 0);
+        $roof_type = trim($_POST['roof_type'] ?? '');
+        if ($roof_type === 'Other' && !empty($_POST['roof_type_other'])) {
+            $roof_type = trim($_POST['roof_type_other']);
+        }
+        $notes = trim($_POST['notes'] ?? '');
+        
+        if (empty($fullname) || empty($email) || empty($phone_full) || empty($address) || empty($inspection_date)) {
+            throw new Exception("Please fill in all required fields.");
+        }
+        
+        $sql = "INSERT INTO `estimates` (full_name, email_address, contact_number, property_type, complete_address, inspection_date, monthly_bill, roof_type, additional_notes, status) 
+                VALUES (:fullname, :email, :phone, :property_type, :address, :inspection_date, :bill, :roof_type, :notes, 'Pending')";
+        
+        $stmt = $db->prepare($sql);
+        $stmt->execute([
+            ':fullname' => $fullname,
+            ':email' => $email,
+            ':phone' => $phone_full,
+            ':property_type' => $property_type,
+            ':address' => $address,
+            ':inspection_date' => $inspection_date,
+            ':bill' => $bill,
+            ':roof_type' => $roof_type,
+            ':notes' => $notes
+        ]);
+        
+        // Trigger Resend API call (using fallback onboarding sender for testing/unverified domains)
+        $resendApiKey = 're_Fh6X1rKo_JzjtWaAfUfRiEQs5HHxE4VsV'; 
+        $subject = "New Solar Estimate Request - " . $fullname;
+        
+        $emailBody = "
+        <html>
+        <head>
+            <style>
+                body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                .container { max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px; background-color: #fcfcfc; }
+                .header { background: linear-gradient(135deg, #115e59, #0f766e); color: #fff; padding: 20px; text-align: center; border-radius: 6px 6px 0 0; }
+                .content { padding: 20px; background: #fff; }
+                table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+                th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+                th { background-color: #f2f2f2; font-weight: bold; width: 35%; }
+                .notes { background-color: #f9f9f9; padding: 15px; border-left: 4px solid #f39c12; margin-top: 15px; font-style: italic; }
+            </style>
+        </head>
+        <body>
+            <div class='container'>
+                <div class='header'>
+                    <h2 style='margin:0;'>New Solar Estimate Request</h2>
+                    <p style='margin:5px 0 0 0;font-size:14px;'>SolarPower Energy Corporation</p>
+                </div>
+                <div class='content'>
+                    <p>A new solar estimate request has been submitted. Details are below:</p>
+                    <table>
+                        <tr>
+                            <th>Full Name</th>
+                            <td>" . htmlspecialchars($fullname) . "</td>
+                        </tr>
+                        <tr>
+                            <th>Email Address</th>
+                            <td>" . htmlspecialchars($email) . "</td>
+                        </tr>
+                        <tr>
+                            <th>Contact Number</th>
+                            <td>" . htmlspecialchars($phone_full) . "</td>
+                        </tr>
+                        <tr>
+                            <th>Property Type</th>
+                            <td>" . htmlspecialchars($property_type) . "</td>
+                        </tr>
+                        <tr>
+                            <th>Complete Address</th>
+                            <td>" . htmlspecialchars($address) . "</td>
+                        </tr>
+                        <tr>
+                            <th>Preferred Assessment Date</th>
+                            <td>" . htmlspecialchars($inspection_date) . "</td>
+                        </tr>
+                        <tr>
+                            <th>Monthly Bill</th>
+                            <td>₱ " . number_format($bill, 2) . "</td>
+                        </tr>
+                        <tr>
+                            <th>Roof Type</th>
+                            <td>" . htmlspecialchars($roof_type) . "</td>
+                        </tr>
+                    </table>";
+                    
+        if (!empty($notes)) {
+            $emailBody .= "
+                    <h3 style='margin-top:20px;color:#0f766e;'>Additional Notes</h3>
+                    <div class='notes'>" . nl2br(htmlspecialchars($notes)) . "</div>";
+        }
+        
+        $emailBody .= "
+                </div>
+            </div>
+        </body>
+        </html>";
+        
+        $payload = [
+            'from' => 'SolarPower Energy <onboarding@resend.dev>',
+            'to' => ['solar@solarpower.com.ph'],
+            'subject' => $subject,
+            'html' => $emailBody
+        ];
+        
+        $ch = curl_init('https://api.resend.com/emails');
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            'Authorization: Bearer ' . $resendApiKey,
+            'Content-Type: application/json'
+        ]);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
+        
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        
+        echo json_encode([
+            'success' => true,
+            'message' => 'Estimate request saved and notification sent!'
+        ]);
+        exit;
+    } catch (Exception $e) {
+        echo json_encode([
+            'success' => false,
+            'message' => $e->getMessage()
+        ]);
+        exit;
+    }
+}
+
 $isLoggedIn = isset($_SESSION['user_id']);
 include "config/dbconn.php";
 
@@ -9,7 +177,7 @@ $products = [];
 $sql = "SELECT 
     p.id,
     p.displayName,
-    CASE WHEN TRIM(p.brandName) = 'Hybrid' THEN 'Package' ELSE TRIM(p.brandName) END AS brandName,
+    CASE WHEN TRIM(p.brandName) = 'Hybrid System' THEN 'Package' ELSE TRIM(p.brandName) END AS brandName,
     p.price,
     p.stockQuantity,
     p.category,
@@ -20,7 +188,7 @@ LEFT JOIN product_images pi
     ON p.id = pi.product_id
 WHERE pi.image_path IS NOT NULL 
   AND p.status = 'Active'
-  AND TRIM(p.brandName) = 'Hybrid'
+  AND (TRIM(p.brandName) = 'Hybrid' OR TRIM(p.brandName) = 'Package')
 GROUP BY p.id
 ORDER BY p.price ASC";
 
@@ -129,6 +297,8 @@ $conn->close();
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     
     <script src="https://cdn.tailwindcss.com"></script>
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8363297627454600"
+     crossorigin="anonymous"></script>
     <script>
       tailwind.config = {
         corePlugins: {
@@ -511,20 +681,111 @@ $conn->close();
                 <!-- LEFT: HERO TEXT -->
                 <div class="hero-text" data-aos="fade-right">
                     <h1>Smart Energy for Smarter Homes</h1>
-                    <p class="hero-tagline">One Stop Shop for Solar Power Mega Company</p>
+                    <p class="hero-tagline">Sun Powered, Future Driven</p>
                     <p>Invest in solar today - enjoy decades of energy independence and savings.</p>
                     <div class="hero-cta">
-                        <button class="btn btn-primary" onclick="window.location.href='about.php'">
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#inspectionModal">GET FREE ESTIMATE NOW!</button>
+                        <button class="btn btn-secondary" onclick="window.location.href='about.php'">
                             Learn More
                         </button>
-                        <button class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#inspectionModal">Book
-                            for Inspection</button>
                     </div>
                 </div>
             </div>
         </section>
     </div>
 
+
+    <!-- Trusted Partners Marquee Section -->
+    <section class="bg-amber-500 py-6 overflow-hidden relative shadow-inner">
+        <!-- Title -->
+        <div class="text-center mb-4">
+            <h3 class="text-xs sm:text-sm font-bold text-white/90 uppercase tracking-[0.2em]">Our Brand Partners</h3>
+        </div>
+
+        <!-- Marquee Container -->
+        <div class="relative flex overflow-x-hidden group">
+            <!-- Left Gradient Mask -->
+            <div class="absolute top-0 left-0 w-16 md:w-32 h-full bg-gradient-to-r from-amber-500 to-transparent z-10 pointer-events-none"></div>
+
+            <!-- Right Gradient Mask -->
+            <div class="absolute top-0 right-0 w-16 md:w-32 h-full bg-gradient-to-l from-amber-500 to-transparent z-10 pointer-events-none"></div>
+
+            <!-- Marquee Track -->
+            <div class="flex animate-marquee group-hover:animate-marquee-paused whitespace-nowrap py-2">
+                <!-- Logos Set 1 -->
+                <div class="flex items-center gap-6 px-3">
+                    <!-- Ian Solar -->
+                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
+                        <img src="assets/img/iansolar.png" alt="Ian Solar" class="w-full h-full object-contain mix-blend-multiply opacity-90">
+                    </div>
+                    <!-- LVTopsun -->
+                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
+                        <img src="assets/img/lvtopsun.png" alt="LVTopsun" class="w-full h-full object-contain mix-blend-multiply opacity-90">
+                    </div>
+                    <!-- Jinko Solar -->
+                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
+                        <img src="assets/img/jinko.png" alt="Jinko Solar" class="w-full h-full object-contain mix-blend-multiply opacity-90">
+                    </div>
+                    <!-- HyxiPower -->
+                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
+                        <img src="assets/img/hyxipower.png" alt="HyxiPower" class="w-full h-full object-contain mix-blend-multiply opacity-90">
+                    </div>
+                    <!-- Hopewind -->
+                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
+                        <img src="assets/img/Hopewind.jpg" alt="Hopewind" class="w-full h-full object-contain mix-blend-multiply opacity-90">
+                    </div>
+                    <!-- Solax -->
+                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
+                        <img src="assets/img/solax.png" alt="Solax Power" class="w-full h-full object-contain mix-blend-multiply opacity-90">
+                    </div>
+                    <!-- Aiko -->
+                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
+                        <img src="assets/img/aiko.png" alt="Aiko" class="w-full h-full object-contain mix-blend-multiply opacity-90">
+                    </div>
+                    <!-- Hoymiles -->
+                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
+                        <img src="assets/img/hoymiles.png" alt="Hoymiles" class="w-full h-full object-contain mix-blend-multiply opacity-90">
+                    </div>
+                    <!-- Trina Solar (Fallback for TW Solar) -->
+                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
+                        <img src="assets/img/trinasolar.png" alt="Trina Solar" class="w-full h-full object-contain mix-blend-multiply opacity-90">
+                    </div>
+                </div>
+
+                <!-- Logos Set 2 (Duplicate for Seamless Loop) -->
+                <div class="flex items-center gap-6 px-3" aria-hidden="true">
+                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
+                        <img src="assets/img/iansolar.png" alt="Ian Solar" class="w-full h-full object-contain mix-blend-multiply opacity-90">
+                    </div>
+                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
+                        <img src="assets/img/lvtopsun.png" alt="LVTopsun" class="w-full h-full object-contain mix-blend-multiply opacity-90">
+                    </div>
+                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
+                        <img src="assets/img/jinko.png" alt="Jinko Solar" class="w-full h-full object-contain mix-blend-multiply opacity-90">
+                    </div>
+                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
+                        <img src="assets/img/hyxipower.png" alt="HyxiPower" class="w-full h-full object-contain mix-blend-multiply opacity-90">
+                    </div>
+                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
+                        <img src="assets/img/Hopewind.jpg" alt="Hopewind" class="w-full h-full object-contain mix-blend-multiply opacity-90">
+                    </div>
+                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
+                        <img src="assets/img/solax.png" alt="Solax Power" class="w-full h-full object-contain mix-blend-multiply opacity-90">
+                    </div>
+                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
+                        <img src="assets/img/aiko.png" alt="Aiko" class="w-full h-full object-contain mix-blend-multiply opacity-90">
+                    </div>
+                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
+                        <img src="assets/img/hoymiles.png" alt="Hoymiles" class="w-full h-full object-contain mix-blend-multiply opacity-90">
+                    </div>
+                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
+                        <img src="assets/img/trinasolar.png" alt="Trina Solar" class="w-full h-full object-contain mix-blend-multiply opacity-90">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
     <!-- Modernized Solar Savings Calculator Section -->
     <section class="py-16 bg-amber-400 relative overflow-hidden" id="solarCalculator">
         <!-- Background Pattern -->
@@ -614,97 +875,6 @@ $conn->close();
                         <i class="fab fa-viber text-xl group-hover:scale-110 transition-transform"></i>
                         Get a Free Detailed Quote via Viber
                     </a>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Trusted Partners Marquee Section -->
-    <section class="bg-amber-500 py-6 overflow-hidden relative shadow-inner">
-        <!-- Title -->
-        <div class="text-center mb-4">
-            <h3 class="text-xs sm:text-sm font-bold text-white/90 uppercase tracking-[0.2em]">Our Brand Partners</h3>
-        </div>
-
-        <!-- Marquee Container -->
-        <div class="relative flex overflow-x-hidden group">
-            <!-- Left Gradient Mask -->
-            <div class="absolute top-0 left-0 w-16 md:w-32 h-full bg-gradient-to-r from-amber-500 to-transparent z-10 pointer-events-none"></div>
-
-            <!-- Right Gradient Mask -->
-            <div class="absolute top-0 right-0 w-16 md:w-32 h-full bg-gradient-to-l from-amber-500 to-transparent z-10 pointer-events-none"></div>
-
-            <!-- Marquee Track -->
-            <div class="flex animate-marquee group-hover:animate-marquee-paused whitespace-nowrap py-2">
-                <!-- Logos Set 1 -->
-                <div class="flex items-center gap-6 px-3">
-                    <!-- Ian Solar -->
-                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
-                        <img src="assets/img/iansolar.png" alt="Ian Solar" class="w-full h-full object-contain mix-blend-multiply opacity-90">
-                    </div>
-                    <!-- LVTopsun -->
-                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
-                        <img src="assets/img/lvtopsun.png" alt="LVTopsun" class="w-full h-full object-contain mix-blend-multiply opacity-90">
-                    </div>
-                    <!-- Jinko Solar -->
-                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
-                        <img src="assets/img/jinko.png" alt="Jinko Solar" class="w-full h-full object-contain mix-blend-multiply opacity-90">
-                    </div>
-                    <!-- HyxiPower -->
-                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
-                        <img src="assets/img/hyxipower.png" alt="HyxiPower" class="w-full h-full object-contain mix-blend-multiply opacity-90">
-                    </div>
-                    <!-- Hopewind -->
-                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
-                        <img src="assets/img/Hopewind.jpg" alt="Hopewind" class="w-full h-full object-contain mix-blend-multiply opacity-90">
-                    </div>
-                    <!-- Solax -->
-                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
-                        <img src="assets/img/solax.png" alt="Solax Power" class="w-full h-full object-contain mix-blend-multiply opacity-90">
-                    </div>
-                    <!-- Aiko -->
-                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
-                        <img src="assets/img/aiko.png" alt="Aiko" class="w-full h-full object-contain mix-blend-multiply opacity-90">
-                    </div>
-                    <!-- Hoymiles -->
-                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
-                        <img src="assets/img/hoymiles.png" alt="Hoymiles" class="w-full h-full object-contain mix-blend-multiply opacity-90">
-                    </div>
-                    <!-- Trina Solar (Fallback for TW Solar) -->
-                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
-                        <img src="assets/img/trinasolar.png" alt="Trina Solar" class="w-full h-full object-contain mix-blend-multiply opacity-90">
-                    </div>
-                </div>
-
-                <!-- Logos Set 2 (Duplicate for Seamless Loop) -->
-                <div class="flex items-center gap-6 px-3" aria-hidden="true">
-                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
-                        <img src="assets/img/iansolar.png" alt="Ian Solar" class="w-full h-full object-contain mix-blend-multiply opacity-90">
-                    </div>
-                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
-                        <img src="assets/img/lvtopsun.png" alt="LVTopsun" class="w-full h-full object-contain mix-blend-multiply opacity-90">
-                    </div>
-                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
-                        <img src="assets/img/jinko.png" alt="Jinko Solar" class="w-full h-full object-contain mix-blend-multiply opacity-90">
-                    </div>
-                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
-                        <img src="assets/img/hyxipower.png" alt="HyxiPower" class="w-full h-full object-contain mix-blend-multiply opacity-90">
-                    </div>
-                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
-                        <img src="assets/img/Hopewind.jpg" alt="Hopewind" class="w-full h-full object-contain mix-blend-multiply opacity-90">
-                    </div>
-                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
-                        <img src="assets/img/solax.png" alt="Solax Power" class="w-full h-full object-contain mix-blend-multiply opacity-90">
-                    </div>
-                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
-                        <img src="assets/img/aiko.png" alt="Aiko" class="w-full h-full object-contain mix-blend-multiply opacity-90">
-                    </div>
-                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
-                        <img src="assets/img/hoymiles.png" alt="Hoymiles" class="w-full h-full object-contain mix-blend-multiply opacity-90">
-                    </div>
-                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
-                        <img src="assets/img/trinasolar.png" alt="Trina Solar" class="w-full h-full object-contain mix-blend-multiply opacity-90">
-                    </div>
                 </div>
             </div>
         </div>
@@ -2183,7 +2353,7 @@ $conn->close();
 
     <!-- INSPECTION MODAL -->
     <div class="modal fade" id="inspectionModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
             <div class="modal-content border-0 rounded-4 overflow-hidden position-relative">
 
                 <!-- Close Button -->
@@ -2202,8 +2372,7 @@ $conn->close();
                             </div>
 
                             <h2 class="fw-bold mb-3">Ready to <span class="text-warning">Switch<br>to Solar?</span></h2>
-                            <p class="mb-4 opacity-75">Book a site inspection and let our certified engineers design the
-                                perfect system for your home or business.</p>
+                            <p class="mb-4 opacity-75">Get a personalized solar quotation and let our certified engineers design the perfect system for your home or business.</p>
 
                             <ul class="list-unstyled inspection-features">
                                 <li class="mb-3"><i class="fas fa-check-circle text-warning me-2"></i> Professional
@@ -2224,9 +2393,9 @@ $conn->close();
                     </div>
 
                     <!-- FORM PANEL -->
-                    <div class="col-lg-7 bg-white p-4 p-md-5">
-                        <div class="mb-4">
-                            <h2 class="fw-bold">Book Site Inspection</h2>
+                    <div class="col-lg-7 bg-white p-4 p-md-4" style="max-height: 80vh; overflow-y: auto;">
+                        <div class="mb-3">
+                            <h2 class="fw-bold">Get Your Free Solar Estimate</h2>
                             <p class="text-muted small">We'll contact you within 24 hours.</p>
                         </div>
 
@@ -2279,7 +2448,7 @@ $conn->close();
                                 </div>
 
                                 <div class="col-md-6 mb-3">
-                                    <label class="form-label fw-semibold small text-uppercase">Inspection Date</label>
+                                    <label class="form-label fw-semibold small text-uppercase">Preferred Assessment Date</label>
                                     <input type="date" name="inspection_date" class="form-control" required>
                                 </div>
 
@@ -2328,8 +2497,7 @@ $conn->close();
 
                             <button type="submit" class="btn w-100 py-3 fw-bold text-uppercase" id="inspectionBtn"
                                 style="background:linear-gradient(135deg,#f39c12,#e67e22);color:#fff;border:none;">
-                                <span class="btn-text"><i class="fas fa-calendar-check me-2"></i>Confirm My
-                                    Schedule</span>
+                                <span class="btn-text"><i class="fas fa-calculator me-2"></i>GET MY FREE ESTIMATE</span>
                                 <span class="spinner-border spinner-border-sm d-none ms-2"></span>
                             </button>
                         </form>
@@ -4054,11 +4222,11 @@ $conn->close();
 
             try {
                 const formData = new FormData(inspectionForm);
+                formData.append('action', 'submit_estimate');
 
-                // STEP 1: Try PHP handler first (beautiful custom email)
-                console.log('📧 Attempting to send via PHP...');
+                console.log('📧 Saving lead and sending email notification via PHP/Resend...');
 
-                const phpResponse = await fetch('send-inspection-email.php', {
+                const phpResponse = await fetch('index.php', {
                     method: 'POST',
                     body: formData
                 });
@@ -4066,53 +4234,21 @@ $conn->close();
                 const phpResult = await phpResponse.json();
 
                 if (phpResult.success) {
-                    // ✅ SUCCESS - PHP worked!
-                    console.log('✅ Email sent successfully via PHP');
+                    console.log('✅ Lead saved and email sent successfully');
                     showSuccessAndReset();
-                    return;
                 } else {
-                    throw new Error('PHP handler failed');
+                    throw new Error(phpResult.message || 'Unknown database/email error');
                 }
 
-            } catch (phpError) {
-                // STEP 2: PHP failed, try FormSubmit backup
-                console.warn('⚠️ PHP failed, trying FormSubmit backup...', phpError);
+            } catch (error) {
+                console.error('❌ Submission failed:', error);
 
-                try {
-                    const formData = new FormData(inspectionForm);
+                // Reset button loading state
+                btnText.classList.remove('d-none');
+                spinner.classList.add('d-none');
+                submitBtn.disabled = false;
 
-                    // Add FormSubmit config
-                    formData.append('_subject', '🌞 New Solar Inspection Request');
-                    formData.append('_captcha', 'false');
-                    formData.append('_template', 'box');
-
-                    const formsubmitResponse = await fetch('https://formsubmit.co/solar@solarpower.com.ph', {
-                        method: 'POST',
-                        body: formData,
-                        headers: {
-                            'Accept': 'application/json'
-                        }
-                    });
-
-                    if (formsubmitResponse.ok) {
-                        // ✅ SUCCESS - FormSubmit worked!
-                        console.log('✅ Email sent successfully via FormSubmit');
-                        showSuccessAndReset();
-                    } else {
-                        throw new Error('FormSubmit also failed');
-                    }
-
-                } catch (formsubmitError) {
-                    // Both methods failed
-                    console.error('❌ Both PHP and FormSubmit failed', formsubmitError);
-
-                    // Reset button
-                    btnText.classList.remove('d-none');
-                    spinner.classList.add('d-none');
-                    submitBtn.disabled = false;
-
-                    alert('There was an error submitting your request. Please try again or contact us directly at solar@solarpower.com.ph');
-                }
+                alert('There was an error submitting your request: ' + error.message);
             }
         });
     }

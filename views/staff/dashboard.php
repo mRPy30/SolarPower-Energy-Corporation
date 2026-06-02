@@ -14,6 +14,24 @@ if (!isset($_SESSION['user_id']) || empty($_SESSION['user_id'])) {
 // Database connection details
 include "../../config/dbconn.php";
 
+// Dynamically alter contact_messages table to support manual inquiries if columns are missing
+$check_cols = $conn->query("SHOW COLUMNS FROM `contact_messages` LIKE 'source'");
+if ($check_cols && $check_cols->num_rows === 0) {
+    $conn->query("ALTER TABLE `contact_messages` ADD COLUMN `source` VARCHAR(50) NOT NULL DEFAULT 'Website'");
+}
+$check_bill = $conn->query("SHOW COLUMNS FROM `contact_messages` LIKE 'monthly_bill'");
+if ($check_bill && $check_bill->num_rows === 0) {
+    $conn->query("ALTER TABLE `contact_messages` ADD COLUMN `monthly_bill` DECIMAL(10,2) NULL");
+}
+$check_prop = $conn->query("SHOW COLUMNS FROM `contact_messages` LIKE 'property_type'");
+if ($check_prop && $check_prop->num_rows === 0) {
+    $conn->query("ALTER TABLE `contact_messages` ADD COLUMN `property_type` VARCHAR(50) NULL");
+}
+$check_roof = $conn->query("SHOW COLUMNS FROM `contact_messages` LIKE 'roof_type'");
+if ($check_roof && $check_roof->num_rows === 0) {
+    $conn->query("ALTER TABLE `contact_messages` ADD COLUMN `roof_type` VARCHAR(50) NULL");
+}
+
 // Get user data from session
 $user_id = $_SESSION['user_id'];
 $firstName = $_SESSION['firstName'] ?? 'User';
@@ -677,6 +695,32 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
                     echo json_encode(['success' => true]);
                 } else {
                     echo json_encode(['success' => false, 'message' => 'Update failed']);
+                }
+                $stmt->close();
+                break;
+
+            case 'create_manual_inquiry':
+                $name = isset($_POST['name']) ? trim($_POST['name']) : '';
+                $email = isset($_POST['email']) ? trim($_POST['email']) : '';
+                $phone = isset($_POST['phone']) ? trim($_POST['phone']) : '';
+                $channel = isset($_POST['channel']) ? trim($_POST['channel']) : 'Website';
+                $message = isset($_POST['message']) ? trim($_POST['message']) : '';
+                $monthly_bill = isset($_POST['monthly_bill']) ? trim($_POST['monthly_bill']) : NULL;
+                $property_type = isset($_POST['property_type']) ? trim($_POST['property_type']) : NULL;
+                $roof_type = isset($_POST['roof_type']) ? trim($_POST['roof_type']) : NULL;
+
+                if (empty($name) || empty($email) || empty($message)) {
+                    echo json_encode(['success' => false, 'message' => 'Client Name, Email, and Message Details are required.']);
+                    exit();
+                }
+
+                $stmt = $conn->prepare("INSERT INTO contact_messages (name, email, phone, message, source, monthly_bill, property_type, roof_type, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'new')");
+                $stmt->bind_param("ssssssss", $name, $email, $phone, $message, $channel, $monthly_bill, $property_type, $roof_type);
+
+                if ($stmt->execute()) {
+                    echo json_encode(['success' => true, 'message' => 'Manual inquiry created successfully!']);
+                } else {
+                    echo json_encode(['success' => false, 'message' => 'Failed to save inquiry.']);
                 }
                 $stmt->close();
                 break;
@@ -1902,6 +1946,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 <span>Inquiries</span>
             </div>
 
+            <div class="menu-item" onclick="showPage('estimates', 'Solar Estimates')" data-tooltip="Solar Estimates">
+                <i class="fas fa-file-invoice-dollar"></i>
+                <span>Solar Estimates</span>
+            </div>
+
             <div class="menu-item" onclick="showPage('clients', 'Clients')" data-tooltip="Clients">
                 <i class="fas fa-users"></i>
                 <span>Clients</span>
@@ -1964,6 +2013,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
             <div class="menu-item" onclick="showPage('settings', 'Settings')" data-tooltip="Settings">
                 <i class="fas fa-user-circle"></i>
                 <span>My Profile</span>
+            </div>
+            <div class="menu-item" onclick="showPage('staff_manage', 'Staff Management')" data-tooltip="Staff Management">
+                <i class="fas fa-users-cog"></i>
+                <span>Staff Management</span>
             </div>
         </aside>
 
@@ -2351,6 +2404,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
 
                 </div>
             </div>
+
+            <!-- Solar Estimates Page -->
+            <div id="estimates" class="page-content">
+                <iframe src="estimates.php" style="width: 100%; height: calc(100vh - 120px); border: none; border-radius: 12px; background: white; box-shadow: 0 4px 20px rgba(0,0,0,0.05);"></iframe>
+            </div>
+
             <div id="inquiries" class="page-content">
 
 
@@ -2358,41 +2417,59 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
 
                     <!-- Stats -->
                     <div class="inq-stats">
-                        <div class="inq-stat inq-s-total">
-                            <i class="fas fa-inbox"></i>
-                            <div><span class="inq-stat-num"><?php echo $total_inquiries; ?></span><span
-                                    class="inq-stat-lbl">Total</span></div>
+                        <div class="inq-stat" style="border-left: 4px solid #6c757d;">
+                            <i class="fas fa-inbox" style="color: #6c757d; font-size: 22px;"></i>
+                            <div>
+                                <span class="inq-stat-num"><?php echo $total_inquiries; ?></span>
+                                <span class="inq-stat-lbl">Total</span>
+                            </div>
                         </div>
-                        <div class="inq-stat inq-s-new">
-                            <i class="fas fa-star"></i>
-                            <div><span
-                                    class="inq-stat-num"><?php echo count(array_filter($all_inquiries, fn($i) => $i['status'] === 'new')); ?></span><span
-                                    class="inq-stat-lbl">New</span></div>
+                        <div class="inq-stat" style="border-left: 4px solid #ffc107;">
+                            <i class="fas fa-globe" style="color: #ffc107; font-size: 22px;"></i>
+                            <div>
+                                <span class="inq-stat-num"><?php echo count(array_filter($all_inquiries, fn($i) => ($i['source'] ?? 'Website') === 'Website')); ?></span>
+                                <span class="inq-stat-lbl">Website</span>
+                            </div>
                         </div>
-                        <div class="inq-stat inq-s-read">
-                            <i class="fas fa-eye"></i>
-                            <div><span
-                                    class="inq-stat-num"><?php echo count(array_filter($all_inquiries, fn($i) => $i['status'] === 'read')); ?></span><span
-                                    class="inq-stat-lbl">Read</span></div>
+                        <div class="inq-stat" style="border-left: 4px solid #1877f2;">
+                            <i class="fab fa-facebook" style="color: #1877f2; font-size: 22px;"></i>
+                            <div>
+                                <span class="inq-stat-num"><?php echo count(array_filter($all_inquiries, fn($i) => ($i['source'] ?? '') === 'Facebook')); ?></span>
+                                <span class="inq-stat-lbl">FB/Messenger</span>
+                            </div>
                         </div>
-                        <div class="inq-stat inq-s-replied">
-                            <i class="fas fa-reply"></i>
-                            <div><span
-                                    class="inq-stat-num"><?php echo count(array_filter($all_inquiries, fn($i) => $i['status'] === 'replied')); ?></span><span
-                                    class="inq-stat-lbl">Replied</span></div>
+                        <div class="inq-stat" style="border-left: 4px solid #22c55e;">
+                            <i class="fas fa-phone-alt" style="color: #22c55e; font-size: 22px;"></i>
+                            <div>
+                                <span class="inq-stat-num"><?php echo count(array_filter($all_inquiries, fn($i) => in_array($i['source'] ?? '', ['Phone', 'Phone Call']))); ?></span>
+                                <span class="inq-stat-lbl">Contact</span>
+                            </div>
+                        </div>
+                        <div class="inq-stat" style="border-left: 4px solid #0284c7;">
+                            <i class="fas fa-envelope" style="color: #0284c7; font-size: 22px;"></i>
+                            <div>
+                                <span class="inq-stat-num"><?php echo count(array_filter($all_inquiries, fn($i) => ($i['source'] ?? '') === 'Email')); ?></span>
+                                <span class="inq-stat-lbl">Email</span>
+                            </div>
                         </div>
                     </div>
 
                     <!-- Search & Filter -->
-                    <div class="inq-toolbar">
-                        <input type="text" id="inqSearch" class="inq-search"
-                            placeholder="Search by name, email or phone…">
-                        <select id="inqStatusFilter" class="inq-filter-sel">
-                            <option value="">All Status</option>
-                            <option value="new">New</option>
-                            <option value="read">Read</option>
-                            <option value="replied">Replied</option>
-                        </select>
+                    <div class="inq-toolbar" style="display: flex; gap: 10px; align-items: center; justify-content: space-between; width: 100%;">
+                        <div style="display: flex; gap: 10px; flex: 1;">
+                            <input type="text" id="inqSearch" class="inq-search"
+                                placeholder="Search by name, email or phone…" style="flex: 1;">
+                            <select id="inqStatusFilter" class="inq-filter-sel">
+                                <option value="">All Status</option>
+                                <option value="new">New</option>
+                                <option value="read">Read</option>
+                                <option value="replied">Replied</option>
+                            </select>
+                        </div>
+                        <button class="btn-primary" style="background-color: #ffc107; color: #0f172a; font-weight: 700; border: none; padding: 10px 18px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 6px; white-space: nowrap;"
+                            onclick="openManualInquiryModal()">
+                            <i class="fas fa-plus"></i> Add Manual Inquiry
+                        </button>
                     </div>
 
                     <!-- Table -->
@@ -2439,7 +2516,21 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                                                         <?php echo strtoupper(substr($msg['name'], 0, 1)); ?>
                                                     </div>
                                                     <div>
-                                                        <div class="inq-fullname"><?php echo $safeName; ?></div>
+                                                        <div class="inq-fullname" style="display: flex; align-items: center; gap: 8px;">
+                                                            <?php echo $safeName; ?>
+                                                            <?php
+                                                            $source = $msg['source'] ?? 'Website';
+                                                            if ($source === 'Facebook') {
+                                                                echo '<i class="fab fa-facebook" title="Facebook" style="font-size: 14px; color: #1877f2 !important;"></i>';
+                                                            } elseif ($source === 'Email') {
+                                                                echo '<i class="fas fa-envelope" title="Email" style="font-size: 14px; color: #0284c7 !important;"></i>';
+                                                            } elseif (in_array($source, ['Phone', 'Phone Call'])) {
+                                                                echo '<i class="fas fa-phone-alt" title="Phone Call" style="font-size: 14px; color: #fbbf24 !important;"></i>';
+                                                            } else {
+                                                                echo '<i class="fas fa-globe" title="Website (Online Form)" style="font-size: 14px; color: #64748b !important;"></i>';
+                                                            }
+                                                            ?>
+                                                        </div>
                                                         <?php if ($msg['status'] === 'new'): ?><span
                                                                 class="inq-new-pill">NEW</span><?php endif; ?>
                                                     </div>
@@ -3580,7 +3671,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                         border-top: 4px solid #8b5cf6;
                     }
                     .cat-stat-box.blue  { border-color: #3b82f6; }
-                    .cat-stat-box.green { border-color: #22c55e; }
+                    .cat-stat-box.yellow { border-color: #fbbf24; }
                     .cat-stat-box h4 {
                         font-size: 11px;
                         color: #888;
@@ -3841,7 +3932,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                             <h4>Total Brands</h4>
                             <div class="value" id="catStatBrands">–</div>
                         </div>
-                        <div class="cat-stat-box green">
+                        <div class="cat-stat-box yellow">
                             <h4>Categories with Brands</h4>
                             <div class="value" id="catStatActive">–</div>
                         </div>
@@ -5098,7 +5189,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                                     // User's specific heatmap coloring (Red -> Yellow)
                                     // Scale val down slightly to prevent pure yellow overflow, wrap correctly
                                     imgData.data[idx] = 255;       // Red
-                                    imgData.data[idx + 1] = Math.min(255, val / 4); // Green adjustment
+                                    imgData.data[idx + 1] = Math.min(255, val / 4); // Yellow adjustment
                                     imgData.data[idx + 2] = 0;       // Blue
                                     imgData.data[idx + 3] = 180;     // Opacity/Alpha
                                 }
@@ -5574,7 +5665,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                             </button>
                             <button class="btn-primary" style="background-color: #ffc107; color: #0f172a; font-weight: 700; border: none;"
                                 onclick="openManualOrderModal()">
-                                <i class="fas fa-plus"></i> + Add Manual Order
+                                <i class="fas fa-plus"></i> Add Manual Order
                             </button>
                             <button class="btn-refresh" onclick="OrdersModule.loadOrders()">
                                 <i class="fas fa-sync-alt"></i> Refresh
@@ -5893,7 +5984,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                                             <td style="padding: 12px;">
                                                 <div style="display: flex; gap: 4px;">
                                                     <button onclick="restoreArchivedProduct(<?php echo $ap['archive_id']; ?>)"
-                                                        class="green-action-btn" title="Restore Product">
+                                                        class="yellow-action-btn" title="Restore Product">
                                                         <i class="fas fa-undo"></i>
                                                     </button>
                                                     <button onclick="permanentDeleteProduct(<?php echo $ap['archive_id']; ?>)"
@@ -6037,7 +6128,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                                             <td style="padding: 12px;">
                                                 <div style="display: flex; gap: 4px;">
                                                     <button onclick="restoreArchivedQuotation(<?php echo $aq['archive_id']; ?>)"
-                                                        class="green-action-btn" title="Restore Quotation">
+                                                        class="yellow-action-btn" title="Restore Quotation">
                                                         <i class="fas fa-undo"></i>
                                                     </button>
                                                     <button onclick="permanentDeleteQuotation(<?php echo $aq['archive_id']; ?>)"
@@ -6138,7 +6229,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                                             <td style="padding: 12px;">
                                                 <div style="display: flex; gap: 4px;">
                                                     <button onclick="restoreArchivedSupplier(<?= $asup['archive_id'] ?>)"
-                                                        class="green-action-btn" title="Restore">
+                                                        class="yellow-action-btn" title="Restore">
                                                         <i class="fas fa-undo"></i>
                                                     </button>
                                                     <button onclick="permanentDeleteSupplier(<?= $asup['archive_id'] ?>)"
@@ -6424,6 +6515,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                     </div>
 
                 </div>
+            </div>
+
+            <!-- Staff Management Page -->
+            <div id="staff_manage" class="page-content">
+                <iframe src="staff_manage.php" style="width: 100%; height: calc(100vh - 120px); border: none; border-radius: 12px; background: white; box-shadow: 0 4px 20px rgba(0,0,0,0.05);"></iframe>
             </div>
 
             <div id="settings" class="page-content profile-container">
@@ -8448,10 +8544,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                     const salesChannel = o.sales_channel || 'Website';
                     let channelBadge = '';
                     if (salesChannel.toLowerCase() !== 'website') {
-                        let badgeColor = '#3b82f6';
+                        let badgeColor = '#16a34a';
                         let label = salesChannel;
                         if (salesChannel.toLowerCase() === 'facebook') { badgeColor = '#1877f2'; label = 'FB'; }
-                        else if (salesChannel.toLowerCase() === 'phone call') { badgeColor = '#16a34a'; label = 'Call'; }
+                        else if (salesChannel.toLowerCase() === 'phone call') { badgeColor = '#3b82f6'; label = 'Call'; }
                         else if (salesChannel.toLowerCase() === 'walk-in') { badgeColor = '#ea580c'; label = 'Walk-in'; }
                         else if (salesChannel.toLowerCase() === 'viber') { badgeColor = '#7360f2'; label = 'Viber'; }
                         
@@ -11482,6 +11578,114 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
         <?php endif; ?>
     </script>
 
+    <!-- Create Manual Inquiry Modal Overlay -->
+    <div class="manual-order-overlay" id="manualInquiryOverlay">
+        <div class="manual-order-modal-box" style="max-width: 650px;">
+            <div class="manual-order-modal-head" style="border-bottom: 1px solid #f1f5f9; background: #f8fafc;">
+                <h3><i class="fas fa-plus-circle" style="color: #3b82f6;"></i> Create Manual Inquiry</h3>
+                <button class="manual-order-modal-close" onclick="closeManualInquiryModal()">&times;</button>
+            </div>
+            <div class="manual-order-modal-body">
+                <form id="manualInquiryForm" onsubmit="submitManualInquiry(event)">
+                    
+                    <div class="mo-form-group">
+                        <label for="miClientName" style="display:block; font-size:13px; font-weight:600; margin-bottom:6px; color:#475569;">Client Name *</label>
+                        <input type="text" id="miClientName" required placeholder="John Doe" style="width:100%; border:1px solid #cbd5e1; padding:0.5rem 0.75rem; border-radius:0.375rem; outline:none; font-size:14px;">
+                    </div>
+
+                    <div class="mo-grid-2" style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
+                        <div class="mo-form-group" style="margin-bottom:0;">
+                            <label for="miClientEmail" style="display:block; font-size:13px; font-weight:600; margin-bottom:6px; color:#475569;">Client Email *</label>
+                            <input type="email" id="miClientEmail" required placeholder="johndoe@example.com" style="width:100%; border:1px solid #cbd5e1; padding:0.5rem 0.75rem; border-radius:0.375rem; outline:none; font-size:14px;">
+                        </div>
+                        <div class="mo-form-group" style="margin-bottom:0;">
+                            <label for="miClientPhone" style="display:block; font-size:13px; font-weight:600; margin-bottom:6px; color:#475569;">Client Phone</label>
+                            <input type="text" id="miClientPhone" placeholder="0917XXXXXXX" style="width:100%; border:1px solid #cbd5e1; padding:0.5rem 0.75rem; border-radius:0.375rem; outline:none; font-size:14px;">
+                        </div>
+                    </div>
+
+                    <div class="mo-form-group relative" id="inquiryChannelDropdownContainer" style="position: relative;">
+                        <label for="miChannel" style="display:block; font-size:13px; font-weight:600; margin-bottom:6px; color:#475569;">Inquiry Channel / Source *</label>
+                        
+                        <!-- Hidden actual select for form logic -->
+                        <select id="miChannel" required style="display: none;">
+                            <option value="Website">Website</option>
+                            <option value="Facebook">Facebook</option>
+                            <option value="Email">Email</option>
+                            <option value="Phone Call">Phone Call</option>
+                        </select>
+                        
+                        <!-- Custom UI Trigger -->
+                        <div id="miCustomTrigger" tabindex="0" onblur="setTimeout(function(){ document.getElementById('miCustomOptions').classList.add('hidden'); }, 200);" onclick="document.getElementById('miCustomOptions').classList.toggle('hidden');" style="border: 1px solid #cbd5e1; padding: 0.5rem 0.75rem; border-radius: 0.375rem; cursor: pointer; display: flex; align-items: center; justify-content: space-between; background-color: #fff; transition: border-color 0.2s; outline: none;">
+                            <div id="miSelectedDisplay" style="display: flex; align-items: center; font-size: 0.875rem; color: #334155; pointer-events: none;">
+                                <i class="fas fa-globe mr-2 text-center" style="width: 1.25rem; font-size: 1.1rem; color: #64748b !important;"></i> Website
+                            </div>
+                            <i class="fas fa-chevron-down text-slate-400" style="font-size: 0.75rem; pointer-events: none;"></i>
+                        </div>
+                        
+                        <!-- Custom UI Options -->
+                        <div id="miCustomOptions" class="hidden" style="position: absolute; top: 100%; left: 0; right: 0; margin-top: 4px; background-color: #fff; border: 1px solid #e2e8f0; border-radius: 0.375rem; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); z-index: 9999; overflow: hidden;">
+                            <div onclick="document.getElementById('miChannel').value='Website'; document.getElementById('miSelectedDisplay').innerHTML=this.innerHTML; document.getElementById('miCustomOptions').classList.add('hidden');" onmouseover="this.style.backgroundColor='#eff6ff'" onmouseout="this.style.backgroundColor='transparent'" style="padding: 0.6rem 0.75rem; cursor: pointer; display: flex; align-items: center; font-size: 0.875rem; color: #334155; border-bottom: 1px solid #f1f5f9; transition: background-color 0.2s;">
+                                <i class="fas fa-globe mr-2 text-center" style="width: 1.25rem; font-size: 1.1rem; color: #64748b !important;"></i> Website
+                            </div>
+                            <div onclick="document.getElementById('miChannel').value='Facebook'; document.getElementById('miSelectedDisplay').innerHTML=this.innerHTML; document.getElementById('miCustomOptions').classList.add('hidden');" onmouseover="this.style.backgroundColor='#eff6ff'" onmouseout="this.style.backgroundColor='transparent'" style="padding: 0.6rem 0.75rem; cursor: pointer; display: flex; align-items: center; font-size: 0.875rem; color: #334155; border-bottom: 1px solid #f1f5f9; transition: background-color 0.2s;">
+                                <i class="fab fa-facebook mr-2 text-center" style="width: 1.25rem; font-size: 1.1rem; color: #1877f2 !important;"></i> Facebook
+                            </div>
+                            <div onclick="document.getElementById('miChannel').value='Email'; document.getElementById('miSelectedDisplay').innerHTML=this.innerHTML; document.getElementById('miCustomOptions').classList.add('hidden');" onmouseover="this.style.backgroundColor='#eff6ff'" onmouseout="this.style.backgroundColor='transparent'" style="padding: 0.6rem 0.75rem; cursor: pointer; display: flex; align-items: center; font-size: 0.875rem; color: #334155; border-bottom: 1px solid #f1f5f9; transition: background-color 0.2s;">
+                                <i class="fas fa-envelope mr-2 text-center" style="width: 1.25rem; font-size: 1.1rem; color: #0284c7 !important;"></i> Email
+                            </div>
+                            <div onclick="document.getElementById('miChannel').value='Phone Call'; document.getElementById('miSelectedDisplay').innerHTML=this.innerHTML; document.getElementById('miCustomOptions').classList.add('hidden');" onmouseover="this.style.backgroundColor='#eff6ff'" onmouseout="this.style.backgroundColor='transparent'" style="padding: 0.6rem 0.75rem; cursor: pointer; display: flex; align-items: center; font-size: 0.875rem; color: #334155; transition: background-color 0.2s;">
+                                <i class="fas fa-phone-alt mr-2 text-center" style="width: 1.25rem; font-size: 1.1rem; color: #fbbf24 !important;"></i> Phone Call
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mo-form-group">
+                        <label for="miMessage" style="display:block; font-size:13px; font-weight:600; margin-bottom:6px; color:#475569;">Message / Inquiry Details *</label>
+                        <textarea id="miMessage" required rows="4" placeholder="Type customer inquiry details here..." style="width:100%; border:1px solid #cbd5e1; padding:0.5rem 0.75rem; border-radius:0.375rem; outline:none; font-size:14px; resize:vertical;"></textarea>
+                    </div>
+
+                    <!-- Optional Estimate Data -->
+                    <div style="border: 1px dashed #cbd5e1; padding: 16px; border-radius: 8px; margin-bottom: 20px; background: #f8fafc;">
+                        <h4 style="font-size: 13px; font-weight: 700; color: #475569; margin: 0 0 12px 0; text-transform: uppercase; letter-spacing: 0.5px;">Estimation Data (Optional)</h4>
+                        
+                        <div class="mo-grid-2" style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+                            <div class="mo-form-group" style="margin-bottom:0;">
+                                <label for="miMonthlyBill" style="display:block; font-size:12px; font-weight:600; margin-bottom:4px; color:#64748b;">Monthly Bill (₱)</label>
+                                <input type="number" id="miMonthlyBill" placeholder="e.g. 5000" style="width:100%; border:1px solid #cbd5e1; padding:0.4rem 0.6rem; border-radius:0.375rem; outline:none; font-size:13px;">
+                            </div>
+                            <div class="mo-form-group" style="margin-bottom:0;">
+                                <label for="miPropertyType" style="display:block; font-size:12px; font-weight:600; margin-bottom:4px; color:#64748b;">Property Type</label>
+                                <select id="miPropertyType" style="width:100%; border:1px solid #cbd5e1; padding:0.4rem 0.6rem; border-radius:0.375rem; outline:none; font-size:13px; background:#fff;">
+                                    <option value="">Select type</option>
+                                    <option value="Residential">Residential</option>
+                                    <option value="Commercial">Commercial</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="mo-form-group" style="margin-top:12px; margin-bottom:0;">
+                            <label for="miRoofType" style="display:block; font-size:12px; font-weight:600; margin-bottom:4px; color:#64748b;">Roof Type</label>
+                            <select id="miRoofType" style="width:100%; border:1px solid #cbd5e1; padding:0.4rem 0.6rem; border-radius:0.375rem; outline:none; font-size:13px; background:#fff;">
+                                <option value="">Select roof type</option>
+                                <option value="Concrete/Flat Roof">Concrete / Flat Roof</option>
+                                <option value="Corrugated Metal">Corrugated Metal</option>
+                                <option value="Tile (Clay/Concrete)">Tile (Clay / Concrete)</option>
+                                <option value="Asphalt Shingles">Asphalt Shingles</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px; border-top: 1px solid #f1f5f9; padding-top: 16px;">
+                        <button type="button" onclick="closeManualInquiryModal()" style="border: 1px solid #cbd5e1; background: #fff; color: #475569; padding: 10px 20px; font-weight: 600; border-radius: 8px; cursor: pointer;">Cancel</button>
+                        <button type="submit" style="background: #3b82f6; color: #fff; border: none; padding: 10px 20px; font-weight: 600; border-radius: 8px; cursor: pointer;">Save Inquiry</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <!-- Create Manual Order Modal Overlay -->
     <div class="manual-order-overlay" id="manualOrderOverlay">
         <div class="manual-order-modal-box">
@@ -11742,6 +11946,77 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 }
             } catch (err) {
                 console.error('Error submitting manual order:', err);
+                alert('An error occurred. Please try again.');
+            }
+        }
+
+        /* ======= MANUAL INQUIRY JS HANDLERS ======= */
+        function openManualInquiryModal() {
+            const overlay = document.getElementById('manualInquiryOverlay');
+            overlay.classList.add('open');
+            document.getElementById('manualInquiryForm').reset();
+            // Reset custom trigger display
+            document.getElementById('miChannel').value = 'Website';
+            document.getElementById('miSelectedDisplay').innerHTML = '<i class="fas fa-globe mr-2 text-center" style="width: 1.25rem; font-size: 1.1rem; color: #64748b !important;"></i> Website';
+        }
+
+        function closeManualInquiryModal() {
+            const overlay = document.getElementById('manualInquiryOverlay');
+            overlay.classList.remove('open');
+        }
+
+        // Close on backdrop click
+        document.getElementById('manualInquiryOverlay').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeManualInquiryModal();
+            }
+        });
+
+        async function submitManualInquiry(event) {
+            event.preventDefault();
+            
+            const name = document.getElementById('miClientName').value.trim();
+            const email = document.getElementById('miClientEmail').value.trim();
+            const phone = document.getElementById('miClientPhone').value.trim();
+            const channel = document.getElementById('miChannel').value;
+            const message = document.getElementById('miMessage').value.trim();
+            
+            const monthlyBill = document.getElementById('miMonthlyBill').value.trim();
+            const propertyType = document.getElementById('miPropertyType').value;
+            const roofType = document.getElementById('miRoofType').value;
+
+            if (!name || !email || !message) {
+                alert('Please fill in all required fields.');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('action', 'create_manual_inquiry');
+            formData.append('name', name);
+            formData.append('email', email);
+            formData.append('phone', phone);
+            formData.append('channel', channel);
+            formData.append('message', message);
+            formData.append('monthly_bill', monthlyBill);
+            formData.append('property_type', propertyType);
+            formData.append('roof_type', roofType);
+
+            try {
+                const response = await fetch('dashboard.php?ajax=1', {
+                    method: 'POST',
+                    body: formData
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    closeManualInquiryModal();
+                    alert('Inquiry created successfully!');
+                    window.location.reload();
+                } else {
+                    alert('Failed: ' + result.message);
+                }
+            } catch (err) {
+                console.error('Error submitting manual inquiry:', err);
                 alert('An error occurred. Please try again.');
             }
         }

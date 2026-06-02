@@ -17,18 +17,22 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $password = trim($_POST["password"]);
     $remember = isset($_POST['remember']);
 
+    // Ensure status column exists (Self-healing migration for staff table)
+    $conn->query("ALTER TABLE `staff` ADD COLUMN IF NOT EXISTS `status` VARCHAR(20) NOT NULL DEFAULT 'Active'");
+
     // Only check staff table (Client logic removed)
-    $stmt = $conn->prepare("SELECT id, firstName, lastName, password FROM staff WHERE email=? LIMIT 1");
+    $stmt = $conn->prepare("SELECT id, firstName, lastName, password, status FROM staff WHERE email=? LIMIT 1");
     $stmt->bind_param("s", $email);
     $stmt->execute();
     $stmt->store_result();
 
     if ($stmt->num_rows == 1) {
-        $stmt->bind_result($id, $firstName, $lastName, $db_password);
+        $stmt->bind_result($id, $firstName, $lastName, $db_password, $status);
         $stmt->fetch();
 
-        // Check for both hashed and plain text (to support your current DB state)
-        if (password_verify($password, $db_password) || $password === $db_password) {
+        if ($status === 'Inactive') {
+            $msg = "<div class='alert alert-danger'>This account has been deactivated. Please contact support.</div>";
+        } else if (password_verify($password, $db_password) || $password === $db_password) {
             $_SESSION["user_id"] = $id;
             $_SESSION["firstName"] = $firstName;
             $_SESSION["lastName"] = $lastName;
