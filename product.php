@@ -36,6 +36,31 @@ if ($stmt) {
     $stmt->close();
 }
 
+$logo_brands = [];
+$res_logos = $conn->query("SELECT brand_name, logo_image FROM brands WHERE logo_image IS NOT NULL AND logo_image != '' AND COALESCE(is_visible, 1) = 1");
+if ($res_logos) {
+    while ($row = $res_logos->fetch_assoc()) {
+        $logo_brands[] = [
+            'brand_name' => $row['brand_name'],
+            'logo_image' => 'uploads/logos/' . $row['logo_image'],
+            'is_fallback' => false
+        ];
+    }
+}
+if (empty($logo_brands)) {
+    $logo_brands = [
+        ['brand_name' => 'Ian Solar', 'logo_image' => 'assets/img/iansolar.png', 'is_fallback' => true],
+        ['brand_name' => 'LVTopsun', 'logo_image' => 'assets/img/lvtopsun.png', 'is_fallback' => true],
+        ['brand_name' => 'Jinko Solar', 'logo_image' => 'assets/img/jinko.png', 'is_fallback' => true],
+        ['brand_name' => 'HyxiPower', 'logo_image' => 'assets/img/hyxipower.png', 'is_fallback' => true],
+        ['brand_name' => 'Hopewind', 'logo_image' => 'assets/img/Hopewind.jpg', 'is_fallback' => true],
+        ['brand_name' => 'Solax Power', 'logo_image' => 'assets/img/solax.png', 'is_fallback' => true],
+        ['brand_name' => 'Aiko', 'logo_image' => 'assets/img/aiko.png', 'is_fallback' => true],
+        ['brand_name' => 'Hoymiles', 'logo_image' => 'assets/img/hoymiles.png', 'is_fallback' => true],
+        ['brand_name' => 'Trina Solar', 'logo_image' => 'assets/img/trinasolar.png', 'is_fallback' => true],
+    ];
+}
+
 $conn->close();
 
 ?>
@@ -122,64 +147,20 @@ $conn->close();
             <div class="flex animate-marquee group-hover:animate-marquee-paused whitespace-nowrap py-2">
                 <!-- Logos Set 1 -->
                 <div class="flex items-center gap-6 px-3">
+                    <?php foreach ($logo_brands as $brand): ?>
                     <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
-                        <img src="assets/img/iansolar.png" alt="Ian Solar" class="w-full h-full object-contain mix-blend-multiply opacity-90">
+                        <img src="<?= htmlspecialchars($brand['logo_image']) ?>" alt="<?= htmlspecialchars($brand['brand_name']) ?>" class="w-full h-full object-contain mix-blend-multiply opacity-90">
                     </div>
-                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
-                        <img src="assets/img/lvtopsun.png" alt="LVTopsun" class="w-full h-full object-contain mix-blend-multiply opacity-90">
-                    </div>
-                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
-                        <img src="assets/img/jinko.png" alt="Jinko Solar" class="w-full h-full object-contain mix-blend-multiply opacity-90">
-                    </div>
-                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
-                        <img src="assets/img/hyxipower.png" alt="HyxiPower" class="w-full h-full object-contain mix-blend-multiply opacity-90">
-                    </div>
-                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
-                        <img src="assets/img/Hopewind.jpg" alt="Hopewind" class="w-full h-full object-contain mix-blend-multiply opacity-90">
-                    </div>
-                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
-                        <img src="assets/img/solax.png" alt="Solax Power" class="w-full h-full object-contain mix-blend-multiply opacity-90">
-                    </div>
-                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
-                        <img src="assets/img/aiko.png" alt="Aiko" class="w-full h-full object-contain mix-blend-multiply opacity-90">
-                    </div>
-                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
-                        <img src="assets/img/hoymiles.png" alt="Hoymiles" class="w-full h-full object-contain mix-blend-multiply opacity-90">
-                    </div>
-                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
-                        <img src="assets/img/trinasolar.png" alt="Trina Solar" class="w-full h-full object-contain mix-blend-multiply opacity-90">
-                    </div>
+                    <?php endforeach; ?>
                 </div>
 
                 <!-- Logos Set 2 (Duplicate for Seamless Loop) -->
                 <div class="flex items-center gap-6 px-3" aria-hidden="true">
+                    <?php foreach ($logo_brands as $brand): ?>
                     <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
-                        <img src="assets/img/iansolar.png" alt="Ian Solar" class="w-full h-full object-contain mix-blend-multiply opacity-90">
+                        <img src="<?= htmlspecialchars($brand['logo_image']) ?>" alt="<?= htmlspecialchars($brand['brand_name']) ?>" class="w-full h-full object-contain mix-blend-multiply opacity-90">
                     </div>
-                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
-                        <img src="assets/img/lvtopsun.png" alt="LVTopsun" class="w-full h-full object-contain mix-blend-multiply opacity-90">
-                    </div>
-                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
-                        <img src="assets/img/jinko.png" alt="Jinko Solar" class="w-full h-full object-contain mix-blend-multiply opacity-90">
-                    </div>
-                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
-                        <img src="assets/img/hyxipower.png" alt="HyxiPower" class="w-full h-full object-contain mix-blend-multiply opacity-90">
-                    </div>
-                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
-                        <img src="assets/img/Hopewind.jpg" alt="Hopewind" class="w-full h-full object-contain mix-blend-multiply opacity-90">
-                    </div>
-                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
-                        <img src="assets/img/solax.png" alt="Solax Power" class="w-full h-full object-contain mix-blend-multiply opacity-90">
-                    </div>
-                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
-                        <img src="assets/img/aiko.png" alt="Aiko" class="w-full h-full object-contain mix-blend-multiply opacity-90">
-                    </div>
-                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
-                        <img src="assets/img/hoymiles.png" alt="Hoymiles" class="w-full h-full object-contain mix-blend-multiply opacity-90">
-                    </div>
-                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
-                        <img src="assets/img/trinasolar.png" alt="Trina Solar" class="w-full h-full object-contain mix-blend-multiply opacity-90">
-                    </div>
+                    <?php endforeach; ?>
                 </div>
             </div>
         </div>
@@ -191,11 +172,11 @@ $conn->close();
             100% { transform: translateX(-50%); }
         }
         .animate-marquee {
-            animation: marquee 12s linear infinite;
+            animation: marquee 10s linear infinite;
         }
         @media (min-width: 768px) {
             .animate-marquee {
-                animation: marquee 25s linear infinite;
+                animation: marquee 18s linear infinite;
             }
         }
         .animate-marquee-paused {

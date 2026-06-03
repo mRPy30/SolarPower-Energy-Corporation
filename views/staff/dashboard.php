@@ -14,6 +14,40 @@ if (!isset($_SESSION['user_id']) || empty($_SESSION['user_id'])) {
 // Database connection details
 include "../../config/dbconn.php";
 
+// Dynamically create calculator_settings table if it doesn't exist
+$conn->query("CREATE TABLE IF NOT EXISTS `calculator_settings` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `solar_panel_wattage` INT NOT NULL DEFAULT 400,
+    `kwh_rate` DECIMAL(10,2) NOT NULL DEFAULT 12.00,
+    `average_sun_hours` DECIMAL(5,2) NOT NULL DEFAULT 4.50,
+    `card1_title` VARCHAR(255) NOT NULL DEFAULT 'REQUIRED SYSTEM (KWP)',
+    `card1_icon` VARCHAR(255) NOT NULL DEFAULT 'assets/img/system-size.png',
+    `card2_title` VARCHAR(255) NOT NULL DEFAULT 'SOLAR PANELS',
+    `card2_icon` VARCHAR(255) NOT NULL DEFAULT 'assets/img/panels.png',
+    `card3_title` VARCHAR(255) NOT NULL DEFAULT 'EST. MONTHLY SAVINGS',
+    `card3_icon` VARCHAR(255) NOT NULL DEFAULT 'assets/img/monthly-savings.png',
+    `card4_title` VARCHAR(255) NOT NULL DEFAULT 'EST. YEARLY SAVINGS',
+    `card4_icon` VARCHAR(255) NOT NULL DEFAULT 'assets/img/yearly-savings.png'
+)");
+
+// Insert default row if table is empty
+$check_empty = $conn->query("SELECT id FROM calculator_settings LIMIT 1");
+if ($check_empty && $check_empty->num_rows === 0) {
+    $conn->query("INSERT INTO calculator_settings (
+        solar_panel_wattage, kwh_rate, average_sun_hours,
+        card1_title, card1_icon,
+        card2_title, card2_icon,
+        card3_title, card3_icon,
+        card4_title, card4_icon
+    ) VALUES (
+        400, 12.00, 4.50,
+        'REQUIRED SYSTEM (KWP)', 'assets/img/system-size.png',
+        'SOLAR PANELS', 'assets/img/panels.png',
+        'EST. MONTHLY SAVINGS', 'assets/img/monthly-savings.png',
+        'EST. YEARLY SAVINGS', 'assets/img/yearly-savings.png'
+    )");
+}
+
 // Dynamically alter contact_messages table to support manual inquiries if columns are missing
 $check_cols = $conn->query("SHOW COLUMNS FROM `contact_messages` LIKE 'source'");
 if ($check_cols && $check_cols->num_rows === 0) {
@@ -912,7 +946,8 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
             // ── BRANDS: fetch all brands (joined with categories) ─────────────────
             case 'fetch_brands':
                 $result = $conn->query("
-                    SELECT b.brand_id, b.brand_name, b.category_id,
+                    SELECT b.brand_id, b.brand_name, b.category_id, b.logo_image, b.contact_person, b.phone, b.location_country,
+                           COALESCE(b.is_visible, 1) AS is_visible,
                            c.category_name
                     FROM brands b
                     LEFT JOIN categories c ON b.category_id = c.category_id
@@ -937,8 +972,12 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
 
             // ── BRANDS: add a new brand ────────────────────────────────────────────
             case 'add_brand':
-                $brandName  = trim($_POST['brand_name']  ?? '');
-                $categoryId = intval($_POST['category_id'] ?? 0);
+                $brandName       = trim($_POST['brand_name']  ?? '');
+                $categoryId      = intval($_POST['category_id'] ?? 0);
+                $contactPerson   = trim($_POST['contact_person'] ?? '');
+                $phone           = trim($_POST['phone'] ?? '');
+                $locationCountry = trim($_POST['location_country'] ?? '');
+
                 if ($brandName === '' || $categoryId === 0) {
                     echo json_encode(['success' => false, 'message' => 'Brand name and category are required.']);
                     break;
@@ -953,21 +992,51 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
                     $chk->close(); break;
                 }
                 $chk->close();
-                $ins = $conn->prepare("INSERT INTO brands (brand_name, category_id) VALUES (?, ?)");
-                $ins->bind_param("si", $brandName, $categoryId);
+
+                // Logo file upload handler
+                $logo_image = null;
+                if (isset($_FILES['logo_image']) && $_FILES['logo_image']['error'] === UPLOAD_ERR_OK) {
+                    $file = $_FILES['logo_image'];
+                    $maxLogoSize = 20 * 1024 * 1024; // 20MB
+                    $allowedLogoExts = ['jpg','jpeg','png','gif','webp','svg'];
+                    $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+                    if ($file['size'] > $maxLogoSize) {
+                        echo json_encode(['success' => false, 'message' => 'Logo image exceeds 20MB limit.']);
+                        break;
+                    }
+                    if (!in_array($ext, $allowedLogoExts)) {
+                        echo json_encode(['success' => false, 'message' => 'Invalid logo type. Use JPG, PNG, GIF, WEBP, or SVG.']);
+                        break;
+                    }
+                    $uploadDir = '../../uploads/logos/';
+                    if (!is_dir($uploadDir)) {
+                        mkdir($uploadDir, 0755, true);
+                    }
+                    $filename = "logo_" . time() . "_" . uniqid() . "." . $ext;
+                    if (move_uploaded_file($file['tmp_name'], $uploadDir . $filename)) {
+                        $logo_image = $filename;
+                    }
+                }
+
+                $ins = $conn->prepare("INSERT INTO brands (brand_name, category_id, logo_image, contact_person, phone, location_country) VALUES (?, ?, ?, ?, ?, ?)");
+                $ins->bind_param("sissss", $brandName, $categoryId, $logo_image, $contactPerson, $phone, $locationCountry);
                 if ($ins->execute()) {
-                    echo json_encode(['success' => true, 'message' => 'Brand added successfully.', 'id' => $ins->insert_id]);
+                    echo json_encode(['success' => true, 'message' => 'Brand/Supplier added successfully.', 'id' => $ins->insert_id]);
                 } else {
-                    echo json_encode(['success' => false, 'message' => 'Failed to add brand: ' . $conn->error]);
+                    echo json_encode(['success' => false, 'message' => 'Failed to add Brand/Supplier: ' . $conn->error]);
                 }
                 $ins->close();
                 break;
 
             // ── BRANDS: update a brand ────────────────────────────────────────────
             case 'edit_brand':
-                $brandId    = intval($_POST['brand_id']    ?? 0);
-                $brandName  = trim($_POST['brand_name']    ?? '');
-                $categoryId = intval($_POST['category_id'] ?? 0);
+                $brandId         = intval($_POST['brand_id']    ?? 0);
+                $brandName       = trim($_POST['brand_name']    ?? '');
+                $categoryId      = intval($_POST['category_id'] ?? 0);
+                $contactPerson   = trim($_POST['contact_person'] ?? '');
+                $phone           = trim($_POST['phone'] ?? '');
+                $locationCountry = trim($_POST['location_country'] ?? '');
+
                 if ($brandId === 0 || $brandName === '' || $categoryId === 0) {
                     echo json_encode(['success' => false, 'message' => 'Brand ID, name, and category are required.']);
                     break;
@@ -982,12 +1051,53 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
                     $chk->close(); break;
                 }
                 $chk->close();
-                $upd = $conn->prepare("UPDATE brands SET brand_name = ?, category_id = ? WHERE brand_id = ?");
-                $upd->bind_param("sii", $brandName, $categoryId, $brandId);
+
+                // Retrieve old logo
+                $old_logo = null;
+                $logo_image = null;
+                $logo_query = $conn->prepare("SELECT logo_image FROM brands WHERE brand_id = ?");
+                $logo_query->bind_param("i", $brandId);
+                $logo_query->execute();
+                $logo_res = $logo_query->get_result();
+                if ($logo_row = $logo_res->fetch_assoc()) {
+                    $old_logo = $logo_row['logo_image'];
+                    $logo_image = $old_logo;
+                }
+                $logo_query->close();
+
+                // Check for new logo upload
+                if (isset($_FILES['logo_image']) && $_FILES['logo_image']['error'] === UPLOAD_ERR_OK) {
+                    $file = $_FILES['logo_image'];
+                    $maxLogoSize = 20 * 1024 * 1024; // 20MB
+                    $allowedLogoExts = ['jpg','jpeg','png','gif','webp','svg'];
+                    $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+                    if ($file['size'] > $maxLogoSize) {
+                        echo json_encode(['success' => false, 'message' => 'Logo image exceeds 20MB limit.']);
+                        break;
+                    }
+                    if (!in_array($ext, $allowedLogoExts)) {
+                        echo json_encode(['success' => false, 'message' => 'Invalid logo type. Use JPG, PNG, GIF, WEBP, or SVG.']);
+                        break;
+                    }
+                    $uploadDir = '../../uploads/logos/';
+                    if (!is_dir($uploadDir)) {
+                        mkdir($uploadDir, 0755, true);
+                    }
+                    $filename = "logo_" . time() . "_" . uniqid() . "." . $ext;
+                    if (move_uploaded_file($file['tmp_name'], $uploadDir . $filename)) {
+                        $logo_image = $filename;
+                        if ($old_logo && file_exists($uploadDir . $old_logo)) {
+                            @unlink($uploadDir . $old_logo);
+                        }
+                    }
+                }
+
+                $upd = $conn->prepare("UPDATE brands SET brand_name = ?, category_id = ?, logo_image = ?, contact_person = ?, phone = ?, location_country = ? WHERE brand_id = ?");
+                $upd->bind_param("sissssi", $brandName, $categoryId, $logo_image, $contactPerson, $phone, $locationCountry, $brandId);
                 if ($upd->execute()) {
-                    echo json_encode(['success' => true, 'message' => 'Brand updated successfully.']);
+                    echo json_encode(['success' => true, 'message' => 'Brand/Supplier updated successfully.']);
                 } else {
-                    echo json_encode(['success' => false, 'message' => 'Failed to update brand: ' . $conn->error]);
+                    echo json_encode(['success' => false, 'message' => 'Failed to update Brand/Supplier: ' . $conn->error]);
                 }
                 $upd->close();
                 break;
@@ -999,6 +1109,20 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
                     echo json_encode(['success' => false, 'message' => 'Brand ID is required.']);
                     break;
                 }
+
+                // Delete logo file first
+                $logo_query = $conn->prepare("SELECT logo_image FROM brands WHERE brand_id = ?");
+                $logo_query->bind_param("i", $brandId);
+                $logo_query->execute();
+                $logo_res = $logo_query->get_result();
+                if ($logo_row = $logo_res->fetch_assoc()) {
+                    $logo = $logo_row['logo_image'];
+                    if ($logo && file_exists('../../uploads/logos/' . $logo)) {
+                        @unlink('../../uploads/logos/' . $logo);
+                    }
+                }
+                $logo_query->close();
+
                 $del = $conn->prepare("DELETE FROM brands WHERE brand_id = ?");
                 $del->bind_param("i", $brandId);
                 if ($del->execute() && $del->affected_rows > 0) {
@@ -1007,6 +1131,32 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
                     echo json_encode(['success' => false, 'message' => 'Brand not found or already deleted.']);
                 }
                 $del->close();
+                break;
+
+            // ── BRANDS: toggle visibility ─────────────────────────────────────────
+            case 'toggle_brand_visibility':
+                $brandId = intval($_POST['brand_id'] ?? 0);
+                if ($brandId === 0) {
+                    echo json_encode(['success' => false, 'message' => 'Brand ID is required.']);
+                    break;
+                }
+                // Ensure column exists (safe ALTER – silently fails if already present)
+                $conn->query("ALTER TABLE brands ADD COLUMN IF NOT EXISTS is_visible TINYINT(1) NOT NULL DEFAULT 1");
+                $tog = $conn->prepare("UPDATE brands SET is_visible = IF(COALESCE(is_visible,1)=1, 0, 1) WHERE brand_id = ?");
+                $tog->bind_param("i", $brandId);
+                if ($tog->execute()) {
+                    // Return new state
+                    $chk2 = $conn->prepare("SELECT COALESCE(is_visible,1) AS is_visible FROM brands WHERE brand_id = ?");
+                    $chk2->bind_param("i", $brandId);
+                    $chk2->execute();
+                    $chk2->bind_result($newState);
+                    $chk2->fetch();
+                    $chk2->close();
+                    echo json_encode(['success' => true, 'is_visible' => (int)$newState, 'message' => $newState ? 'Brand is now visible.' : 'Brand is now hidden.']);
+                } else {
+                    echo json_encode(['success' => false, 'message' => 'Failed to toggle visibility.']);
+                }
+                $tog->close();
                 break;
 
             // ── CATEGORIES: fetch all ────────────────────────────────────────────
@@ -1107,6 +1257,101 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
                     echo json_encode(['success' => false, 'message' => 'Category not found or already deleted.']);
                 }
                 $del->close();
+                break;
+
+            case 'fetch_calculator_settings':
+                $res = $conn->query("SELECT * FROM calculator_settings LIMIT 1");
+                if ($res && $row = $res->fetch_assoc()) {
+                    echo json_encode(['success' => true, 'data' => $row]);
+                } else {
+                    echo json_encode(['success' => false, 'message' => 'Failed to fetch settings.']);
+                }
+                break;
+
+            case 'save_calculator_settings':
+                $wattage = intval($_POST['solar_panel_wattage'] ?? 400);
+                $rate = floatval($_POST['kwh_rate'] ?? 12.00);
+                $sun_hours = floatval($_POST['average_sun_hours'] ?? 4.50);
+                $card1_title = trim($_POST['card1_title'] ?? 'REQUIRED SYSTEM (KWP)');
+                $card2_title = trim($_POST['card2_title'] ?? 'SOLAR PANELS');
+                $card3_title = trim($_POST['card3_title'] ?? 'EST. MONTHLY SAVINGS');
+                $card4_title = trim($_POST['card4_title'] ?? 'EST. YEARLY SAVINGS');
+
+                // Fetch current settings to get old icon paths if no new ones uploaded
+                $res = $conn->query("SELECT * FROM calculator_settings LIMIT 1");
+                $curr = $res ? $res->fetch_assoc() : [];
+
+                $card1_icon = $curr['card1_icon'] ?? 'assets/img/system-size.png';
+                $card2_icon = $curr['card2_icon'] ?? 'assets/img/panels.png';
+                $card3_icon = $curr['card3_icon'] ?? 'assets/img/monthly-savings.png';
+                $card4_icon = $curr['card4_icon'] ?? 'assets/img/yearly-savings.png';
+
+                $uploadDir = '../../uploads/calculator/';
+                if (!file_exists($uploadDir)) {
+                    mkdir($uploadDir, 0755, true);
+                }
+
+                // Loop through files
+                for ($i = 1; $i <= 4; $i++) {
+                    $fileKey = "card" . $i . "_icon";
+                    if (isset($_FILES[$fileKey]) && $_FILES[$fileKey]['error'] === UPLOAD_ERR_OK) {
+                        $file = $_FILES[$fileKey];
+                        // Validate size (20MB)
+                        if ($file['size'] > 20 * 1024 * 1024) {
+                            echo json_encode(['success' => false, 'message' => 'Icon file size exceeds 20MB limit.']);
+                            break 2;
+                        }
+                        // Validate extension
+                        $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+                        $allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'];
+                        if (!in_array($ext, $allowed)) {
+                            echo json_encode(['success' => false, 'message' => 'Invalid file type for card ' . $i . ' icon.']);
+                            break 2;
+                        }
+
+                        $filename = "card" . $i . "_" . time() . "_" . uniqid() . "." . $ext;
+                        if (move_uploaded_file($file['tmp_name'], $uploadDir . $filename)) {
+                            // Remove old upload if it exists and is not standard asset
+                            $oldIcon = ${"card" . $i . "_icon"};
+                            if ($oldIcon && strpos($oldIcon, 'uploads/calculator/') !== false && file_exists('../../' . $oldIcon)) {
+                                @unlink('../../' . $oldIcon);
+                            }
+                            ${"card" . $i . "_icon"} = 'uploads/calculator/' . $filename;
+                        }
+                    }
+                }
+
+                $stmt = $conn->prepare("UPDATE calculator_settings SET 
+                    solar_panel_wattage = ?, 
+                    kwh_rate = ?, 
+                    average_sun_hours = ?, 
+                    card1_title = ?, 
+                    card1_icon = ?, 
+                    card2_title = ?, 
+                    card2_icon = ?, 
+                    card3_title = ?, 
+                    card3_icon = ?, 
+                    card4_title = ?, 
+                    card4_icon = ? 
+                    WHERE id = 1");
+                
+                if ($stmt) {
+                    $stmt->bind_param("iddssssssss", 
+                        $wattage, $rate, $sun_hours,
+                        $card1_title, $card1_icon,
+                        $card2_title, $card2_icon,
+                        $card3_title, $card3_icon,
+                        $card4_title, $card4_icon
+                    );
+                    if ($stmt->execute()) {
+                        echo json_encode(['success' => true, 'message' => 'Calculator settings updated successfully.']);
+                    } else {
+                        echo json_encode(['success' => false, 'message' => 'Failed to save calculator settings: ' . $stmt->error]);
+                    }
+                    $stmt->close();
+                } else {
+                    echo json_encode(['success' => false, 'message' => 'Database error: ' . $conn->error]);
+                }
                 break;
 
             case 'bulk_update_status':
@@ -1261,8 +1506,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/png" href="../../assets/img/icon.png">
     <title>SolarPower - Staff</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Cropper.js for profile image cropping -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <style>
         /* ======= GLOBAL BODY STYLES ======= */
@@ -1956,10 +2207,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 <span>Clients</span>
             </div>
 
+            <div class="menu-item" onclick="showPage('calculator-settings', 'Calculator Settings')" data-tooltip="Calculator Settings">
+                <i class="fas fa-calculator"></i>
+                <span>Calculator Settings</span>
+            </div>
+
             <div class="menu-label">PRODUCT MANAGEMENT</div>
-            <div class="menu-item" onclick="showPage('brands', 'Brands')" data-tooltip="Brands">
+            <div class="menu-item" onclick="showPage('brands', 'Supplier/Brands')" data-tooltip="Supplier/Brands">
                 <i class="fas fa-trademark"></i>
-                <span>Brands</span>
+                <span>Supplier/Brands</span>
             </div>
             <div class="menu-item" onclick="showPage('categories', 'Categories')" data-tooltip="Categories">
                 <i class="fas fa-tags"></i>
@@ -2000,12 +2256,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
             <div class="menu-item" onclick="showPage('archive', 'Archive')" data-tooltip="Archive">
                 <i class="fas fa-map-marker-alt"></i>
                 <span>Archived</span>
-            </div>
-
-            <div class="menu-label">SUPPLY MANAGEMENT</div>
-            <div class="menu-item" onclick="showPage('suppliers', 'Suppliers')" data-tooltip="Suppliers">
-                <i class="fas fa-truck"></i>
-                <span>Suppliers</span>
             </div>
 
             <div class="menu-label">ACCOUNT</div>
@@ -3350,14 +3600,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                     }
 
                     .btn-brand-edit,
-                    .btn-brand-del {
+                    .btn-brand-del,
+                    .btn-brand-toggle {
                         border: none;
                         cursor: pointer;
                         border-radius: 7px;
                         padding: 5px 10px;
                         font-size: 12px;
                         font-weight: 600;
-                        transition: background .2s;
+                        transition: background .2s, opacity .2s;
                     }
 
                     .btn-brand-edit {
@@ -3376,6 +3627,88 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
 
                     .btn-brand-del:hover {
                         background: #fecaca;
+                    }
+
+                    .btn-brand-toggle {
+                        background: #dcfce7;
+                        color: #15803d;
+                    }
+
+                    .btn-brand-toggle:hover {
+                        background: #bbf7d0;
+                    }
+
+                    .btn-brand-toggle.hidden-state {
+                        background: #fef9c3;
+                        color: #854d0e;
+                    }
+
+                    .btn-brand-toggle.hidden-state:hover {
+                        background: #fde68a;
+                    }
+
+                    tr.brand-row-hidden td {
+                        opacity: 0.45;
+                    }
+
+                    tr.brand-row-hidden td:last-child {
+                        opacity: 1;
+                    }
+
+                    /* Logo image uploader */
+                    .logo-upload-wrap {
+                        display: flex;
+                        align-items: center;
+                        gap: 12px;
+                        border: 2px dashed #d1d5db;
+                        border-radius: 10px;
+                        padding: 10px 14px;
+                        cursor: pointer;
+                        background: #f9fafb;
+                        transition: border-color .2s, background .2s;
+                        position: relative;
+                    }
+
+                    .logo-upload-wrap:hover {
+                        border-color: #f59e0b;
+                        background: #fffbeb;
+                    }
+
+                    .logo-upload-wrap input[type=file] {
+                        position: absolute;
+                        inset: 0;
+                        opacity: 0;
+                        cursor: pointer;
+                        width: 100%;
+                        height: 100%;
+                    }
+
+                    .logo-preview-thumb {
+                        width: 54px;
+                        height: 54px;
+                        border-radius: 8px;
+                        object-fit: contain;
+                        border: 1px solid #e5e7eb;
+                        background: #fff;
+                        display: none;
+                        flex-shrink: 0;
+                    }
+
+                    .logo-upload-label {
+                        display: flex;
+                        flex-direction: column;
+                        gap: 2px;
+                    }
+
+                    .logo-upload-label span.logo-main {
+                        font-size: 13px;
+                        font-weight: 600;
+                        color: #374151;
+                    }
+
+                    .logo-upload-label span.logo-sub {
+                        font-size: 11px;
+                        color: #9ca3af;
                     }
 
                     .brands-empty td {
@@ -3532,7 +3865,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                             <div class="brands-card">
                                 <div class="brands-card-head">
                                     <i class="fas fa-plus-circle" style="color:#f59e0b;font-size:17px;"></i>
-                                    <h2>Add New Brand</h2>
+                                    <h2>Add New Supplier/Brand</h2>
                                 </div>
                                 <div class="brands-card-body">
                                     <div class="bfg">
@@ -3545,8 +3878,31 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                                             <option value="">— Select Category —</option>
                                         </select>
                                     </div>
+                                    <div class="bfg">
+                                        <label><i class="fas fa-image"></i> Logo Image <small style="color:#9ca3af;font-weight:400;">(max 20MB)</small></label>
+                                        <div class="logo-upload-wrap" id="bNewLogoWrap" onclick="document.getElementById('bNewLogo').click()">
+                                            <img id="bNewLogoPreview" class="logo-preview-thumb" src="" alt="Preview">
+                                            <div class="logo-upload-label">
+                                                <span class="logo-main"><i class="fas fa-cloud-upload-alt"></i> Choose Logo</span>
+                                                <span class="logo-sub" id="bNewLogoName">No file chosen</span>
+                                            </div>
+                                            <input type="file" id="bNewLogo" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;" onchange="BrandsModule.previewLogo(this,'bNewLogoPreview','bNewLogoName')">
+                                        </div>
+                                    </div>
+                                    <div class="bfg">
+                                        <label><i class="fas fa-user"></i> Contact Person</label>
+                                        <input type="text" id="bNewContact" placeholder="e.g. Juan dela Cruz">
+                                    </div>
+                                    <div class="bfg">
+                                        <label><i class="fas fa-phone"></i> Phone Number</label>
+                                        <input type="text" id="bNewPhone" placeholder="e.g. 09171234567">
+                                    </div>
+                                    <div class="bfg">
+                                        <label><i class="fas fa-globe"></i> Location / Country</label>
+                                        <input type="text" id="bNewCountry" placeholder="e.g. Philippines">
+                                    </div>
                                     <button class="btn-brand-add" onclick="BrandsModule.addBrand()">
-                                        <i class="fas fa-plus"></i> Add Brand
+                                        <i class="fas fa-plus"></i> Add Brand/Supplier
                                     </button>
                                 </div>
                             </div>
@@ -3575,7 +3931,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                         <div class="brands-card">
                             <div class="brands-card-head">
                                 <i class="fas fa-list" style="color:#2563eb;font-size:17px;"></i>
-                                <h2>All Brands</h2>
+                                <h2>All Brands/Suppliers</h2>
                             </div>
                             <div class="brands-card-body">
                                 <div class="brands-toolbar">
@@ -3589,14 +3945,18 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                                     <thead>
                                         <tr>
                                             <th>#</th>
-                                            <th>Brand Name</th>
+                                            <th>Logo</th>
+                                            <th>Brand/Company</th>
                                             <th>Category</th>
+                                            <th>Contact Person</th>
+                                            <th>Phone</th>
+                                            <th>Location/Country</th>
                                             <th>Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody id="brandsTableBody">
                                         <tr class="brands-empty">
-                                            <td colspan="4"><i class="fas fa-spinner fa-spin"></i> Loading…</td>
+                                            <td colspan="8"><i class="fas fa-spinner fa-spin"></i> Loading…</td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -3608,8 +3968,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
 
                 <!-- Edit Modal -->
                 <div class="brand-overlay" id="bEditOverlay">
-                    <div class="brand-modal">
-                        <h3><i class="fas fa-edit" style="color:#f59e0b;"></i> Edit Brand</h3>
+                    <div class="brand-modal" style="width:480px; max-height: 90vh; overflow-y: auto;">
+                        <h3><i class="fas fa-edit" style="color:#f59e0b;"></i> Edit Brand/Supplier</h3>
                         <input type="hidden" id="bEditId">
                         <div class="bfg">
                             <label>Brand Name *</label>
@@ -3618,6 +3978,33 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                         <div class="bfg">
                             <label>Category *</label>
                             <select id="bEditCategory"></select>
+                        </div>
+                        <div class="bfg">
+                            <label>Logo Image <small style="color:#9ca3af;font-weight:400;">(max 20MB)</small></label>
+                            <div class="logo-upload-wrap" id="bEditLogoWrap" onclick="document.getElementById('bEditLogo').click()">
+                                <img id="bEditLogoPreview" class="logo-preview-thumb" src="" alt="Preview">
+                                <div class="logo-upload-label">
+                                    <span class="logo-main"><i class="fas fa-cloud-upload-alt"></i> Replace Logo</span>
+                                    <span class="logo-sub" id="bEditLogoName">No file chosen</span>
+                                </div>
+                                <input type="file" id="bEditLogo" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;" onchange="BrandsModule.previewLogo(this,'bEditLogoPreview','bEditLogoName')">
+                            </div>
+                            <div id="bEditCurrentLogo" style="margin-top:8px;display:none;">
+                                <span style="font-size:11px;color:#6b7280;">Current logo:</span><br>
+                                <img id="bEditCurrentLogoImg" src="" alt="Current" style="width:54px;height:54px;object-fit:contain;border-radius:6px;border:1px solid #e5e7eb;background:#fff;margin-top:4px;">
+                            </div>
+                        </div>
+                        <div class="bfg">
+                            <label>Contact Person</label>
+                            <input type="text" id="bEditContact" placeholder="Contact person">
+                        </div>
+                        <div class="bfg">
+                            <label>Phone Number</label>
+                            <input type="text" id="bEditPhone" placeholder="Phone number">
+                        </div>
+                        <div class="bfg">
+                            <label>Location / Country</label>
+                            <input type="text" id="bEditCountry" placeholder="Location/Country">
                         </div>
                         <div class="brand-modal-actions">
                             <button class="btn-bcancel" onclick="BrandsModule.closeEditModal()">Cancel</button>
@@ -6522,22 +6909,535 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 <iframe src="staff_manage.php" style="width: 100%; height: calc(100vh - 120px); border: none; border-radius: 12px; background: white; box-shadow: 0 4px 20px rgba(0,0,0,0.05);"></iframe>
             </div>
 
+            <!-- Calculator Settings Page -->
+            <div id="calculator-settings" class="page-content">
+                <style>
+                    /* Premium Pure-CSS Settings Layout */
+                    .calc-settings-container {
+                        display: grid;
+                        grid-template-columns: 1fr;
+                        gap: 24px;
+                        padding: 20px;
+                        width: 100%;
+                        box-sizing: border-box;
+                    }
+
+                    @media (min-width: 992px) {
+                        .calc-settings-container {
+                            grid-template-columns: 350px 1fr;
+                        }
+                    }
+
+                    @media (min-width: 1200px) {
+                        .calc-settings-container {
+                            grid-template-columns: 400px 1fr;
+                        }
+                    }
+
+                    .calc-card {
+                        background: #ffffff;
+                        border-radius: 14px;
+                        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+                        border: 1px solid #e9ecef;
+                        padding: 24px;
+                        box-sizing: border-box;
+                        transition: all 0.25s ease;
+                    }
+
+                    .calc-card:hover {
+                        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+                    }
+
+                    .calc-card-header {
+                        display: flex;
+                        align-items: center;
+                        gap: 12px;
+                        margin-bottom: 24px;
+                        padding-bottom: 16px;
+                        border-bottom: 1px solid #f1f5f9;
+                    }
+
+                    .calc-accent-icon {
+                        width: 36px;
+                        height: 36px;
+                        background: rgba(25, 135, 84, 0.08);
+                        border-radius: 10px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                    }
+
+                    .calc-accent-icon i {
+                        color: #198754;
+                        font-size: 1.1rem;
+                    }
+
+                    .calc-accent-icon.orange-accent {
+                        background: rgba(245, 158, 11, 0.08);
+                    }
+
+                    .calc-accent-icon.orange-accent i {
+                        color: #f59e0b;
+                    }
+
+                    .calc-header-info h5 {
+                        margin: 0;
+                        font-size: 1.1rem;
+                        font-weight: 700;
+                        color: #0f172a;
+                    }
+
+                    .calc-header-info p {
+                        margin: 2px 0 0;
+                        font-size: 0.75rem;
+                        color: #64748b;
+                    }
+
+                    .calc-form-group {
+                        margin-bottom: 20px;
+                    }
+
+                    .calc-label {
+                        display: block;
+                        font-size: 0.8rem;
+                        font-weight: 700;
+                        color: #475569;
+                        margin-bottom: 8px;
+                        text-transform: uppercase;
+                        letter-spacing: 0.5px;
+                    }
+
+                    .calc-input-wrapper {
+                        display: flex;
+                        align-items: stretch;
+                        border: 1.5px solid #cbd5e1;
+                        border-radius: 8px;
+                        overflow: hidden;
+                        background: #f8fafc;
+                        transition: all 0.2s ease;
+                    }
+
+                    .calc-input-wrapper:focus-within {
+                        border-color: #f59e0b;
+                        box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15);
+                        background: #ffffff;
+                    }
+
+                    .calc-input-addon {
+                        background: #f1f5f9;
+                        padding: 10px 14px;
+                        color: #475569;
+                        font-weight: 700;
+                        font-size: 0.85rem;
+                        display: flex;
+                        align-items: center;
+                        border-right: 1.5px solid #cbd5e1;
+                        user-select: none;
+                    }
+
+                    .calc-input-addon.suffix {
+                        border-right: none;
+                        border-left: 1.5px solid #cbd5e1;
+                    }
+
+                    .calc-input-field {
+                        flex: 1;
+                        border: none;
+                        background: transparent;
+                        padding: 10px 12px;
+                        font-size: 0.9rem;
+                        font-weight: 600;
+                        color: #0f172a;
+                        outline: none;
+                        width: 100%;
+                    }
+
+                    .calc-help-text {
+                        font-size: 0.75rem;
+                        color: #64748b;
+                        margin-top: 6px;
+                        line-height: 1.4;
+                    }
+
+                    .calc-btn-primary {
+                        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+                        border: none;
+                        color: #ffffff;
+                        font-weight: 700;
+                        font-size: 0.85rem;
+                        text-transform: uppercase;
+                        letter-spacing: 0.5px;
+                        padding: 12px 20px;
+                        border-radius: 8px;
+                        width: 100%;
+                        cursor: pointer;
+                        box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2);
+                        transition: all 0.2s ease;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        gap: 8px;
+                    }
+
+                    .calc-btn-primary:hover {
+                        transform: translateY(-1px);
+                        box-shadow: 0 6px 18px rgba(245, 158, 11, 0.3);
+                        opacity: 0.95;
+                    }
+
+                    .calc-cards-grid {
+                        display: grid;
+                        grid-template-columns: 1fr;
+                        gap: 16px;
+                    }
+
+                    @media (min-width: 768px) {
+                        .calc-cards-grid {
+                            grid-template-columns: repeat(2, 1fr);
+                        }
+                    }
+
+                    .calc-inner-card {
+                        background: #ffffff;
+                        border: 1.5px solid #e2e8f0;
+                        border-radius: 12px;
+                        padding: 18px;
+                        transition: all 0.25s ease;
+                        display: flex;
+                        flex-direction: column;
+                        gap: 14px;
+                        box-sizing: border-box;
+                    }
+
+                    .calc-inner-card:hover {
+                        border-color: #cbd5e1;
+                        transform: translateY(-2px);
+                        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.03);
+                    }
+
+                    .calc-inner-header {
+                        display: flex;
+                        align-items: center;
+                        gap: 12px;
+                    }
+
+                    .calc-icon-container {
+                        width: 56px;
+                        height: 56px;
+                        min-width: 56px;
+                        border-radius: 8px;
+                        background: #f8fafc;
+                        border: 1.5px solid #e2e8f0;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        padding: 6px;
+                        box-sizing: border-box;
+                        box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+                    }
+
+                    .calc-icon-container img {
+                        max-width: 100%;
+                        max-height: 100%;
+                        object-fit: contain;
+                    }
+
+                    .calc-inner-title-desc h6 {
+                        margin: 0;
+                        font-size: 0.75rem;
+                        font-weight: 800;
+                        color: #0f172a;
+                        text-transform: uppercase;
+                        letter-spacing: 0.5px;
+                    }
+
+                    .calc-inner-title-desc span {
+                        font-size: 0.7rem;
+                        color: #64748b;
+                        display: block;
+                        margin-top: 1px;
+                    }
+
+                    .calc-inner-input {
+                        border: 1.5px solid #cbd5e1;
+                        border-radius: 6px;
+                        padding: 8px 12px;
+                        font-size: 0.85rem;
+                        font-weight: 600;
+                        color: #0f172a;
+                        width: 100%;
+                        box-sizing: border-box;
+                        outline: none;
+                        background: #f8fafc;
+                        transition: all 0.2s ease;
+                    }
+
+                    .calc-inner-input:focus {
+                        border-color: #f59e0b;
+                        background: #ffffff;
+                        box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
+                    }
+
+                    .calc-upload-wrapper {
+                        position: relative;
+                        width: 100%;
+                    }
+
+                    .calc-upload-wrapper input[type="file"] {
+                        position: absolute;
+                        left: 0;
+                        top: 0;
+                        opacity: 0;
+                        width: 100%;
+                        height: 100%;
+                        cursor: pointer;
+                    }
+
+                    .calc-upload-label {
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        gap: 8px;
+                        padding: 8px 12px;
+                        background: #f8fafc;
+                        border: 1.5px solid #cbd5e1;
+                        border-radius: 6px;
+                        font-size: 0.75rem;
+                        font-weight: 700;
+                        color: #475569;
+                        cursor: pointer;
+                        transition: all 0.2s ease;
+                        box-sizing: border-box;
+                    }
+
+                    .calc-upload-wrapper:hover .calc-upload-label {
+                        background: #f1f5f9;
+                        color: #0f172a;
+                        border-color: #cbd5e1;
+                    }
+
+                    .calc-action-bar {
+                        display: flex;
+                        justify-content: flex-end;
+                        margin-top: 24px;
+                    }
+
+                    .calc-action-bar .calc-btn-primary {
+                        width: auto;
+                        padding: 10px 24px;
+                    }
+                </style>
+
+                <div class="calc-settings-container">
+                    <!-- Left Column: Constants & Formula Configuration -->
+                    <div class="calc-card">
+                        <div class="calc-card-header">
+                            <div class="calc-accent-icon">
+                                <i class="fas fa-sliders-h"></i>
+                            </div>
+                            <div class="calc-header-info">
+                                <h5>Formula & Constants</h5>
+                                <p>Savings formula settings</p>
+                            </div>
+                        </div>
+                        <form id="calculatorConstantsForm">
+                            <input type="hidden" name="ajax" value="1">
+                            <input type="hidden" name="action" value="save_calculator_settings">
+                            <!-- Keep fields of cards hidden to preserve them -->
+                            <input type="hidden" name="card1_title" id="const_card1_title">
+                            <input type="hidden" name="card2_title" id="const_card2_title">
+                            <input type="hidden" name="card3_title" id="const_card3_title">
+                            <input type="hidden" name="card4_title" id="const_card4_title">
+
+                            <div class="calc-form-group">
+                                <label class="calc-label">Electricity Rate per kWh (₱)</label>
+                                <div class="calc-input-wrapper">
+                                    <span class="calc-input-addon">₱</span>
+                                    <input type="number" step="0.01" class="calc-input-field" name="kwh_rate" id="calc_kwh_rate" required placeholder="12.00">
+                                </div>
+                                <div class="calc-help-text">Average cost per kilowatt-hour used in the savings formula.</div>
+                            </div>
+
+                            <div class="calc-form-group">
+                                <label class="calc-label">Base Panel Wattage (W)</label>
+                                <div class="calc-input-wrapper">
+                                    <input type="number" class="calc-input-field" name="solar_panel_wattage" id="calc_panel_wattage" required placeholder="400">
+                                    <span class="calc-input-addon suffix">W</span>
+                                </div>
+                                <div class="calc-help-text">Wattage of a single solar panel (e.g. 400 for 400W panels).</div>
+                            </div>
+
+                            <div class="calc-form-group">
+                                <label class="calc-label">Average Daily Peak Sun Hours</label>
+                                <div class="calc-input-wrapper">
+                                    <input type="number" step="0.01" class="calc-input-field" name="average_sun_hours" id="calc_sun_hours" required placeholder="4.50">
+                                    <span class="calc-input-addon suffix">Hrs</span>
+                                </div>
+                                <div class="calc-help-text">Peak sun hours received daily on average (e.g. 4.5 hours).</div>
+                            </div>
+
+                            <button type="submit" class="calc-btn-primary mt-2">
+                                <i class="fas fa-save"></i>Save Configurations
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Right Column: Card Customization (2x2 Grid Layout) -->
+                    <div class="calc-card">
+                        <div class="calc-card-header">
+                            <div class="calc-accent-icon orange-accent">
+                                <i class="fas fa-th-large"></i>
+                            </div>
+                            <div class="calc-header-info">
+                                <h5>Card Customization</h5>
+                                <p>Manage titles and upload SVG/image icons</p>
+                            </div>
+                        </div>
+                        <form id="calculatorCardsForm" enctype="multipart/form-data">
+                            <input type="hidden" name="ajax" value="1">
+                            <input type="hidden" name="action" value="save_calculator_settings">
+                            <!-- Keep constants hidden to preserve them -->
+                            <input type="hidden" name="kwh_rate" id="card_const_kwh_rate">
+                            <input type="hidden" name="solar_panel_wattage" id="card_const_panel_wattage">
+                            <input type="hidden" name="average_sun_hours" id="card_const_sun_hours">
+
+                            <div class="calc-cards-grid">
+                                <!-- Card 1 -->
+                                <div class="calc-inner-card">
+                                    <div class="calc-inner-header">
+                                        <div class="calc-icon-container">
+                                            <img id="prev_card1_icon" src="../../assets/img/system-size.png" alt="">
+                                        </div>
+                                        <div class="calc-inner-title-desc">
+                                            <h6>Card 1: Required System</h6>
+                                            <span>Current Icon Preview</span>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="calc-label" style="font-size: 0.75rem;">Card Title</label>
+                                        <input type="text" class="calc-inner-input" name="card1_title" id="calc_card1_title" required>
+                                    </div>
+                                    <div>
+                                        <label class="calc-label" style="font-size: 0.75rem;">Upload Icon (SVG/PNG)</label>
+                                        <div class="calc-upload-wrapper">
+                                            <label class="calc-upload-label">
+                                                <i class="fas fa-cloud-upload-alt text-warning"></i>Choose File...
+                                            </label>
+                                            <input type="file" name="card1_icon" accept="image/*,.svg" onchange="previewCardIcon(this, 'prev_card1_icon')">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Card 2 -->
+                                <div class="calc-inner-card">
+                                    <div class="calc-inner-header">
+                                        <div class="calc-icon-container">
+                                            <img id="prev_card2_icon" src="../../assets/img/panels.png" alt="">
+                                        </div>
+                                        <div class="calc-inner-title-desc">
+                                            <h6>Card 2: Solar Panels</h6>
+                                            <span>Current Icon Preview</span>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="calc-label" style="font-size: 0.75rem;">Card Title</label>
+                                        <input type="text" class="calc-inner-input" name="card2_title" id="calc_card2_title" required>
+                                    </div>
+                                    <div>
+                                        <label class="calc-label" style="font-size: 0.75rem;">Upload Icon (SVG/PNG)</label>
+                                        <div class="calc-upload-wrapper">
+                                            <label class="calc-upload-label">
+                                                <i class="fas fa-cloud-upload-alt text-warning"></i>Choose File...
+                                            </label>
+                                            <input type="file" name="card2_icon" accept="image/*,.svg" onchange="previewCardIcon(this, 'prev_card2_icon')">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Card 3 -->
+                                <div class="calc-inner-card">
+                                    <div class="calc-inner-header">
+                                        <div class="calc-icon-container">
+                                            <img id="prev_card3_icon" src="../../assets/img/monthly-savings.png" alt="">
+                                        </div>
+                                        <div class="calc-inner-title-desc">
+                                            <h6>Card 3: Monthly Savings</h6>
+                                            <span>Current Icon Preview</span>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="calc-label" style="font-size: 0.75rem;">Card Title</label>
+                                        <input type="text" class="calc-inner-input" name="card3_title" id="calc_card3_title" required>
+                                    </div>
+                                    <div>
+                                        <label class="calc-label" style="font-size: 0.75rem;">Upload Icon (SVG/PNG)</label>
+                                        <div class="calc-upload-wrapper">
+                                            <label class="calc-upload-label">
+                                                <i class="fas fa-cloud-upload-alt text-warning"></i>Choose File...
+                                            </label>
+                                            <input type="file" name="card3_icon" accept="image/*,.svg" onchange="previewCardIcon(this, 'prev_card3_icon')">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Card 4 -->
+                                <div class="calc-inner-card">
+                                    <div class="calc-inner-header">
+                                        <div class="calc-icon-container">
+                                            <img id="prev_card4_icon" src="../../assets/img/yearly-savings.png" alt="">
+                                        </div>
+                                        <div class="calc-inner-title-desc">
+                                            <h6>Card 4: Yearly Savings</h6>
+                                            <span>Current Icon Preview</span>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="calc-label" style="font-size: 0.75rem;">Card Title</label>
+                                        <input type="text" class="calc-inner-input" name="card4_title" id="calc_card4_title" required>
+                                    </div>
+                                    <div>
+                                        <label class="calc-label" style="font-size: 0.75rem;">Upload Icon (SVG/PNG)</label>
+                                        <div class="calc-upload-wrapper">
+                                            <label class="calc-upload-label">
+                                                <i class="fas fa-cloud-upload-alt text-warning"></i>Choose File...
+                                            </label>
+                                            <input type="file" name="card4_icon" accept="image/*,.svg" onchange="previewCardIcon(this, 'prev_card4_icon')">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="calc-action-bar">
+                                <button type="submit" class="calc-btn-primary">
+                                    <i class="fas fa-save"></i>Update Dashboard Cards
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
             <div id="settings" class="page-content profile-container">
                 <!-- Profile Header -->
                 <div class="profile-header">
                     <div class="profile-header-content">
-                        <div class="staff-header-avatar profile-avatar-large">
+                        <div class="staff-header-avatar profile-avatar-large position-relative" style="cursor: pointer;" onclick="document.getElementById('headerAvatarInput').click()" title="Click to upload new profile picture">
                             <?php if (!empty($current_staff['profile_picture']) && file_exists('../../uploads/profiles/' . $current_staff['profile_picture'])): ?>
                                 <img src="../../uploads/profiles/<?= htmlspecialchars($current_staff['profile_picture']) ?>" alt="" class="staff-avatar-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                                 <div class="staff-avatar-initials" style="display:none;">
                                     <?php echo $initials; ?>
                                 </div>
                             <?php else: ?>
+                                <img style="display:none;" alt="" class="staff-avatar-img">
                                 <div class="staff-avatar-initials">
                                     <?php echo $initials; ?>
                                 </div>
                             <?php endif; ?>
+                            <div class="staffModal-avatar-overlay">
+                                <span>Upload</span>
+                            </div>
                         </div>
+                        <input type="file" id="headerAvatarInput" accept="image/*" style="display:none;" onchange="handleHeaderAvatarUpload(this)">
                         <div class="profile-info">
                             <h1 class="profile-name"><?php echo htmlspecialchars($fullName); ?></h1>
                             <div class="profile-role">
@@ -6632,6 +7532,45 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                                 </div>
                             </div>
                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Profile Image Cropper Modal -->
+            <div id="cropModalOverlay" class="crop-modal-overlay">
+                <div class="crop-modal-box">
+                    <div class="crop-modal-header">
+                        <h3>
+                            <i class="fas fa-crop-alt"></i>
+                            <span>Crop Profile Picture</span>
+                        </h3>
+                        <button type="button" class="crop-modal-close" onclick="closeCropModal()">&times;</button>
+                    </div>
+                    <div class="crop-modal-body">
+                        <div class="crop-wrapper">
+                            <img id="cropperImage" src="" alt="Source Image">
+                        </div>
+                        <div class="crop-controls">
+                            <button type="button" class="crop-zoom-btn" onclick="zoomCropper(0.1)" title="Zoom In">
+                                <i class="fas fa-search-plus"></i>
+                            </button>
+                            <button type="button" class="crop-zoom-btn" onclick="zoomCropper(-0.1)" title="Zoom Out">
+                                <i class="fas fa-search-minus"></i>
+                            </button>
+                            <button type="button" class="crop-zoom-btn" onclick="rotateCropper(-90)" title="Rotate Left">
+                                <i class="fas fa-undo"></i>
+                            </button>
+                            <button type="button" class="crop-zoom-btn" onclick="rotateCropper(90)" title="Rotate Right">
+                                <i class="fas fa-redo"></i>
+                            </button>
+                            <button type="button" class="crop-zoom-btn" onclick="resetCropper()" title="Reset">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="crop-modal-footer">
+                        <button type="button" class="crop-btn-cancel" onclick="closeCropModal()">Cancel</button>
+                        <button type="button" class="crop-btn-save" id="saveCroppedImageBtn">Upload & Save</button>
                     </div>
                 </div>
             </div>
@@ -6773,6 +7712,173 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
     <?php include "includes/export-suppliers-excel.php"; ?>
     <?php include "includes/export-quotations-excel.php"; ?>
     <script>
+        let profileCropper = null;
+        let selectedCropFile = null;
+        let cropperSourceInputId = '';
+        let croppedProfileBlob = null; // Stored blob for profile update modal form
+
+        function openCropModal(file, inputId) {
+            cropperSourceInputId = inputId;
+            selectedCropFile = file;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const cropperImage = document.getElementById('cropperImage');
+                cropperImage.src = e.target.result;
+                
+                // Show Cropper Modal
+                const overlay = document.getElementById('cropModalOverlay');
+                overlay.classList.add('open');
+
+                if (profileCropper) {
+                    profileCropper.destroy();
+                }
+
+                profileCropper = new Cropper(cropperImage, {
+                    aspectRatio: 1,
+                    viewMode: 1,
+                    dragMode: 'move',
+                    autoCropArea: 1,
+                    restore: false,
+                    guides: false,
+                    center: true,
+                    highlight: false,
+                    cropBoxMovable: true,
+                    cropBoxResizable: true,
+                    toggleDragModeOnDblclick: false
+                });
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function closeCropModal() {
+            const overlay = document.getElementById('cropModalOverlay');
+            overlay.classList.remove('open');
+            if (profileCropper) {
+                profileCropper.destroy();
+                profileCropper = null;
+            }
+            selectedCropFile = null;
+            const fileInput = document.getElementById(cropperSourceInputId);
+            if (fileInput) fileInput.value = '';
+        }
+
+        function zoomCropper(ratio) {
+            if (profileCropper) {
+                profileCropper.zoom(ratio);
+            }
+        }
+
+        function rotateCropper(degree) {
+            if (profileCropper) {
+                profileCropper.rotate(degree);
+            }
+        }
+
+        function resetCropper() {
+            if (profileCropper) {
+                profileCropper.reset();
+            }
+        }
+
+        // Dynamic Quick Header Profile Picture Upload
+        function handleHeaderAvatarUpload(input) {
+            if (input.files.length === 0) return;
+            const file = input.files[0];
+            const maxMB = 20;
+            if (file.size > maxMB * 1024 * 1024) {
+                showToast('File exceeds ' + maxMB + 'MB limit.', 'error');
+                input.value = '';
+                return;
+            }
+            openCropModal(file, 'headerAvatarInput');
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const cropOverlay = document.getElementById('cropModalOverlay');
+            if (cropOverlay) {
+                cropOverlay.addEventListener('click', function(e) {
+                    if (e.target === this) closeCropModal();
+                });
+            }
+
+            const saveBtn = document.getElementById('saveCroppedImageBtn');
+            if (saveBtn) {
+                saveBtn.addEventListener('click', function() {
+                    if (!profileCropper) return;
+
+                    saveBtn.disabled = true;
+                    saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+
+                    profileCropper.getCroppedCanvas({
+                        width: 300,
+                        height: 300
+                    }).toBlob(async function(blob) {
+                        if (!blob) {
+                            showToast('Failed to process cropped image.', 'error');
+                            saveBtn.disabled = false;
+                            saveBtn.innerHTML = 'Upload & Save';
+                            return;
+                        }
+
+                        if (cropperSourceInputId === 'headerAvatarInput') {
+                            // Quick upload flow
+                            const firstName = document.getElementById('profileFirstName')?.value || '<?= htmlspecialchars($_SESSION['firstName'] ?? '') ?>';
+                            const lastName = document.getElementById('profileLastName')?.value || '<?= htmlspecialchars($_SESSION['lastName'] ?? '') ?>';
+                            const email = document.getElementById('profileEmail')?.value || '<?= htmlspecialchars($current_staff['email'] ?? '') ?>';
+                            const contact = document.getElementById('profileContactNumber')?.value || '<?= htmlspecialchars($current_staff['contact_number'] ?? '') ?>';
+
+                            const formData = new FormData();
+                            formData.append('action', 'update_profile');
+                            formData.append('firstName', firstName);
+                            formData.append('lastName', lastName);
+                            formData.append('email', email);
+                            formData.append('contact_number', contact);
+                            formData.append('profile_picture', blob, 'cropped_avatar.png');
+
+                            try {
+                                const response = await fetch('profile_api.php', {
+                                    method: 'POST',
+                                    body: formData
+                                });
+                                const result = await response.json();
+                                if (result.success) {
+                                    showToast('Profile picture updated successfully!', 'success');
+                                    closeCropModal();
+                                    setTimeout(() => {
+                                        location.reload();
+                                    }, 1000);
+                                } else {
+                                    showToast(result.message || 'Failed to update profile picture.', 'error');
+                                    saveBtn.disabled = false;
+                                    saveBtn.innerHTML = 'Upload & Save';
+                                }
+                            } catch (error) {
+                                showToast('Failed to connect to the server.', 'error');
+                                saveBtn.disabled = false;
+                                saveBtn.innerHTML = 'Upload & Save';
+                            }
+                        } else {
+                            // Edit Profile Modal flow: Update preview only and store blob
+                            croppedProfileBlob = blob;
+                            const preview = document.getElementById('profile_preview');
+                            const initials = document.getElementById('profile_initials');
+                            if (preview) {
+                                preview.src = URL.createObjectURL(blob);
+                                preview.style.display = 'block';
+                            }
+                            if (initials) {
+                                initials.style.display = 'none';
+                            }
+                            closeCropModal();
+                            showToast('Image cropped successfully!', 'success');
+                            saveBtn.disabled = false;
+                            saveBtn.innerHTML = 'Upload & Save';
+                        }
+                    }, 'image/png');
+                });
+            }
+        });
+
 
 
 
@@ -7165,12 +8271,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
         function previewProfilePic(input) {
             const file = input.files[0];
             if (file) {
-                const maxSizeBytes = 2 * 1024 * 1024; // 2MB
+                const maxSizeBytes = 20 * 1024 * 1024; // 20MB
                 const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
 
                 // Client-side Validation
                 if (file.size > maxSizeBytes) {
-                    showToast('File size exceeds 2MB limit. Please choose a smaller image.', 'error');
+                    showToast('File size exceeds 20MB limit. Please choose a smaller image.', 'error');
                     input.value = ""; // Clear file
                     return;
                 }
@@ -7181,20 +8287,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                     return;
                 }
 
-                // Preview the image
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const preview = document.getElementById('profile_preview');
-                    const initials = document.getElementById('profile_initials');
-                    
-                    preview.src = e.target.result;
-                    preview.style.display = 'block';
-                    
-                    if (initials) {
-                        initials.style.display = 'none';
-                    }
-                };
-                reader.readAsDataURL(file);
+                openCropModal(file, 'profile_picture_input');
             }
         }
 
@@ -7226,9 +8319,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
             formData.append('email', email);
             formData.append('contact_number', contact);
 
-            const fileInput = document.getElementById('profile_picture_input');
-            if (fileInput.files.length > 0) {
-                formData.append('profile_picture', fileInput.files[0]);
+            if (croppedProfileBlob) {
+                formData.append('profile_picture', croppedProfileBlob, 'cropped_avatar.png');
+            } else {
+                const fileInput = document.getElementById('profile_picture_input');
+                if (fileInput && fileInput.files.length > 0) {
+                    formData.append('profile_picture', fileInput.files[0]);
+                }
             }
 
             const submitBtn = event.target.querySelector('button[type="submit"]');
@@ -7248,7 +8345,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                     showToast(result.message || 'Profile updated successfully!', 'success');
 
                     // If profile picture was updated, reload to reflect in header and profile
-                    if (fileInput.files.length > 0) {
+                    const fileInput = document.getElementById('profile_picture_input');
+                    if (croppedProfileBlob || (fileInput && fileInput.files.length > 0)) {
                         setTimeout(() => {
                             location.reload();
                         }, 1500);
@@ -9042,8 +10140,145 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 if (pageId === 'add-product' && typeof fetchAndPopulateCategories === 'function') {
                     fetchAndPopulateCategories();
                 }
+
+                if (pageId === 'calculator-settings' && typeof CalculatorSettingsModule !== 'undefined') {
+                    CalculatorSettingsModule.load();
+                }
             }
         };
+
+        const CalculatorSettingsModule = {
+            init() {
+                const constantsForm = document.getElementById('calculatorConstantsForm');
+                const cardsForm = document.getElementById('calculatorCardsForm');
+
+                if (constantsForm) {
+                    constantsForm.addEventListener('submit', function(e) {
+                        e.preventDefault();
+                        CalculatorSettingsModule.save(new FormData(this), 'constants');
+                    });
+                }
+
+                if (cardsForm) {
+                    cardsForm.addEventListener('submit', function(e) {
+                        e.preventDefault();
+                        CalculatorSettingsModule.save(new FormData(this), 'cards');
+                    });
+                }
+            },
+
+            load() {
+                fetch('dashboard.php?ajax=1&action=fetch_calculator_settings')
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            const s = data.data;
+                            // Set form values
+                            document.getElementById('calc_kwh_rate').value = s.kwh_rate;
+                            document.getElementById('calc_panel_wattage').value = s.solar_panel_wattage;
+                            document.getElementById('calc_sun_hours').value = s.average_sun_hours;
+
+                            document.getElementById('calc_card1_title').value = s.card1_title;
+                            document.getElementById('calc_card2_title').value = s.card2_title;
+                            document.getElementById('calc_card3_title').value = s.card3_title;
+                            document.getElementById('calc_card4_title').value = s.card4_title;
+
+                            // Keep hidden constants/cards synced in cross-forms to avoid losing state
+                            document.getElementById('const_card1_title').value = s.card1_title;
+                            document.getElementById('const_card2_title').value = s.card2_title;
+                            document.getElementById('const_card3_title').value = s.card3_title;
+                            document.getElementById('const_card4_title').value = s.card4_title;
+
+                            document.getElementById('card_const_kwh_rate').value = s.kwh_rate;
+                            document.getElementById('card_const_panel_wattage').value = s.solar_panel_wattage;
+                            document.getElementById('card_const_sun_hours').value = s.average_sun_hours;
+
+                            // Update previews
+                            if (s.card1_icon) document.getElementById('prev_card1_icon').src = '../../' + s.card1_icon;
+                            if (s.card2_icon) document.getElementById('prev_card2_icon').src = '../../' + s.card2_icon;
+                            if (s.card3_icon) document.getElementById('prev_card3_icon').src = '../../' + s.card3_icon;
+                            if (s.card4_icon) document.getElementById('prev_card4_icon').src = '../../' + s.card4_icon;
+                        } else {
+                            showToast(data.message || 'Failed to load calculator settings', 'error');
+                        }
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        showToast('Error loading calculator settings', 'error');
+                    });
+            },
+
+            save(formData, type) {
+                // Ensure helper fields are populated
+                if (type === 'constants') {
+                    formData.set('card1_title', document.getElementById('calc_card1_title').value);
+                    formData.set('card2_title', document.getElementById('calc_card2_title').value);
+                    formData.set('card3_title', document.getElementById('calc_card3_title').value);
+                    formData.set('card4_title', document.getElementById('calc_card4_title').value);
+                } else {
+                    formData.set('kwh_rate', document.getElementById('calc_kwh_rate').value);
+                    formData.set('solar_panel_wattage', document.getElementById('calc_panel_wattage').value);
+                    formData.set('average_sun_hours', document.getElementById('calc_sun_hours').value);
+                }
+
+                // Add ajax parameter
+                formData.set('ajax', '1');
+
+                // Show SweetAlert2 saving state
+                Swal.fire({
+                    title: 'Saving...',
+                    text: 'Updating calculator configuration, please wait.',
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+
+                fetch('dashboard.php', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        Swal.fire({
+                            title: 'Saved Successfully!',
+                            text: data.message || 'Settings updated.',
+                            icon: 'success',
+                            confirmButtonColor: '#f59e0b',
+                            timer: 2000
+                        });
+                        CalculatorSettingsModule.load(); // Refresh state
+                    } else {
+                        Swal.fire({
+                            title: 'Error',
+                            text: data.message || 'Failed to save settings.',
+                            icon: 'error',
+                            confirmButtonColor: '#e11d48'
+                        });
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    Swal.fire({
+                        title: 'Error',
+                        text: 'An error occurred while saving the configuration.',
+                        icon: 'error',
+                        confirmButtonColor: '#e11d48'
+                    });
+                });
+            }
+        };
+
+        function previewCardIcon(input, prevId) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById(prevId).src = e.target.result;
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
 
         function showPage(pageId, pageTitle) {
             PageNavigation.showPage(pageId, pageTitle);
@@ -9052,6 +10287,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
         // PRODUCT MODAL FUNCTIONS
         // Product Filtering Functionality
         document.addEventListener('DOMContentLoaded', function () {
+            // Initialize calculator settings module
+            if (typeof CalculatorSettingsModule !== 'undefined') {
+                CalculatorSettingsModule.init();
+            }
+
             const filterButtons = document.querySelectorAll('.filter-btn');
             const productCountElement = document.getElementById('displayedProductCount');
             const searchInput = document.getElementById('productSearchInput');
@@ -11072,27 +12312,49 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 if (!tbody) return;
 
                 if (!list || list.length === 0) {
-                    tbody.innerHTML = '<tr class="brands-empty"><td colspan="4"><i class="fas fa-box-open"></i> No brands yet. Add one!</td></tr>';
+                    tbody.innerHTML = '<tr class="brands-empty"><td colspan="8"><i class="fas fa-box-open"></i> No brands/suppliers yet. Add one!</td></tr>';
                     return;
                 }
 
-                tbody.innerHTML = list.map((b, i) => `
-            <tr data-brand-id="${b.brand_id}" data-brand-name="${this.esc(b.brand_name)}"
-                data-category-id="${b.category_id}" data-category-name="${this.esc(b.category_name)}">
+                tbody.innerHTML = list.map((b, i) => {
+                    const logoSrc = b.logo_image ? `../../uploads/logos/${b.logo_image}` : '../../assets/img/icon.png';
+                    const isVisible = parseInt(b.is_visible ?? 1);
+                    const rowClass = isVisible ? '' : 'brand-row-hidden';
+                    const toggleClass = isVisible ? '' : 'hidden-state';
+                    const toggleLabel = isVisible ? '<i class="fas fa-eye-slash"></i> Hide' : '<i class="fas fa-eye"></i> Show';
+                    return `
+            <tr data-brand-id="${b.brand_id}" 
+                data-brand-name="${this.esc(b.brand_name)}"
+                data-category-id="${b.category_id}" 
+                data-category-name="${this.esc(b.category_name)}"
+                data-logo-image="${this.esc(b.logo_image || '')}"
+                data-contact-person="${this.esc(b.contact_person || '')}"
+                data-phone="${this.esc(b.phone || '')}"
+                data-location-country="${this.esc(b.location_country || '')}"
+                data-is-visible="${isVisible}"
+                class="${rowClass}">
                 <td style="color:#999;font-size:12px;">${i + 1}</td>
+                <td><img src="${logoSrc}" alt="Logo" style="width: 48px; height: 48px; object-fit: contain; border-radius: 6px; border: 1px solid #e2e8f0; background: #fff; padding: 2px;" onerror="this.src='../../assets/img/icon.png'"></td>
                 <td style="font-weight:600;">${this.esc(b.brand_name)}</td>
                 <td><span class="cat-badge ${this.badgeClass(b.category_name)}">${this.esc(b.category_name)}</span></td>
+                <td>${this.esc(b.contact_person || '—')}</td>
+                <td>${this.esc(b.phone || '—')}</td>
+                <td>${this.esc(b.location_country || '—')}</td>
                 <td>
                     <div class="brand-action-btns">
                         <button class="btn-brand-edit" onclick="BrandsModule.openEditModal(this)">
                             <i class="fas fa-edit"></i> Edit
+                        </button>
+                        <button class="btn-brand-toggle ${toggleClass}" onclick="BrandsModule.toggleVisibility(this)">
+                            ${toggleLabel}
                         </button>
                         <button class="btn-brand-del" onclick="BrandsModule.openDeleteConfirm(this)">
                             <i class="fas fa-trash"></i> Delete
                         </button>
                     </div>
                 </td>
-            </tr>`).join('');
+            </tr>`;
+                }).join('');
             },
 
             // ── Filters ──────────────────────────────────────────────────────────────
@@ -11112,6 +12374,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
             async addBrand() {
                 const brand_name = document.getElementById('bNewName')?.value.trim();
                 const category_id = document.getElementById('bNewCategory')?.value;
+                const logoInput = document.getElementById('bNewLogo');
+                const contact_person = document.getElementById('bNewContact')?.value.trim();
+                const phone = document.getElementById('bNewPhone')?.value.trim();
+                const location_country = document.getElementById('bNewCountry')?.value.trim();
 
                 if (!brand_name || !category_id) {
                     return this.toast('Brand name and category are required.', 'error');
@@ -11121,12 +12387,72 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 fd.append('action', 'add_brand');
                 fd.append('brand_name', brand_name);
                 fd.append('category_id', category_id);
+                fd.append('contact_person', contact_person);
+                fd.append('phone', phone);
+                fd.append('location_country', location_country);
+                
+                if (logoInput && logoInput.files.length > 0) {
+                    fd.append('logo_image', logoInput.files[0]);
+                }
 
                 const data = await this.post(fd);
                 if (data.success) {
                     this.toast(data.message);
                     document.getElementById('bNewName').value = '';
                     document.getElementById('bNewCategory').value = '';
+                    if (logoInput) logoInput.value = '';
+                    // Clear logo preview
+                    const np = document.getElementById('bNewLogoPreview');
+                    if (np) { np.src = ''; np.style.display = 'none'; }
+                    const nn = document.getElementById('bNewLogoName');
+                    if (nn) nn.textContent = 'No file chosen';
+                    if (document.getElementById('bNewContact')) document.getElementById('bNewContact').value = '';
+                    if (document.getElementById('bNewPhone')) document.getElementById('bNewPhone').value = '';
+                    if (document.getElementById('bNewCountry')) document.getElementById('bNewCountry').value = '';
+                    await this.loadBrands();
+                } else {
+                    this.toast(data.message, 'error');
+                }
+            },
+
+            // ── Logo preview helper ──────────────────────────────────────────────────
+            previewLogo(input, previewId, nameId) {
+                const file = input.files[0];
+                if (!file) return;
+                const maxMB = 20;
+                if (file.size > maxMB * 1024 * 1024) {
+                    this.toast(`Logo exceeds ${maxMB}MB limit.`, 'error');
+                    input.value = '';
+                    return;
+                }
+                const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'];
+                if (!allowedTypes.includes(file.type)) {
+                    this.toast('Invalid file type. Use JPG, PNG, GIF, WEBP, or SVG.', 'error');
+                    input.value = '';
+                    return;
+                }
+                const reader = new FileReader();
+                reader.onload = e => {
+                    const img = document.getElementById(previewId);
+                    if (img) { img.src = e.target.result; img.style.display = 'block'; }
+                    const nm = document.getElementById(nameId);
+                    if (nm) nm.textContent = file.name;
+                };
+                reader.readAsDataURL(file);
+            },
+
+            // ── Toggle Visibility ────────────────────────────────────────────────────
+            async toggleVisibility(btn) {
+                const tr = btn.closest('tr');
+                const brand_id = tr.dataset.brandId;
+                btn.disabled = true;
+                const fd = new FormData();
+                fd.append('action', 'toggle_brand_visibility');
+                fd.append('brand_id', brand_id);
+                const data = await this.post(fd);
+                btn.disabled = false;
+                if (data.success) {
+                    this.toast(data.message);
                     await this.loadBrands();
                 } else {
                     this.toast(data.message, 'error');
@@ -11139,6 +12465,30 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 document.getElementById('bEditId').value = tr.dataset.brandId;
                 document.getElementById('bEditName').value = tr.dataset.brandName;
                 document.getElementById('bEditCategory').value = tr.dataset.categoryId;
+                
+                document.getElementById('bEditContact').value = tr.dataset.contactPerson || '';
+                document.getElementById('bEditPhone').value = tr.dataset.phone || '';
+                document.getElementById('bEditCountry').value = tr.dataset.locationCountry || '';
+                
+                const logoInput = document.getElementById('bEditLogo');
+                if (logoInput) logoInput.value = '';
+
+                // Reset edit logo preview
+                const editPreview = document.getElementById('bEditLogoPreview');
+                if (editPreview) { editPreview.src = ''; editPreview.style.display = 'none'; }
+                const editName = document.getElementById('bEditLogoName');
+                if (editName) editName.textContent = 'No file chosen';
+
+                // Show current logo if exists
+                const currentLogoWrap = document.getElementById('bEditCurrentLogo');
+                const currentLogoImg = document.getElementById('bEditCurrentLogoImg');
+                if (tr.dataset.logoImage && currentLogoWrap && currentLogoImg) {
+                    currentLogoImg.src = '../../uploads/logos/' + tr.dataset.logoImage;
+                    currentLogoWrap.style.display = 'block';
+                } else if (currentLogoWrap) {
+                    currentLogoWrap.style.display = 'none';
+                }
+
                 document.getElementById('bEditOverlay').classList.add('open');
             },
 
@@ -11150,6 +12500,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 const brand_id = document.getElementById('bEditId').value;
                 const brand_name = document.getElementById('bEditName').value.trim();
                 const category_id = document.getElementById('bEditCategory').value;
+                
+                const contact_person = document.getElementById('bEditContact')?.value.trim();
+                const phone = document.getElementById('bEditPhone')?.value.trim();
+                const location_country = document.getElementById('bEditCountry')?.value.trim();
+                const logoInput = document.getElementById('bEditLogo');
 
                 if (!brand_name || !category_id) {
                     return this.toast('All fields are required.', 'error');
@@ -11160,6 +12515,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 fd.append('brand_id', brand_id);
                 fd.append('brand_name', brand_name);
                 fd.append('category_id', category_id);
+                fd.append('contact_person', contact_person);
+                fd.append('phone', phone);
+                fd.append('location_country', location_country);
+
+                if (logoInput && logoInput.files.length > 0) {
+                    fd.append('logo_image', logoInput.files[0]);
+                }
 
                 const data = await this.post(fd);
                 if (data.success) {

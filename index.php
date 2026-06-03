@@ -171,6 +171,50 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 $isLoggedIn = isset($_SESSION['user_id']);
 include "config/dbconn.php";
 
+/* ---------- Fetch Calculator Settings ---------- */
+$calc_settings = [
+    'solar_panel_wattage' => 400,
+    'kwh_rate' => 12.00,
+    'average_sun_hours' => 4.50,
+    'card1_title' => 'REQUIRED SYSTEM (KWP)',
+    'card1_icon' => 'assets/img/system-size.png',
+    'card2_title' => 'SOLAR PANELS',
+    'card2_icon' => 'assets/img/panels.png',
+    'card3_title' => 'EST. MONTHLY SAVINGS',
+    'card3_icon' => 'assets/img/monthly-savings.png',
+    'card4_title' => 'EST. YEARLY SAVINGS',
+    'card4_icon' => 'assets/img/yearly-savings.png'
+];
+$res_calc = $conn->query("SELECT * FROM calculator_settings LIMIT 1");
+if ($res_calc && $row_calc = $res_calc->fetch_assoc()) {
+    $calc_settings = $row_calc;
+}
+
+$logo_brands = [];
+$res_logos = $conn->query("SELECT brand_name, logo_image FROM brands WHERE logo_image IS NOT NULL AND logo_image != '' AND COALESCE(is_visible, 1) = 1");
+if ($res_logos) {
+    while ($row = $res_logos->fetch_assoc()) {
+        $logo_brands[] = [
+            'brand_name' => $row['brand_name'],
+            'logo_image' => 'uploads/logos/' . $row['logo_image'],
+            'is_fallback' => false
+        ];
+    }
+}
+if (empty($logo_brands)) {
+    $logo_brands = [
+        ['brand_name' => 'Ian Solar', 'logo_image' => 'assets/img/iansolar.png', 'is_fallback' => true],
+        ['brand_name' => 'LVTopsun', 'logo_image' => 'assets/img/lvtopsun.png', 'is_fallback' => true],
+        ['brand_name' => 'Jinko Solar', 'logo_image' => 'assets/img/jinko.png', 'is_fallback' => true],
+        ['brand_name' => 'HyxiPower', 'logo_image' => 'assets/img/hyxipower.png', 'is_fallback' => true],
+        ['brand_name' => 'Hopewind', 'logo_image' => 'assets/img/Hopewind.jpg', 'is_fallback' => true],
+        ['brand_name' => 'Solax Power', 'logo_image' => 'assets/img/solax.png', 'is_fallback' => true],
+        ['brand_name' => 'Aiko', 'logo_image' => 'assets/img/aiko.png', 'is_fallback' => true],
+        ['brand_name' => 'Hoymiles', 'logo_image' => 'assets/img/hoymiles.png', 'is_fallback' => true],
+        ['brand_name' => 'Trina Solar', 'logo_image' => 'assets/img/trinasolar.png', 'is_fallback' => true],
+    ];
+}
+
 /* ---------- 2.  Fetch products (safe) ---------- */
 $products = [];
 
@@ -714,73 +758,20 @@ $conn->close();
             <div class="flex animate-marquee group-hover:animate-marquee-paused whitespace-nowrap py-2">
                 <!-- Logos Set 1 -->
                 <div class="flex items-center gap-6 px-3">
-                    <!-- Ian Solar -->
+                    <?php foreach ($logo_brands as $brand): ?>
                     <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
-                        <img src="assets/img/iansolar.png" alt="Ian Solar" class="w-full h-full object-contain mix-blend-multiply opacity-90">
+                        <img src="<?= htmlspecialchars($brand['logo_image']) ?>" alt="<?= htmlspecialchars($brand['brand_name']) ?>" class="w-full h-full object-contain mix-blend-multiply opacity-90">
                     </div>
-                    <!-- LVTopsun -->
-                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
-                        <img src="assets/img/lvtopsun.png" alt="LVTopsun" class="w-full h-full object-contain mix-blend-multiply opacity-90">
-                    </div>
-                    <!-- Jinko Solar -->
-                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
-                        <img src="assets/img/jinko.png" alt="Jinko Solar" class="w-full h-full object-contain mix-blend-multiply opacity-90">
-                    </div>
-                    <!-- HyxiPower -->
-                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
-                        <img src="assets/img/hyxipower.png" alt="HyxiPower" class="w-full h-full object-contain mix-blend-multiply opacity-90">
-                    </div>
-                    <!-- Hopewind -->
-                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
-                        <img src="assets/img/Hopewind.jpg" alt="Hopewind" class="w-full h-full object-contain mix-blend-multiply opacity-90">
-                    </div>
-                    <!-- Solax -->
-                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
-                        <img src="assets/img/solax.png" alt="Solax Power" class="w-full h-full object-contain mix-blend-multiply opacity-90">
-                    </div>
-                    <!-- Aiko -->
-                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
-                        <img src="assets/img/aiko.png" alt="Aiko" class="w-full h-full object-contain mix-blend-multiply opacity-90">
-                    </div>
-                    <!-- Hoymiles -->
-                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
-                        <img src="assets/img/hoymiles.png" alt="Hoymiles" class="w-full h-full object-contain mix-blend-multiply opacity-90">
-                    </div>
-                    <!-- Trina Solar (Fallback for TW Solar) -->
-                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
-                        <img src="assets/img/trinasolar.png" alt="Trina Solar" class="w-full h-full object-contain mix-blend-multiply opacity-90">
-                    </div>
+                    <?php endforeach; ?>
                 </div>
 
                 <!-- Logos Set 2 (Duplicate for Seamless Loop) -->
                 <div class="flex items-center gap-6 px-3" aria-hidden="true">
+                    <?php foreach ($logo_brands as $brand): ?>
                     <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
-                        <img src="assets/img/iansolar.png" alt="Ian Solar" class="w-full h-full object-contain mix-blend-multiply opacity-90">
+                        <img src="<?= htmlspecialchars($brand['logo_image']) ?>" alt="<?= htmlspecialchars($brand['brand_name']) ?>" class="w-full h-full object-contain mix-blend-multiply opacity-90">
                     </div>
-                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
-                        <img src="assets/img/lvtopsun.png" alt="LVTopsun" class="w-full h-full object-contain mix-blend-multiply opacity-90">
-                    </div>
-                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
-                        <img src="assets/img/jinko.png" alt="Jinko Solar" class="w-full h-full object-contain mix-blend-multiply opacity-90">
-                    </div>
-                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
-                        <img src="assets/img/hyxipower.png" alt="HyxiPower" class="w-full h-full object-contain mix-blend-multiply opacity-90">
-                    </div>
-                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
-                        <img src="assets/img/Hopewind.jpg" alt="Hopewind" class="w-full h-full object-contain mix-blend-multiply opacity-90">
-                    </div>
-                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
-                        <img src="assets/img/solax.png" alt="Solax Power" class="w-full h-full object-contain mix-blend-multiply opacity-90">
-                    </div>
-                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
-                        <img src="assets/img/aiko.png" alt="Aiko" class="w-full h-full object-contain mix-blend-multiply opacity-90">
-                    </div>
-                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
-                        <img src="assets/img/hoymiles.png" alt="Hoymiles" class="w-full h-full object-contain mix-blend-multiply opacity-90">
-                    </div>
-                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
-                        <img src="assets/img/trinasolar.png" alt="Trina Solar" class="w-full h-full object-contain mix-blend-multiply opacity-90">
-                    </div>
+                    <?php endforeach; ?>
                 </div>
             </div>
         </div>
@@ -835,37 +826,37 @@ $conn->close();
                     <!-- System Size -->
                     <div class="bg-slate-50 rounded-2xl p-6 text-center border border-slate-100 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-200 group relative overflow-hidden">
                         <div class="w-28 h-28 mx-auto mb-4 bg-white rounded-2xl shadow-sm flex items-center justify-center p-2 group-hover:scale-110 transition-transform duration-300 overflow-hidden">
-                            <img src="assets/img/system-size.png" alt="System Size" class="w-full h-full object-contain">
+                            <img src="<?= htmlspecialchars($calc_settings['card1_icon']) ?>" alt="<?= htmlspecialchars($calc_settings['card1_title']) ?>" class="w-full h-full object-contain">
                         </div>
                         <div class="text-3xl font-bold text-slate-800 mb-1" id="twKwValue">2.4</div>
-                        <div class="text-xs font-bold text-slate-500 uppercase tracking-wide">Required System (kWp)</div>
+                        <div class="text-xs font-bold text-slate-500 uppercase tracking-wide"><?= htmlspecialchars($calc_settings['card1_title']) ?></div>
                     </div>
 
                     <!-- Solar Panels -->
                     <div class="bg-slate-50 rounded-2xl p-6 text-center border border-slate-100 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-200 group relative overflow-hidden">
                         <div class="w-28 h-28 mx-auto mb-4 bg-white rounded-2xl shadow-sm flex items-center justify-center p-2 group-hover:scale-110 transition-transform duration-300 overflow-hidden">
-                            <img src="assets/img/panels.png" alt="Solar Panels" class="w-full h-full object-contain">
+                            <img src="<?= htmlspecialchars($calc_settings['card2_icon']) ?>" alt="<?= htmlspecialchars($calc_settings['card2_title']) ?>" class="w-full h-full object-contain">
                         </div>
                         <div class="text-3xl font-bold text-slate-800 mb-1" id="twPanelsValue">6</div>
-                        <div class="text-xs font-bold text-slate-500 uppercase tracking-wide">Solar Panels</div>
+                        <div class="text-xs font-bold text-slate-500 uppercase tracking-wide"><?= htmlspecialchars($calc_settings['card2_title']) ?></div>
                     </div>
 
                     <!-- Monthly Savings -->
                     <div class="bg-green-50 rounded-2xl p-6 text-center border border-green-100 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-green-200 group relative overflow-hidden">
                         <div class="w-28 h-28 mx-auto mb-4 bg-white rounded-2xl shadow-sm flex items-center justify-center p-2 group-hover:scale-110 transition-transform duration-300 overflow-hidden">
-                            <img src="assets/img/monthly-savings.png" alt="Monthly Savings" class="w-full h-full object-contain">
+                            <img src="<?= htmlspecialchars($calc_settings['card3_icon']) ?>" alt="<?= htmlspecialchars($calc_settings['card3_title']) ?>" class="w-full h-full object-contain">
                         </div>
                         <div class="text-3xl font-bold text-green-600 mb-1">₱<span id="twMonthlySavings">3,500</span></div>
-                        <div class="text-xs font-bold text-green-700/70 uppercase tracking-wide">Est. Monthly Savings</div>
+                        <div class="text-xs font-bold text-green-700/70 uppercase tracking-wide"><?= htmlspecialchars($calc_settings['card3_title']) ?></div>
                     </div>
 
                     <!-- Yearly Savings -->
                     <div class="bg-amber-50 rounded-2xl p-6 text-center border border-amber-100 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-amber-200 group relative overflow-hidden">
                         <div class="w-28 h-28 mx-auto mb-4 bg-white rounded-2xl shadow-sm flex items-center justify-center p-2 group-hover:scale-110 transition-transform duration-300 overflow-hidden">
-                            <img src="assets/img/yearly-savings.png" alt="Yearly Savings" class="w-full h-full object-contain">
+                            <img src="<?= htmlspecialchars($calc_settings['card4_icon']) ?>" alt="<?= htmlspecialchars($calc_settings['card4_title']) ?>" class="w-full h-full object-contain">
                         </div>
                         <div class="text-3xl font-bold text-amber-600 mb-1">₱<span id="twYearlySavings">42,000</span></div>
-                        <div class="text-xs font-bold text-amber-700/70 uppercase tracking-wide">Est. Yearly Savings</div>
+                        <div class="text-xs font-bold text-amber-700/70 uppercase tracking-wide"><?= htmlspecialchars($calc_settings['card4_title']) ?></div>
                     </div>
                 </div>
 
@@ -893,12 +884,12 @@ $conn->close();
         }
 
         .animate-marquee {
-            animation: marquee 12s linear infinite;
+            animation: marquee 10s linear infinite;
         }
 
         @media (min-width: 768px) {
             .animate-marquee {
-                animation: marquee 25s linear infinite;
+                animation: marquee 18s linear infinite;
             }
         }
 
@@ -938,22 +929,30 @@ $conn->close();
     </style>
 
     <script>
+        const CALC_CONFIG = {
+            kwhRate: <?= floatval($calc_settings['kwh_rate']) ?>,
+            panelWattage: <?= intval($calc_settings['solar_panel_wattage']) ?>,
+            sunHours: <?= floatval($calc_settings['average_sun_hours']) ?>
+        };
+
         function updateTwCalculator(val) {
             let bill = parseFloat(val);
             if (isNaN(bill) || bill < 0) bill = 0;
 
-            // Basic estimation logic
-            // Assuming cost per kWh is around ₱12
-            // And 1 kWp system produces roughly 120 kWh per month
-            let kwhUsed = bill / 12;
-            let kwpRequired = kwhUsed / 120;
+            // 1. kWh per month = Monthly Bill / kWh Rate (Rounded)
+            let kwhUsed = Math.round(bill / CALC_CONFIG.kwhRate);
 
-            // Assume 1 panel is roughly 400W (0.4 kWp)
-            let panelsNeeded = Math.ceil(kwpRequired / 0.4);
+            // 2. Required System (kW) = roundup( kWh_per_month / (30 * sunHours) * 0.95 )
+            let kwpRequired = Math.ceil((kwhUsed / (30 * CALC_CONFIG.sunHours)) * 0.95);
 
-            // Calculate Savings
-            // Let's assume solar offsets 70% of the bill on average
-            let monthlySavings = bill * 0.70;
+            // 3. No. of Panels = roundup( (System_kW * 1000) / panelWattage )
+            let panelsNeeded = Math.ceil((kwpRequired * 1000) / CALC_CONFIG.panelWattage);
+
+            // 4. Estimated Savings per Month (kWh) = System_kW * sunHours * 30 * 0.95
+            let savingsKwh = kwpRequired * CALC_CONFIG.sunHours * 30 * 0.95;
+
+            // 5. Estimated Savings per Month (₱) = Savings_kWh * kWh_Rate
+            let monthlySavings = savingsKwh * CALC_CONFIG.kwhRate;
             let yearlySavings = monthlySavings * 12;
 
             // Cap it if they put extreme values, or handle minimums

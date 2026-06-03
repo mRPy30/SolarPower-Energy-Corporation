@@ -555,6 +555,7 @@
             <li><a href="../services.php">SERVICES</a></li>
             <li><a href="../product.php">PRODUCT</a></li>
             <li><a href="../projects.php">PROJECTS</a></li>
+            <li><a href="../loans.php">SOLAR LOANS</a></li>
             <li><a href="../contact.php">CONTACT</a></li>
           </ul>
         </div>

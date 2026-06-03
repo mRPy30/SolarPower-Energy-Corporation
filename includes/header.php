@@ -440,6 +440,7 @@ function isActive($page)
                     <li><a href="services.php" class="<?php echo isActive('services.php'); ?>">SERVICES</a></li>
                     <li><a href="product.php" class="<?php echo isActive('product.php'); ?>">PRODUCTS</a></li>
                     <li><a href="projects.php" class="<?php echo isActive('projects.php'); ?>">PROJECTS</a></li>
+                    <li><a href="loans.php" class="<?php echo isActive('loans.php'); ?>">SOLAR LOANS</a></li>
                     <li><a href="contact.php" class="<?php echo isActive('contact.php'); ?>">CONTACT</a></li>
                 </ul>
             </nav>

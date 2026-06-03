@@ -55,11 +55,11 @@ switch ($action) {
         $profilePictureFilename = null;
         if (isset($_FILES['profile_picture']) && $_FILES['profile_picture']['error'] === UPLOAD_ERR_OK) {
             $file = $_FILES['profile_picture'];
-            $maxSize = 2 * 1024 * 1024; // 2MB
+            $maxSize = 20 * 1024 * 1024; // 20MB
 
             // Server-side size validation
             if ($file['size'] > $maxSize) {
-                echo json_encode(['success' => false, 'message' => 'File exceeds 2MB limit.']);
+                echo json_encode(['success' => false, 'message' => 'File exceeds 20MB limit.']);
                 exit;
             }
 
