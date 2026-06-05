@@ -791,11 +791,10 @@ body {
 /* Hero Section */
 .hero {
     position: relative;
-    height: 70vh;
-    min-height: 550px;
-    overflow: hidden;
+    height: auto;
+    min-height: 720px;
     color: var(--clr-light);
-    padding: 100px 0 120px;
+    padding: 120px 0;
     background: linear-gradient(135deg, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.5)), url("img/homepage-cover.png") center center / cover no-repeat;
 }
 

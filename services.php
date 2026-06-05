@@ -4,8 +4,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/png" href="assets/img/icon.png">
-    <title>Services | SolarPower Energy Corporation</title>
-    
+    <!-- Primary Meta Tags -->
+    <title>Solar Services & Technical Capabilities | SolarPower Energy Corporation</title>
+    <meta name="description" content="Discover our complete range of solar energy solutions in the Philippines. We offer Tier-1 solar panel supply, master engineering installations, energy audits, and net-metering integrations." />
+    <meta name="keywords" content="solar services Philippines, solar panel supplier, master solar installer, energy audit Philippines, net metering compliance" />
+    <meta name="author" content="SolarPower Energy Corporation" />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://solarpower.com.ph/services.php" />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Solar Services & Technical Capabilities | SolarPower Energy Corporation" />
+    <meta property="og:description" content="Premium solar panels, expert design engineering, professional installation, and lifetime support services nationwide." />
+    <meta property="og:image" content="https://solarpower.com.ph/assets/img/logo.png" />
+    <meta property="og:url" content="https://solarpower.com.ph/services.php" />
+
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">

@@ -65,6 +65,14 @@ $check_roof = $conn->query("SHOW COLUMNS FROM `contact_messages` LIKE 'roof_type
 if ($check_roof && $check_roof->num_rows === 0) {
     $conn->query("ALTER TABLE `contact_messages` ADD COLUMN `roof_type` VARCHAR(50) NULL");
 }
+$check_ord_service = $conn->query("SHOW COLUMNS FROM `orders` LIKE 'service_type'");
+if ($check_ord_service && $check_ord_service->num_rows === 0) {
+    $conn->query("ALTER TABLE `orders` ADD COLUMN `service_type` VARCHAR(100) DEFAULT 'Site Assessment'");
+}
+$check_ord_remarks = $conn->query("SHOW COLUMNS FROM `orders` LIKE 'remarks'");
+if ($check_ord_remarks && $check_ord_remarks->num_rows === 0) {
+    $conn->query("ALTER TABLE `orders` ADD COLUMN `remarks` TEXT NULL");
+}
 
 // Get user data from session
 $user_id = $_SESSION['user_id'];
@@ -352,12 +360,21 @@ function get_most_sold_product($conn)
 }
 
 function get_monthly_revenue_trend($conn) {
-    $months = [];
-    $revenues = [];
+    $months_list = [];
+    $revenues_map = [];
+    
+    // Generate the last 6 months (including the current month)
+    for ($i = 5; $i >= 0; $i--) {
+        $m_time = strtotime("-$i month");
+        $m_key = date('Y-m', $m_time);
+        $m_name = date('M Y', $m_time);
+        $months_list[$m_key] = $m_name;
+        $revenues_map[$m_key] = 0.00;
+    }
     
     // Fetch last 6 months including current month
     $query = "SELECT 
-                DATE_FORMAT(created_at, '%b %Y') AS month_name,
+                DATE_FORMAT(created_at, '%Y-%m') AS month_key,
                 SUM(total_amount) AS monthly_revenue
               FROM orders
               WHERE order_status IN ('installed', 'completed', 'approved', 'delivered', 'confirmed')
@@ -368,16 +385,15 @@ function get_monthly_revenue_trend($conn) {
     $result = $conn->query($query);
     if ($result) {
         while ($row = $result->fetch_assoc()) {
-            $months[] = $row['month_name'];
-            $revenues[] = (float)$row['monthly_revenue'];
+            $key = $row['month_key'];
+            if (isset($revenues_map[$key])) {
+                $revenues_map[$key] = (float)$row['monthly_revenue'];
+            }
         }
     }
     
-    // Fallback if no data
-    if (empty($months)) {
-        $months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
-        $revenues = [0, 0, 0, 0, 0, 0];
-    }
+    $months = array_values($months_list);
+    $revenues = array_values($revenues_map);
     
     return ['months' => $months, 'revenues' => $revenues];
 }
@@ -572,29 +588,43 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
                 $sales_channel = isset($_POST['sales_channel']) ? trim($_POST['sales_channel']) : 'Website';
                 $product_id = isset($_POST['product_id']) ? (int)$_POST['product_id'] : 0;
                 $custom_price = isset($_POST['custom_price']) ? trim($_POST['custom_price']) : '';
+                $service_type = isset($_POST['service_type']) ? trim($_POST['service_type']) : 'Site Assessment';
+                $remarks = isset($_POST['remarks']) ? trim($_POST['remarks']) : '';
+                $revenue_date = isset($_POST['revenue_date']) && !empty($_POST['revenue_date']) ? trim($_POST['revenue_date']) : date('Y-m-d');
+                $created_at = $revenue_date . ' ' . date('H:i:s');
 
-                if (empty($customer_name) || empty($customer_email) || empty($product_id)) {
-                    echo json_encode(['success' => false, 'message' => 'Name, Email, and Product are required.']);
+                if (empty($customer_name)) {
+                    $customer_name = 'Walk-in Client';
+                }
+
+                if (empty($customer_address) || empty($sales_channel) || $custom_price === '' || empty($service_type)) {
+                    echo json_encode(['success' => false, 'message' => 'Location, Sales Channel, Service Type, and Override Amount are required.']);
                     exit();
                 }
 
                 // Generate order reference
                 $ref = 'OFF-' . strtoupper(bin2hex(random_bytes(4)));
 
-                // Fetch product details
-                $p_stmt = $conn->prepare("SELECT displayName, price FROM product WHERE id = ?");
-                $p_stmt->bind_param("i", $product_id);
-                $p_stmt->execute();
-                $p_res = $p_stmt->get_result()->fetch_assoc();
-                $p_stmt->close();
+                $product_name = 'Custom Solar Service';
+                $price = 0.00;
 
-                if (!$p_res) {
-                    echo json_encode(['success' => false, 'message' => 'Selected product not found.']);
-                    exit();
+                if ($product_id > 0) {
+                    // Fetch product details
+                    $p_stmt = $conn->prepare("SELECT displayName, price FROM product WHERE id = ?");
+                    $p_stmt->bind_param("i", $product_id);
+                    $p_stmt->execute();
+                    $p_res = $p_stmt->get_result()->fetch_assoc();
+                    $p_stmt->close();
+
+                    if ($p_res) {
+                        $product_name = $p_res['displayName'];
+                        $price = ($custom_price !== '') ? (float)$custom_price : (float)$p_res['price'];
+                    } else {
+                        $price = ($custom_price !== '') ? (float)$custom_price : 0.00;
+                    }
+                } else {
+                    $price = ($custom_price !== '') ? (float)$custom_price : 0.00;
                 }
-
-                $product_name = $p_res['displayName'];
-                $price = ($custom_price !== '') ? (float)$custom_price : (float)$p_res['price'];
 
                 // Start transaction
                 $conn->begin_transaction();
@@ -602,8 +632,8 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
                     $payment_status = 'paid';
                     $order_status = 'confirmed';
 
-                    $stmt = $conn->prepare("INSERT INTO orders (order_reference, customer_name, customer_email, customer_phone, customer_address, total_amount, payment_method, payment_status, order_status, sales_channel) VALUES (?, ?, ?, ?, ?, ?, 'Manual', ?, ?, ?)");
-                    $stmt->bind_param("sssssdsss", $ref, $customer_name, $customer_email, $customer_phone, $customer_address, $price, $payment_status, $order_status, $sales_channel);
+                    $stmt = $conn->prepare("INSERT INTO orders (order_reference, customer_name, customer_email, customer_phone, customer_address, total_amount, payment_method, payment_status, order_status, sales_channel, service_type, remarks, created_at) VALUES (?, ?, ?, ?, ?, ?, 'Manual', ?, ?, ?, ?, ?, ?)");
+                    $stmt->bind_param("sssssdssssss", $ref, $customer_name, $customer_email, $customer_phone, $customer_address, $price, $payment_status, $order_status, $sales_channel, $service_type, $remarks, $created_at);
                     $stmt->execute();
                     $order_id = $stmt->insert_id;
                     $stmt->close();
@@ -1518,8 +1548,34 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
     <style>
         /* ======= GLOBAL BODY STYLES ======= */
         body {
-            margin-right: 0;
+            margin: 0 !important;
+            padding: 0 !important;
             overflow-x: hidden;
+        }
+        .container {
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+            max-width: 100% !important;
+            width: 100% !important;
+        }
+        body.iframe-modal-open .sidebar,
+        body.iframe-modal-open .main-content > .header {
+            filter: blur(5px);
+            pointer-events: none;
+            transition: filter 0.2s ease;
+        }
+        body.iframe-modal-open iframe {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            z-index: 99999 !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            background: transparent !important;
         }
         
         /* ======= MANUAL ORDER MODAL STYLES ======= */
@@ -2242,9 +2298,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 <span>Tracking</span>
             </div>
 
-            <div class="menu-item" onclick="showPage('orders', 'Orders')" data-tooltip="Orders">
+            <div class="menu-item" onclick="showPage('orders', 'Revenue')" data-tooltip="Revenue">
                 <i class="fas fa-shopping-bag"></i>
-                <span>Orders</span>
+                <span>Revenue</span>
             </div>
 
             <div class="menu-item" onclick="showPage('quotation', 'Quotation')" data-tooltip="Quotation">
@@ -2264,9 +2320,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 <i class="fas fa-user-circle"></i>
                 <span>My Profile</span>
             </div>
-            <div class="menu-item" onclick="showPage('staff_manage', 'Staff Management')" data-tooltip="Staff Management">
+            <div class="menu-item" onclick="showPage('staff_manage', 'User Management')" data-tooltip="User Management">
                 <i class="fas fa-users-cog"></i>
-                <span>Staff Management</span>
+                <span>User Management</span>
             </div>
         </aside>
 
@@ -6042,7 +6098,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                     <!-- HEADER -->
                     <div class="orders-header">
                         <div class="orders-title">
-                            <h3><i class="fas fa-shopping-cart"></i> Order Check</h3>
+                            <h3><i class="fas fa-shopping-cart"></i> Revenue Check</h3>
                         </div>
 
                         <div style="display: flex; gap: 10px;">
@@ -6052,7 +6108,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                             </button>
                             <button class="btn-primary" style="background-color: #ffc107; color: #0f172a; font-weight: 700; border: none;"
                                 onclick="openManualOrderModal()">
-                                <i class="fas fa-plus"></i> Add Manual Order
+                                <i class="fas fa-plus"></i> Add Manual Revenue/Order
                             </button>
                             <button class="btn-refresh" onclick="OrdersModule.loadOrders()">
                                 <i class="fas fa-sync-alt"></i> Refresh
@@ -6196,7 +6252,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                     <div
                         style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid #eee;background:#f8f9fa;border-radius:14px 14px 0 0;">
                         <h3 style="margin:0;font-size:16px;"><i class="fas fa-file-invoice"
-                                style="color:#007bff;margin-right:8px;"></i>Order Details</h3>
+                                style="color:#007bff;margin-right:8px;"></i>Revenue/Order Details</h3>
                         <button onclick="closeOrderDetailModal()"
                             style="background:none;border:none;font-size:24px;cursor:pointer;color:#aaa;line-height:1;padding:0 4px;">&times;</button>
                     </div>
@@ -9736,11 +9792,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
         ${verifySection}
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
             <div>
-                <div style="font-size:10px;font-weight:800;color:#999;text-transform:uppercase;letter-spacing:.5px;">Order Reference</div>
+                <div style="font-size:10px;font-weight:800;color:#999;text-transform:uppercase;letter-spacing:.5px;">Order/Revenue Reference</div>
                 <div style="font-weight:700;margin-top:3px;">${this.esc(o.order_reference || '—')}</div>
             </div>
             <div>
-                <div style="font-size:10px;font-weight:800;color:#999;text-transform:uppercase;letter-spacing:.5px;">Date Placed</div>
+                <div style="font-size:10px;font-weight:800;color:#999;text-transform:uppercase;letter-spacing:.5px;">Date Created / Placed</div>
                 <div style="margin-top:3px;font-size:13px;">${date}</div>
             </div>
             <div>
@@ -9759,8 +9815,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 <div style="font-size:10px;font-weight:800;color:#999;text-transform:uppercase;letter-spacing:.5px;">Total Amount</div>
                 <div style="font-weight:800;font-size:20px;color:#28a745;margin-top:3px;">${amount}</div>
             </div>
+            <div>
+                <div style="font-size:10px;font-weight:800;color:#999;text-transform:uppercase;letter-spacing:.5px;">Service Type</div>
+                <div style="margin-top:3px;font-size:13px;font-weight:600;color:#0a5c3d;">${this.esc(o.service_type || '—')}</div>
+            </div>
+            <div>
+                <div style="font-size:10px;font-weight:800;color:#999;text-transform:uppercase;letter-spacing:.5px;">Sales Channel</div>
+                <div style="margin-top:3px;font-size:13px;">${this.esc(o.sales_channel || 'Website')}</div>
+            </div>
             <div style="grid-column:1/-1;">
-                <div style="font-size:10px;font-weight:800;color:#999;text-transform:uppercase;letter-spacing:.5px;">Delivery Address</div>
+                <div style="font-size:10px;font-weight:800;color:#999;text-transform:uppercase;letter-spacing:.5px;">Installation Location / Address</div>
                 <div style="margin-top:3px;font-size:13px;">${this.esc(o.customer_address || '—')}</div>
             </div>
         </div>
@@ -9782,6 +9846,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
         <div style="background:#fffde7;border:1px solid #ffe082;border-radius:8px;padding:12px;margin-bottom:16px;">
             <div style="font-size:10px;font-weight:800;color:#999;text-transform:uppercase;margin-bottom:6px;"><i class="fas fa-sticky-note"></i> Staff Notes / Payment Info</div>
             <div style="font-size:13px;">${this.esc(o.staff_notes)}</div>
+        </div>` : ''}
+        ${o.remarks ? `
+        <div style="background:#f1f5f9;border:1px solid #cbd5e1;border-radius:8px;padding:12px;margin-bottom:16px;">
+            <div style="font-size:10px;font-weight:800;color:#999;text-transform:uppercase;margin-bottom:6px;"><i class="fas fa-comment-dots"></i> Remarks / Notes</div>
+            <div style="font-size:13px;color:#334155;">${this.esc(o.remarks)}</div>
         </div>` : ''}
         ${receiptSection}
         `;
@@ -9819,7 +9888,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 const sel = document.getElementById('orderStatusFilter');
                 if (sel) { sel.value = status; sel.dispatchEvent(new Event('change')); }
                 // Navigate to orders page if not already there
-                if (typeof showPage === 'function') showPage('orders', 'Orders');
+                if (typeof showPage === 'function') showPage('orders', 'Revenue');
             },
 
             // ── Bind Filters ──────────────────────────────────────────────────────
@@ -13052,7 +13121,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
     <div class="manual-order-overlay" id="manualOrderOverlay">
         <div class="manual-order-modal-box">
             <div class="manual-order-modal-head">
-                <h3><i class="fas fa-plus-circle" style="color: #3b82f6;"></i> Create Manual Order</h3>
+                <h3><i class="fas fa-plus-circle" style="color: #3b82f6;"></i> Create Manual Revenue/Order</h3>
                 <button class="manual-order-modal-close" onclick="closeManualOrderModal()">&times;</button>
             </div>
             <div class="manual-order-modal-body">
@@ -13060,14 +13129,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                     
                     <!-- Contact details -->
                     <div class="mo-form-group">
-                        <label for="moClientName">Client Name *</label>
-                        <input type="text" id="moClientName" required placeholder="John Doe">
+                        <label for="moClientName">Client Name</label>
+                        <input type="text" id="moClientName" placeholder="John Doe">
                     </div>
 
                     <div class="mo-grid-2">
                         <div class="mo-form-group">
-                            <label for="moClientEmail">Client Email *</label>
-                            <input type="email" id="moClientEmail" required placeholder="johndoe@example.com" list="existingClientsList" oninput="onManualOrderEmailInput()">
+                            <label for="moClientEmail">Client Email</label>
+                            <input type="email" id="moClientEmail" placeholder="johndoe@example.com" list="existingClientsList" oninput="onManualOrderEmailInput()">
                             <datalist id="existingClientsList">
                                 <?php
                                 $db_conn = mysqli_connect($servername, $username, $password, $dbname);
@@ -13092,14 +13161,28 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                             </datalist>
                         </div>
                         <div class="mo-form-group">
-                            <label for="moClientPhone">Client Phone *</label>
-                            <input type="text" id="moClientPhone" required placeholder="0917XXXXXXX">
+                            <label for="moClientPhone">Client Phone</label>
+                            <input type="text" id="moClientPhone" placeholder="0917XXXXXXX">
                         </div>
                     </div>
 
                     <div class="mo-form-group">
                         <label for="moClientAddress">Installation Location / City *</label>
                         <input type="text" id="moClientAddress" required placeholder="e.g. Manila, Cavite">
+                    </div>
+
+                    <div class="mo-form-group">
+                        <label for="moServiceType">Service Type *</label>
+                        <select id="moServiceType" required style="border: 1px solid #cbd5e1; padding: 0.5rem 0.75rem; border-radius: 0.375rem; width: 100%; font-size: 0.875rem; color: #334155; outline: none; background-color: #fff;">
+                            <option value="Site Assessment">Site Assessment</option>
+                            <option value="Supply and Install">Supply and Install</option>
+                            <option value="Supply Only">Supply Only</option>
+                            <option value="Install Only">Install Only</option>
+                            <option value="Net Metering Application">Net Metering Application</option>
+                            <option value="System Upgrade / Expansion">System Upgrade / Expansion</option>
+                            <option value="Preventive Maintenance">Preventive Maintenance</option>
+                            <option value="Troubleshooting & Repair">Troubleshooting & Repair</option>
+                        </select>
                     </div>
 
                     <!-- Sales Channel & Product Select -->
@@ -13148,8 +13231,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                             </div>
                         </div>
                         <div class="mo-form-group">
-                            <label for="moProduct">Select Product *</label>
-                            <select id="moProduct" onchange="onManualOrderProductChange()" required>
+                            <label for="moProduct">Select Product</label>
+                            <select id="moProduct" onchange="onManualOrderProductChange()">
                                 <option value="">-- Choose Product --</option>
                                 <?php
                                 $db_conn = mysqli_connect($servername, $username, $password, $dbname);
@@ -13171,15 +13254,29 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                         </div>
                     </div>
 
-                    <!-- Override Price -->
+                    <div class="mo-grid-2">
+                        <!-- Override Price -->
+                        <div class="mo-form-group">
+                            <label for="moCustomPrice">Override Amount (₱) *</label>
+                            <input type="number" step="0.01" id="moCustomPrice" required placeholder="0.00">
+                        </div>
+
+                        <!-- Revenue Date -->
+                        <div class="mo-form-group">
+                            <label for="moRevenueDate">Revenue Date *</label>
+                            <input type="date" id="moRevenueDate" required value="<?php echo date('Y-m-d'); ?>" style="border: 1px solid #cbd5e1; padding: 0.5rem 0.75rem; border-radius: 0.375rem; width: 100%; font-size: 0.875rem; color: #334155; outline: none; background-color: #fff;">
+                        </div>
+                    </div>
+
+                    <!-- Remarks -->
                     <div class="mo-form-group">
-                        <label for="moCustomPrice">Override Amount (₱) - Leave blank for base price</label>
-                        <input type="number" step="0.01" id="moCustomPrice" placeholder="0.00">
+                        <label for="moRemarks">Remarks / Notes</label>
+                        <textarea id="moRemarks" placeholder="Enter remarks or additional details here..." rows="3" style="border: 1px solid #cbd5e1; padding: 0.5rem 0.75rem; border-radius: 0.375rem; width: 100%; font-size: 0.875rem; color: #334155; outline: none; background-color: #fff; font-family: inherit; resize: vertical;"></textarea>
                     </div>
 
                     <div class="mo-btn-group">
                         <button type="button" class="mo-btn-cancel" onclick="closeManualOrderModal()">Cancel</button>
-                        <button type="submit" class="mo-btn-submit">Create Order</button>
+                        <button type="submit" class="mo-btn-submit">Add Revenue</button>
                     </div>
                 </form>
             </div>
@@ -13250,9 +13347,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
             const salesChannel = document.getElementById('moSalesChannel').value;
             const productId = document.getElementById('moProduct').value;
             const customPrice = document.getElementById('moCustomPrice').value.trim();
+            const serviceType = document.getElementById('moServiceType').value;
+            const remarks = document.getElementById('moRemarks').value.trim();
+            const revenueDate = document.getElementById('moRevenueDate').value;
 
-            if (!clientName || !clientEmail || !clientPhone || !clientAddress || !productId) {
-                alert('Please fill in all required fields.');
+            if (!clientAddress || !salesChannel || !customPrice || !serviceType || !revenueDate) {
+                alert('Please fill in all required fields (Location, Service Type, Sales Channel, Override Amount, and Revenue Date).');
                 return;
             }
 
@@ -13265,6 +13365,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
             formData.append('sales_channel', salesChannel);
             formData.append('product_id', productId);
             formData.append('custom_price', customPrice);
+            formData.append('service_type', serviceType);
+            formData.append('remarks', remarks);
+            formData.append('revenue_date', revenueDate);
 
             try {
                 const response = await fetch('dashboard.php?ajax=1', {

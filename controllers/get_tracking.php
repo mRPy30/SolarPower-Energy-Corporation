@@ -7,8 +7,9 @@ try {
     $sql = "SELECT id, order_reference, customer_name, customer_email, 
                    customer_phone, total_amount, order_status, 
                    payment_status, tracking_number, current_location, 
-                   estimated_delivery, delivered_at, created_at 
+                   estimated_delivery, delivered_at, created_at, sales_channel 
             FROM orders 
+            WHERE LOWER(sales_channel) = 'website'
             ORDER BY created_at DESC";
             
     $result = $conn->query($sql);

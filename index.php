@@ -27,9 +27,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $fullname = trim($_POST['fullname'] ?? '');
         $email = trim($_POST['email'] ?? '');
         $phone = trim($_POST['phone'] ?? '');
-        $phone_full = trim($_POST['phone_full'] ?? $phone);
+        $phone_full = trim($_POST['phone_full'] ?? '');
+        if ($phone_full === '') {
+            $phone_full = $phone;
+        }
         if (strpos($phone_full, '+63') === false && !empty($phone_full)) {
-            $phone_full = '+63' . ltrim($phone_full, '0');
+            if (strlen($phone_full) === 9 && $phone_full[0] !== '9') {
+                $phone_full = '+639' . $phone_full;
+            } else {
+                $phone_full = '+63' . ltrim($phone_full, '0');
+            }
         }
         $property_type = trim($_POST['property_type'] ?? '');
         $address = trim($_POST['address'] ?? '');
@@ -724,14 +731,99 @@ $conn->close();
             <div class="hero-content">
                 <!-- LEFT: HERO TEXT -->
                 <div class="hero-text" data-aos="fade-right">
-                    <h1>Smart Energy for Smarter Homes</h1>
-                    <p class="hero-tagline">Sun Powered, Future Driven</p>
+                    <h1 style="color: #FFFFFF; font-weight: 800;">Smart Energy for Smarter Homes.</h1>
+                    <p class="hero-tagline" style="color: #F2A900; font-weight: 700;">Sun Powered, Future Driven</p>
                     <p>Invest in solar today - enjoy decades of energy independence and savings.</p>
-                    <div class="hero-cta">
-                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#inspectionModal">GET FREE ESTIMATE NOW!</button>
-                        <button class="btn btn-secondary" onclick="window.location.href='about.php'">
-                            Learn More
-                        </button>
+                    <div class="hero-cta d-flex flex-row gap-3">
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#inspectionModal" style="background-color: #F2A900 !important; border-color: #F2A900 !important; color: #000000 !important; font-weight: bold;">GET A FREE QUOTE</button>
+                        <a href="loans.php" class="btn btn-secondary text-decoration-none d-inline-flex align-items-center justify-content-center" style="border: 2px solid #FFFFFF !important; color: #FFFFFF !important; font-weight: bold; background: transparent !important;">
+                            EXPLORE FINANCING
+                        </a>
+                    </div>
+                </div>
+
+                <!-- RIGHT: CALCULATOR WIDGET -->
+                <div class="hero-calculator" data-aos="fade-left" style="max-width: 480px; width: 100%; margin-left: auto;">
+                    <div class="bg-white rounded-3xl shadow-2xl p-4 border border-slate-100 text-slate-800" style="border-radius: 24px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.08);">
+                        <!-- Header -->
+                        <div class="text-center mb-4">
+                            <div class="inline-flex items-center justify-center rounded-full text-amber-500 mb-2 shadow-sm" style="width: 48px; height: 48px; background-color: #FEF3C7; color: #F59E0B; display: inline-flex; align-items: center; justify-content: center; font-size: 1.4rem;">
+                                <i class="fa-regular fa-lightbulb"></i>
+                            </div>
+                            <h4 class="fw-bold mb-1 text-slate-900" style="font-size: 1.25rem; font-family: var(--ff-body); color: #0D5C3A;">Calculate Your Solar Savings</h4>
+                            <p class="text-slate-500 small mb-0 px-2" style="font-size: 0.8rem; line-height: 1.4;">See how much you can save by switching to solar energy. Drag the slider to match your monthly electric bill.</p>
+                        </div>
+
+                        <!-- Input Section -->
+                        <div class="mb-4 text-center">
+                            <label for="twBillAmountHero" class="form-label small fw-bold mb-2 text-slate-600 text-uppercase tracking-wider" style="font-size: 0.75rem;">Average Monthly Electric Bill</label>
+                            <div class="input-group input-group-sm mx-auto shadow-sm" style="max-width: 220px; border-radius: 8px; overflow: hidden; border: 1px solid #E2E8F0;">
+                                <span class="input-group-text bg-white border-0 fw-bold" style="color: #0D5C3A; font-size: 1rem;">₱</span>
+                                <input type="text" inputmode="numeric" id="twBillAmountHero" value="5,000"
+                                    class="form-control border-0 fw-extrabold text-center"
+                                    style="color: #0D5C3A; font-size: 1.25rem; background-color: #FFFFFF;"
+                                    placeholder="0" oninput="let raw = this.value.replace(/[^0-9]/g, ''); this.value = raw ? parseInt(raw).toLocaleString('en-US') : ''; document.getElementById('twBillSliderHero').value = raw; updateHeroCalculator(raw)">
+                            </div>
+
+                            <!-- Range Slider -->
+                            <div class="mt-3 px-2">
+                                <input type="range" id="twBillSliderHero" min="2000" max="50000" step="500" value="5000"
+                                    class="form-range custom-range w-100"
+                                    oninput="document.getElementById('twBillAmountHero').value = parseInt(this.value).toLocaleString('en-US'); updateHeroCalculator(this.value)">
+                                <div class="d-flex justify-content-between text-muted mt-2 fw-semibold" style="font-size: 0.72rem;">
+                                    <span>₱2,000</span>
+                                    <span>₱25,000</span>
+                                    <span>₱50,000+</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Results Grid -->
+                        <div class="row g-2.5">
+                            <!-- System Size -->
+                            <div class="col-6">
+                                <div class="rounded-2xl p-3 text-center transition-all" style="border-radius: 16px; border: 1px solid rgba(13, 92, 58, 0.08); background-color: rgba(13, 92, 58, 0.02); min-height: 110px; display: flex; flex-direction: column; justify-content: space-between;">
+                                    <div class="mx-auto mb-2 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; overflow: hidden; background: #fff; border-radius: 50%; padding: 4px; box-shadow: 0 4px 10px rgba(0,0,0,0.04);">
+                                        <img src="<?= htmlspecialchars($calc_settings['card1_icon']) ?>" alt="<?= htmlspecialchars($calc_settings['card1_title']) ?>" style="width: 100%; height: 100%; object-fit: contain;">
+                                    </div>
+                                    <div class="fw-extrabold" style="color: #0D5C3A; font-size: 1.35rem; line-height: 1.1;" id="twKwValueHero">2.4</div>
+                                    <div class="text-uppercase text-slate-500 fw-bold mt-1" style="font-size: 0.65rem; letter-spacing: 0.5px; line-height: 1.2;"><?= htmlspecialchars($calc_settings['card1_title']) ?></div>
+                                </div>
+                            </div>
+
+                            <!-- Solar Panels -->
+                            <div class="col-6">
+                                <div class="rounded-2xl p-3 text-center transition-all" style="border-radius: 16px; border: 1px solid rgba(242, 169, 0, 0.08); background-color: rgba(242, 169, 0, 0.02); min-height: 110px; display: flex; flex-direction: column; justify-content: space-between;">
+                                    <div class="mx-auto mb-2 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; overflow: hidden; background: #fff; border-radius: 50%; padding: 4px; box-shadow: 0 4px 10px rgba(0,0,0,0.04);">
+                                        <img src="<?= htmlspecialchars($calc_settings['card2_icon']) ?>" alt="<?= htmlspecialchars($calc_settings['card2_title']) ?>" style="width: 100%; height: 100%; object-fit: contain;">
+                                    </div>
+                                    <div class="fw-extrabold" style="color: #0D5C3A; font-size: 1.35rem; line-height: 1.1;" id="twPanelsValueHero">6</div>
+                                    <div class="text-uppercase text-slate-500 fw-bold mt-1" style="font-size: 0.65rem; letter-spacing: 0.5px; line-height: 1.2;"><?= htmlspecialchars($calc_settings['card2_title']) ?></div>
+                                </div>
+                            </div>
+
+                            <!-- Est. Monthly Savings -->
+                            <div class="col-6">
+                                <div class="rounded-2xl p-3 text-center transition-all" style="border-radius: 16px; border: 1px solid rgba(13, 92, 58, 0.12); background-color: rgba(13, 92, 58, 0.04) !important; min-height: 110px; display: flex; flex-direction: column; justify-content: space-between;">
+                                    <div class="mx-auto mb-2 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; overflow: hidden; background: #fff; border-radius: 50%; padding: 4px; box-shadow: 0 4px 10px rgba(0,0,0,0.04);">
+                                        <img src="<?= htmlspecialchars($calc_settings['card3_icon']) ?>" alt="<?= htmlspecialchars($calc_settings['card3_title']) ?>" style="width: 100%; height: 100%; object-fit: contain;">
+                                    </div>
+                                    <div class="fw-extrabold text-success" style="font-size: 1.35rem; line-height: 1.1;" id="twMonthlySavingsHero">0</div>
+                                    <div class="text-uppercase text-slate-500 fw-bold mt-1" style="font-size: 0.65rem; letter-spacing: 0.5px; line-height: 1.2;"><?= htmlspecialchars($calc_settings['card3_title']) ?></div>
+                                </div>
+                            </div>
+
+                            <!-- Est. Yearly Savings -->
+                            <div class="col-6">
+                                <div class="rounded-2xl p-3 text-center transition-all" style="border-radius: 16px; border: 1px solid rgba(242, 169, 0, 0.12); background-color: rgba(242, 169, 0, 0.04) !important; min-height: 110px; display: flex; flex-direction: column; justify-content: space-between;">
+                                    <div class="mx-auto mb-2 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; overflow: hidden; background: #fff; border-radius: 50%; padding: 4px; box-shadow: 0 4px 10px rgba(0,0,0,0.04);">
+                                        <img src="<?= htmlspecialchars($calc_settings['card4_icon']) ?>" alt="<?= htmlspecialchars($calc_settings['card4_title']) ?>" style="width: 100%; height: 100%; object-fit: contain;">
+                                    </div>
+                                    <div class="fw-extrabold" style="color: #F2A900; font-size: 1.35rem; line-height: 1.1;" id="twYearlySavingsHero">0</div>
+                                    <div class="text-uppercase text-slate-500 fw-bold mt-1" style="font-size: 0.65rem; letter-spacing: 0.5px; line-height: 1.2;"><?= htmlspecialchars($calc_settings['card4_title']) ?></div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -776,223 +868,6 @@ $conn->close();
             </div>
         </div>
     </section>
-    
-    <!-- Modernized Solar Savings Calculator Section -->
-    <section class="py-16 bg-amber-400 relative overflow-hidden" id="solarCalculator">
-        <!-- Background Pattern -->
-        <div class="absolute inset-0 opacity-10 pointer-events-none" style="background-image: radial-gradient(#000 1px, transparent 1px); background-size: 20px 20px;"></div>
-
-        <div class="container relative z-10 mx-auto px-4 max-w-6xl">
-            <!-- Header -->
-            <div class="text-center mb-10" data-aos="fade-up">
-                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-white text-amber-500 mb-4 shadow-lg">
-                    <i class="fa-regular fa-lightbulb text-3xl"></i>
-                </div>
-                <h2 class="text-3xl md:text-4xl font-bold text-slate-900 mb-2">Calculate Your Solar Savings</h2>
-                <p class="text-slate-800 font-medium max-w-xl mx-auto">See how much you can save by switching to solar energy. Drag the slider to match your monthly electric bill.</p>
-            </div>
-
-            <!-- Main Card -->
-            <div class="bg-white rounded-3xl shadow-2xl p-6 md:p-10 mb-12 border border-white/50 backdrop-blur-sm" data-aos="fade-up" data-aos-delay="100">
-
-                <!-- Input Section -->
-                <div class="max-w-xl mx-auto mb-10 text-center">
-                    <label for="twBillAmount" class="block text-slate-700 font-bold mb-3">Average Monthly Electric Bill</label>
-                    <div class="relative group">
-                        <!-- Pinned Peso Sign Container -->
-                        <div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
-                            <span class="text-slate-500 font-bold text-xl">₱</span>
-                        </div>
-                        <input type="text" inputmode="numeric" id="twBillAmount" value="5,000"
-                            class="block w-full pl-10 pr-4 py-4 text-2xl md:text-3xl font-bold text-slate-800 bg-slate-50 border-2 border-slate-200 rounded-2xl focus:outline-none transition-all duration-300 focus-within:ring-4 focus-within:ring-amber-500/20 focus-within:border-amber-500 text-center"
-                            placeholder="0" oninput="let raw = this.value.replace(/[^0-9]/g, ''); this.value = raw ? parseInt(raw).toLocaleString('en-US') : ''; document.getElementById('twBillSlider').value = raw; updateTwCalculator(raw)">
-                    </div>
-
-                    <!-- Range Slider -->
-                    <div class="mt-6 px-2">
-                        <input type="range" id="twBillSlider" min="2000" max="50000" step="500" value="5000"
-                            class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-amber-500 hover:accent-amber-600 transition-all duration-300"
-                            oninput="document.getElementById('twBillAmount').value = parseInt(this.value).toLocaleString('en-US'); updateTwCalculator(this.value)">
-                        <div class="flex justify-between text-xs font-semibold text-slate-400 mt-2 px-1 uppercase tracking-wider">
-                            <span>₱2,000</span>
-                            <span>₱25,000</span>
-                            <span>₱50,000+</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Results Grid -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <!-- System Size -->
-                    <div class="bg-slate-50 rounded-2xl p-6 text-center border border-slate-100 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-200 group relative overflow-hidden">
-                        <div class="w-28 h-28 mx-auto mb-4 bg-white rounded-2xl shadow-sm flex items-center justify-center p-2 group-hover:scale-110 transition-transform duration-300 overflow-hidden">
-                            <img src="<?= htmlspecialchars($calc_settings['card1_icon']) ?>" alt="<?= htmlspecialchars($calc_settings['card1_title']) ?>" class="w-full h-full object-contain">
-                        </div>
-                        <div class="text-3xl font-bold text-slate-800 mb-1" id="twKwValue">2.4</div>
-                        <div class="text-xs font-bold text-slate-500 uppercase tracking-wide"><?= htmlspecialchars($calc_settings['card1_title']) ?></div>
-                    </div>
-
-                    <!-- Solar Panels -->
-                    <div class="bg-slate-50 rounded-2xl p-6 text-center border border-slate-100 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-200 group relative overflow-hidden">
-                        <div class="w-28 h-28 mx-auto mb-4 bg-white rounded-2xl shadow-sm flex items-center justify-center p-2 group-hover:scale-110 transition-transform duration-300 overflow-hidden">
-                            <img src="<?= htmlspecialchars($calc_settings['card2_icon']) ?>" alt="<?= htmlspecialchars($calc_settings['card2_title']) ?>" class="w-full h-full object-contain">
-                        </div>
-                        <div class="text-3xl font-bold text-slate-800 mb-1" id="twPanelsValue">6</div>
-                        <div class="text-xs font-bold text-slate-500 uppercase tracking-wide"><?= htmlspecialchars($calc_settings['card2_title']) ?></div>
-                    </div>
-
-                    <!-- Monthly Savings -->
-                    <div class="bg-green-50 rounded-2xl p-6 text-center border border-green-100 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-green-200 group relative overflow-hidden">
-                        <div class="w-28 h-28 mx-auto mb-4 bg-white rounded-2xl shadow-sm flex items-center justify-center p-2 group-hover:scale-110 transition-transform duration-300 overflow-hidden">
-                            <img src="<?= htmlspecialchars($calc_settings['card3_icon']) ?>" alt="<?= htmlspecialchars($calc_settings['card3_title']) ?>" class="w-full h-full object-contain">
-                        </div>
-                        <div class="text-3xl font-bold text-green-600 mb-1">₱<span id="twMonthlySavings">3,500</span></div>
-                        <div class="text-xs font-bold text-green-700/70 uppercase tracking-wide"><?= htmlspecialchars($calc_settings['card3_title']) ?></div>
-                    </div>
-
-                    <!-- Yearly Savings -->
-                    <div class="bg-amber-50 rounded-2xl p-6 text-center border border-amber-100 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-amber-200 group relative overflow-hidden">
-                        <div class="w-28 h-28 mx-auto mb-4 bg-white rounded-2xl shadow-sm flex items-center justify-center p-2 group-hover:scale-110 transition-transform duration-300 overflow-hidden">
-                            <img src="<?= htmlspecialchars($calc_settings['card4_icon']) ?>" alt="<?= htmlspecialchars($calc_settings['card4_title']) ?>" class="w-full h-full object-contain">
-                        </div>
-                        <div class="text-3xl font-bold text-amber-600 mb-1">₱<span id="twYearlySavings">42,000</span></div>
-                        <div class="text-xs font-bold text-amber-700/70 uppercase tracking-wide"><?= htmlspecialchars($calc_settings['card4_title']) ?></div>
-                    </div>
-                </div>
-
-                <!-- CTA Section -->
-                <div class="mt-10 text-center opacity-0 transition-opacity duration-700 ease-in-out translate-y-4" id="twCtaContainer">
-                    <a href="viber://chat?number=%2B639953947379" target="_blank" class="inline-flex items-center justify-center gap-3 px-8 py-4 text-base font-bold text-white !no-underline hover:text-white bg-[#7360f2] rounded-xl hover:bg-[#5e4bcf] transition-colors shadow-lg hover:shadow-xl group">
-                        <i class="fab fa-viber text-xl group-hover:scale-110 transition-transform"></i>
-                        Get a Free Detailed Quote via Viber
-                    </a>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Tailwind Config Additions & JS Logic for Calculator -->
-    <style>
-        @keyframes marquee {
-            0% {
-                transform: translateX(0);
-            }
-
-            100% {
-                transform: translateX(-50%);
-            }
-        }
-
-        .animate-marquee {
-            animation: marquee 10s linear infinite;
-        }
-
-        @media (min-width: 768px) {
-            .animate-marquee {
-                animation: marquee 18s linear infinite;
-            }
-        }
-
-        .animate-marquee-paused {
-            animation-play-state: paused;
-        }
-
-        /* Fallback for Tailwind range input styling cross-browser */
-        input[type=range]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            height: 20px;
-            width: 20px;
-            border-radius: 50%;
-            background: #f59e0b;
-            /* amber-500 */
-            cursor: pointer;
-            margin-top: -6px;
-            /* You need to specify a margin in Chrome, but in Firefox and IE it is automatic */
-            box-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
-            transition: transform 0.15s ease-in-out;
-        }
-
-        input[type=range]::-webkit-slider-thumb:hover {
-            transform: scale(1.2);
-            background: #d97706;
-            /* amber-600 */
-        }
-
-        input[type=range]::-webkit-slider-runnable-track {
-            width: 100%;
-            height: 8px;
-            cursor: pointer;
-            background: #e2e8f0;
-            /* slate-200 */
-            border-radius: 4px;
-        }
-    </style>
-
-    <script>
-        const CALC_CONFIG = {
-            kwhRate: <?= floatval($calc_settings['kwh_rate']) ?>,
-            panelWattage: <?= intval($calc_settings['solar_panel_wattage']) ?>,
-            sunHours: <?= floatval($calc_settings['average_sun_hours']) ?>
-        };
-
-        function updateTwCalculator(val) {
-            let bill = parseFloat(val);
-            if (isNaN(bill) || bill < 0) bill = 0;
-
-            // 1. kWh per month = Monthly Bill / kWh Rate (Rounded)
-            let kwhUsed = Math.round(bill / CALC_CONFIG.kwhRate);
-
-            // 2. Required System (kW) = roundup( kWh_per_month / (30 * sunHours) * 0.95 )
-            let kwpRequired = Math.ceil((kwhUsed / (30 * CALC_CONFIG.sunHours)) * 0.95);
-
-            // 3. No. of Panels = roundup( (System_kW * 1000) / panelWattage )
-            let panelsNeeded = Math.ceil((kwpRequired * 1000) / CALC_CONFIG.panelWattage);
-
-            // 4. Estimated Savings per Month (kWh) = System_kW * sunHours * 30 * 0.95
-            let savingsKwh = kwpRequired * CALC_CONFIG.sunHours * 30 * 0.95;
-
-            // 5. Estimated Savings per Month (₱) = Savings_kWh * kWh_Rate
-            let monthlySavings = savingsKwh * CALC_CONFIG.kwhRate;
-            let yearlySavings = monthlySavings * 12;
-
-            // Cap it if they put extreme values, or handle minimums
-            if (bill < 1000) {
-                kwpRequired = 0;
-                panelsNeeded = 0;
-                monthlySavings = 0;
-                yearlySavings = 0;
-            }
-
-            // Update DOM
-            document.getElementById('twKwValue').textContent = kwpRequired.toFixed(1);
-            document.getElementById('twPanelsValue').textContent = panelsNeeded;
-
-            // Format Currency
-            const formatter = new Intl.NumberFormat('en-PH', {
-                minimumFractionDigits: 0,
-                maximumFractionDigits: 0
-            });
-            document.getElementById('twMonthlySavings').textContent = formatter.format(monthlySavings);
-            document.getElementById('twYearlySavings').textContent = formatter.format(yearlySavings);
-
-            // Show CTA smoothly if there's a valid calculation
-            const cta = document.getElementById('twCtaContainer');
-            if (bill > 1500) {
-                cta.classList.remove('opacity-0', 'translate-y-4');
-                cta.classList.add('opacity-100', 'translate-y-0');
-            } else {
-                cta.classList.remove('opacity-100', 'translate-y-0');
-                cta.classList.add('opacity-0', 'translate-y-4');
-            }
-        }
-
-        // Initialize on load
-        document.addEventListener('DOMContentLoaded', () => {
-            updateTwCalculator(document.getElementById('twBillAmount').value);
-        });
-    </script>
-
-
 
     <!-- ---------- CATALOG SECTION ---------- -->
     <section class="catalogs-section" id="catalogSection">
@@ -1640,6 +1515,331 @@ $conn->close();
         </div>
     </section>
 
+    <!-- ── SECTION 2: CORE SERVICES & PRODUCTS GRID (The 3-Pillar Solution) ── -->
+    <section class="py-5 bg-white" id="servicesGrid">
+        <div class="container py-lg-4">
+            <div class="text-center mb-5" data-aos="fade-up">
+                <span class="text-uppercase fw-bold text-success" style="font-size: 0.85rem; letter-spacing: 1.5px; color: #0D5C3A !important;">Core Offerings</span>
+                <h2 class="fw-extrabold mt-2" style="color: #0D5C3A; font-family: var(--ff-poppins); font-size: 2.3rem;">Engineered Solar Solutions</h2>
+                <p class="text-muted">High-performance solar solutions designed for structural mastery and financial efficiency.</p>
+            </div>
+            
+            <div class="row g-4" data-aos="fade-up" data-aos-delay="100">
+                <!-- Card 1 -->
+                <div class="col-md-4">
+                    <div class="card h-100 p-4 border-0 shadow-sm transition-all" style="border-bottom: 5px solid #F2A900 !important; border-radius: 16px; background: #FFFFFF;">
+                        <div class="mb-4 text-success d-flex align-items-center justify-content-center rounded-circle" style="width: 60px; height: 60px; background-color: rgba(13, 92, 58, 0.05); font-size: 1.75rem;">
+                            <i class="fas fa-home"></i>
+                        </div>
+                        <h4 class="fw-bold mb-3" style="color: #0D5C3A;">Residential Solar Systems</h4>
+                        <p class="text-muted mb-0">Sleek, high-efficiency home grid roof integrations, specifically engineered for premium subdivisions and private estates.</p>
+                    </div>
+                </div>
+
+                <!-- Card 2 -->
+                <div class="col-md-4">
+                    <div class="card h-100 p-4 border-0 shadow-sm transition-all" style="border-bottom: 5px solid #F2A900 !important; border-radius: 16px; background: #FFFFFF;">
+                        <div class="mb-4 text-success d-flex align-items-center justify-content-center rounded-circle" style="width: 60px; height: 60px; background-color: rgba(13, 92, 58, 0.05); font-size: 1.75rem;">
+                            <i class="fas fa-industry"></i>
+                        </div>
+                        <h4 class="fw-bold mb-3" style="color: #0D5C3A;">Commercial & Industrial</h4>
+                        <p class="text-muted mb-0">Heavy-duty solar installations designed to slash corporate operating expenses, support carbon compliance, and secure energy independence.</p>
+                    </div>
+                </div>
+
+                <!-- Card 3 -->
+                <div class="col-md-4">
+                    <div class="card h-100 p-4 border-0 shadow-sm transition-all" style="border-bottom: 5px solid #F2A900 !important; border-radius: 16px; background: #FFFFFF;">
+                        <div class="mb-4 text-success d-flex align-items-center justify-content-center rounded-circle" style="width: 60px; height: 60px; background-color: rgba(13, 92, 58, 0.05); font-size: 1.75rem;">
+                            <i class="fas fa-hand-holding-usd"></i>
+                        </div>
+                        <h4 class="fw-bold mb-3" style="color: #0D5C3A;">Flexible Solar Financing</h4>
+                        <p class="text-muted mb-4">Direct linkage to GSIS, Pag-IBIG, and SSS government backup programs, making clean energy affordable with zero cash outlays.</p>
+                        <a href="loans.php" class="btn btn-outline-success btn-sm w-100 mt-auto fw-bold" style="border-color: #0D5C3A; color: #0D5C3A; border-radius: 8px;">Explore Financing</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── SECTION 3: LIVE ENERGY & CARBON TRACKER WIDGET ── -->
+    <section class="py-5" style="background-color: var(--solar-bg-gray);" id="trackerSection">
+        <div class="container py-lg-4">
+            <div class="row justify-content-center">
+                <div class="col-lg-10">
+                    <div class="overflow-hidden border border-slate-100 shadow-lg" style="border-radius: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.05);">
+                        <div class="row g-0">
+                            <!-- Left Pane: Configurations -->
+                            <div class="col-md-6 p-5 bg-white d-flex flex-column justify-content-center">
+                                <span class="text-uppercase fw-bold text-success" style="font-size: 0.8rem; letter-spacing: 1.5px; color: #0D5C3A !important;">Live Analytics</span>
+                                <h3 class="fw-extrabold mt-2 mb-4" style="color: #0D5C3A; font-family: var(--ff-poppins);">Real-Time Impact Tracker</h3>
+                                <p class="text-muted mb-0">Our solar deployment footprints across the regions. Ticking counters represent live active production values compiled from all our connected arrays.</p>
+                            </div>
+                            
+                            <!-- Right Pane: Green Dashboard Block -->
+                            <div class="col-md-6 p-5 d-flex flex-column justify-content-center" style="background-color: #0D5C3A; color: #FFFFFF;">
+                                <!-- Metric 1 -->
+                                <div class="mb-4">
+                                    <span class="text-uppercase fw-bold text-white-50" style="font-size: 0.75rem; letter-spacing: 1px;">Total Megawatts Generated Nationwide</span>
+                                    <h2 class="fw-extrabold text-white mt-1 mb-0" id="mwhCounter" style="font-size: 2.75rem; font-family: var(--ff-poppins);">12,456.82</h2>
+                                </div>
+                                <!-- Metric 2 -->
+                                <div class="mb-0">
+                                    <span class="text-uppercase fw-bold text-white-50" style="font-size: 0.75rem; letter-spacing: 1px;">Metric Tons of CO2 Reduced</span>
+                                    <h2 class="fw-extrabold mt-1 mb-0" id="co2Counter" style="color: #F2A900; font-size: 2.75rem; font-family: var(--ff-poppins);">9,342.61</h2>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Bottom CTA Bar -->
+                        <a href="loans.php" class="d-block text-center py-3 fw-bold text-uppercase text-decoration-none transition-all" style="background-color: #F2A900; color: #1A1A1A; letter-spacing: 1px; font-size: 0.95rem;">
+                            See How Much Your Roof Can Save &rarr;
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── SECTION 4: SOLAR INSIGHTS & LATEST BLOGS ── -->
+    <section id="blog" class="py-5 bg-white">
+        <div class="container py-lg-4">
+            <div class="text-center mb-5" data-aos="fade-up">
+                <span class="text-uppercase fw-bold text-success" style="font-size: 0.85rem; letter-spacing: 1.5px; color: #0D5C3A !important;">Insights & Guides</span>
+                <h2 class="fw-extrabold mt-2" style="color: #0D5C3A; font-family: var(--ff-poppins); font-size: 2.3rem;">Solar Financing Insights & Guides</h2>
+                <p class="text-muted">Shifting to solar is now heavily backed by state programs. Learn how to maximize government support.</p>
+            </div>
+            
+            <div class="row g-4" data-aos="fade-up" data-aos-delay="100">
+                <!-- Blog 1 -->
+                <div class="col-lg-4 col-md-6 col-sm-12">
+                    <div class="card h-100 border-0 shadow-sm overflow-hidden" style="border-radius: 16px; background-color: #F8F9FA;">
+                        <div style="height: 180px; background: linear-gradient(135deg, rgba(13, 92, 58, 0.8), rgba(242, 169, 0, 0.4)), url('assets/img/projects2.jpg') no-repeat center center/cover;"></div>
+                        <div class="p-4 d-flex flex-column justify-content-between h-100" style="min-height: 380px;">
+                            <div>
+                                <span class="badge text-uppercase fw-bold mb-3" style="background-color: rgba(13, 92, 58, 0.1); color: #0D5C3A; font-size: 0.72rem; letter-spacing: 0.5px;">Government Financing</span>
+                                <h5 class="fw-bold mb-3" style="color: #0D5C3A; font-size: 1.15rem; line-height: 1.4;">GINHAWA SOLAR ENERGY LOAN: Shift to Clean Energy with GSIS</h5>
+                                <p class="text-muted small mb-0" style="line-height: 1.6;">The Ginhawa Solar Energy Loan (GSEL) gives GSIS members a smart and accessible way to shift to solar power by offering financing of up to ₱500,000 for home solar panel installation. With rising electricity costs, GSEL empowers members to take control of their energy expenses, reduce monthly bills, and enjoy long-term savings—all while increasing the value of their homes. It’s a practical investment that delivers immediate financial relief and lasting Ginhawa benefits, while supporting a cleaner, more sustainable future.</p>
+                            </div>
+                            <a href="loans.php" class="btn btn-outline-success btn-sm mt-4 align-self-start fw-bold" style="border-color: #0D5C3A; color: #0D5C3A; border-radius: 8px;">Read More &rarr;</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Blog 2 -->
+                <div class="col-lg-4 col-md-6 col-sm-12">
+                    <div class="card h-100 border-0 shadow-sm overflow-hidden" style="border-radius: 16px; background-color: #F8F9FA;">
+                        <div style="height: 180px; background: linear-gradient(135deg, rgba(13, 92, 58, 0.8), rgba(242, 169, 0, 0.4)), url('assets/img/pagibig-completed-solar-home.jpg') no-repeat center center/cover;"></div>
+                        <div class="p-4 d-flex flex-column justify-content-between h-100" style="min-height: 380px;">
+                            <div>
+                                <span class="badge text-uppercase fw-bold mb-3" style="background-color: rgba(13, 92, 58, 0.1); color: #0D5C3A; font-size: 0.72rem; letter-spacing: 0.5px;">Step-by-Step Guide</span>
+                                <h5 class="fw-bold mb-3" style="color: #0D5C3A; font-size: 1.15rem; line-height: 1.4;">Pag-IBIG Solar Loan 2026: Complete Guide to Financing Solar with Housing Loans</h5>
+                                <p class="text-muted small mb-0" style="line-height: 1.6;">Looking to go solar but don't have ₱300,000–₱500,000 in cash? Your Pag-IBIG housing loan might be the solution. The Home Development Mutual Fund (HDMF) allows qualified members to finance solar panel installations as part of their home improvement loan—potentially turning your electricity savings into your monthly loan payment.</p>
+                            </div>
+                            <a href="loans.php" class="btn btn-outline-success btn-sm mt-4 align-self-start fw-bold" style="border-color: #0D5C3A; color: #0D5C3A; border-radius: 8px;">Read More &rarr;</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Blog 3 -->
+                <div class="col-lg-4 col-md-6 col-sm-12">
+                    <div class="card h-100 border-0 shadow-sm overflow-hidden" style="border-radius: 16px; background-color: #F8F9FA;">
+                        <div style="height: 180px; background: linear-gradient(135deg, rgba(242, 169, 0, 0.8), rgba(13, 92, 58, 0.4)), url('assets/img/sss-technical-solar-mounting.jpg') no-repeat center center/cover;"></div>
+                        <div class="p-4 d-flex flex-column justify-content-between h-100" style="min-height: 380px;">
+                            <div>
+                                <span class="badge text-uppercase fw-bold mb-3" style="background-color: rgba(242, 169, 0, 0.1); color: #B45309; font-size: 0.72rem; letter-spacing: 0.5px;">Upcoming Programs</span>
+                                <h5 class="fw-bold mb-3" style="color: #0D5C3A; font-size: 1.15rem; line-height: 1.4;">SSS Energy Sustainability Loan Program: What Filipino Households Need to Know</h5>
+                                <p class="text-muted small mb-0" style="line-height: 1.6;">The Social Security System (SSS) is set to introduce its Energy Sustainability Loan Program, which will allow qualified members to finance residential solar panel systems. The program represents a proactive response to emerging economic pressures, helping Filipino households save on high electricity rates.</p>
+                            </div>
+                            <a href="loans.php" class="btn btn-outline-success btn-sm mt-4 align-self-start fw-bold" style="border-color: #0D5C3A; color: #0D5C3A; border-radius: 8px;">Read More &rarr;</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        // Dynamic Live Ticking Counters
+        document.addEventListener('DOMContentLoaded', () => {
+            const mwhEl = document.getElementById('mwhCounter');
+            const co2El = document.getElementById('co2Counter');
+            
+            if (mwhEl && co2El) {
+                let mwh = 12456.82;
+                let co2 = 9342.61;
+                
+                setInterval(() => {
+                    mwh += Math.random() * 0.05;
+                    co2 += Math.random() * 0.04;
+                    
+                    mwhEl.textContent = mwh.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' MWh';
+                    co2El.textContent = co2.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' Tons';
+                }, 3000);
+            }
+        });
+    </script>
+    
+
+
+    <!-- Tailwind Config Additions & JS Logic for Calculator -->
+    <style>
+        @keyframes marquee {
+            0% {
+                transform: translateX(0);
+            }
+
+            100% {
+                transform: translateX(-50%);
+            }
+        }
+
+        .animate-marquee {
+            animation: marquee 10s linear infinite;
+        }
+
+        @media (min-width: 768px) {
+            .animate-marquee {
+                animation: marquee 18s linear infinite;
+            }
+        }
+
+        .animate-marquee-paused {
+            animation-play-state: paused;
+        }
+
+        /* Fallback for Tailwind range input styling cross-browser */
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: #f59e0b;
+            /* amber-500 */
+            cursor: pointer;
+            margin-top: -6px;
+            /* You need to specify a margin in Chrome, but in Firefox and IE it is automatic */
+            box-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
+            transition: transform 0.15s ease-in-out;
+        }
+
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+            background: #d97706;
+            /* amber-600 */
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 8px;
+            cursor: pointer;
+            background: #e2e8f0;
+            /* slate-200 */
+            border-radius: 4px;
+        }
+    </style>
+
+    <script>
+        const CALC_CONFIG = {
+            kwhRate: <?= floatval($calc_settings['kwh_rate']) ?>,
+            panelWattage: <?= intval($calc_settings['solar_panel_wattage']) ?>,
+            sunHours: <?= floatval($calc_settings['average_sun_hours']) ?>
+        };
+
+        function updateTwCalculator(val) {
+            let sanitized = String(val).replace(/[^0-9.]/g, '');
+            let bill = parseFloat(sanitized);
+            if (isNaN(bill) || bill < 0) bill = 0;
+
+            // 1. kWh per month = Monthly Bill / kWh Rate (Rounded)
+            let kwhUsed = Math.round(bill / CALC_CONFIG.kwhRate);
+
+            // 2. Required System (kW) = roundup( kWh_per_month / (30 * sunHours) * 0.95 )
+            let kwpRequired = Math.ceil((kwhUsed / (30 * CALC_CONFIG.sunHours)) * 0.95);
+
+            // 3. No. of Panels = roundup( (System_kW * 1000) / panelWattage )
+            let panelsNeeded = Math.ceil((kwpRequired * 1000) / CALC_CONFIG.panelWattage);
+
+            // 4. Estimated Savings per Month (kWh) = System_kW * sunHours * 30 * 0.95
+            let savingsKwh = kwpRequired * CALC_CONFIG.sunHours * 30 * 0.95;
+
+            // 5. Estimated Savings per Month (₱) = Savings_kWh * kWh_Rate
+            let monthlySavings = savingsKwh * CALC_CONFIG.kwhRate;
+            let yearlySavings = monthlySavings * 12;
+
+            // Cap it if they put extreme values, or handle minimums
+            if (bill < 1000) {
+                kwpRequired = 0;
+                panelsNeeded = 0;
+                monthlySavings = 0;
+                yearlySavings = 0;
+            }
+
+            // Update DOM with safety check
+            let kwEl = document.getElementById('twKwValue');
+            if (kwEl) kwEl.textContent = kwpRequired.toFixed(1);
+            let panelsEl = document.getElementById('twPanelsValue');
+            if (panelsEl) panelsEl.textContent = panelsNeeded;
+
+            // Format Currency
+            const formatter = new Intl.NumberFormat('en-PH', {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            });
+            let mSavingsEl = document.getElementById('twMonthlySavings');
+            if (mSavingsEl) mSavingsEl.textContent = formatter.format(monthlySavings);
+            let ySavingsEl = document.getElementById('twYearlySavings');
+            if (ySavingsEl) ySavingsEl.textContent = formatter.format(yearlySavings);
+
+            // Show CTA smoothly if there's a valid calculation
+            const cta = document.getElementById('twCtaContainer');
+            if (cta) {
+                if (bill > 1500) {
+                    cta.classList.remove('opacity-0', 'translate-y-4');
+                    cta.classList.add('opacity-100', 'translate-y-0');
+                } else {
+                    cta.classList.remove('opacity-100', 'translate-y-0');
+                    cta.classList.add('opacity-0', 'translate-y-4');
+                }
+            }
+        }
+
+        function updateHeroCalculator(val) {
+            let sanitized = String(val).replace(/[^0-9.]/g, '');
+            let bill = parseFloat(sanitized);
+            if (isNaN(bill) || bill < 0) bill = 0;
+
+            let kwhUsed = Math.round(bill / CALC_CONFIG.kwhRate);
+            let kwpRequired = Math.ceil((kwhUsed / (30 * CALC_CONFIG.sunHours)) * 0.95);
+            let panelsNeeded = Math.ceil((kwpRequired * 1000) / CALC_CONFIG.panelWattage);
+            let savingsKwh = kwpRequired * CALC_CONFIG.sunHours * 30 * 0.95;
+            let monthlySavings = savingsKwh * CALC_CONFIG.kwhRate;
+            let yearlySavings = monthlySavings * 12;
+
+            if (bill < 1000) {
+                kwpRequired = 0;
+                panelsNeeded = 0;
+                monthlySavings = 0;
+                yearlySavings = 0;
+            }
+
+            document.getElementById('twKwValueHero').textContent = kwpRequired.toFixed(1);
+            document.getElementById('twPanelsValueHero').textContent = panelsNeeded;
+
+            const formatter = new Intl.NumberFormat('en-PH', {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            });
+            document.getElementById('twMonthlySavingsHero').textContent = '₱' + formatter.format(monthlySavings);
+            document.getElementById('twYearlySavingsHero').textContent = '₱' + formatter.format(yearlySavings);
+        }
+
+        // Initialize on load
+        document.addEventListener('DOMContentLoaded', () => {
+            let initialBillVal = document.getElementById('twBillAmountHero') ? document.getElementById('twBillAmountHero').value : "5000";
+            updateHeroCalculator(initialBillVal);
+        });
+    </script>
 
 
     <!-- Services Section --
@@ -4218,6 +4418,12 @@ $conn->close();
             btnText.classList.add('d-none');
             spinner.classList.remove('d-none');
             submitBtn.disabled = true;
+
+            const phoneInput = inspectionForm.querySelector('input[name="phone"]');
+            const phoneFullInput = inspectionForm.querySelector('.insp-phone-full');
+            if (phoneFullInput && phoneInput) {
+                phoneFullInput.value = '+639' + phoneInput.value;
+            }
 
             try {
                 const formData = new FormData(inspectionForm);

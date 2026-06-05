@@ -18,9 +18,16 @@ $current_user_id = intval($_SESSION['user_id']);
 // Self-healing database schema migrations
 try {
     // 1. Add status column to staff table if it does not exist
-    $db->exec("ALTER TABLE `staff` ADD COLUMN IF NOT EXISTS `status` VARCHAR(20) NOT NULL DEFAULT 'Active'");
-    
-    // 2. Create staff_audit_logs table if it does not exist
+    $db->exec("ALTER TABLE `staff` ADD COLUMN `status` VARCHAR(20) NOT NULL DEFAULT 'Active'");
+} catch (Exception $e) {}
+
+try {
+    // 2. Add position column to staff table if it does not exist
+    $db->exec("ALTER TABLE `staff` ADD COLUMN `position` VARCHAR(100) NOT NULL DEFAULT 'Staff'");
+} catch (Exception $e) {}
+
+try {
+    // 3. Create staff_audit_logs table if it does not exist
     $db->exec("CREATE TABLE IF NOT EXISTS `staff_audit_logs` (
         `id` INT AUTO_INCREMENT PRIMARY KEY,
         `actor_id` INT NOT NULL,
@@ -32,9 +39,7 @@ try {
         `details` TEXT DEFAULT NULL,
         `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;");
-} catch (Exception $e) {
-    // Suppress schema migration errors
-}
+} catch (Exception $e) {}
 
 // Generate CSRF Token if not present
 if (empty($_SESSION['csrf_token'])) {
@@ -90,6 +95,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $email = trim($_POST['email'] ?? '');
         $contact_number = trim($_POST['contact_number'] ?? '');
         $password = $_POST['password'] ?? '';
+        $position = trim($_POST['position'] ?? 'Staff');
         
         // Validation
         if (empty($firstName) || empty($lastName) || empty($email) || empty($password)) {
@@ -118,13 +124,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             // Hash and Insert
             $hashed = password_hash($password, PASSWORD_BCRYPT);
-            $stmt = $db->prepare("INSERT INTO `staff` (firstName, lastName, email, password, contact_number, status) VALUES (:first, :last, :email, :pass, :contact, 'Active')");
+            $stmt = $db->prepare("INSERT INTO `staff` (firstName, lastName, email, password, contact_number, status, position) VALUES (:first, :last, :email, :pass, :contact, 'Active', :position)");
             $stmt->execute([
                 ':first' => $firstName,
                 ':last' => $lastName,
                 ':email' => $email,
                 ':pass' => $hashed,
-                ':contact' => $contact_number
+                ':contact' => $contact_number,
+                ':position' => $position
             ]);
             $new_id = $db->lastInsertId();
             
@@ -146,6 +153,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $lastName = trim($_POST['lastName'] ?? '');
         $email = trim($_POST['email'] ?? '');
         $contact_number = trim($_POST['contact_number'] ?? '');
+        $position = trim($_POST['position'] ?? 'Staff');
         
         if ($id <= 0 || empty($firstName) || empty($lastName) || empty($email)) {
             echo json_encode(['success' => false, 'message' => 'All details are required.']);
@@ -172,17 +180,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             
             // Get old info for details diff in logs
-            $old_stmt = $db->prepare("SELECT firstName, lastName, email, contact_number FROM `staff` WHERE id = :id");
+            $old_stmt = $db->prepare("SELECT firstName, lastName, email, contact_number, position FROM `staff` WHERE id = :id");
             $old_stmt->execute([':id' => $id]);
             $old = $old_stmt->fetch(PDO::FETCH_ASSOC);
             
             // Update details
-            $stmt = $db->prepare("UPDATE `staff` SET firstName = :first, lastName = :last, email = :email, contact_number = :contact WHERE id = :id");
+            $stmt = $db->prepare("UPDATE `staff` SET firstName = :first, lastName = :last, email = :email, contact_number = :contact, position = :position WHERE id = :id");
             $stmt->execute([
                 ':first' => $firstName,
                 ':last' => $lastName,
                 ':email' => $email,
                 ':contact' => $contact_number,
+                ':position' => $position,
                 ':id' => $id
             ]);
             
@@ -192,12 +201,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($old['lastName'] !== $lastName) $diffs[] = "Last Name (from '{$old['lastName']}' to '{$lastName}')";
             if ($old['email'] !== $email) $diffs[] = "Email (from '{$old['email']}' to '{$email}')";
             if ($old['contact_number'] !== $contact_number) $diffs[] = "Contact (from '{$old['contact_number']}' to '{$contact_number}')";
+            if (($old['position'] ?? '') !== $position) $diffs[] = "Position (from '{$old['position']}' to '{$position}')";
             
             $diff_str = count($diffs) > 0 ? "Modified fields: " . implode(', ', $diffs) : "No changes made.";
             
             logSecurityEvent($db, $current_user_id, $actor_name, 'Edit Staff Info', $id, "$firstName $lastName", $diff_str);
             
-            echo json_encode(['success' => true, 'message' => 'Staff details updated successfully.']);
+            echo json_encode(['success' => true, 'message' => 'User details updated successfully.']);
             exit();
         } catch (Exception $e) {
             echo json_encode(['success' => false, 'message' => 'Database error: ' . $e->getMessage()]);
@@ -332,7 +342,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // Retrieve Staff List
 try {
-    $stmt = $db->query("SELECT id, firstName, lastName, email, contact_number, profile_picture, created_at, status FROM `staff` ORDER BY id DESC");
+    $stmt = $db->query("SELECT id, firstName, lastName, email, contact_number, profile_picture, created_at, status, position FROM `staff` ORDER BY id DESC");
     $staffList = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (Exception $e) {
     $staffList = [];
@@ -356,6 +366,8 @@ try {
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
     <!-- FontAwesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <!-- Inter Font -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
@@ -455,21 +467,218 @@ try {
         .req-item i {
             margin-right: 4px;
         }
+
+        /* ── Modern Premium Modal Override (Matching Project Portfolio) ── */
+        .modal {
+            backdrop-filter: blur(5px);
+            transition: all 0.3s ease;
+        }
+        .modal-backdrop {
+            background-color: rgba(15, 23, 42, 0.75) !important;
+            backdrop-filter: blur(5px);
+        }
+        .modal-dialog {
+            max-width: 600px;
+            margin: 1.75rem auto;
+        }
+        #deleteStaffModal .modal-dialog {
+            max-width: 480px;
+        }
+        .modal-content {
+            background: #f8fafc !important;
+            border-radius: 16px !important;
+            border: none !important;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4) !important;
+            overflow: hidden;
+            transform: scale(0.98);
+            transition: transform 0.3s ease;
+        }
+        .modal.show .modal-content {
+            transform: scale(1);
+        }
+        .modal-header {
+            background: #ffffff !important;
+            padding: 18px 24px !important;
+            border-bottom: 1px solid #e2e8f0 !important;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .modal-title {
+            margin: 0;
+            font-size: 1.25rem !important;
+            font-weight: 800 !important;
+            color: #1a202c !important;
+        }
+        .btn-close-custom {
+            background: none !important;
+            border: none !important;
+            font-size: 1.3rem !important;
+            color: #718096 !important;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            opacity: 0.8;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+        }
+        .btn-close-custom:hover {
+            color: #e53e3e !important;
+            background-color: #fee2e2 !important;
+            transform: rotate(90deg);
+            opacity: 1;
+        }
+        .modal-body {
+            padding: 24px !important;
+            background: #f8fafc !important;
+        }
+        /* Card wraps for inputs like .pm-form-card */
+        .modal-form-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+        .modal-body label.form-label {
+            display: block;
+            font-size: .75rem;
+            font-weight: 700;
+            color: #718096;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+            margin-bottom: 8px;
+        }
+        .modal-body .form-control, 
+        .modal-body .form-select {
+            width: 100%;
+            padding: 12px 16px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            font-size: .9rem;
+            font-family: inherit;
+            transition: border-color .2s, background-color .2s;
+            background: #f7f9fc;
+            color: #1a202c;
+        }
+        .modal-body .form-control:focus,
+        .modal-body .form-select:focus {
+            outline: none;
+            border-color: #2d6a9f;
+            background: #ffffff;
+            box-shadow: 0 0 0 3px rgba(45, 106, 159, 0.1);
+        }
+        /* Password toggle input group adjustments */
+        .modal-body .input-group {
+            position: relative;
+            display: flex;
+            align-items: stretch;
+            width: 100%;
+        }
+        .modal-body .input-group .form-control {
+            flex: 1 1 auto;
+            width: 1%;
+            min-width: 0;
+            border-top-right-radius: 0;
+            border-bottom-right-radius: 0;
+        }
+        .modal-body .input-group .input-group-text {
+            background: #f7f9fc;
+            border: 1px solid #e2e8f0;
+            border-left: none;
+            color: #718096;
+            padding: 12px 16px;
+            border-top-right-radius: 8px;
+            border-bottom-right-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+        }
+        .modal-body .input-group .form-control:focus + .input-group-text {
+            background: #ffffff;
+            border-color: #2d6a9f;
+        }
+        .modal-footer {
+            background: #ffffff !important;
+            border-top: 1px solid #e2e8f0 !important;
+            padding: 18px 24px !important;
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+        .modal-footer .btn {
+            padding: 12px 24px;
+            font-size: 0.95rem;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+        .modal-footer .btn-secondary {
+            background: #edf2f7 !important;
+            border: none !important;
+            color: #4a5568 !important;
+        }
+        .modal-footer .btn-secondary:hover {
+            background: #e2e8f0 !important;
+            color: #2d3748 !important;
+        }
+        /* Save / Submit buttons styling matching the green style of solarpower but premium */
+        .modal-footer button[type="submit"] {
+            background: #0a5c3d !important;
+            border: none !important;
+            color: #ffffff !important;
+            font-weight: 700 !important;
+        }
+        .modal-footer button[type="submit"]:hover {
+            background: #0d7049 !important;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(10, 92, 61, 0.2);
+        }
+        /* Deletion modal custom styles */
+        #deleteStaffModal button[type="submit"] {
+            background: #e53e3e !important;
+            border: none !important;
+            color: #ffffff !important;
+        }
+        #deleteStaffModal button[type="submit"]:hover {
+            background: #c53030 !important;
+            box-shadow: 0 4px 12px rgba(229, 62, 62, 0.2);
+        }
+        /* Warning / Reset modal custom styles */
+        #resetPasswordModal button[type="submit"] {
+            background: #dd6b20 !important;
+            border: none !important;
+            color: #ffffff !important;
+        }
+        #resetPasswordModal button[type="submit"]:hover {
+            background: #c05621 !important;
+            box-shadow: 0 4px 12px rgba(221, 107, 32, 0.2);
+        }
+        body.modal-open, body.swal2-shown {
+            background-color: transparent !important;
+        }
     </style>
 </head>
 <body>
 
 <div class="container-fluid py-4">
-    <div class="row">
+    <div class="row" id="staffManageGrid">
         <!-- Staff List (Left Panel) -->
         <div class="col-xl-8 col-lg-7">
             <div class="card dashboard-card">
                 <div class="card-header card-header-custom d-flex justify-content-between align-items-center flex-wrap gap-2">
-                    <h5 class="mb-0 fw-bold"><i class="fas fa-id-card me-2"></i> Active Staff Roster</h5>
+                    <h5 class="mb-0 fw-bold"><i class="fas fa-id-card me-2"></i> Active User Roster</h5>
                     <div class="d-flex align-items-center gap-2">
                         <span class="badge bg-white fs-7" style="color: #0a5c3d;" id="totalStaffBadge"><?= count($staffList) ?> Accounts</span>
                         <button class="btn btn-sm btn-light fw-bold" style="color: #0a5c3d; border-radius: 8px;" data-bs-toggle="modal" data-bs-target="#addStaffModal">
-                            <i class="fas fa-user-plus me-1"></i> Create Staff Account
+                            <i class="fas fa-user-plus me-1"></i> Create User Account
                         </button>
                     </div>
                 </div>
@@ -484,9 +693,10 @@ try {
                         <table class="table table-hover align-middle" id="staffTable">
                             <thead>
                                 <tr>
-                                    <th>Staff Member</th>
+                                    <th>User</th>
                                     <th>Email Address</th>
                                     <th>Contact Info</th>
+                                    <th>Position</th>
                                     <th>Status</th>
                                     <th>Registered</th>
                                     <th class="text-end">Actions</th>
@@ -495,9 +705,9 @@ try {
                             <tbody>
                                 <?php if(empty($staffList)): ?>
                                     <tr>
-                                        <td colspan="6" class="text-center py-5 text-muted">
+                                        <td colspan="7" class="text-center py-5 text-muted">
                                             <i class="fas fa-user-slash fs-1 mb-3"></i>
-                                            <p class="mb-0">No staff members found.</p>
+                                            <p class="mb-0">No users found.</p>
                                         </td>
                                     </tr>
                                 <?php else: ?>
@@ -509,8 +719,8 @@ try {
                                         <tr data-search-str="<?= strtolower($fullName . ' ' . $staff['email']) ?>">
                                             <td>
                                                 <div class="d-flex align-items-center gap-2">
-                                                    <?php if(!empty($staff['profile_picture'])): ?>
-                                                        <img src="../../uploads/profile_pics/<?= htmlspecialchars($staff['profile_picture']) ?>" class="profile-img-pill" alt="Avatar">
+                                                    <?php if(!empty($staff['profile_picture']) && file_exists('../../uploads/profiles/' . $staff['profile_picture'])): ?>
+                                                        <img src="../../uploads/profiles/<?= htmlspecialchars($staff['profile_picture']) ?>" class="profile-img-pill" alt="Avatar">
                                                     <?php else: ?>
                                                         <div class="avatar-placeholder"><?= $initials ?></div>
                                                     <?php endif; ?>
@@ -518,7 +728,7 @@ try {
                                                         <strong class="text-dark d-block">
                                                             <?= $fullName ?>
                                                             <?php if($isSelf): ?>
-                                                                <span class="badge bg-secondary ms-1 fs-8">You</span>
+                                                                 <span class="badge bg-secondary ms-1 fs-8">You</span>
                                                             <?php endif; ?>
                                                         </strong>
                                                         <span class="text-muted small">ID: #<?= $staff['id'] ?></span>
@@ -530,6 +740,11 @@ try {
                                             </td>
                                             <td>
                                                 <i class="fas fa-phone-alt text-muted me-1" style="font-size: 0.75rem;"></i> <?= htmlspecialchars($staff['contact_number'] ?? 'N/A') ?>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-light text-dark border px-2.5 py-1.5 rounded" style="font-size: 0.8rem; font-weight: 500; border-color: #cbd5e1 !important; color: #475569 !important;">
+                                                    <?= htmlspecialchars($staff['position'] ?? 'Staff') ?>
+                                                </span>
                                             </td>
                                             <td>
                                                 <span class="badge <?= ($staff['status'] === 'Active') ? 'badge-active' : 'badge-inactive' ?> px-2.5 py-1.5 rounded-pill">
@@ -582,44 +797,84 @@ try {
         <!-- Security Activity Logs (Right Panel) -->
         <div class="col-xl-4 col-lg-5">
             <div class="card dashboard-card">
-                <div class="card-header card-header-custom">
+                <div class="card-header card-header-custom text-center">
                     <h5 class="mb-0 fw-bold"><i class="fas fa-shield-halved me-2"></i> Security Audit Trail</h5>
                 </div>
-                <div class="card-body p-4" style="max-height: 600px; overflow-y: auto;">
-                    <p class="text-muted small mb-3">Live ledger recording administrative account activities and modifications.</p>
-                    
-                    <div id="auditLogContainer">
-                        <?php if(empty($auditLogs)): ?>
-                            <div class="text-center py-4 text-muted">
-                                <i class="fas fa-receipt mb-2 fs-4"></i>
-                                <p class="small mb-0">No logs generated yet.</p>
-                            </div>
-                        <?php else: ?>
-                            <?php foreach($auditLogs as $log): 
-                                $class = '';
-                                if (strpos($log['action'], 'Deactivate') !== false) $class = 'deactivate';
-                                if (strpos($log['action'], 'Delete') !== false) $class = 'delete';
-                                if (strpos($log['action'], 'Password') !== false) $class = 'reset';
-                            ?>
-                                <div class="audit-log-item <?= $class ?>">
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <strong class="text-dark small"><?= htmlspecialchars($log['action']) ?></strong>
-                                        <small class="text-muted" style="font-size: 0.7rem;"><?= date('M d, h:i A', strtotime($log['created_at'])) ?></small>
-                                    </div>
-                                    <div class="text-muted small mt-1">
-                                        Actor: <strong><?= htmlspecialchars($log['actor_name']) ?></strong><br>
-                                        Target: <strong><?= htmlspecialchars($log['target_name'] ?? 'N/A') ?></strong> (ID: #<?= $log['target_id'] ?? 'N/A' ?>)<br>
-                                        IP: <span class="badge bg-light text-dark font-monospace"><?= htmlspecialchars($log['ip_address']) ?></span>
-                                    </div>
-                                    <?php if(!empty($log['details'])): ?>
-                                        <div class="bg-light p-1.5 rounded mt-1 border-start border-3 border-success text-secondary" style="font-size: 0.72rem; word-break: break-all;">
-                                            <?= htmlspecialchars($log['details']) ?>
-                                        </div>
-                                    <?php endif; ?>
-                                </div>
-                            <?php endforeach; ?>
-                        <?php endif; ?>
+                <div class="card-body p-4 text-center d-flex flex-column align-items-center justify-content-center" style="min-height: 320px;">
+                    <div class="mb-3">
+                        <i class="fas fa-lock text-warning" style="font-size: 2.7rem; opacity: 0.85;"></i>
                     </div>
+                    <h5 class="fw-bold mb-2">Restricted Access Ledger</h5>
+                    <p class="text-muted small mb-4" style="max-width: 280px; margin: 0 auto;">You must authenticate using the security passphrase to unlock and view the administrative log ledger.</p>
+                    <button class="btn btn-warning fw-semibold px-4 py-2" onclick="promptAuditTrailPassword()" style="border-radius: 8px; background-color: #ffc107; border-color: #ffc107; color: #333;">
+                        <i class="fas fa-key me-2"></i> Unlock Audit Trail
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Security Activity Logs (Full Page View) -->
+<div class="row d-none" id="auditTrailFullView">
+    <div class="col-12">
+        <div class="card dashboard-card">
+            <div class="card-header card-header-custom d-flex justify-content-between align-items-center flex-wrap gap-2" style="background: linear-gradient(135deg, #1e293b, #0f172a);">
+                <h5 class="mb-0 fw-bold"><i class="fas fa-shield-halved me-2 text-warning"></i> Security Audit Trail Ledger</h5>
+                <button class="btn btn-sm btn-light fw-bold" onclick="hideAuditTrail()" style="border-radius: 8px;">
+                    <i class="fas fa-arrow-left me-1"></i> Back to Staff Roster
+                </button>
+            </div>
+            <div class="card-body p-4" style="max-height: 80vh; overflow-y: auto;">
+                <p class="text-muted small mb-4">Live ledger recording administrative account activities and modifications.</p>
+                <div id="auditLogContainerFull">
+                    <?php if(empty($auditLogs)): ?>
+                        <div class="text-center py-5 text-muted">
+                            <i class="fas fa-receipt mb-3 fs-2"></i>
+                            <p class="mb-0">No logs generated yet.</p>
+                        </div>
+                    <?php else: ?>
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead>
+                                    <tr class="table-light">
+                                        <th style="font-size: 0.8rem; font-weight: 600;">Timestamp</th>
+                                        <th style="font-size: 0.8rem; font-weight: 600;">Administrative Action</th>
+                                        <th style="font-size: 0.8rem; font-weight: 600;">Actor / Performer</th>
+                                        <th style="font-size: 0.8rem; font-weight: 600;">Target Entity</th>
+                                        <th style="font-size: 0.8rem; font-weight: 600;">IP Address</th>
+                                        <th style="font-size: 0.8rem; font-weight: 600;">Details / Context</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php foreach($auditLogs as $log): 
+                                        $badgeClass = 'bg-secondary';
+                                        if (strpos($log['action'], 'Deactivate') !== false) $badgeClass = 'bg-danger';
+                                        if (strpos($log['action'], 'Delete') !== false) $badgeClass = 'bg-dark';
+                                        if (strpos($log['action'], 'Password') !== false) $badgeClass = 'bg-warning text-dark';
+                                        if (strpos($log['action'], 'Activate') !== false) $badgeClass = 'bg-success';
+                                    ?>
+                                        <tr>
+                                            <td class="text-muted small" style="white-space: nowrap; font-size: 0.85rem;"><?= date('Y-m-d h:i A', strtotime($log['created_at'])) ?></td>
+                                            <td><span class="badge <?= $badgeClass ?> px-2.5 py-1.5" style="font-size: 0.78rem;"><?= htmlspecialchars($log['action']) ?></span></td>
+                                            <td style="font-size: 0.85rem;"><strong><?= htmlspecialchars($log['actor_name']) ?></strong> <span class="text-muted small">(ID: #<?= $log['actor_id'] ?>)</span></td>
+                                            <td style="font-size: 0.85rem;"><strong><?= htmlspecialchars($log['target_name'] ?? 'N/A') ?></strong> <span class="text-muted small">(ID: #<?= $log['target_id'] ?? 'N/A' ?>)</span></td>
+                                            <td><code class="text-dark bg-light px-2 py-1 rounded" style="border: 1px solid #e2e8f0; font-size: 0.8rem; font-family: monospace;"><?= htmlspecialchars($log['ip_address']) ?></code></td>
+                                            <td>
+                                                <?php if(!empty($log['details'])): ?>
+                                                    <div class="text-secondary small" style="max-width: 450px; word-break: break-word; font-size: 0.82rem;">
+                                                        <?= htmlspecialchars($log['details']) ?>
+                                                    </div>
+                                                <?php else: ?>
+                                                    <span class="text-muted italic small" style="font-size: 0.8rem;">No additional details</span>
+                                                <?php endif; ?>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
@@ -632,54 +887,64 @@ try {
         <form class="modal-content" id="addStaffForm" onsubmit="submitAddStaff(event)">
             <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
             <input type="hidden" name="action" value="add_staff">
-            <div class="modal-header" style="background-color: #0a5c3d; color: white;">
-                <h5 class="modal-title fw-bold"><i class="fas fa-user-plus me-2"></i> Create Staff Account</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold"><i class="fas fa-user-plus me-2"></i> Create User Account</h5>
+                <button type="button" class="btn-close-custom" data-bs-dismiss="modal" aria-label="Close"><i class="fas fa-times"></i></button>
             </div>
             <div class="modal-body p-4">
-                <div class="row">
-                    <div class="col-sm-6 mb-3">
-                        <label class="form-label small fw-semibold">First Name</label>
-                        <input type="text" name="firstName" class="form-control" placeholder="First Name" required>
-                    </div>
-                    <div class="col-sm-6 mb-3">
-                        <label class="form-label small fw-semibold">Last Name</label>
-                        <input type="text" name="lastName" class="form-control" placeholder="Last Name" required>
-                    </div>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label small fw-semibold">Email Address</label>
-                    <input type="email" name="email" class="form-control" placeholder="staff@solarpower.com.ph" required>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label small fw-semibold">Contact Number</label>
-                    <input type="text" name="contact_number" class="form-control" placeholder="e.g. 09171234567">
-                </div>
-                <div class="mb-3">
-                    <label class="form-label small fw-semibold">Security Password</label>
-                    <div class="input-group">
-                        <input type="password" name="password" id="add_pwd" class="form-control" placeholder="Enter strong password" onkeyup="checkPasswordStrength('add_pwd', 'add_pwd_strength', 'add_pwd_req')" required>
-                        <button type="button" class="input-group-text" onclick="togglePasswordVisibility('add_pwd')"><i class="fas fa-eye" id="add_pwd_eye"></i></button>
-                    </div>
-                    <!-- Password strength visualizer -->
-                    <div class="mt-2">
-                        <div class="progress" style="height: 6px;">
-                            <div id="add_pwd_strength" class="progress-bar strength-bar" role="progressbar"></div>
+                <div class="modal-form-card">
+                    <div class="row">
+                        <div class="col-sm-6 mb-3">
+                            <label class="form-label small fw-semibold">First Name</label>
+                            <input type="text" name="firstName" class="form-control" placeholder="First Name" required>
+                        </div>
+                        <div class="col-sm-6 mb-3">
+                            <label class="form-label small fw-semibold">Last Name</label>
+                            <input type="text" name="lastName" class="form-control" placeholder="Last Name" required>
                         </div>
                     </div>
-                    <!-- Password requirements checklist -->
-                    <div id="add_pwd_req" class="mt-2 row">
-                        <div class="col-6 req-item len" id="add_req_len"><i class="fas fa-circle-xmark"></i> 8+ characters</div>
-                        <div class="col-6 req-item cap" id="add_req_cap"><i class="fas fa-circle-xmark"></i> Uppercase (A-Z)</div>
-                        <div class="col-6 req-item low" id="add_req_low"><i class="fas fa-circle-xmark"></i> Lowercase (a-z)</div>
-                        <div class="col-6 req-item num" id="add_req_num"><i class="fas fa-circle-xmark"></i> Number (0-9)</div>
-                        <div class="col-12 req-item spc" id="add_req_spc"><i class="fas fa-circle-xmark"></i> Special char (@$!%*?&)</div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Email Address</label>
+                        <input type="email" name="email" class="form-control" placeholder="staff@solarpower.com.ph" required>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-6 mb-3">
+                            <label class="form-label small fw-semibold">Contact Number</label>
+                            <input type="text" name="contact_number" class="form-control" placeholder="e.g. 09171234567">
+                        </div>
+                        <div class="col-sm-6 mb-3">
+                            <label class="form-label small fw-semibold">Position / Role</label>
+                            <input type="text" name="position" class="form-control" placeholder="e.g. Staff" required>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-form-card">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Security Password</label>
+                        <div class="input-group">
+                            <input type="password" name="password" id="add_pwd" class="form-control" placeholder="Enter strong password" onkeyup="checkPasswordStrength('add_pwd', 'add_pwd_strength', 'add_pwd_req')" required>
+                            <button type="button" class="input-group-text" onclick="togglePasswordVisibility('add_pwd')"><i class="fas fa-eye" id="add_pwd_eye"></i></button>
+                        </div>
+                        <!-- Password strength visualizer -->
+                        <div class="mt-2">
+                            <div class="progress" style="height: 6px;">
+                                <div id="add_pwd_strength" class="progress-bar strength-bar" role="progressbar"></div>
+                            </div>
+                        </div>
+                        <!-- Password requirements checklist -->
+                        <div id="add_pwd_req" class="mt-2 row">
+                            <div class="col-6 req-item len" id="add_req_len"><i class="fas fa-circle-xmark"></i> 8+ characters</div>
+                            <div class="col-6 req-item cap" id="add_req_cap"><i class="fas fa-circle-xmark"></i> Uppercase (A-Z)</div>
+                            <div class="col-6 req-item low" id="add_req_low"><i class="fas fa-circle-xmark"></i> Lowercase (a-z)</div>
+                            <div class="col-6 req-item num" id="add_req_num"><i class="fas fa-circle-xmark"></i> Number (0-9)</div>
+                            <div class="col-12 req-item spc" id="add_req_spc"><i class="fas fa-circle-xmark"></i> Special char (@$!%*?&)</div>
+                        </div>
                     </div>
                 </div>
             </div>
             <div class="modal-footer bg-light">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="submit" class="btn text-white" style="background-color: #0a5c3d;">Save Account</button>
+                <button type="submit" class="btn">Save Account</button>
             </div>
         </form>
     </div>
@@ -692,28 +957,36 @@ try {
             <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
             <input type="hidden" name="action" value="edit_staff">
             <input type="hidden" name="id" id="edit_staff_id">
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title fw-bold"><i class="fas fa-user-edit me-2"></i> Edit Staff Details</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold"><i class="fas fa-user-edit me-2"></i> Edit User Details</h5>
+                <button type="button" class="btn-close-custom" data-bs-dismiss="modal" aria-label="Close"><i class="fas fa-times"></i></button>
             </div>
             <div class="modal-body p-4">
-                <div class="row">
-                    <div class="col-sm-6 mb-3">
-                        <label class="form-label small fw-semibold">First Name</label>
-                        <input type="text" name="firstName" id="edit_first" class="form-control" required>
+                <div class="modal-form-card">
+                    <div class="row">
+                        <div class="col-sm-6 mb-3">
+                            <label class="form-label small fw-semibold">First Name</label>
+                            <input type="text" name="firstName" id="edit_first" class="form-control" required>
+                        </div>
+                        <div class="col-sm-6 mb-3">
+                            <label class="form-label small fw-semibold">Last Name</label>
+                            <input type="text" name="lastName" id="edit_last" class="form-control" required>
+                        </div>
                     </div>
-                    <div class="col-sm-6 mb-3">
-                        <label class="form-label small fw-semibold">Last Name</label>
-                        <input type="text" name="lastName" id="edit_last" class="form-control" required>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Email Address</label>
+                        <input type="email" name="email" id="edit_email" class="form-control" required>
                     </div>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label small fw-semibold">Email Address</label>
-                    <input type="email" name="email" id="edit_email" class="form-control" required>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label small fw-semibold">Contact Number</label>
-                    <input type="text" name="contact_number" id="edit_contact" class="form-control">
+                    <div class="row">
+                        <div class="col-sm-6 mb-3">
+                            <label class="form-label small fw-semibold">Contact Number</label>
+                            <input type="text" name="contact_number" id="edit_contact" class="form-control">
+                        </div>
+                        <div class="col-sm-6 mb-3">
+                            <label class="form-label small fw-semibold">Position / Role</label>
+                            <input type="text" name="position" id="edit_position" class="form-control" required>
+                        </div>
+                    </div>
                 </div>
             </div>
             <div class="modal-footer bg-light">
@@ -731,40 +1004,43 @@ try {
             <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
             <input type="hidden" name="action" value="reset_password">
             <input type="hidden" name="id" id="reset_staff_id">
-            <div class="modal-header bg-warning text-dark">
+            <div class="modal-header">
                 <h5 class="modal-title fw-bold"><i class="fas fa-key me-2"></i> Reset Staff Password</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close-custom" data-bs-dismiss="modal" aria-label="Close"><i class="fas fa-times"></i></button>
             </div>
             <div class="modal-body p-4">
-                <div class="mb-2">
-                    <span class="small text-muted">You are changing password for:</span><br>
-                    <strong class="fs-5 text-dark" id="reset_staff_name"></strong>
-                </div>
-                <hr>
-                <div class="mb-3">
-                    <label class="form-label small fw-semibold">New Password</label>
-                    <div class="input-group">
-                        <input type="password" name="new_password" id="reset_pwd" class="form-control" placeholder="Enter new strong password" onkeyup="checkPasswordStrength('reset_pwd', 'reset_pwd_strength', 'reset_pwd_req')" required>
-                        <button type="button" class="input-group-text" onclick="togglePasswordVisibility('reset_pwd')"><i class="fas fa-eye" id="reset_pwd_eye"></i></button>
+                <div class="modal-form-card">
+                    <div class="mb-2">
+                        <span class="small text-muted">You are changing password for:</span><br>
+                        <strong class="fs-5 text-dark" id="reset_staff_name"></strong>
                     </div>
-                    <!-- Password strength visualizer -->
-                    <div class="mt-2">
-                        <div class="progress" style="height: 6px;">
-                            <div id="reset_pwd_strength" class="progress-bar strength-bar" role="progressbar"></div>
+                </div>
+                <div class="modal-form-card">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">New Password</label>
+                        <div class="input-group">
+                            <input type="password" name="new_password" id="reset_pwd" class="form-control" placeholder="Enter new strong password" onkeyup="checkPasswordStrength('reset_pwd', 'reset_pwd_strength', 'reset_pwd_req')" required>
+                            <button type="button" class="input-group-text" onclick="togglePasswordVisibility('reset_pwd')"><i class="fas fa-eye" id="reset_pwd_eye"></i></button>
+                        </div>
+                        <!-- Password strength visualizer -->
+                        <div class="mt-2">
+                            <div class="progress" style="height: 6px;">
+                                <div id="reset_pwd_strength" class="progress-bar strength-bar" role="progressbar"></div>
+                            </div>
+                        </div>
+                        <!-- Password requirements checklist -->
+                        <div id="reset_pwd_req" class="mt-2 row">
+                            <div class="col-6 req-item len" id="reset_req_len"><i class="fas fa-circle-xmark"></i> 8+ characters</div>
+                            <div class="col-6 req-item cap" id="reset_req_cap"><i class="fas fa-circle-xmark"></i> Uppercase (A-Z)</div>
+                            <div class="col-6 req-item low" id="reset_req_low"><i class="fas fa-circle-xmark"></i> Lowercase (a-z)</div>
+                            <div class="col-6 req-item num" id="reset_req_num"><i class="fas fa-circle-xmark"></i> Number (0-9)</div>
+                            <div class="col-12 req-item spc" id="reset_req_spc"><i class="fas fa-circle-xmark"></i> Special char (@$!%*?&)</div>
                         </div>
                     </div>
-                    <!-- Password requirements checklist -->
-                    <div id="reset_pwd_req" class="mt-2 row">
-                        <div class="col-6 req-item len" id="reset_req_len"><i class="fas fa-circle-xmark"></i> 8+ characters</div>
-                        <div class="col-6 req-item cap" id="reset_req_cap"><i class="fas fa-circle-xmark"></i> Uppercase (A-Z)</div>
-                        <div class="col-6 req-item low" id="reset_req_low"><i class="fas fa-circle-xmark"></i> Lowercase (a-z)</div>
-                        <div class="col-6 req-item num" id="reset_req_num"><i class="fas fa-circle-xmark"></i> Number (0-9)</div>
-                        <div class="col-12 req-item spc" id="reset_req_spc"><i class="fas fa-circle-xmark"></i> Special char (@$!%*?&)</div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Confirm Password</label>
+                        <input type="password" name="confirm_password" class="form-control" placeholder="Retype password" required>
                     </div>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label small fw-semibold">Confirm Password</label>
-                    <input type="password" name="confirm_password" class="form-control" placeholder="Retype password" required>
                 </div>
             </div>
             <div class="modal-footer bg-light">
@@ -782,18 +1058,20 @@ try {
             <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
             <input type="hidden" name="action" value="delete_staff">
             <input type="hidden" name="id" id="delete_staff_id">
-            <div class="modal-header bg-danger text-white">
+            <div class="modal-header">
                 <h5 class="modal-title fw-bold"><i class="fas fa-exclamation-triangle me-2"></i> Permanent Account Deletion</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close-custom" data-bs-dismiss="modal" aria-label="Close"><i class="fas fa-times"></i></button>
             </div>
             <div class="modal-body p-4 text-center">
-                <i class="fas fa-trash-alt text-danger fs-1 mb-3"></i>
-                <h5 class="fw-bold">Are you absolutely sure?</h5>
-                <p class="text-muted small">
-                    This action will permanently delete <strong id="delete_staff_name" class="text-dark"></strong>'s staff account. This is irreversible, but their historical actions in the audit logs and orders will remain tracked.
-                </p>
-                <div class="alert alert-danger small p-2 mb-0">
-                    <i class="fas fa-info-circle"></i> Suspension (deactivation) is recommended over deletion to maintain complete trace integrity.
+                <div class="modal-form-card">
+                    <i class="fas fa-trash-alt text-danger fs-1 mb-3"></i>
+                    <h5 class="fw-bold">Are you absolutely sure?</h5>
+                    <p class="text-muted small">
+                        This action will permanently delete <strong id="delete_staff_name" class="text-dark"></strong>'s staff account. This is irreversible, but their historical actions in the audit logs and orders will remain tracked.
+                    </p>
+                    <div class="alert alert-danger small p-2 mb-0">
+                        <i class="fas fa-info-circle"></i> Suspension (deactivation) is recommended over deletion to maintain complete trace integrity.
+                    </div>
                 </div>
             </div>
             <div class="modal-footer bg-light">
@@ -808,6 +1086,22 @@ try {
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
 
 <script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const modals = document.querySelectorAll('.modal');
+        modals.forEach(m => {
+            m.addEventListener('show.bs.modal', function () {
+                if (window.parent && window.parent.document) {
+                    window.parent.document.body.classList.add('iframe-modal-open');
+                }
+            });
+            m.addEventListener('hidden.bs.modal', function () {
+                if (window.parent && window.parent.document) {
+                    window.parent.document.body.classList.remove('iframe-modal-open');
+                }
+            });
+        });
+    });
+
     // Live Client-Side Search
     function searchStaff() {
         const query = document.getElementById('staffSearchInput').value.toLowerCase().trim();
@@ -937,6 +1231,7 @@ try {
         document.getElementById('edit_last').value = staff.lastName;
         document.getElementById('edit_email').value = staff.email;
         document.getElementById('edit_contact').value = staff.contact_number || '';
+        document.getElementById('edit_position').value = staff.position || 'Staff';
         
         const modal = new bootstrap.Modal(document.getElementById('editStaffModal'));
         modal.show();
@@ -967,12 +1262,45 @@ try {
 
     // Modal Control: Reset Password
     function openResetModal(id, fullName) {
-        document.getElementById('reset_staff_id').value = id;
-        document.getElementById('reset_staff_name').textContent = fullName;
-        document.getElementById('reset_pwd').value = '';
-        
-        const modal = new bootstrap.Modal(document.getElementById('resetPasswordModal'));
-        modal.show();
+        Swal.fire({
+            title: 'Authentication Required',
+            text: "Please enter the security passphrase to reset this user's password.",
+            input: 'password',
+            inputPlaceholder: 'Enter security passphrase...',
+            inputAttributes: {
+                autocapitalize: 'off',
+                autocorrect: 'off'
+            },
+            showCancelButton: true,
+            confirmButtonText: 'Verify Passphrase',
+            confirmButtonColor: '#0a5c3d',
+            cancelButtonColor: '#6c757d',
+            didOpen: () => {
+                if (window.parent && window.parent.document) {
+                    window.parent.document.body.classList.add('iframe-modal-open');
+                }
+            },
+            didClose: () => {
+                if (window.parent && window.parent.document) {
+                    window.parent.document.body.classList.remove('iframe-modal-open');
+                }
+            },
+            preConfirm: (value) => {
+                if (value !== 'SolarPower@1906') {
+                    Swal.showValidationMessage('Incorrect passphrase. Access denied.');
+                }
+                return value;
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                document.getElementById('reset_staff_id').value = id;
+                document.getElementById('reset_staff_name').textContent = fullName;
+                document.getElementById('reset_pwd').value = '';
+                
+                const modal = new bootstrap.Modal(document.getElementById('resetPasswordModal'));
+                modal.show();
+            }
+        });
     }
 
     // API ACTION: Reset Password
@@ -1070,6 +1398,50 @@ try {
         } catch (error) {
             alert('Failed to execute account deletion.');
         }
+    }
+
+    // Passphrase Protection function for Security Audit Trail Ledger
+    function promptAuditTrailPassword() {
+        Swal.fire({
+            title: 'Authentication Required',
+            text: 'Please enter the security passphrase to unlock the Security Audit Trail ledger.',
+            input: 'password',
+            inputPlaceholder: 'Enter security passphrase...',
+            inputAttributes: {
+                autocapitalize: 'off',
+                autocorrect: 'off'
+            },
+            showCancelButton: true,
+            confirmButtonText: 'Unlock Ledger',
+            confirmButtonColor: '#0a5c3d',
+            cancelButtonColor: '#6c757d',
+            didOpen: () => {
+                if (window.parent && window.parent.document) {
+                    window.parent.document.body.classList.add('iframe-modal-open');
+                }
+            },
+            didClose: () => {
+                if (window.parent && window.parent.document) {
+                    window.parent.document.body.classList.remove('iframe-modal-open');
+                }
+            },
+            preConfirm: (value) => {
+                if (value !== 'SolarPower@1906') {
+                    Swal.showValidationMessage('Incorrect passphrase. Access denied.');
+                }
+                return value;
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                document.getElementById('staffManageGrid').classList.add('d-none');
+                document.getElementById('auditTrailFullView').classList.remove('d-none');
+            }
+        });
+    }
+
+    function hideAuditTrail() {
+        document.getElementById('auditTrailFullView').classList.add('d-none');
+        document.getElementById('staffManageGrid').classList.remove('d-none');
     }
 </script>
 </body>

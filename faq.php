@@ -5,7 +5,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/png" href="assets/img/icon.png">
-    <title>SolarPower Energy - Smart Energy for Smarter Homes</title>
+    
+    <!-- Primary Meta Tags -->
+    <title>Frequently Asked Questions | SolarPower Energy Corporation</title>
+    <meta name="description" content="Find answers to all your questions about residential and commercial solar installations, costs, ROI, net-metering, maintenance, and government financing in the Philippines." />
+    <meta name="keywords" content="solar power FAQ Philippines, solar cost Philippines, solar panel return on investment, net metering Philippines, solar panel maintenance" />
+    <meta name="author" content="SolarPower Energy Corporation" />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://solarpower.com.ph/faq.php" />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Frequently Asked Questions | SolarPower Energy Corporation" />
+    <meta property="og:description" content="Answers to common questions about going solar in the Philippines. Learn about costs, ROI, hybrid systems, and net-metering setup." />
+    <meta property="og:image" content="https://solarpower.com.ph/assets/img/logo.png" />
+    <meta property="og:url" content="https://solarpower.com.ph/faq.php" />
+
     <!-- Bootstrap CSS -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome -->
