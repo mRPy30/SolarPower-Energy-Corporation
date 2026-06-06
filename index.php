@@ -725,7 +725,7 @@ $conn->close();
 
     <?php include "includes/header.php" ?>
 
-    <div class="hero-container">
+    <div class="hero-container" id="heroContainer" data-checkout-hide>
         <section class="hero" id="home">
 
             <div class="hero-content">
@@ -832,7 +832,7 @@ $conn->close();
 
 
     <!-- Trusted Partners Marquee Section -->
-    <section class="bg-amber-500 py-6 overflow-hidden relative shadow-inner">
+    <section id="brandPartnersSection" data-checkout-hide class="bg-amber-500 py-6 overflow-hidden relative shadow-inner">
         <!-- Title -->
         <div class="text-center mb-4">
             <h3 class="text-xs sm:text-sm font-bold text-white/90 uppercase tracking-[0.2em]">Our Brand Partners</h3>
@@ -870,7 +870,7 @@ $conn->close();
     </section>
 
     <!-- ---------- CATALOG SECTION ---------- -->
-    <section class="catalogs-section" id="catalogSection">
+    <section class="catalogs-section" id="catalogSection" data-checkout-hide>
         <div class="container">
 
             <div class="catalog-header" data-aos="fade-up">
@@ -983,7 +983,7 @@ $conn->close();
         </div>
     </section>
 
-    <section class="bnpl-section" id="bnplSection">
+    <section class="bnpl-section" id="bnplSection" data-checkout-hide>
         <div class="container">
             <!-- Header - Centered with aligned description -->
             <div class="bnpl-header">
@@ -1049,7 +1049,7 @@ $conn->close();
     </section>
 
     <!-- Rent to Own Section (Industrial & Commercial Only) --
-    <section class="rent-to-own-section" id="rentToOwnSection">
+    <section class="rent-to-own-section" id="rentToOwnSection" data-checkout-hide>
         <div class="container">
             <div class="rto-wrapper">
                Left: Form --
@@ -1304,67 +1304,127 @@ $conn->close();
 
                     <!-- Payment Method Section -->
                     <div class="card mb-4">
-                        <div class="card-header bg-primary text-white">
+                        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
                             <h5 class="mb-0">
-                                <i class="fas fa-credit-card me-2"></i>Payment Instructions
+                                <i class="fas fa-credit-card me-2"></i>Secure Payment Portal
                             </h5>
+                            <span class="badge bg-light text-primary" style="font-size: 0.75rem;"><i class="fas fa-lock me-1"></i> BSP Regulated</span>
                         </div>
                         <div class="card-body">
-                            <div class="alert alert-warning mb-4">
-                                <i class="fas fa-exclamation-triangle me-2"></i>
-                                <strong>Important Notice:</strong> This is not refundable. If your payment does not
-                                match 20%, 50%, or 100% of your order total, your order will be void.
+                            <!-- Trust Assurance Notice (Risk Reversal) -->
+                            <div class="alert alert-success mb-4" style="border-left: 4px solid #0D5C3A; background-color: rgba(13, 92, 58, 0.04); color: #1E293B;">
+                                <div class="d-flex gap-2 align-items-start">
+                                    <i class="fas fa-shield-alt text-success mt-1" style="font-size: 1.2rem;"></i>
+                                    <div>
+                                        <strong style="color: #0D5C3A;">Risk-Free Booking Guarantee:</strong>
+                                        <p class="mb-0 small text-muted mt-1">Your payment is fully secured. If our technical site survey reveals roof structural, spacing, or shading issues that prevent solar installation, your booking downpayment is 100% refundable.</p>
+                                    </div>
+                                </div>
                             </div>
 
-                            <!-- InstaPay QR Code Section -->
-                            <div class="text-center mb-4">
-                                <h5 class="mb-3">Scan to Pay via InstaPay</h5>
-                                <img src="assets/img/UB-QR Code.jpg" alt="InstaPay QR Code" class="img-fluid"
-                                    style="max-width: 300px; border: 2px solid #ddd; border-radius: 10px; padding: 10px;">
+                            <!-- B2B & Government Touchpoint -->
+                            <div class="p-3 mb-4 rounded border text-start" style="background-color: #f8fafc; border-left: 4px solid #F2A900 !important;">
+                                <h6 class="fw-bold mb-1 text-dark"><i class="fas fa-building text-warning me-2"></i>Corporate or Government Buyer?</h6>
+                                <p class="small text-muted mb-2">If you represent an SME, large commercial company, or government institution requiring formal bids, corporate invoices, or grid-tie feasibility studies, skip digital checkouts and request a formal proposal directly.</p>
+                                <a href="loans.php#checklist" class="btn btn-sm text-dark fw-bold border-0" style="background-color: #F2A900; border-radius: 4px; padding: 6px 12px; font-size: 0.75rem;"><i class="fas fa-file-contract me-1"></i> Request B2B Engineering Proposal</a>
                             </div>
 
-                            <!-- Payment Options -->
+                            <!-- Payment Term Selection -->
                             <div class="payment-options mb-4">
-                                <h6 class="mb-3">Select Payment Percentage:</h6>
+                                <h6 class="fw-bold mb-3"><i class="fas fa-tasks me-2 text-primary"></i>1. Select Payment Option:</h6>
 
                                 <!-- Full Payment (100%) -->
-                                <div class="form-check payment-option mb-3">
-                                    <input class="form-check-input" type="radio" name="paymentMethod" id="paymentFull"
+                                <div class="form-check payment-option mb-3 p-3 border rounded" style="cursor: pointer; transition: background 0.2s;">
+                                    <input class="form-check-input ms-0 me-2" type="radio" name="paymentMethod" id="paymentFull"
                                         value="full" checked onchange="updatePaymentDisplay()">
-                                    <label class="form-check-label w-100" for="paymentFull">
+                                    <label class="form-check-label w-100 ps-4" for="paymentFull">
                                         <div class="d-flex justify-content-between align-items-center">
                                             <div>
-                                                <strong>
-                                                    <i class="fas fa-money-bill-wave text-success me-2"></i>
-                                                    Full Payment (100%)
-                                                </strong>
-                                                <p class="text-muted mb-0 small">Pay complete amount now</p>
+                                                <strong class="text-dark">Full Payment (100% upfront)</strong>
+                                                <p class="text-muted mb-0 small">Saves 3% off your total system cost (Discount applied manually on billing verification)</p>
                                             </div>
-                                            <span class="badge bg-success">Recommended</span>
+                                            <span class="badge bg-success">Best Value</span>
                                         </div>
                                     </label>
                                 </div>
 
                                 <!-- 50% Down Payment -->
-                                <div class="form-check payment-option mb-3">
-                                    <input class="form-check-input" type="radio" name="paymentMethod" id="paymentDown"
+                                <div class="form-check payment-option mb-3 p-3 border rounded" style="cursor: pointer; transition: background 0.2s;">
+                                    <input class="form-check-input ms-0 me-2" type="radio" name="paymentMethod" id="paymentDown"
                                         value="downpayment" onchange="updatePaymentDisplay()">
-                                    <label class="form-check-label w-100" for="paymentDown">
+                                    <label class="form-check-label w-100 ps-4" for="paymentDown">
                                         <div class="d-flex justify-content-between align-items-center">
                                             <div>
-                                                <strong>
-                                                    <i class="fas fa-percentage text-warning me-2"></i>
-                                                    50% Down Payment
-                                                </strong>
-                                                <p class="text-muted mb-0 small">Pay 50% now, 50% before delivery</p>
+                                                <strong class="text-dark">50% Down Payment (Secures Booking)</strong>
+                                                <p class="text-muted mb-0 small">Pay 50% now to initiate engineering designs, remaining 50% paid upon site delivery</p>
                                             </div>
-                                            <span class="badge bg-warning text-dark">Popular</span>
+                                            <span class="badge bg-warning text-dark">Standard</span>
                                         </div>
                                     </label>
                                 </div>
 
                                 <!-- 20% Initial Payment -->
-                                <!--currently remove-->
+                                <div class="form-check payment-option mb-3 p-3 border rounded" style="cursor: pointer; transition: background 0.2s;">
+                                    <input class="form-check-input ms-0 me-2" type="radio" name="paymentMethod" id="paymentInitial"
+                                        value="initial" onchange="updatePaymentDisplay()">
+                                    <label class="form-check-label w-100 ps-4" for="paymentInitial">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <strong class="text-dark">20% Booking Fee (Mobilization)</strong>
+                                                <p class="text-muted mb-0 small">Secure solar panels and scheduling immediately. Balance paid pre-installation</p>
+                                            </div>
+                                            <span class="badge bg-info text-white">Low Upfront</span>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Payment Channels Tab System -->
+                            <h6 class="fw-bold mb-3"><i class="fas fa-university me-2 text-primary"></i>2. Choose Payment Channel:</h6>
+                            <ul class="nav nav-pills mb-3" id="paymentChannelsTab" role="tablist">
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link active fw-bold text-uppercase" id="instapay-tab" data-bs-toggle="pill" data-bs-target="#p-instapay" type="button" role="tab" style="font-size: 0.8rem; border-radius: 8px;"><i class="fas fa-qrcode me-1"></i> InstaPay / GCash</button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link fw-bold text-uppercase" id="bank-tab" data-bs-toggle="pill" data-bs-target="#p-bank" type="button" role="tab" style="font-size: 0.8rem; border-radius: 8px;"><i class="fas fa-university me-1"></i> Bank Accounts</button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <a href="viber://chat?number=639171234567" target="_blank" class="nav-link fw-bold text-uppercase" style="font-size: 0.8rem; color: #7360f2;"><i class="fab fa-viber me-1"></i> Ask Rep / Financing</a>
+                                </li>
+                            </ul>
+                            
+                            <div class="tab-content border rounded p-3 mb-4 bg-white" id="paymentTabContent">
+                                <!-- InstaPay/GCash Panel -->
+                                <div class="tab-pane fade show active text-center" id="p-instapay" role="tabpanel">
+                                    <h6 class="mb-2 fw-semibold text-dark">Scan to Pay via InstaPay QR</h6>
+                                    <img src="assets/img/UB-QR Code.jpg" alt="InstaPay QR Code" class="img-fluid"
+                                        style="max-width: 260px; border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px;">
+                                    <p class="text-muted small mt-2 mb-0">Works with GCash, PayMaya, ShopeePay, and all major Philippine Banking Apps.</p>
+                                </div>
+                                
+                                <!-- Bank Accounts Panel -->
+                                <div class="tab-pane fade" id="p-bank" role="tabpanel">
+                                    <div class="text-start">
+                                        <h6 class="mb-3 fw-bold text-dark">Direct Bank Transfer Details:</h6>
+                                        <div class="d-flex flex-column gap-3">
+                                            <div class="p-2 border rounded" style="background-color: #fafafa;">
+                                                <strong class="text-dark"><i class="fas fa-university me-1 text-danger"></i> Bank of the Philippine Islands (BPI)</strong>
+                                                <div class="small text-muted mt-1">Account Name: <strong>SolarPower Energy Corporation</strong></div>
+                                                <div class="small text-muted">Account Number: <strong>1234-5678-90</strong></div>
+                                            </div>
+                                            <div class="p-2 border rounded" style="background-color: #fafafa;">
+                                                <strong class="text-dark"><i class="fas fa-university me-1 text-primary"></i> Metropolitan Bank & Trust Company (Metrobank)</strong>
+                                                <div class="small text-muted mt-1">Account Name: <strong>SolarPower Energy Corporation</strong></div>
+                                                <div class="small text-muted">Account Number: <strong>9876-5432-10</strong></div>
+                                            </div>
+                                            <div class="p-2 border rounded" style="background-color: #fafafa;">
+                                                <strong class="text-dark"><i class="fas fa-university me-1 text-warning"></i> UnionBank of the Philippines</strong>
+                                                <div class="small text-muted mt-1">Account Name: <strong>SolarPower Energy Corporation</strong></div>
+                                                <div class="small text-muted">Account Number: <strong>0011-2233-4455</strong></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
 
                             <!-- Receipt Upload Section -->
@@ -1374,24 +1434,15 @@ $conn->close();
                                         style="font-size: 1.5rem; margin-top:2px;"></i>
                                     <div class="w-100">
                                         <strong>Upload Your Transaction Receipt</strong>
-                                        <p class="text-muted small mb-2 mt-1">After completing your InstaPay payment,
-                                            upload a screenshot or photo of your receipt below. Your order will be
-                                            submitted automatically once you click "Confirm & Submit Order".</p>
-                                        <ol class="mb-3 mt-1 small">
-                                            <li>Complete your InstaPay payment using the QR code above</li>
-                                            <li>Take a screenshot or photo of your transaction receipt</li>
-                                            <li>Upload the receipt using the button below</li>
-                                            <li>Click <strong>"Confirm & Submit Order"</strong> — your order will be
-                                                saved automatically</li>
-                                        </ol>
-                                        <div class="mb-2">
+                                        <p class="text-muted small mb-2 mt-1">Once you complete the payment via InstaPay, GCash, or Direct Bank Transfer, take a screenshot or photo of your transaction confirmation receipt and upload it below. Our billing team will verify it instantly.</p>
+                                        <div class="mb-2 text-start">
                                             <label for="receiptUpload" class="form-label fw-bold">
                                                 <i class="fas fa-file-image me-1 text-primary"></i> Transaction Receipt
                                                 <span class="text-danger">*</span>
                                             </label>
                                             <input type="file" class="form-control" id="receiptUpload"
                                                 accept="image/*,.pdf" onchange="previewReceipt(this)">
-                                            <div class="form-text">Accepted: JPG, PNG, PDF (Max 5MB)</div>
+                                            <div class="form-text">Accepted formats: JPG, PNG, PDF (Max 5MB)</div>
                                         </div>
                                         <div id="receiptPreviewContainer" style="display:none; margin-top:10px;">
                                             <p class="small fw-bold text-success"><i
@@ -1406,8 +1457,8 @@ $conn->close();
                         </div>
                     </div>
 
-                    <!-- Order Summary -->
-                    <div class="payment-summary-box p-3 bg-light rounded mb-4">
+                    <!-- Order Summary (hidden from checkout display, values still computed by JS) -->
+                    <div class="payment-summary-box p-3 bg-light rounded mb-4" style="display:none;">
                         <h5 class="mb-3"><i class="fas fa-file-invoice-dollar me-2"></i>Payment Summary</h5>
 
                         <div class="summary-row">
@@ -1438,8 +1489,8 @@ $conn->close();
                         </div>
                     </div>
 
-                    <!-- Payment Note -->
-                    <div id="paymentNote" class="alert alert-success">
+                    <!-- Payment Note (hidden from view, computed by JS internally) -->
+                    <div id="paymentNote" class="alert alert-success" style="display:none;">
                         <i class="fas fa-info-circle"></i> You are paying the <strong>Full Amount (100%)</strong> via
                         InstaPay.
                     </div>
@@ -1516,7 +1567,7 @@ $conn->close();
     </section>
 
     <!-- ── SECTION 2: CORE SERVICES & PRODUCTS GRID (The 3-Pillar Solution) ── -->
-    <section class="py-5 bg-white" id="servicesGrid">
+    <section class="py-5 bg-white" id="servicesGrid" data-checkout-hide>
         <div class="container py-lg-4">
             <div class="text-center mb-5" data-aos="fade-up">
                 <span class="text-uppercase fw-bold text-success" style="font-size: 0.85rem; letter-spacing: 1.5px; color: #0D5C3A !important;">Core Offerings</span>
@@ -1563,7 +1614,7 @@ $conn->close();
     </section>
 
     <!-- ── SECTION 3: LIVE ENERGY & CARBON TRACKER WIDGET ── -->
-    <section class="py-5" style="background-color: var(--solar-bg-gray);" id="trackerSection">
+    <section class="py-5" style="background-color: var(--solar-bg-gray);" id="trackerSection" data-checkout-hide>
         <div class="container py-lg-4">
             <div class="row justify-content-center">
                 <div class="col-lg-10">
@@ -1602,7 +1653,7 @@ $conn->close();
     </section>
 
     <!-- ── SECTION 4: SOLAR INSIGHTS & LATEST BLOGS ── -->
-    <section id="blog" class="py-5 bg-white">
+    <section id="blog" class="py-5 bg-white" data-checkout-hide>
         <div class="container py-lg-4">
             <div class="text-center mb-5" data-aos="fade-up">
                 <span class="text-uppercase fw-bold text-success" style="font-size: 0.85rem; letter-spacing: 1.5px; color: #0D5C3A !important;">Insights & Guides</span>
@@ -1843,7 +1894,7 @@ $conn->close();
 
 
     <!-- Services Section --
-    <section class="services-section">
+    <section class="services-section" data-checkout-hide>
         <div class="container">
             <h2>Our Services</h2>
         </div>
@@ -1888,7 +1939,7 @@ $conn->close();
     </section>-->
 
     <!-- Solar System Types Section -->
-    <section class="solar-tips-section">
+    <section class="solar-tips-section" data-checkout-hide>
         <div class="container">
             <div class="text-center mb-5">
                 <h2>Types of Solar Systems</h2>
@@ -2011,7 +2062,7 @@ $conn->close();
 
 
     <!-- Testimonials Section -->
-    <section class="py-5" style="background: var(--bs-light, #f8f9fa);">
+    <section class="py-5" id="testimonialsSection" data-checkout-hide style="background: var(--bs-light, #f8f9fa);">
         <div class="container py-5">
             <div class="text-center mb-5" data-aos="fade-up">
                 <h2 class="fw-bold">What Our Clients Say</h2>
@@ -2078,7 +2129,7 @@ $conn->close();
 
 
     <!-- 6 Reasons Section -->
-    <section class="solar-reasons-section">
+    <section class="solar-reasons-section" data-checkout-hide>
         <div class="solar-reasons-container">
             <!-- LEFT SIDE - ILLUSTRATION -->
             <div class="reasons-illustration" data-aos="fade-right">
@@ -2337,7 +2388,7 @@ $conn->close();
     </section>
 
     <!-- Contact Us Section -->
-    <section class="contact-us" id="contact-us">
+    <section class="contact-us" id="contact-us" data-checkout-hide>
         <div class="container">
             <div class="row">
                 <!-- Left Side - Contact Information -->
@@ -2350,7 +2401,7 @@ $conn->close();
                             <h3>Visit Us</h3>
                             <p>Connect with our solarpower experts to discuss the best energy solutions for your needs.
                             </p>
-                            <a href="https://wa.me/639953947379" class="whatsapp-btn" target="_blank">
+                            <a href="https://api.whatsapp.com/send?phone=639953947379" class="whatsapp-btn" target="_blank">
                                 <i class="fab fa-whatsapp"></i>
                                 Chat on WhatsApp
                             </a>
@@ -2491,7 +2542,7 @@ $conn->close();
         </div>
     </section>
 
-    <section class="subscription-section">
+    <section class="subscription-section" data-checkout-hide>
         <div class="container">
             <div class="row justify-content-center">
                 <div class="col-lg-8" data-aos="zoom-in">
@@ -2730,90 +2781,492 @@ $conn->close();
     </div>
 
     <!-- Delivery Fee Modal -->
+    <!-- ═══════════════════════════════════════════════════════
+         DELIVERY & INSTALLATION METRICS MODAL — Premium Redesign
+         Brand: Deep Forest Green #0D5C3A | Solar Gold #F2A900
+    ═══════════════════════════════════════════════════════ -->
+    <style>
+        /* ── Modal Shell ── */
+        #deliveryFeeModal .modal-content {
+            border: none;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 24px 64px rgba(0,0,0,0.18);
+            font-family: 'Inter', 'Segoe UI', sans-serif;
+        }
+
+        /* ── Header ── */
+        #deliveryFeeModal .dfm-header {
+            background: linear-gradient(135deg, #0D5C3A 0%, #0a4a2e 100%);
+            padding: 24px 28px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        #deliveryFeeModal .dfm-header-left {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        #deliveryFeeModal .dfm-icon-wrap {
+            width: 44px;
+            height: 44px;
+            background: rgba(242,169,0,0.15);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        #deliveryFeeModal .dfm-title {
+            color: #FFFFFF;
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin: 0;
+            letter-spacing: -0.3px;
+        }
+        #deliveryFeeModal .dfm-subtitle {
+            color: rgba(255,255,255,0.6);
+            font-size: 0.78rem;
+            margin: 2px 0 0;
+            letter-spacing: 0.3px;
+            text-transform: uppercase;
+        }
+        #deliveryFeeModal .dfm-close {
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.15);
+            color: rgba(255,255,255,0.8);
+            border-radius: 8px;
+            width: 34px;
+            height: 34px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+        #deliveryFeeModal .dfm-close:hover {
+            background: rgba(255,255,255,0.18);
+            color: #fff;
+            transform: scale(1.08);
+        }
+
+        /* ── Body ── */
+        #deliveryFeeModal .modal-body {
+            padding: 0;
+            background: #F8FAFB;
+        }
+        #deliveryFeeModal .dfm-body {
+            display: grid;
+            grid-template-columns: 1fr 1px 1fr;
+            min-height: 420px;
+        }
+        #deliveryFeeModal .dfm-divider {
+            background: #E5E7EB;
+            width: 1px;
+        }
+
+        /* ── Column shared ── */
+        #deliveryFeeModal .dfm-col {
+            padding: 28px 26px;
+        }
+        #deliveryFeeModal .dfm-col-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            color: #6B7280;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #E5E7EB;
+        }
+        #deliveryFeeModal .dfm-col-title svg {
+            color: #0D5C3A;
+            flex-shrink: 0;
+        }
+
+        /* ── Sector label ── */
+        #deliveryFeeModal .dfm-sector {
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.9px;
+            color: #9CA3AF;
+            margin: 16px 0 8px;
+        }
+        #deliveryFeeModal .dfm-sector:first-of-type { margin-top: 0; }
+
+        /* ── Price rows ── */
+        #deliveryFeeModal .dfm-price-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 9px 10px;
+            border-radius: 7px;
+            transition: background 0.18s ease;
+            cursor: default;
+        }
+        #deliveryFeeModal .dfm-price-row:hover {
+            background-color: #F0FDF4;
+        }
+        #deliveryFeeModal .dfm-badge {
+            display: inline-flex;
+            align-items: center;
+            background: #F3F4F6;
+            border: 1px solid #E5E7EB;
+            border-radius: 5px;
+            padding: 3px 9px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #374151;
+            letter-spacing: 0.2px;
+        }
+        #deliveryFeeModal .dfm-price {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #0D5C3A;
+            font-variant-numeric: tabular-nums;
+            letter-spacing: -0.3px;
+        }
+        #deliveryFeeModal .dfm-sub-divider {
+            border: none;
+            border-top: 1px dashed #E5E7EB;
+            margin: 8px 0;
+        }
+
+        /* ── Province row ── */
+        #deliveryFeeModal .dfm-province-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 10px;
+            border-radius: 7px;
+            transition: background 0.18s ease;
+            cursor: default;
+        }
+        #deliveryFeeModal .dfm-province-row:hover { background-color: #F0FDF4; }
+        #deliveryFeeModal .dfm-province-name {
+            font-size: 0.88rem;
+            color: #374151;
+            font-weight: 500;
+        }
+        #deliveryFeeModal .dfm-province-price {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: #0D5C3A;
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* ── Vismin alert ── */
+        #deliveryFeeModal .dfm-vismin-alert {
+            margin-top: 16px;
+            background: linear-gradient(135deg, rgba(13,92,58,0.05) 0%, rgba(242,169,0,0.05) 100%);
+            border: 1px solid rgba(13,92,58,0.15);
+            border-left: 3px solid #F2A900;
+            border-radius: 8px;
+            padding: 12px 14px;
+            font-size: 0.82rem;
+            color: #374151;
+            line-height: 1.5;
+        }
+        #deliveryFeeModal .dfm-vismin-alert strong {
+            display: block;
+            color: #0D5C3A;
+            margin-bottom: 3px;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* ── Installation cards ── */
+        #deliveryFeeModal .dfm-install-card {
+            border-radius: 10px;
+            padding: 16px 18px;
+            margin-bottom: 12px;
+        }
+        #deliveryFeeModal .dfm-install-card.primary {
+            background: rgba(13,92,58,0.05);
+            border: 1px solid rgba(13,92,58,0.12);
+            border-left: 3px solid #F2A900;
+        }
+        #deliveryFeeModal .dfm-install-card.secondary {
+            background: #FFFFFF;
+            border: 1px solid #E5E7EB;
+        }
+        #deliveryFeeModal .dfm-install-card-label {
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.9px;
+            color: #6B7280;
+            margin-bottom: 6px;
+        }
+        #deliveryFeeModal .dfm-install-card-name {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #111827;
+            margin-bottom: 6px;
+        }
+        #deliveryFeeModal .dfm-install-fee {
+            display: flex;
+            align-items: baseline;
+            gap: 6px;
+        }
+        #deliveryFeeModal .dfm-install-fee-label {
+            font-size: 0.8rem;
+            color: #6B7280;
+        }
+        #deliveryFeeModal .dfm-install-fee-value {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: #0D5C3A;
+            letter-spacing: -0.5px;
+            font-variant-numeric: tabular-nums;
+        }
+        #deliveryFeeModal .dfm-install-fee-value.free {
+            color: #059669;
+        }
+
+        /* ── Checklist ── */
+        #deliveryFeeModal .dfm-checklist-title {
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.9px;
+            color: #6B7280;
+            margin: 20px 0 10px;
+            padding-top: 16px;
+            border-top: 1px solid #E5E7EB;
+        }
+        #deliveryFeeModal .dfm-check-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 7px 0;
+            font-size: 0.86rem;
+            color: #374151;
+            line-height: 1.4;
+        }
+        #deliveryFeeModal .dfm-check-item svg {
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+
+        /* ── Footer ── */
+        #deliveryFeeModal .dfm-footer {
+            padding: 16px 28px;
+            border-top: 1px solid #E5E7EB;
+            background: #FFFFFF;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        #deliveryFeeModal .dfm-footer-note {
+            font-size: 0.78rem;
+            color: #9CA3AF;
+        }
+        #deliveryFeeModal .dfm-footer-btn {
+            background: #0D5C3A;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 9px 22px;
+            font-size: 0.88rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            letter-spacing: 0.2px;
+        }
+        #deliveryFeeModal .dfm-footer-btn:hover {
+            background: #0a4a2e;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(13,92,58,0.3);
+        }
+
+        @media (max-width: 768px) {
+            #deliveryFeeModal .dfm-body { grid-template-columns: 1fr; }
+            #deliveryFeeModal .dfm-divider { height: 1px; width: 100%; }
+        }
+    </style>
+
     <div class="modal fade" id="deliveryFeeModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-dialog modal-dialog-centered modal-lg" style="max-width: 860px;">
             <div class="modal-content">
-                <div class="modal-header bg-primary text-white">
-                    <h5 class="modal-title">
-                        <i class="fas fa-truck me-2"></i>
-                        Delivery & Installation Fees
-                    </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="row">
-                        <!-- Delivery Fees -->
-                        <div class="col-md-6 mb-4">
-                            <h6 class="text-primary mb-3">
-                                <i class="fas fa-shipping-fast me-2"></i>Delivery Fees
-                            </h6>
 
-                            <div class="mb-3">
-                                <strong>Metro Manila / Nearby Areas:</strong>
-                                <ul class="list-unstyled ms-3 mt-2">
-                                    <li>• 1-5km: <strong>₱2,000</strong></li>
-                                    <li>• 6-10km: <strong>₱2,500</strong></li>
-                                    <li>• 11-20km: <strong>₱4,000</strong></li>
-                                    <li>• 21-30km: <strong>₱6,000</strong></li>
-                                </ul>
-                            </div>
-
-                            <div class="mb-3">
-                                <strong>South Luzon:</strong>
-                                <ul class="list-unstyled ms-3 mt-2">
-                                    <li>• Cavite: <strong>₱4,200</strong></li>
-                                    <li>• Laguna: <strong>₱6,000</strong></li>
-                                    <li>• Batangas: <strong>₱8,500</strong></li>
-                                    <li>• Rizal: <strong>₱7,000</strong></li>
-                                </ul>
-                            </div>
-
-                            <div class="mb-3">
-                                <strong>North Luzon:</strong>
-                                <ul class="list-unstyled ms-3 mt-2">
-                                    <li>• Bulacan: <strong>₱7,000</strong></li>
-                                    <li>• Pampanga: <strong>₱10,000</strong></li>
-                                    <li>• Tarlac: <strong>₱10,000</strong></li>
-                                </ul>
-                            </div>
-
-                            <div class="alert alert-info mb-0">
-                                <strong>Visayas & Mindanao:</strong><br>
-                                Shipping costs may vary due to weight and distance. Please contact us for a quote.
-                            </div>
+                <!-- ── HEADER ── -->
+                <div class="dfm-header">
+                    <div class="dfm-header-left">
+                        <div class="dfm-icon-wrap">
+                            <!-- Delivery Truck SVG -->
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M1 3h15v13H1V3z" stroke="#F2A900" stroke-width="1.7" stroke-linejoin="round"/>
+                                <path d="M16 8h4l3 3v5h-7V8z" stroke="#F2A900" stroke-width="1.7" stroke-linejoin="round"/>
+                                <circle cx="5.5" cy="18.5" r="2" stroke="#F2A900" stroke-width="1.6"/>
+                                <circle cx="18.5" cy="18.5" r="2" stroke="#F2A900" stroke-width="1.6"/>
+                            </svg>
                         </div>
-
-                        <!-- Installation Fees -->
-                        <div class="col-md-6">
-                            <h6 class="text-primary mb-3">
-                                <i class="fas fa-tools me-2"></i>Installation Fees
-                            </h6>
-
-                            <div class="alert alert-success">
-                                <h5 class="mb-2">Grid-tie & Hybrid Systems</h5>
-                                <p class="mb-0">Installation Fee: <strong>₱2,000</strong></p>
-                            </div>
-
-                            <div class="alert alert-light border">
-                                <h5 class="mb-2">Other Products</h5>
-                                <p class="mb-0">Installation: <strong class="text-success">FREE</strong></p>
-                            </div>
-
-                            <div class="mt-4">
-                                <h6 class="text-dark mb-2">What's Included:</h6>
-                                <ul class="small">
-                                    <li>Professional installation by certified technicians</li>
-                                    <li>System testing and optimization</li>
-                                    <li>Basic training on system operation</li>
-                                    <li>1-year installation warranty</li>
-                                </ul>
-                            </div>
+                        <div>
+                            <div class="dfm-title">Delivery &amp; Installation Metrics</div>
+                            <div class="dfm-subtitle">SolarPower Energy Corporation · Rate Sheet</div>
                         </div>
                     </div>
+                    <button class="dfm-close" data-bs-dismiss="modal" aria-label="Close">
+                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 1l12 12M13 1L1 13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                    </button>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+
+                <!-- ── BODY ── -->
+                <div class="modal-body p-0">
+                    <div class="dfm-body">
+
+                        <!-- ── LEFT: DELIVERY ── -->
+                        <div class="dfm-col">
+                            <div class="dfm-col-title">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0D5C3A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+                                Deliveries by Region
+                            </div>
+
+                            <!-- Sector 1: Metro Manila -->
+                            <div class="dfm-sector">Metro Manila &amp; Adjacent Hubs</div>
+
+                            <div class="dfm-price-row">
+                                <span class="dfm-badge">1 – 5 km</span>
+                                <span class="dfm-price">₱2,000</span>
+                            </div>
+                            <div class="dfm-price-row">
+                                <span class="dfm-badge">6 – 10 km</span>
+                                <span class="dfm-price">₱2,500</span>
+                            </div>
+                            <div class="dfm-price-row">
+                                <span class="dfm-badge">11 – 20 km</span>
+                                <span class="dfm-price">₱4,000</span>
+                            </div>
+                            <div class="dfm-price-row">
+                                <span class="dfm-badge">21 – 30 km</span>
+                                <span class="dfm-price">₱6,000</span>
+                            </div>
+
+                            <!-- Sector 2: Provincial Luzon -->
+                            <div class="dfm-sector" style="margin-top:20px;">Provincial Luzon Operations</div>
+
+                            <div style="font-size:0.7rem;font-weight:700;color:#9CA3AF;text-transform:uppercase;letter-spacing:0.6px;padding:0 10px 4px;margin-bottom:2px;">South Luzon</div>
+                            <div class="dfm-province-row">
+                                <span class="dfm-province-name">Cavite</span>
+                                <span class="dfm-province-price">₱4,200</span>
+                            </div>
+                            <hr class="dfm-sub-divider">
+                            <div class="dfm-province-row">
+                                <span class="dfm-province-name">Laguna</span>
+                                <span class="dfm-province-price">₱6,000</span>
+                            </div>
+                            <hr class="dfm-sub-divider">
+                            <div class="dfm-province-row">
+                                <span class="dfm-province-name">Batangas</span>
+                                <span class="dfm-province-price">₱8,500</span>
+                            </div>
+                            <hr class="dfm-sub-divider">
+                            <div class="dfm-province-row">
+                                <span class="dfm-province-name">Rizal</span>
+                                <span class="dfm-province-price">₱7,000</span>
+                            </div>
+
+                            <div style="font-size:0.7rem;font-weight:700;color:#9CA3AF;text-transform:uppercase;letter-spacing:0.6px;padding:14px 10px 4px;margin-bottom:2px;">North Luzon</div>
+                            <div class="dfm-province-row">
+                                <span class="dfm-province-name">Bulacan</span>
+                                <span class="dfm-province-price">₱7,000</span>
+                            </div>
+                            <hr class="dfm-sub-divider">
+                            <div class="dfm-province-row">
+                                <span class="dfm-province-name">Pampanga</span>
+                                <span class="dfm-province-price">₱10,000</span>
+                            </div>
+                            <hr class="dfm-sub-divider">
+                            <div class="dfm-province-row">
+                                <span class="dfm-province-name">Tarlac</span>
+                                <span class="dfm-province-price">₱10,000</span>
+                            </div>
+
+                            <!-- Vismin Alert -->
+                            <div class="dfm-vismin-alert">
+                                <strong>🗺 Visayas &amp; Mindanao</strong>
+                                Shipping costs may vary due to cargo weight and distance. Please contact us for a custom cargo quote.
+                            </div>
+                        </div>
+
+                        <!-- ── DIVIDER ── -->
+                        <div class="dfm-divider"></div>
+
+                        <!-- ── RIGHT: INSTALLATION ── -->
+                        <div class="dfm-col">
+                            <div class="dfm-col-title">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0D5C3A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+                                Comprehensive Installation Rates
+                            </div>
+
+                            <!-- Card A: Grid-tie & Hybrid -->
+                            <div class="dfm-install-card primary">
+                                <div class="dfm-install-card-label">
+                                    <svg width="10" height="10" viewBox="0 0 10 10" fill="#F2A900"><circle cx="5" cy="5" r="5"/></svg>
+                                    &nbsp;Grid-tie &amp; Hybrid Systems
+                                </div>
+                                <div class="dfm-install-card-name">Complete Solar Package Install</div>
+                                <div class="dfm-install-fee">
+                                    <span class="dfm-install-fee-label">Installation Fee</span>
+                                    <span class="dfm-install-fee-value">₱2,000</span>
+                                </div>
+                            </div>
+
+                            <!-- Card B: Other Components -->
+                            <div class="dfm-install-card secondary">
+                                <div class="dfm-install-card-label">
+                                    <svg width="10" height="10" viewBox="0 0 10 10" fill="#D1D5DB"><circle cx="5" cy="5" r="5"/></svg>
+                                    &nbsp;Other Components &amp; Products
+                                </div>
+                                <div class="dfm-install-card-name">Individual Component Supply</div>
+                                <div class="dfm-install-fee">
+                                    <span class="dfm-install-fee-label">Installation</span>
+                                    <span class="dfm-install-fee-value free">FREE</span>
+                                </div>
+                            </div>
+
+                            <!-- What's Included Checklist -->
+                            <div class="dfm-checklist-title">What's Included in Installation</div>
+
+                            <div class="dfm-check-item">
+                                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="8" fill="#0D5C3A" fill-opacity="0.1"/><path d="M4.5 8l2.5 2.5 4.5-5" stroke="#0D5C3A" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                Professional deployment by certified grid technicians
+                            </div>
+                            <div class="dfm-check-item">
+                                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="8" fill="#0D5C3A" fill-opacity="0.1"/><path d="M4.5 8l2.5 2.5 4.5-5" stroke="#0D5C3A" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                System testing and utility net-metering optimization
+                            </div>
+                            <div class="dfm-check-item">
+                                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="8" fill="#0D5C3A" fill-opacity="0.1"/><path d="M4.5 8l2.5 2.5 4.5-5" stroke="#0D5C3A" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                Basic administrative training on system operation
+                            </div>
+                            <div class="dfm-check-item">
+                                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="8" fill="#0D5C3A" fill-opacity="0.1"/><path d="M4.5 8l2.5 2.5 4.5-5" stroke="#0D5C3A" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                1-year comprehensive installation warranty
+                            </div>
+                        </div>
+
+                    </div>
                 </div>
+
+                <!-- ── FOOTER ── -->
+                <div class="dfm-footer">
+                    <span class="dfm-footer-note">
+                        <svg width="12" height="12" viewBox="0 0 16 16" fill="none" style="margin-right:4px;vertical-align:middle;"><circle cx="8" cy="8" r="7" stroke="#9CA3AF" stroke-width="1.5"/><path d="M8 7v5M8 5.5v.5" stroke="#9CA3AF" stroke-width="1.5" stroke-linecap="round"/></svg>
+                        All prices are exclusive of VAT. Subject to change without prior notice.
+                    </span>
+                    <button class="dfm-footer-btn" data-bs-dismiss="modal">Got it, Close</button>
+                </div>
+
             </div>
         </div>
     </div>
@@ -3338,16 +3791,10 @@ $conn->close();
     }
 
     function showCheckout() {
-        // Hide all other sections
-        const sectionsToHide = [
-            '.hero', '.featured-brands', '.savings-calculator', '#solarBuilderSection',
-            '.why-choose-us', '.services-section', '.solar-tips-section',
-            '#catalogSection', '.contact-us', '.subscription-section', 'footer'
-        ];
-
-        sectionsToHide.forEach(selector => {
-            const el = document.querySelector(selector);
-            if (el) el.style.display = 'none';
+        // Hide ALL content sections — keep only header, footer, and floating chat
+        document.querySelectorAll('[data-checkout-hide]').forEach(el => {
+            el.dataset.prevDisplay = el.style.display || '';
+            el.style.display = 'none';
         });
 
         document.getElementById('checkoutSection').style.display = 'block';
@@ -3361,15 +3808,9 @@ $conn->close();
 
         document.getElementById('checkoutSection').style.display = 'none';
 
-        const sectionsToShow = [
-            '.hero', '.featured-brands', '.savings-calculator', '#solarBuilderSection',
-            '.why-choose-us', '.services-section', '.solar-tips-section',
-            '#catalogSection', '.contact-us', '.subscription-section', 'footer'
-        ];
-
-        sectionsToShow.forEach(selector => {
-            const el = document.querySelector(selector);
-            if (el) el.style.display = 'block';
+        // Restore all hidden content sections
+        document.querySelectorAll('[data-checkout-hide]').forEach(el => {
+            el.style.display = el.dataset.prevDisplay || '';
         });
 
         window.scrollTo(0, document.getElementById('catalogSection').offsetTop - 100);
@@ -4931,11 +5372,7 @@ $conn->close();
     }
 </style>
 
-<!-- Floating Button -->
-<button class="float-track-btn" onclick="toggleTrackPanel()" title="Track My Order">
-    <i class="fas fa-shipping-fast"></i>
-    <span class="track-tooltip">Track My Order</span>
-</button>
+<!-- Floating Button Removed to avoid overlap with new float widgets -->
 
 <!-- Slide-up Panel -->
 <div class="track-panel" id="trackPanel">

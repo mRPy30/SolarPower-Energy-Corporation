@@ -1,8 +1,9 @@
 {
     "main": {
-        "image": "assets\/img\/promo-main.jpg",
+        "image": "assets\/img\/promo-main.png",
         "link": "https:\/\/www.facebook.com\/share\/p\/1Ct5fohLui\/",
-        "start": "05\/19\/2026 02:12 pm"
+        "start": "05\/19\/2026 02:12 pm",
+        "end": "indefinite"
     },
     "top": {
         "image": "assets\/img\/promo-top.jpg",

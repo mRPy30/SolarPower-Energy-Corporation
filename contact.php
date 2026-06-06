@@ -696,7 +696,7 @@
                             <h3>Visit Us</h3>
                             <p>Come visit our showroom to see our solar products and speak with our experts in person.
                             </p>
-                            <a href="https://wa.me/639953947379" class="whatsapp-btn" target="_blank">
+                            <a href="https://api.whatsapp.com/send?phone=639953947379" class="whatsapp-btn" target="_blank">
                                 <i class="fab fa-whatsapp"></i>
                                 Chat on WhatsApp
                             </a>
@@ -1005,7 +1005,7 @@
                             <a href="https://www.tiktok.com/@solarpower.energy?_r=1&_t=ZS-92HlpTBUuzF" class="book-social-btn" aria-label="TikTok" target="_blank"><i class="fab fa-tiktok"></i></a>
                             <a href="https://youtube.com/@solarpowerenergycorporation?si=-kln0fTid4zMZDXq" class="book-social-btn" aria-label="YouTube" target="_blank"><i class="fab fa-youtube"></i></a>
                             <a href="https://www.linkedin.com/in/solar-power-6792283aa" class="book-social-btn" aria-label="LinkedIn" target="_blank"><i class="fab fa-linkedin-in"></i></a>
-                            <a href="https://wa.me/639953947379" class="book-social-btn" aria-label="WhatsApp" target="_blank"><i class="fab fa-whatsapp"></i></a>
+                            <a href="https://api.whatsapp.com/send?phone=639953947379" class="book-social-btn" aria-label="WhatsApp" target="_blank"><i class="fab fa-whatsapp"></i></a>
                         </div>
                     </div>
 

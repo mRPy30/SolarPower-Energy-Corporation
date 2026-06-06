@@ -1405,9 +1405,9 @@ if ($res_calc && $row_calc = $res_calc->fetch_assoc()) {
 
         // ── SECTION 4: PRE-APP CHECKLIST DOCUMENT UPLOAD & VALIDATION ENGINE ──
         const docRows = [
-            { row: document.getElementById('docRow1'), input: document.getElementById('fileInput1'), name: document.getElementById('fileName1'), status: document.getElementById('badgeStatus1'), spinner: document.getElementById('spinner1'), loaded: false },
-            { row: document.getElementById('docRow2'), input: document.getElementById('fileInput2'), name: document.getElementById('fileName2'), status: document.getElementById('badgeStatus2'), spinner: document.getElementById('spinner2'), loaded: false },
-            { row: document.getElementById('docRow3'), input: document.getElementById('fileInput3'), name: document.getElementById('fileName3'), status: document.getElementById('badgeStatus3'), spinner: document.getElementById('spinner3'), loaded: false }
+            { row: document.getElementById('docRow1'), input: document.getElementById('fileInput1'), name: document.getElementById('fileName1'), status: document.getElementById('badgeStatus1'), spinner: document.getElementById('spinner1'), loaded: false, file: null },
+            { row: document.getElementById('docRow2'), input: document.getElementById('fileInput2'), name: document.getElementById('fileName2'), status: document.getElementById('badgeStatus2'), spinner: document.getElementById('spinner2'), loaded: false, file: null },
+            { row: document.getElementById('docRow3'), input: document.getElementById('fileInput3'), name: document.getElementById('fileName3'), status: document.getElementById('badgeStatus3'), spinner: document.getElementById('spinner3'), loaded: false, file: null }
         ];
         
         const progressBar = document.getElementById('progressBar');
@@ -1469,19 +1469,21 @@ if ($res_calc && $row_calc = $res_calc->fetch_assoc()) {
             setTimeout(() => {
                 item.spinner.style.display = 'none';
                 
-                // For simplicity, let's treat any PDF or Image format as valid
+                // Validate if it is a PDF or Image format
                 const isValid = file.type === 'application/pdf' || file.type.startsWith('image/');
                 if (isValid) {
                     item.status.textContent = 'File Attached';
                     item.status.style.backgroundColor = '#0D5C3A';
                     item.row.classList.add('has-file');
                     item.loaded = true;
+                    item.file = file;
                 } else {
                     item.status.textContent = 'Invalid Format';
                     item.status.style.backgroundColor = '#DC3545';
                     item.row.classList.remove('has-file');
                     item.name.textContent = 'Attached file must be a PDF or Image.';
                     item.loaded = false;
+                    item.file = null;
                 }
                 updateUploadProgress();
             }, 1500);
@@ -1525,6 +1527,32 @@ if ($res_calc && $row_calc = $res_calc->fetch_assoc()) {
         function submitLeadForm(e) {
             e.preventDefault();
             
+            const meralcoFile = docRows[0].file;
+            const landTitleFile = docRows[1].file;
+            const membershipProofFile = docRows[2].file;
+
+            if (!meralcoFile || !landTitleFile || !membershipProofFile) {
+                Swal.fire({
+                    title: 'Missing Requirements',
+                    text: 'Mangyaring i-upload ang lahat ng tatlong kinakailangang dokumento.',
+                    icon: 'warning',
+                    confirmButtonColor: '#0D5C3A'
+                });
+                return;
+            }
+
+            const form = document.getElementById('proposalLeadForm');
+            const formData = new FormData(form);
+            
+            // Append the requirements files
+            formData.append('meralco_bill', meralcoFile);
+            formData.append('land_title', landTitleFile);
+            formData.append('membership_proof', membershipProofFile);
+            
+            // Append estimated monthly bill
+            const billInputVal = document.getElementById('billInput').value;
+            formData.append('monthly_bill', billInputVal);
+
             // Hide modal
             const modalEl = document.getElementById('leadGenerationModal');
             const modal = bootstrap.Modal.getInstance(modalEl);
@@ -1534,28 +1562,53 @@ if ($res_calc && $row_calc = $res_calc->fetch_assoc()) {
             const rocketOverlay = document.getElementById('rocketAnimation');
             rocketOverlay.style.display = 'flex';
 
-            setTimeout(() => {
+            // Send actual files to the backend controller
+            fetch('controllers/submit_loan_application.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
                 rocketOverlay.style.display = 'none';
-                
-                Swal.fire({
-                    title: 'Proposal Sent!',
-                    text: 'Ang iyong customized engineering proposal at blueprint ay naipadala na sa iyong email. Makikipag-ugnayan din ang aming team sa iyo sa loob ng 24 oras.',
-                    icon: 'success',
-                    confirmButtonColor: '#0D5C3A'
-                }).then(() => {
-                    // Reset upload portal and form
-                    document.getElementById('proposalLeadForm').reset();
-                    docRows.forEach(item => {
-                        item.loaded = false;
-                        item.input.value = '';
-                        item.row.classList.remove('has-file');
-                        item.status.textContent = 'Pending Upload';
-                        item.status.style.backgroundColor = '#64748B';
-                        item.name.textContent = 'Click or drag & drop file to attach (PDF/Image)';
+                if (data.success) {
+                    Swal.fire({
+                        title: 'Proposal Request Sent!',
+                        text: 'Ang iyong pre-application loan request at mga dokumento ay matagumpay na natanggap. Makikipag-ugnayan ang aming team sa iyo sa loob ng 24 oras.',
+                        icon: 'success',
+                        confirmButtonColor: '#0D5C3A'
+                    }).then(() => {
+                        // Reset form and reset upload items
+                        form.reset();
+                        docRows.forEach(item => {
+                            item.loaded = false;
+                            item.file = null;
+                            item.input.value = '';
+                            item.row.classList.remove('has-file');
+                            item.status.textContent = 'Pending Upload';
+                            item.status.style.backgroundColor = '#64748B';
+                            item.name.textContent = 'Click or drag & drop file to attach (PDF/Image)';
+                        });
+                        updateUploadProgress();
                     });
-                    updateUploadProgress();
+                } else {
+                    Swal.fire({
+                        title: 'Submission Failed',
+                        text: 'Error: ' + data.message,
+                        icon: 'error',
+                        confirmButtonColor: '#0D5C3A'
+                    });
+                }
+            })
+            .catch(error => {
+                rocketOverlay.style.display = 'none';
+                console.error('Error submitting application:', error);
+                Swal.fire({
+                    title: 'Submission Error',
+                    text: 'Hindi maipadala ang inyong aplikasyon sa ngayon. Pakisubukan muli mamaya.',
+                    icon: 'error',
+                    confirmButtonColor: '#0D5C3A'
                 });
-            }, 2500);
+            });
         }
     </script>
 </body>

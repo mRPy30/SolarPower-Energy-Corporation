@@ -2258,6 +2258,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 <span>Solar Estimates</span>
             </div>
 
+            <div class="menu-item" onclick="showPage('loans', 'Loan Applications')" data-tooltip="Loan Applications">
+                <i class="fas fa-file-signature"></i>
+                <span>Loan Applications</span>
+            </div>
+
             <div class="menu-item" onclick="showPage('clients', 'Clients')" data-tooltip="Clients">
                 <i class="fas fa-users"></i>
                 <span>Clients</span>
@@ -2714,6 +2719,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
             <!-- Solar Estimates Page -->
             <div id="estimates" class="page-content">
                 <iframe src="estimates.php" style="width: 100%; height: calc(100vh - 120px); border: none; border-radius: 12px; background: white; box-shadow: 0 4px 20px rgba(0,0,0,0.05);"></iframe>
+            </div>
+
+            <!-- Loan Applications Page -->
+            <div id="loans" class="page-content">
+                <iframe src="loan_applications.php" style="width: 100%; height: calc(100vh - 120px); border: none; border-radius: 12px; background: white; box-shadow: 0 4px 20px rgba(0,0,0,0.05);"></iframe>
             </div>
 
             <div id="inquiries" class="page-content">

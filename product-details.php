@@ -96,6 +96,8 @@ $conn->close();
     <title><?= htmlspecialchars($product['displayName']) ?> - Solar Power Energy</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="assets/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/aos@2.3.1/dist/aos.css">
     <style>
         :root {
             --clr-primary: #ffc107;
@@ -538,400 +540,16 @@ $conn->close();
                 top: 0;
             }
 
-            .product-title {
-                font-size: 26px;
-            }
+            .product-title { font-size: 26px; }
+            .product-price { font-size: 32px; }
 
-            .product-price {
-                font-size: 32px;
-            }
-
-            .action-buttons {
-                flex-direction: column;
-            }
+            .action-buttons { flex-direction: column; }
         }
 
         @media (max-width: 576px) {
-            .product-details-wrapper {
-                padding: 100px 0 60px;
-            }
-
-            .main-image-container {
-                padding: 20px;
-            }
-
-            .main-image {
-                height: 300px;
-            }
-        }
-
-        /* ========== CHECKOUT STYLES ========== */
-        #checkoutSection {
-            display: none;
-            padding: 40px 0;
-            background: #fafafa;
-        }
-
-        .checkout-shell {
-            max-width: 1200px;
-            margin: auto;
-            display: grid;
-            grid-template-columns: 1fr 380px;
-            gap: 40px;
-            padding: 40px 20px;
-        }
-
-        .checkout-main {
-            background: white;
-            border-radius: 12px;
-            padding: 30px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-        }
-
-        .checkout-steps {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 30px;
-            position: relative;
-        }
-
-        .checkout-steps::before {
-            content: '';
-            position: absolute;
-            top: 18px;
-            left: 10%;
-            right: 10%;
-            height: 2px;
-            background: #e0e0e0;
-            z-index: 0;
-        }
-
-        .checkout-steps .step {
-            text-align: center;
-            flex: 1;
-            position: relative;
-            z-index: 1;
-        }
-
-        .checkout-steps .step span {
-            width: 36px;
-            height: 36px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
-            background: #e0e0e0;
-            color: #666;
-            font-weight: bold;
-            margin-bottom: 8px;
-            transition: all 0.3s ease;
-        }
-
-        .checkout-steps .step p {
-            font-size: 12px;
-            color: #666;
-            margin: 0;
-            font-weight: 500;
-        }
-
-        .checkout-steps .step.active span {
-            background: #e7ad00;
-            color: white;
-            box-shadow: 0 4px 12px rgba(231, 173, 0, 0.3);
-        }
-
-        .checkout-steps .step.active p {
-            color: #e7ad00;
-            font-weight: 600;
-        }
-
-        .checkout-title {
-            font-size: 28px;
-            font-weight: 700;
-            margin-bottom: 25px;
-            color: #1a1a1a;
-        }
-
-        .checkout-card {
-            margin-bottom: 25px;
-        }
-
-        .checkout-card h3 {
-            font-size: 20px;
-            font-weight: 600;
-            margin-bottom: 8px;
-            color: #1a1a1a;
-        }
-
-        .checkout-actions {
-            display: flex;
-            justify-content: space-between;
-            gap: 15px;
-            margin-top: 30px;
-        }
-
-        .btn-primary {
-            background: #e7ad00;
-            border: none;
-            padding: 12px 28px;
-            font-weight: 600;
-            border-radius: 8px;
-            color: white;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .btn-primary:hover {
-            background: #d39d00;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(231, 173, 0, 0.3);
-        }
-
-        .btn-primary:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .btn-outline {
-            background: transparent;
-            border: 2px solid #e0e0e0;
-            padding: 12px 28px;
-            border-radius: 8px;
-            color: #666;
-            cursor: pointer;
-            font-weight: 600;
-            transition: all 0.3s ease;
-        }
-
-        .btn-outline:hover {
-            border-color: #1a1a1a;
-            color: #1a1a1a;
-        }
-
-        .payment-methods {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 20px;
-            margin: 25px 0;
-        }
-
-        .payment-option {
-            border: 2px solid #e0e0e0;
-            padding: 20px;
-            border-radius: 12px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .payment-option:hover {
-            border-color: #e7ad00;
-            background: #fffbf0;
-        }
-
-        .payment-option.selected-payment {
-            border-color: #e7ad00;
-            background: #fff8e1;
-            box-shadow: 0 4px 12px rgba(231, 173, 0, 0.2);
-        }
-
-        .payment-option h5 {
-            font-size: 16px;
-            font-weight: 600;
-            margin-bottom: 8px;
-        }
-
-        .payment-option p {
-            font-size: 13px;
-            color: #666;
-            margin: 0;
-        }
-
-        #paymentDetails {
-            background: #fafafa;
-            padding: 20px;
-            border-radius: 8px;
-            margin-top: 20px;
-        }
-
-        .summary-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 0;
-            font-size: 14px;
-        }
-
-        .total-row {
-            font-size: 18px;
-            font-weight: 700;
-            border-top: 2px solid #e0e0e0;
-            margin-top: 10px;
-            padding-top: 12px;
-        }
-
-        /* Payment Options Styling */
-        .payment-options {
-            padding: 10px 0;
-        }
-
-        .payment-option {
-            border: 2px solid #e0e0e0;
-            padding: 15px;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .payment-option:hover {
-            border-color: var(--clr-primary);
-            background-color: #f8f9fa;
-        }
-
-        .payment-option input[type="radio"]:checked+label {
-            font-weight: bold;
-        }
-
-        .payment-option input[type="radio"]:checked~* {
-            color: var(--clr-primary);
-        }
-
-        .form-check-input:checked {
-            background-color: var(--clr-primary);
-            border-color: var(--clr-primary);
-        }
-
-        .summary-row {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 10px;
-            font-size: 1rem;
-        }
-
-        .total-row {
-            font-weight: bold;
-            padding-top: 10px;
-        }
-
-        .checkout-sidebar {
-            position: sticky;
-            top: 90px;
-            height: fit-content;
-        }
-
-        .summary-box {
-            background: white;
-            border: 1px solid #e5e7eb;
-            border-radius: 12px;
-            padding: 20px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-        }
-
-        .summary-box h4 {
-            font-size: 18px;
-            font-weight: 600;
-            margin-bottom: 15px;
-        }
-
-        .confirmation-box {
-            text-align: center;
-            padding: 40px 20px;
-        }
-
-        .success-icon {
-            font-size: 60px;
-            color: #10b981;
-            margin-bottom: 15px;
-        }
-
-        .confirmation-details {
-            background: #fafafa;
-            padding: 20px;
-            border-radius: 8px;
-            margin: 20px 0;
-            text-align: left;
-        }
-
-        /* ========== RESPONSIVE DESIGN ========== */
-        @media (max-width: 992px) {
-            .checkout-shell {
-                grid-template-columns: 1fr;
-            }
-
-            .checkout-sidebar {
-                position: static;
-            }
-        }
-
-        @media (max-width: 768px) {
-            .filter-bar {
-                flex-direction: column;
-                align-items: stretch;
-                padding: 15px;
-            }
-
-            .filter-buttons {
-                justify-content: center;
-            }
-
-            .sort-container {
-                justify-content: space-between;
-                width: 100%;
-            }
-
-            .sort-select {
-                flex: 1;
-            }
-
-            .products-grid {
-                grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-                gap: 16px;
-            }
-
-            .product-image {
-                height: 250px;
-            }
-
-            .package-offers-section {
-                margin-top: 40px;
-                padding-top: 40px;
-            }
-
-            .package-title {
-                font-size: 26px;
-                margin-bottom: 30px;
-            }
-
-            .package-grid {
-                grid-template-columns: 1fr;
-                gap: 20px;
-            }
-
-            .package-image {
-                height: 220px;
-            }
-
-            .checkout-actions {
-                flex-direction: column;
-            }
-
-            .checkout-steps::before {
-                display: none;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .products-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .filter-btn {
-                font-size: 13px;
-                padding: 8px 16px;
-            }
-
-            .product-image {
-                height: 220px;
-            }
+            .product-details-wrapper { padding: 100px 0 60px; }
+            .main-image-container { padding: 20px; }
+            .main-image { height: 300px; }
         }
     </style>
 </head>
@@ -939,7 +557,7 @@ $conn->close();
 <body>
     <?php include "includes/header.php" ?>
 
-    <section class="product-details-wrapper">
+    <section class="product-details-wrapper" data-checkout-hide>
         <div class="container-custom">
             <!-- Breadcrumb -->
             <nav aria-label="breadcrumb">
@@ -1114,22 +732,26 @@ $conn->close();
         <div class="checkout-shell">
             <div class="checkout-main">
                 <div class="checkout-steps" id="checkoutSteps" data-step="1">
-                    <div class="step active" id="ind-step1"><span>1</span>
+                    <div class="step active" id="ind-step1">
+                        <span>1</span>
                         <p>Details</p>
                     </div>
-                    <div class="step" id="ind-step2"><span>2</span>
+                    <div class="step" id="ind-step2">
+                        <span>2</span>
                         <p>Payment</p>
                     </div>
-                    <div class="step" id="ind-step3"><span>3</span>
+                    <div class="step" id="ind-step3">
+                        <span>3</span>
                         <p>Confirm</p>
                     </div>
                 </div>
 
                 <h2 class="checkout-title">Checkout</h2>
 
+                <!-- Step 1: Delivery Details -->
                 <div id="checkoutStep1" class="checkout-card">
                     <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h3>Delivery & Installation Details</h3>
+                        <h3>Delivery &amp; Installation Details</h3>
                         <button class="btn btn-sm btn-outline-primary" onclick="backToCatalog()">
                             <i class="fas fa-plus"></i> Add More Product
                         </button>
@@ -1152,7 +774,7 @@ $conn->close();
                             <input type="text" class="form-control" id="house_street" placeholder="House No., Street, Subdivision" required>
                         </div>
                         <div class="col-md-4 mb-2">
-                            <label class="form-label fw-bold">Province</label>
+                            <label class="form-label fw-bold">Province/Region</label>
                             <select class="form-select" id="province" required>
                                 <option value="">Select Province</option>
                             </select>
@@ -1170,26 +792,167 @@ $conn->close();
                             </select>
                         </div>
                         <input type="hidden" id="cust_address">
+                        <div class="col-md-12">
+                            <div class="alert alert-info">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div><i class="fas fa-truck me-2"></i><strong>Delivery &amp; Installation Fees Apply</strong></div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     <div class="checkout-actions">
-                        <button class="btn-outline" onclick="backToCatalog()">Continue Shopping</button>
-                        <button class="btn-primary" onclick="validateStep1()">Proceed to Payment</button>
+                        <button class="btn-outline" onclick="backToCatalog()">← Continue Shopping</button>
+                        <button class="btn-primary" onclick="validateStep1()">Proceed to Payment →</button>
                     </div>
                 </div>
 
+                <!-- Step 2: Payment -->
                 <div id="checkoutStep2" class="checkout-card" style="display:none;">
+                    <h3>Order Summary &amp; Payment</h3>
+                    <div class="card mb-4">
+                        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0"><i class="fas fa-credit-card me-2"></i>Secure Payment Portal</h5>
+                            <span class="badge bg-light text-primary" style="font-size:0.75rem;"><i class="fas fa-lock me-1"></i>BSP Regulated</span>
+                        </div>
+                        <div class="card-body">
+                            <!-- Risk-Free Notice -->
+                            <div class="alert alert-success mb-4" style="border-left:4px solid #0D5C3A;background-color:rgba(13,92,58,0.04);color:#1E293B;">
+                                <div class="d-flex gap-2 align-items-start">
+                                    <i class="fas fa-shield-alt text-success mt-1" style="font-size:1.2rem;"></i>
+                                    <div>
+                                        <strong style="color:#0D5C3A;">Risk-Free Booking Guarantee:</strong>
+                                        <p class="mb-0 small text-muted mt-1">Your payment is fully secured. If our technical site survey reveals roof structural, spacing, or shading issues that prevent solar installation, your booking downpayment is 100% refundable.</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- B2B Notice -->
+                            <div class="p-3 mb-4 rounded border text-start" style="background-color:#f8fafc;border-left:4px solid #F2A900 !important;">
+                                <h6 class="fw-bold mb-1 text-dark"><i class="fas fa-building text-warning me-2"></i>Corporate or Government Buyer?</h6>
+                                <p class="small text-muted mb-2">If you represent an SME, large commercial company, or government institution requiring formal bids, corporate invoices, or grid-tie feasibility studies, skip digital checkouts and request a formal proposal directly.</p>
+                                <a href="loans.php#checklist" class="btn btn-sm text-dark fw-bold border-0" style="background-color:#F2A900;border-radius:4px;padding:6px 12px;font-size:0.75rem;"><i class="fas fa-file-contract me-1"></i>Request B2B Engineering Proposal</a>
+                            </div>
+                            <!-- Payment Term -->
+                            <div class="payment-options mb-4">
+                                <h6 class="fw-bold mb-3"><i class="fas fa-tasks me-2 text-primary"></i>1. Select Payment Option:</h6>
+                                <div class="form-check payment-option mb-3 p-3 border rounded" style="cursor:pointer;">
+                                    <input class="form-check-input ms-0 me-2" type="radio" name="paymentMethod" id="paymentFull" value="full" checked onchange="updatePaymentDisplay()">
+                                    <label class="form-check-label w-100 ps-4" for="paymentFull">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div><strong class="text-dark">Full Payment (100% upfront)</strong><p class="text-muted mb-0 small">Saves 3% off your total system cost</p></div>
+                                            <span class="badge bg-success">Best Value</span>
+                                        </div>
+                                    </label>
+                                </div>
+                                <div class="form-check payment-option mb-3 p-3 border rounded" style="cursor:pointer;">
+                                    <input class="form-check-input ms-0 me-2" type="radio" name="paymentMethod" id="paymentDown" value="downpayment" onchange="updatePaymentDisplay()">
+                                    <label class="form-check-label w-100 ps-4" for="paymentDown">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div><strong class="text-dark">50% Down Payment (Secures Booking)</strong><p class="text-muted mb-0 small">Pay 50% now, remaining 50% upon delivery</p></div>
+                                            <span class="badge bg-warning text-dark">Standard</span>
+                                        </div>
+                                    </label>
+                                </div>
+                                <div class="form-check payment-option mb-3 p-3 border rounded" style="cursor:pointer;">
+                                    <input class="form-check-input ms-0 me-2" type="radio" name="paymentMethod" id="paymentInitial" value="initial" onchange="updatePaymentDisplay()">
+                                    <label class="form-check-label w-100 ps-4" for="paymentInitial">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div><strong class="text-dark">20% Booking Fee (Mobilization)</strong><p class="text-muted mb-0 small">Secure panels and scheduling. Balance paid pre-installation</p></div>
+                                            <span class="badge bg-info text-white">Low Upfront</span>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+                            <!-- Payment Channels -->
+                            <h6 class="fw-bold mb-3"><i class="fas fa-university me-2 text-primary"></i>2. Choose Payment Channel:</h6>
+                            <ul class="nav nav-pills mb-3" id="paymentChannelsTab" role="tablist">
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link active fw-bold text-uppercase" id="instapay-tab" data-bs-toggle="pill" data-bs-target="#p-instapay" type="button" role="tab" style="font-size:0.8rem;border-radius:8px;"><i class="fas fa-qrcode me-1"></i>InstaPay / GCash</button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link fw-bold text-uppercase" id="bank-tab" data-bs-toggle="pill" data-bs-target="#p-bank" type="button" role="tab" style="font-size:0.8rem;border-radius:8px;"><i class="fas fa-university me-1"></i>Bank Accounts</button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <a href="viber://chat?number=639171234567" target="_blank" class="nav-link fw-bold text-uppercase" style="font-size:0.8rem;color:#7360f2;"><i class="fab fa-viber me-1"></i>Ask Rep / Financing</a>
+                                </li>
+                            </ul>
+                            <div class="tab-content border rounded p-3 mb-4 bg-white" id="paymentTabContent">
+                                <div class="tab-pane fade show active text-center" id="p-instapay" role="tabpanel">
+                                    <h6 class="mb-2 fw-semibold text-dark">Scan to Pay via InstaPay QR</h6>
+                                    <img src="assets/img/UB-QR Code.jpg" alt="InstaPay QR Code" class="img-fluid" style="max-width:260px;border:1px solid #e2e8f0;border-radius:12px;padding:10px;">
+                                    <p class="text-muted small mt-2 mb-0">Works with GCash, PayMaya, ShopeePay, and all major Philippine Banking Apps.</p>
+                                </div>
+                                <div class="tab-pane fade" id="p-bank" role="tabpanel">
+                                    <div class="text-start">
+                                        <h6 class="mb-3 fw-bold text-dark">Direct Bank Transfer Details:</h6>
+                                        <div class="d-flex flex-column gap-3">
+                                            <div class="p-2 border rounded" style="background-color:#fafafa;"><strong class="text-dark"><i class="fas fa-university me-1 text-danger"></i>Bank of the Philippine Islands (BPI)</strong><div class="small text-muted mt-1">Account Name: <strong>SolarPower Energy Corporation</strong></div><div class="small text-muted">Account Number: <strong>1234-5678-90</strong></div></div>
+                                            <div class="p-2 border rounded" style="background-color:#fafafa;"><strong class="text-dark"><i class="fas fa-university me-1 text-primary"></i>Metropolitan Bank &amp; Trust Company (Metrobank)</strong><div class="small text-muted mt-1">Account Name: <strong>SolarPower Energy Corporation</strong></div><div class="small text-muted">Account Number: <strong>9876-5432-10</strong></div></div>
+                                            <div class="p-2 border rounded" style="background-color:#fafafa;"><strong class="text-dark"><i class="fas fa-university me-1 text-warning"></i>UnionBank of the Philippines</strong><div class="small text-muted mt-1">Account Name: <strong>SolarPower Energy Corporation</strong></div><div class="small text-muted">Account Number: <strong>0011-2233-4455</strong></div></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Receipt Upload -->
+                            <div class="alert alert-light border mt-3">
+                                <div class="d-flex align-items-start">
+                                    <i class="fas fa-upload text-primary me-3" style="font-size:1.5rem;margin-top:2px;"></i>
+                                    <div class="w-100">
+                                        <strong>Upload Your Transaction Receipt</strong>
+                                        <p class="text-muted small mb-2 mt-1">Once you complete the payment via InstaPay, GCash, or Direct Bank Transfer, take a screenshot or photo of your transaction confirmation receipt and upload it below. Our billing team will verify it instantly.</p>
+                                        <div class="mb-2 text-start">
+                                            <label for="receiptUpload" class="form-label fw-bold"><i class="fas fa-file-image me-1 text-primary"></i>Transaction Receipt <span class="text-danger">*</span></label>
+                                            <input type="file" class="form-control" id="receiptUpload" accept="image/*,.pdf" onchange="previewReceipt(this)">
+                                            <div class="form-text">Accepted formats: JPG, PNG, PDF (Max 5MB)</div>
+                                        </div>
+                                        <div id="receiptPreviewContainer" style="display:none;margin-top:10px;">
+                                            <p class="small fw-bold text-success"><i class="fas fa-check-circle me-1"></i>Receipt ready to upload:</p>
+                                            <img id="receiptPreviewImg" src="" alt="Receipt Preview" style="max-width:200px;max-height:200px;border-radius:8px;border:2px solid #28a745;object-fit:cover;">
+                                            <p id="receiptFileName" class="small text-muted mt-1 mb-0"></p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Payment Summary (hidden, computed by JS) -->
+                    <div class="payment-summary-box p-3 bg-light rounded mb-4" style="display:none;">
+                        <h5 class="mb-3"><i class="fas fa-file-invoice-dollar me-2"></i>Payment Summary</h5>
+                        <div class="summary-row"><span>Items Subtotal:</span><span id="checkoutSubtotal" class="fw-bold"></span></div>
+                        <div class="summary-row"><span>Delivery Fee:</span><span id="deliveryFeeDisplay" class="fw-bold text-primary"></span></div>
+                        <hr>
+                        <div class="summary-row" style="font-size:1.2rem;"><span class="fw-bold">Amount to Pay Now:</span><span id="amountToPay" class="fw-bold text-primary"></span></div>
+                        <div class="summary-row total-row" style="font-size:1.3rem;color:#2c3e50;"><span class="fw-bold">Total Order Amount:</span><span id="checkoutTotal" class="fw-bold text-dark"></span></div>
+                    </div>
+                    <!-- Payment Note (hidden) -->
+                    <div id="paymentNote" class="alert alert-success" style="display:none;">
+                        <i class="fas fa-info-circle"></i> You are paying the <strong>Full Amount (100%)</strong> via InstaPay.
+                    </div>
+                    <!-- Actions -->
                     <div class="checkout-actions mt-4">
-                        <button class="btn-outline" onclick="goToStep(1)">Edit Details</button>
-                        <button id="confirmPaymentBtn" class="btn-primary" onclick="submitUnionBankPayment()">Confirm & Submit</button>
+                        <button class="btn-outline" onclick="goToStep(1)"><i class="fas fa-arrow-left me-2"></i>Edit Details</button>
+                        <button id="confirmPaymentBtn" class="btn-primary" onclick="confirmInstapayOrder()"><i class="fas fa-check-circle me-2"></i>Confirm &amp; Submit Order</button>
                     </div>
                 </div>
 
+                <!-- Step 3: Confirmation -->
                 <div id="checkoutStep3" class="checkout-card" style="display:none;">
                     <div class="text-center py-5">
                         <i class="fas fa-check-circle text-success mb-3" style="font-size:64px;"></i>
-                        <h3>Order Submitted</h3>
-                        <p id="orderRef"></p>
-                        <div id="orderQr"></div>
+                        <h3>Order Submitted Successfully!</h3>
+                        <p class="text-muted">Thank you, <strong><span id="confCustomerName"></span></strong>! Your order and receipt have been submitted. We will verify your payment shortly.</p>
+                        <div class="alert alert-info mt-4 text-start">
+                            <i class="fas fa-info-circle me-2"></i><strong>Next Steps:</strong>
+                            <ul class="list-unstyled mt-2 mb-0">
+                                <li>✓ Your order has been saved to our database</li>
+                                <li>✓ Your receipt has been uploaded for verification</li>
+                                <li>✓ You will receive a confirmation within 24 hours</li>
+                                <li>✓ Our team will contact you to schedule delivery/installation</li>
+                            </ul>
+                        </div>
+                        <p class="mt-3"><strong>Order Reference:</strong><br><span id="confOrderRef" class="fw-bold fs-5"></span></p>
+                        <p class="mt-1"><strong>Total Amount:</strong> <span id="confTotalAmount" class="fw-bold text-primary"></span></p>
+                        <button class="btn btn-outline-secondary btn-sm mt-2" onclick="copyOrderRef()"><i class="fas fa-copy"></i> Copy Reference</button>
+                        <div class="mt-4"><p class="text-muted small mb-2">Scan or save this QR code to track your order.</p><div id="orderQr" class="d-inline-block p-2 bg-white"></div></div>
                         <button class="btn btn-primary mt-4" onclick="location.href='index.php'">Back to Home</button>
                     </div>
                 </div>
@@ -1206,7 +969,7 @@ $conn->close();
 
     <!-- Related Products -->
     <?php if (!empty($relatedProducts)): ?>
-        <section class="related-section">
+        <section class="related-section" data-checkout-hide>
             <div class="container-custom">
                 <h2 class="section-title">You May Also Like</h2>
                 <div class="related-grid">
@@ -1276,58 +1039,44 @@ $conn->close();
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
     <script>
+        // ── Product data passed from PHP ──
         const productData = <?= json_encode($product) ?>;
         productData.image_path = '<?= $productImages[0] ?>';
-        let cart = [];
-        let deliveryFee = 0;
 
+        // ── Cart ──
+        let cart = JSON.parse(localStorage.getItem('solarCart') || '[]');
+        let deliveryFee = 0;
+        let installationFee = 0;
+
+        // ── Image gallery ──
         function closeImgModal() {
-            const modal = document.getElementById('imgModal');
-            modal.style.display = 'none';
+            document.getElementById('imgModal').style.display = 'none';
             document.body.style.overflow = '';
         }
-
-        // WHEN CLICK THE "ESC" IT WILL CLOSE THE ZOOM
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') closeImgModal();
-        });
-
+        document.addEventListener('keydown', e => { if (e.key === 'Escape') closeImgModal(); });
         function openImgModal() {
-            const modal = document.getElementById('imgModal');
-            modal.style.display = 'flex';
+            document.getElementById('imgModal').style.display = 'flex';
             document.body.style.overflow = 'hidden';
         }
-
         function handleModalBackdropClick(e) {
-            if (e.target === document.getElementById('imgModal')) {
-                closeImgModal();
-            }
+            if (e.target === document.getElementById('imgModal')) closeImgModal();
         }
-
         function changeMainImage(el, src) {
             document.getElementById('mainImage').src = src;
             document.getElementById('modalImage').src = src;
             document.querySelectorAll('.thumbnail-item').forEach(t => t.classList.remove('active'));
             el.classList.add('active');
-
-            // Sync modal thumbnails
             document.querySelectorAll('.modal-thumb').forEach(t => {
                 const isMatch = t.querySelector('img').src === el.querySelector('img').src;
                 t.style.borderColor = isMatch ? 'var(--clr-primary)' : '#e0e0e0';
                 t.classList.toggle('modal-thumb-active', isMatch);
             });
         }
-
         function changeModalImage(el, src) {
             document.getElementById('modalImage').src = src;
-            document.querySelectorAll('.modal-thumb').forEach(t => {
-                t.style.borderColor = '#e0e0e0';
-                t.classList.remove('modal-thumb-active');
-            });
+            document.querySelectorAll('.modal-thumb').forEach(t => { t.style.borderColor = '#e0e0e0'; t.classList.remove('modal-thumb-active'); });
             el.style.borderColor = 'var(--clr-primary)';
             el.classList.add('modal-thumb-active');
-
-            // Sync main gallery thumbnails
             document.querySelectorAll('.thumbnail-item').forEach(t => {
                 const isMatch = t.querySelector('img') && t.querySelector('img').src === el.querySelector('img').src;
                 t.classList.toggle('active', isMatch);
@@ -1335,83 +1084,219 @@ $conn->close();
             document.getElementById('mainImage').src = src;
         }
 
-        function updateGlobalDeliveryFee() {
-            const select = document.getElementById('delivery_location_select');
-            const selectedOption = select.options[select.selectedIndex];
-            deliveryFee = parseFloat(selectedOption.getAttribute('data-fee')) || 0;
-            renderSummary();
-        }
-
+        // ── Cart helpers ──
         function addToCartFromDetails() {
-            addToCartLogic(productData);
+            const existing = cart.find(i => i.id === productData.id);
+            if (existing) { existing.quantity = (existing.quantity || 1) + 1; }
+            else { cart.push({ id: productData.id, displayName: productData.displayName, price: parseFloat(productData.price), image_path: productData.image_path, quantity: 1 }); }
+            localStorage.setItem('solarCart', JSON.stringify(cart));
             alert('Added to cart!');
         }
 
+        // ── Buy Now: show checkout, hide product page ──
         function buyNowFromDetails() {
-            cart = [];
-            addToCartLogic(productData);
-            document.getElementById('productView').style.display = 'none';
+            // Clear cart and add this product
+            cart = [{ id: productData.id, displayName: productData.displayName, price: parseFloat(productData.price), image_path: productData.image_path, quantity: 1 }];
+            localStorage.setItem('solarCart', JSON.stringify(cart));
+            showCheckout();
+        }
+
+        function showCheckout() {
+            document.querySelectorAll('[data-checkout-hide]').forEach(el => {
+                el.dataset.prevDisplay = el.style.display || '';
+                el.style.display = 'none';
+            });
             document.getElementById('checkoutSection').style.display = 'block';
-            renderSummary();
+            window.scrollTo(0, 0);
+            renderCheckoutSummary();
+            goToStep(1);
+        }
+
+        function backToCatalog() {
+            document.getElementById('checkoutSection').style.display = 'none';
+            document.querySelectorAll('[data-checkout-hide]').forEach(el => {
+                el.style.display = el.dataset.prevDisplay || '';
+            });
             window.scrollTo(0, 0);
         }
 
-        function backToProduct() {
-            document.getElementById('checkoutSection').style.display = 'none';
-            document.getElementById('productView').style.display = 'block';
-        }
-
+        // ── Step navigation ──
         function goToStep(step) {
             document.getElementById('checkoutStep1').style.display = step === 1 ? 'block' : 'none';
             document.getElementById('checkoutStep2').style.display = step === 2 ? 'block' : 'none';
             document.getElementById('checkoutStep3').style.display = step === 3 ? 'block' : 'none';
-
-            document.querySelectorAll('.step').forEach((s, idx) => {
-                s.classList.toggle('active', idx + 1 === step);
-            });
+            document.querySelectorAll('.step').forEach((s, idx) => s.classList.toggle('active', idx + 1 === step));
         }
 
-        function addToCartLogic(product) {
-            cart.push({
-                id: product.id,
-                name: product.displayName,
-                price: parseFloat(product.price),
-                img: product.image_path,
-                qty: 1
-            });
+        // ── Step 1 validation ──
+        function validateStep1() {
+            const name    = document.getElementById('cust_name').value.trim();
+            const email   = document.getElementById('cust_email').value.trim();
+            const phone   = document.getElementById('cust_phone').value.trim();
+            const street  = document.getElementById('house_street').value.trim();
+            const province = document.getElementById('province').value;
+            const city    = document.getElementById('municipality').value;
+            const brgy    = document.getElementById('barangay').value;
+            if (!name || !email || !phone || !street || !province || !city || !brgy) {
+                alert('Please fill in all delivery details including Province, City, and Barangay.');
+                return;
+            }
+            const fullAddress = `${street}, ${brgy}, ${city}, ${province}`;
+            document.getElementById('cust_address').value = fullAddress;
+            renderCheckoutSummary();
+            goToStep(2);
         }
 
-        function renderSummary() {
+        // ── Receipt preview ──
+        function previewReceipt(input) {
+            const file = input.files[0];
+            if (!file) return;
+            const container = document.getElementById('receiptPreviewContainer');
+            const img       = document.getElementById('receiptPreviewImg');
+            const name      = document.getElementById('receiptFileName');
+            name.textContent = file.name;
+            if (file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = e => { img.src = e.target.result; img.style.display = 'block'; };
+                reader.readAsDataURL(file);
+            } else {
+                img.style.display = 'none';
+            }
+            container.style.display = 'block';
+        }
+
+        // ── Sidebar order summary ──
+        function renderCheckoutSummary() {
             const container = document.getElementById('checkoutOrderSummary');
+            if (!container) return;
             let subtotal = 0;
             let html = '';
-
             cart.forEach(item => {
-                subtotal += item.price;
-                html += `<div class="d-flex justify-content-between mb-2">
-                            <small>${item.name}</small>
-                            <small>₱${item.price.toLocaleString()}</small>
-                         </div>`;
+                const qty   = item.quantity || 1;
+                const price = parseFloat(item.price) || 0;
+                subtotal += price * qty;
+                html += `
+                    <div class="d-flex justify-content-between align-items-start mb-3 pb-3 border-bottom">
+                        <div style="flex:1">
+                            <div class="fw-semibold small">${item.displayName || item.name}</div>
+                            <div class="text-muted small">₱${price.toLocaleString()} × ${qty}</div>
+                        </div>
+                        <div class="fw-bold small ms-2">₱${(price * qty).toLocaleString()}</div>
+                    </div>`;
             });
-
             const total = subtotal + deliveryFee;
-
             container.innerHTML = html + `
-                <hr>
-                <div class="d-flex justify-content-between mb-1">
-                    <span>Subtotal</span>
-                    <span>₱${subtotal.toLocaleString()}</span>
+                <div class="d-flex justify-content-between mb-1 small">
+                    <span>Subtotal</span><span>₱${subtotal.toLocaleString()}</span>
                 </div>
-                <div class="d-flex justify-content-between mb-1 text-success">
-                    <span>Delivery Fee</span>
-                    <span>+ ₱${deliveryFee.toLocaleString()}</span>
+                <div class="d-flex justify-content-between mb-2 small text-primary">
+                    <span>Delivery Fee</span><span>₱${deliveryFee.toLocaleString()}</span>
                 </div>
-                <div class="d-flex justify-content-between fw-bold mt-2 h5">
-                    <span>Total</span>
-                    <span class="text-primary">₱${total.toLocaleString()}</span>
-                </div>
-            `;
+                <div class="d-flex justify-content-between fw-bold mt-2" style="font-size:1.1rem;">
+                    <span>Total</span><span class="text-primary">₱${total.toLocaleString()}</span>
+                </div>`;
+            // Update hidden summary elements
+            const sub = document.getElementById('checkoutSubtotal');
+            const dfd = document.getElementById('deliveryFeeDisplay');
+            const atp = document.getElementById('amountToPay');
+            const ct  = document.getElementById('checkoutTotal');
+            if (sub) sub.textContent = '₱' + subtotal.toLocaleString();
+            if (dfd) dfd.textContent = '₱' + deliveryFee.toLocaleString();
+            if (ct)  ct.textContent  = '₱' + total.toLocaleString();
+            if (atp) atp.textContent = '₱' + total.toLocaleString();
         }
+
+        // ── Update payment display on radio change ──
+        function updatePaymentDisplay() { renderCheckoutSummary(); }
+
+        // ── Submit InstaPay order ──
+        function confirmInstapayOrder() {
+            const btn = document.getElementById('confirmPaymentBtn');
+            const receiptInput = document.getElementById('receiptUpload');
+            if (!receiptInput || !receiptInput.files[0]) {
+                alert('Please upload your payment receipt before confirming.');
+                return;
+            }
+            btn.disabled = true;
+            btn.textContent = 'Submitting...';
+            const formData = new FormData();
+            formData.append('customerName',    document.getElementById('cust_name').value);
+            formData.append('customerEmail',   document.getElementById('cust_email').value);
+            formData.append('customerPhone',   document.getElementById('cust_phone').value);
+            formData.append('customerAddress', document.getElementById('cust_address').value);
+            formData.append('totalAmount',     cart.reduce((s, i) => s + parseFloat(i.price) * (i.quantity || 1), 0) + deliveryFee);
+            formData.append('paymentMethod',   'instapay');
+            formData.append('items',           JSON.stringify(cart.map(i => ({ id: i.id, displayName: i.displayName || i.name, price: i.price, quantity: i.quantity || 1 }))));
+            formData.append('receipt',         receiptInput.files[0]);
+            fetch('controllers/ordering/create-instapay-order.php', { method: 'POST', body: formData })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        document.getElementById('confCustomerName').textContent = document.getElementById('cust_name').value;
+                        document.getElementById('confOrderRef').textContent     = data.orderRef;
+                        document.getElementById('confTotalAmount').textContent  = '₱' + (cart.reduce((s,i)=>s+parseFloat(i.price)*(i.quantity||1),0)+deliveryFee).toLocaleString();
+                        localStorage.removeItem('solarCart');
+                        goToStep(3);
+                    } else {
+                        alert('Error: ' + data.message);
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="fas fa-check-circle me-2"></i>Confirm & Submit Order';
+                    }
+                })
+                .catch(err => {
+                    alert('Network error. Please try again.');
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-check-circle me-2"></i>Confirm & Submit Order';
+                });
+        }
+
+        function copyOrderRef() {
+            const ref = document.getElementById('confOrderRef').textContent;
+            navigator.clipboard.writeText(ref).then(() => alert('Order reference copied!')).catch(() => {});
+        }
+
+        // ── PH Address Dropdowns (PSGC API) ──
+        const API_BASE = 'https://psgc.gitlab.io/api';
+        async function loadProvinces() {
+            try {
+                const res  = await fetch(`${API_BASE}/provinces/`);
+                const data = await res.json();
+                const sel  = document.getElementById('province');
+                data.sort((a,b) => a.name.localeCompare(b.name))
+                    .forEach(p => { const o = new Option(p.name, p.code); sel.add(o); });
+            } catch(e) { console.warn('Province load failed', e); }
+        }
+        async function loadCities(provinceCode) {
+            const sel = document.getElementById('municipality');
+            sel.innerHTML = '<option value="">Loading…</option>';
+            sel.disabled  = true;
+            document.getElementById('barangay').innerHTML = '<option value="">Select Barangay</option>';
+            document.getElementById('barangay').disabled = true;
+            try {
+                const res  = await fetch(`${API_BASE}/provinces/${provinceCode}/cities-municipalities/`);
+                const data = await res.json();
+                sel.innerHTML = '<option value="">Select City / Municipality</option>';
+                data.sort((a,b) => a.name.localeCompare(b.name))
+                    .forEach(c => sel.add(new Option(c.name, c.code)));
+                sel.disabled = false;
+            } catch(e) { sel.innerHTML = '<option value="">Error loading cities</option>'; }
+        }
+        async function loadBarangays(cityCode) {
+            const sel = document.getElementById('barangay');
+            sel.innerHTML = '<option value="">Loading…</option>';
+            sel.disabled  = true;
+            try {
+                const res  = await fetch(`${API_BASE}/cities-municipalities/${cityCode}/barangays/`);
+                const data = await res.json();
+                sel.innerHTML = '<option value="">Select Barangay</option>';
+                data.sort((a,b) => a.name.localeCompare(b.name))
+                    .forEach(b => sel.add(new Option(b.name, b.code)));
+                sel.disabled = false;
+            } catch(e) { sel.innerHTML = '<option value="">Error loading barangays</option>'; }
+        }
+        document.getElementById('province').addEventListener('change', e => { if (e.target.value) loadCities(e.target.value); });
+        document.getElementById('municipality').addEventListener('change', e => { if (e.target.value) loadBarangays(e.target.value); });
+        loadProvinces();
     </script>
 </body>
 
