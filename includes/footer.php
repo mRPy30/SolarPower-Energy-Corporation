@@ -12,13 +12,13 @@
     margin-bottom: var(--spacing-lg);
   }
 
-  .social-links {
+  .footer-social-links {
     display: flex;
     gap: 12px;
     margin-top: var(--spacing-lg);
   }
 
-  .social-links a {
+  .footer-social-links a {
     width: 40px;
     height: 40px;
     background: #2c2c2c;
@@ -32,9 +32,9 @@
     transition: var(--transition-fast);
   }
 
-  .social-links a:hover {
-    background: var(--clr-primary);
-    color: #1a1a1a;
+  .footer-social-links a:hover {
+    background: var(--clr-secondary);
+    color: #fff;
     transform: translateY(-3px);
   }
 
@@ -482,7 +482,7 @@
     #notification-container,
     .whatsapp-btn,
     .btn-subscribe,
-    .social-links {
+    .footer-social-links {
       display: none !important;
     }
 
@@ -535,8 +535,8 @@
     <div class="row">
       <div class="col-lg-3 col-md-6 mb-4">
         <div class="footer-logo-social">
-          <img src="/assets/img/new_logo.png" alt="Logo">
-          <div class="social-links">
+          <img src="assets/img/new_logo.png" alt="Logo">
+          <div class="footer-social-links">
             <a href="https://www.facebook.com/p/SolarPower-Energy-Corporation-61578373983187/"><i class="fab fa-facebook-f"></i></a>
             <a href="https://www.instagram.com/solarpowerenergycorporation?igsh=MWh4YTEyYWpzbDNlNQ=="><i class="fab fa-instagram"></i></a>
             <a href="https://www.tiktok.com/@solarpower.energy?_r=1&_t=ZS-92HlpTBUuzF"><i class="fab fa-tiktok"></i></a>
@@ -550,13 +550,14 @@
         <div class="footer-links">
           <h4>Quick Links</h4>
           <ul>
-            <li><a href="../index.php">HOME</a></li>
-            <li><a href="../about.php">ABOUT US</a></li>
-            <li><a href="../services.php">SERVICES</a></li>
-            <li><a href="../product.php">PRODUCT</a></li>
-            <li><a href="../projects.php">PROJECTS</a></li>
-            <li><a href="../loans.php">SOLAR LOANS</a></li>
-            <li><a href="../contact.php">CONTACT</a></li>
+            <li><a href="index.php">HOME</a></li>
+            <li><a href="about.php">ABOUT US</a></li>
+            <li><a href="services.php">SERVICES</a></li>
+            <li><a href="product.php">PRODUCT</a></li>
+            <li><a href="projects.php">PROJECTS</a></li>
+            <li><a href="loans.php">SOLAR LOANS</a></li>
+            <li><a href="contact.php">CONTACT</a></li>
+            <li><a href="privacy-policy.php">PRIVACY POLICY</a></li>
           </ul>
         </div>
       </div>
@@ -582,7 +583,7 @@
       <div class="col-lg-3 col-md-6 mb-4 text-lg-end">
         <div class="footer-shoppee-side">
           <h4>Explore our Shopee</h4>
-          <img src="/assets/img/SHOPEE.png" alt="QR Code">
+          <img src="assets/img/SHOPEE.png" alt="QR Code">
           <p style="color: #ee4d2d;">Scan to shop online</p>
         </div>
       </div>
@@ -592,12 +593,12 @@
       <div class="col-12 text-center">
         <h4 class="mb-3">Payment Methods</h4>
         <div class="payment-icons">
-          <img src="/assets/img/payments/metrobank.webp" alt="Metrobank">
-          <img src="/assets/img/payments/BPI.webp" alt="BPI">
-          <img src="/assets/img/payments/GCash-Logo.png" alt="GCash">
-          <img src="/assets/img/payments/mastercard-logo.png" alt="MasterCard">
-          <img src="/assets/img/payments/Unionbank_logo.png" alt="UnionBank">
-          <img src="/assets/img/payments/BOC.jpg" alt="BOC">
+          <img src="assets/img/payments/metrobank.webp" alt="Metrobank">
+          <img src="assets/img/payments/BPI.webp" alt="BPI">
+          <img src="assets/img/payments/GCash-Logo.png" alt="GCash">
+          <img src="assets/img/payments/mastercard-logo.png" alt="MasterCard">
+          <img src="assets/img/payments/Unionbank_logo.png" alt="UnionBank">
+          <img src="assets/img/payments/BOC.jpg" alt="BOC">
         </div>
       </div>
     </div>

@@ -1,6 +1,17 @@
 <?php
 session_start();
 $isLoggedIn = isset($_SESSION['user_id']);
+
+if (!function_exists('createSlug')) {
+    function createSlug($text) {
+        $text = preg_replace('~[^\pL\d]+~u', '-', $text);
+        $text = preg_replace('~[^-\w]+~', '', $text);
+        $text = trim($text, '-');
+        $text = preg_replace('~-+~', '-', $text);
+        $text = strtolower($text);
+        return empty($text) ? 'n-a' : $text;
+    }
+}
 /* ---------- 1.  DB connection ---------- */
 include "config/dbconn.php";
 
@@ -22,7 +33,7 @@ LEFT JOIN product_images pi
     ON p.id = pi.product_id
 WHERE pi.image_path IS NOT NULL
   AND p.status = 'Active'
-  AND TRIM(p.brandName) = 'Hybrid'
+  AND (TRIM(p.brandName) = 'Hybrid' OR TRIM(p.brandName) = 'Package' OR TRIM(p.brandName) = 'Hybrid System')
 GROUP BY p.id
 ORDER BY p.price ASC";
 
@@ -243,7 +254,7 @@ $conn->close();
                             data-price="<?= htmlspecialchars($p['price']) ?>">
 
                             <!-- Clickable Product Image and Info -->
-                            <div onclick="location.href='product-details.php?id=<?= $p['id'] ?>'" style="cursor: pointer;">
+                            <div onclick="location.href='product-details.php/<?= createSlug($p['displayName']) ?>'" style="cursor: pointer;">
                                 <div class="product-image">
                                     <img src="<?= htmlspecialchars($p['image_path'] ?? 'assets/img/placeholder.png') ?>"
                                         alt="<?= htmlspecialchars($p['displayName']) ?>">

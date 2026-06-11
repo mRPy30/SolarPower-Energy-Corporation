@@ -2,6 +2,17 @@
 session_start();
 $isLoggedIn = isset($_SESSION['user_id']);
 
+if (!function_exists('createSlug')) {
+    function createSlug($text) {
+        $text = preg_replace('~[^\pL\d]+~u', '-', $text);
+        $text = preg_replace('~[^-\w]+~', '', $text);
+        $text = trim($text, '-');
+        $text = preg_replace('~-+~', '-', $text);
+        $text = strtolower($text);
+        return empty($text) ? 'n-a' : $text;
+    }
+}
+
 /* ---------- DB connection ---------- */
 include "config/dbconn.php";
 
@@ -547,7 +558,7 @@ $conn->close();
                              data-kw="<?= htmlspecialchars(str_replace('kW', '', $kw)) ?>">
                             
                             <!-- Clickable Product Image and Info -->
-                            <div onclick="location.href='product-details.php?id=<?= $p['id'] ?>'" style="cursor: pointer;">
+                            <div onclick="location.href='product-details.php/<?= createSlug($p['displayName']) ?>'" style="cursor: pointer;">
                                 <div class="product-image">
                                     <img src="<?= htmlspecialchars($p['image_path'] ?? 'assets/img/placeholder.png') ?>" 
                                          alt="<?= htmlspecialchars($p['displayName']) ?>">

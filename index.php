@@ -1,6 +1,17 @@
 <?php
 session_start();
 
+if (!function_exists('createSlug')) {
+    function createSlug($text) {
+        $text = preg_replace('~[^\pL\d]+~u', '-', $text);
+        $text = preg_replace('~[^-\w]+~', '', $text);
+        $text = trim($text, '-');
+        $text = preg_replace('~-+~', '-', $text);
+        $text = strtolower($text);
+        return empty($text) ? 'n-a' : $text;
+    }
+}
+
 // Handle Estimate Form Submission POST Request
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'submit_estimate') {
     header('Content-Type: application/json');
@@ -264,13 +275,13 @@ $conn->close();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <!-- Primary Meta Tags -->
-    <title>SolarPower Energy - Smart Energy for Smarter Homes</title>
+    <title>SolarPower Energy | Solar Panel Philippines | Solar Calculator & Bill Calculator</title>
     <link rel="icon" type="image/png" href="assets/img/icon.png">
 
     <meta name="theme-color" content="#f59e0b" />
  
-    <meta name="description" content="SolarPower Energy Corporation is the Philippines' leading DOE-accredited solar panel provider. Get hybrid and On-grid solar installations for homes and businesses. Save up to 80% on electricity bills. Serving Metro Manila and nationwide." />
-    <meta name="keywords" content="SolarPower Energy Corporation, solar panel Philippines, solar installation Philippines, DOE accredited solar, hybrid solar system Philippines, On-grid solar Philippines, renewable energy Philippines, solar power Manila, solar panels for home Philippines, commercial solar Philippines, save electricity bills Philippines, smart energy Philippines" />
+    <meta name="description" content="SolarPower Energy Corporation is the Philippines' leading DOE-accredited solar panel provider. Use our free Solar Calculator and Electricity Bill Calculator to find out how much you can save. Get hybrid and On-grid solar installations for homes and businesses. Save up to 80% on electricity bills. Serving Metro Manila and nationwide." />
+    <meta name="keywords" content="SolarPower Energy Corporation, solar panel Philippines, solar installation Philippines, DOE accredited solar, hybrid solar system Philippines, On-grid solar Philippines, renewable energy Philippines, solar power Manila, solar panels for home Philippines, commercial solar Philippines, save electricity bills Philippines, smart energy Philippines, solar calculator Philippines, solar calculator, electricity bill calculator Philippines, bill calculator solar, solar savings calculator Philippines, Meralco bill calculator, solar panel calculator Philippines, solar energy calculator, electricity bill savings calculator, solar ROI calculator Philippines" />
     <meta name="author" content="SolarPower Energy Corporation" />
     <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
     <meta name="google-adsense-account" content="ca-pub-8363297627454600" />
@@ -285,8 +296,8 @@ $conn->close();
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://solarpower.com.ph/" />
-    <meta property="og:title" content="SolarPower Energy Corporation | Solar Panel Seller, Distributor, and Installer in the Philippines" />
-    <meta property="og:description" content="Philippines' leading DOE-accredited solar provider. Hybrid and On-grid solar installations for homes and businesses. Save up to 80% on electricity bills. Get a free quote today!" />
+    <meta property="og:title" content="SolarPower Energy Corporation | Solar Panel, Solar Calculator & Bill Calculator Philippines" />
+    <meta property="og:description" content="Philippines' leading DOE-accredited solar provider. Use our free Solar Calculator and Electricity Bill Calculator to estimate your savings. Hybrid and On-grid solar installations for homes and businesses. Save up to 80% on electricity bills!" />
     <meta property="og:image" content="https://solarpower.com.ph/assets/img/new_logo.png" />
     <meta property="og:image:alt" content="SolarPower Energy Corporation Logo" />
     <meta property="og:site_name" content="SolarPower Energy Corporation" />
@@ -295,8 +306,8 @@ $conn->close();
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:url" content="https://solarpower.com.ph/" />
-    <meta name="twitter:title" content="SolarPower Energy Corporation | Solar Panel Seller, Distributor, and Installer in the Philippines" />
-    <meta name="twitter:description" content="DOE-accredited solar provider. Save on electricity bills with our Hybrid and On-grid solar solutions across the Philippines." />
+    <meta name="twitter:title" content="SolarPower Energy Corporation | Solar Calculator & Bill Calculator Philippines" />
+    <meta name="twitter:description" content="Free Solar Calculator & Electricity Bill Calculator. DOE-accredited solar provider. Save up to 80% on electricity bills with Hybrid and On-grid solar solutions across the Philippines." />
     <meta name="twitter:image" content="https://solarpower.com.ph/assets/img/new_logo.png" />
     <meta name="twitter:image:alt" content="SolarPower Energy Corporation Logo" />
     
@@ -675,18 +686,18 @@ $conn->close();
             margin-bottom: 10px;
         }
 
-        .social-links {
+        .contact-social-links .social-links {
             display: flex;
             gap: 8px;
             flex-wrap: wrap;
         }
 
-        .social-links a {
+        .contact-social-links .social-links a {
             width: 34px;
             height: 34px;
             border-radius: 50%;
-            background: #f0f0f0;
-            color: var(--clr-dark);
+            background: #2c2c2c;
+            color: #fff;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -695,7 +706,7 @@ $conn->close();
             transition: all 0.2s ease;
         }
 
-        .social-links a:hover {
+        .contact-social-links .social-links a:hover {
             background: var(--clr-secondary);
             color: #fff;
         }
@@ -824,6 +835,49 @@ $conn->close();
                                 </div>
                             </div>
                         </div>
+
+                        <!-- ── CTA: Talk to Our Team ── -->
+                        <div class="mt-3 pt-3" style="border-top: 1px solid #F1F5F9;">
+
+                            <p class="text-center mb-2" style="font-size: 0.71rem; font-weight: 600; color: #64748B; letter-spacing: 0.25px; line-height: 1.5; margin: 0 0 10px 0;">
+                                Ready to lock in these savings? Talk to our team:
+                            </p>
+
+                            <!-- Button Row: side-by-side desktop, stacked mobile -->
+                            <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+
+                                <!-- ① Messenger Button -->
+                                <a href="https://m.me/61578373983187"
+                                   target="_blank"
+                                   rel="noopener noreferrer"
+                                   style="flex: 1 1 120px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 9px 12px; border-radius: 10px; background-color: #0084FF; color: #ffffff; font-size: 0.74rem; font-weight: 700; text-decoration: none; letter-spacing: 0.2px; transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease; white-space: nowrap;"
+                                   onmouseover="this.style.backgroundColor='#006ACC';this.style.transform='translateY(-2px)';this.style.boxShadow='0 8px 20px rgba(0,132,255,0.32)';"
+                                   onmouseout="this.style.backgroundColor='#0084FF';this.style.transform='translateY(0)';this.style.boxShadow='none';">
+                                    <!-- Official Messenger Bolt SVG -->
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="white" style="flex-shrink:0;">
+                                        <path d="M12 2C6.477 2 2 6.145 2 11.25c0 2.86 1.32 5.42 3.41 7.17.18.15.29.36.3.59l.06 1.84a.75.75 0 0 0 1.05.67l2.06-.91c.18-.08.38-.1.57-.05A11.26 11.26 0 0 0 12 20.5c5.523 0 10-4.145 10-9.25S17.523 2 12 2Zm1.046 12.533-2.597-2.77-5.073 2.77 5.583-5.933 2.663 2.77 5.017-2.77-5.593 5.933Z"/>
+                                    </svg>
+                                    Via Messenger
+                                </a>
+
+                                <!-- ② Viber Button -->
+                                <a href="viber://chat?number=639953947379&text=Hi%20SolarPower!%20I%20just%20used%20your%20solar%20calculator%20and%20I%20want%20to%20request%20a%20formal%20quotation."
+                                   target="_blank"
+                                   rel="noopener noreferrer"
+                                   style="flex: 1 1 120px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 9px 12px; border-radius: 10px; background-color: #7360F2; color: #ffffff; font-size: 0.74rem; font-weight: 700; text-decoration: none; letter-spacing: 0.2px; transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease; white-space: nowrap;"
+                                   onmouseover="this.style.backgroundColor='#5A4BD1';this.style.transform='translateY(-2px)';this.style.boxShadow='0 8px 20px rgba(115,96,242,0.32)';"
+                                   onmouseout="this.style.backgroundColor='#7360F2';this.style.transform='translateY(0)';this.style.boxShadow='none';">
+                                    <!-- Official Viber Phone SVG -->
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="white" style="flex-shrink:0;">
+                                        <path d="M20.435 3.561C18.239 1.494 15.322.43 12.253.47 5.87.47.88 5.396.88 11.693c0 2.014.537 3.979 1.557 5.713L.8 23.53l6.335-1.63a11.624 11.624 0 0 0 5.112 1.192h.005c6.378 0 11.372-4.926 11.372-10.988-.001-2.937-1.146-5.696-3.189-7.543Zm-8.182 16.9h-.004a9.646 9.646 0 0 1-4.886-1.328l-.35-.207-3.63.937.966-3.498-.228-.359a9.467 9.467 0 0 1-1.473-5.033c0-5.284 4.362-9.584 9.71-9.584 2.593.001 5.03.998 6.866 2.806a9.45 9.45 0 0 1 2.848 6.748c-.003 5.285-4.365 9.518-9.819 9.518Zm5.33-7.147c-.29-.144-1.718-.839-1.984-.935-.265-.097-.458-.144-.651.144-.193.289-.748.935-.917 1.127-.169.192-.337.217-.627.072-.29-.145-1.223-.446-2.33-1.425-.861-.762-1.443-1.702-1.612-1.99-.169-.29-.018-.445.127-.59.13-.129.29-.337.435-.505.145-.168.193-.289.29-.48.096-.192.048-.361-.025-.505-.073-.144-.651-1.56-.893-2.136-.235-.561-.474-.485-.651-.494l-.555-.009c-.193 0-.506.072-.77.361-.265.289-1.012.98-1.012 2.392s1.036 2.774 1.18 2.966c.144.193 2.038 3.082 4.939 4.32.69.295 1.229.472 1.649.604.693.218 1.324.187 1.822.113.556-.082 1.718-.695 1.96-1.367.24-.672.24-1.248.169-1.368-.073-.12-.266-.193-.556-.337Z"/>
+                                    </svg>
+                                    Via Viber
+                                </a>
+
+                            </div>
+                        </div>
+                        <!-- ── END CTA ── -->
+
                     </div>
                 </div>
             </div>
@@ -924,7 +978,7 @@ $conn->close();
                             data-price="<?= htmlspecialchars($p['price']) ?>">
 
                             <!-- Clickable Product Image and Info -->
-                            <div onclick="location.href='product-details.php?id=<?= $p['id'] ?>'" style="cursor: pointer;">
+                            <div onclick="location.href='product-details.php/<?= createSlug($p['displayName']) ?>'" style="cursor: pointer;">
                                 <div class="product-image">
                                     <img src="<?= htmlspecialchars($p['image_path'] ?? 'assets/img/placeholder.png') ?>"
                                         alt="<?= htmlspecialchars($p['displayName']) ?>">
@@ -1665,7 +1719,7 @@ $conn->close();
                 <!-- Blog 1 -->
                 <div class="col-lg-4 col-md-6 col-sm-12">
                     <div class="card h-100 border-0 shadow-sm overflow-hidden" style="border-radius: 16px; background-color: #F8F9FA;">
-                        <div style="height: 180px; background: linear-gradient(135deg, rgba(13, 92, 58, 0.8), rgba(242, 169, 0, 0.4)), url('assets/img/projects2.jpg') no-repeat center center/cover;"></div>
+                        <div style="height: 180px; background: linear-gradient(135deg, rgba(13, 92, 58, 0.8), rgba(242, 169, 0, 0.4)), url('assets/img/GSIS.png') no-repeat center center/cover;"></div>
                         <div class="p-4 d-flex flex-column justify-content-between h-100" style="min-height: 380px;">
                             <div>
                                 <span class="badge text-uppercase fw-bold mb-3" style="background-color: rgba(13, 92, 58, 0.1); color: #0D5C3A; font-size: 0.72rem; letter-spacing: 0.5px;">Government Financing</span>
@@ -1680,7 +1734,7 @@ $conn->close();
                 <!-- Blog 2 -->
                 <div class="col-lg-4 col-md-6 col-sm-12">
                     <div class="card h-100 border-0 shadow-sm overflow-hidden" style="border-radius: 16px; background-color: #F8F9FA;">
-                        <div style="height: 180px; background: linear-gradient(135deg, rgba(13, 92, 58, 0.8), rgba(242, 169, 0, 0.4)), url('assets/img/pagibig-completed-solar-home.jpg') no-repeat center center/cover;"></div>
+                        <div style="height: 180px; background: linear-gradient(135deg, rgba(13, 92, 58, 0.8), rgba(242, 169, 0, 0.4)), url('assets/img/demo-faq.jpeg') no-repeat center center/cover;"></div>
                         <div class="p-4 d-flex flex-column justify-content-between h-100" style="min-height: 380px;">
                             <div>
                                 <span class="badge text-uppercase fw-bold mb-3" style="background-color: rgba(13, 92, 58, 0.1); color: #0D5C3A; font-size: 0.72rem; letter-spacing: 0.5px;">Step-by-Step Guide</span>
@@ -1695,7 +1749,7 @@ $conn->close();
                 <!-- Blog 3 -->
                 <div class="col-lg-4 col-md-6 col-sm-12">
                     <div class="card h-100 border-0 shadow-sm overflow-hidden" style="border-radius: 16px; background-color: #F8F9FA;">
-                        <div style="height: 180px; background: linear-gradient(135deg, rgba(242, 169, 0, 0.8), rgba(13, 92, 58, 0.4)), url('assets/img/sss-technical-solar-mounting.jpg') no-repeat center center/cover;"></div>
+                        <div style="height: 180px; background: linear-gradient(135deg, rgba(242, 169, 0, 0.8), rgba(13, 92, 58, 0.4)), url('assets/img/demo-solar1.webp') no-repeat center center/cover;"></div>
                         <div class="p-4 d-flex flex-column justify-content-between h-100" style="min-height: 380px;">
                             <div>
                                 <span class="badge text-uppercase fw-bold mb-3" style="background-color: rgba(242, 169, 0, 0.1); color: #B45309; font-size: 0.72rem; letter-spacing: 0.5px;">Upcoming Programs</span>

@@ -132,15 +132,17 @@ function isActive($page)
 
     .logo img {
         width: 180px;
-        height: 85px;
+        height: auto;
+        max-height: 85px;
         border-radius: var(--border-radius-md);
         transition: all 0.3s ease;
-        object-fit: cover;
+        object-fit: contain;
+        object-position: left center;
     }
 
     header.scrolled .logo img {
         width: 120px;
-        height: 70px;
+        max-height: 60px;
     }
 
     nav ul {

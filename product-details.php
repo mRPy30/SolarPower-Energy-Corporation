@@ -2,12 +2,52 @@
 session_start();
 $isLoggedIn = isset($_SESSION['user_id']);
 
-// Get product ID from URL
-$productId = isset($_GET['id']) ? intval($_GET['id']) : 0;
+// Get product ID or slug from URL
+$productId = 0;
+$slug = '';
+
+if (isset($_SERVER['PATH_INFO']) && !empty($_SERVER['PATH_INFO'])) {
+    $slug = trim($_SERVER['PATH_INFO'], '/');
+} elseif (isset($_GET['slug']) && !empty($_GET['slug'])) {
+    $slug = trim($_GET['slug'], '/');
+}
+
+// Function to generate slug
+function createSlug($text) {
+    $text = preg_replace('~[^\pL\d]+~u', '-', $text);
+    $text = preg_replace('~[^-\w]+~', '', $text);
+    $text = trim($text, '-');
+    $text = preg_replace('~-+~', '-', $text);
+    $text = strtolower($text);
+    return empty($text) ? 'n-a' : $text;
+}
+
+if (!empty($slug)) {
+    include "config/dbconn.php";
+    $sql = "SELECT id, displayName FROM product WHERE status = 'Active'";
+    $result = $conn->query($sql);
+    while ($row = $result->fetch_assoc()) {
+        if (createSlug($row['displayName']) === $slug) {
+            $productId = intval($row['id']);
+            break;
+        }
+    }
+    $conn->close();
+}
+
+if (!$productId && isset($_GET['id'])) {
+    $productId = intval($_GET['id']);
+}
 
 if (!$productId) {
     header('Location: index.php');
     exit;
+}
+
+// Calculate base url for path routing
+$base_url = '/';
+if (strpos($_SERVER['REQUEST_URI'], '/SolarPower-Energy-Corporation/') !== false) {
+    $base_url = '/SolarPower-Energy-Corporation/';
 }
 
 /* ---------- DB connection ---------- */
@@ -90,6 +130,7 @@ $conn->close();
 <html lang="en">
 
 <head>
+    <base href="<?= $base_url ?>">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/png" href="assets/img/icon.png">
@@ -975,7 +1016,7 @@ $conn->close();
                 <div class="related-grid">
                     <?php foreach ($relatedProducts as $related): ?>
                         <div class="product-card-minimal">
-                            <div class="card-image-wrapper" onclick="location.href='product-details.php?id=<?= $related['id'] ?>'">
+                            <div class="card-image-wrapper" onclick="location.href='product-details.php/<?= createSlug($related['displayName']) ?>'">
                                 <img src="<?= htmlspecialchars($related['image_path'] ?? 'assets/img/placeholder.png') ?>"
                                     alt="<?= htmlspecialchars($related['displayName']) ?>"
                                     class="card-image">
