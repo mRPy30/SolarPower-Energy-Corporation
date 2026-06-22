@@ -560,6 +560,7 @@
             <li><a href="privacy-policy.php">PRIVACY POLICY</a></li>
             <li><a href="terms-of-service.php">TERMS OF SERVICE</a></li>
             <li><a href="refund-policy.php">REFUND POLICY</a></li>
+            <li><a href="terms-of-payment.php">TERMS OF PAYMENT</a></li>
           </ul>
         </div>
       </div>
