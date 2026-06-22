@@ -829,191 +829,150 @@
         </div>
     </section>
 
-    <!-- Savings Calculator -->
-    <section class="savings-calculator">
-        <div class="container">
-            <div class="row justify-content-center">
-                <div class="col-lg-10">
-                    <div class="calculator-box collapsed" id="calculatorBox" data-aos="fade-up">
-                        <div class="savings-icon">
-                            <i class="fa-regular fa-lightbulb"></i>
-                        </div>
-                        <h2>Let's check how much you can save!</h2>
-                        <p>What's your monthly electric bill?</p>
-                        <div class="row justify-content-center mb-4">
-                            <div class="col-lg-4 col-md-6">
-                                <div class="input-group-custom">
-                                    <input type="number" id="billAmount" placeholder="0" min="0" step="0.01"
-                                        onfocus="expandCalculator()" onblur="shrinkCalculatorIfEmpty()">
-                                    <p>Monthly Electric Bill (₱)</p>
-                                </div>
-                            </div>
-                        </div>
-                        <button class="calculate-btn" onclick="calculateSavings()">Calculate</button>
-                        <div id="errorMessage" class="error-message"></div>
-                        <div id="results" class="results">
-                            <div class="result-card">
-                                <div class="result-value" id="kwpValue">0.0</div>
-                                <div class="result-label">Required System Size (kWp)</div>
-                            </div>
-                            <div class="result-card">
-                                <div class="result-value" id="panelsValue">0</div>
-                                <div class="result-label">Solar Panels</div>
-                            </div>
-                            <div class="result-card">
-                                <div class="result-value" id="monthlySavings">0</div>
-                                <div class="result-label">Monthly Savings (₱)</div>
-                            </div>
-                            <div class="result-card">
-                                <div class="result-value" id="yearlySavings">0</div>
-                                <div class="result-label">Yearly Savings (₱)</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
     <!------ Book For Inspection (redesigned) ------>
     <section class="book-section" id="inspection-section">
         <div class="container">
 
             <!-- Eyebrow + Heading -->
             <div class="book-eyebrow" data-aos="fade-up">Contact Us</div>
-            <h2 class="book-heading" data-aos="fade-up" data-aos-delay="60">Get Your Free Quote Today!</h2>
+            <h2 class="book-heading" data-aos="fade-up" data-aos-delay="60">Get Your Free Solar Estimate</h2>
 
-            <!-- Two-column card: form left | info right -->
-            <div class="book-card" data-aos="fade-up" data-aos-delay="120">
+            <!-- Two-column card: info left | form right -->
+            <div class="card border-0 rounded-4 shadow-lg overflow-hidden" data-aos="fade-up" data-aos-delay="120">
+                <div class="row g-0">
 
-                <!-- LEFT: Form Panel -->
-                <div class="book-form-panel">
-                    <form id="inspectionForm" class="inspection-form">
-                        <div class="row g-3">
+                    <!-- LEFT INFO PANEL -->
+                    <div class="col-lg-5 d-none d-lg-flex inspection-left-panel"
+                        style="background-color:#0a5c3d; background-image: linear-gradient(160deg, rgba(20,40,20,.92) 0%, rgba(10,92,61,.85) 100%), url('assets/img/solar-install.jpg'); background-size:cover; background-position:center; min-height: 100%;">
+                        <div class="w-100 p-5 text-white d-flex flex-column justify-content-center">
 
-                            <div class="col-sm-6">
-                                <label class="form-label">Your Name *</label>
-                                <input type="text" name="fullname" class="form-control" placeholder="Ex. John Doe"
-                                    required>
+                            <div class="inspection-badge mb-3">
+                                <i class="fas fa-solar-panel me-2"></i> Free Site Assessment
                             </div>
 
-                            <div class="col-sm-6">
-                                <label class="form-label">Email *</label>
-                                <div class="input-group">
-                                    <input type="email" name="email" class="form-control"
-                                        placeholder="example@gmail.com" required>
-                                </div>
-                            </div>
+                            <h2 class="fw-bold mb-3">Ready to <span class="text-warning">Switch<br>to Solar?</span></h2>
+                            <p class="mb-4 opacity-75">Get a personalized solar quotation and let our certified engineers design the perfect system for your home or business.</p>
 
-                            <div class="col-sm-6">
-                                <label class="form-label">Phone *</label>
-                                <div class="input-group">
-                                    <span class="input-group-text">+639</span>
-                                    <input type="tel" name="phone" class="form-control" placeholder="XXXXXXXXX"
-                                        required maxlength="9" pattern="[0-9]{9}"
-                                        oninput="this.value=this.value.replace(/[^0-9]/g,'')">
-                                </div>
-                            </div>
+                            <ul class="list-unstyled inspection-features">
+                                <li class="mb-3"><i class="fas fa-check-circle text-warning me-2"></i> Professional
+                                    Assessment</li>
+                                <li class="mb-3"><i class="fas fa-check-circle text-warning me-2"></i> Accurate ROI
+                                    Projection</li>
+                                <li class="mb-3"><i class="fas fa-check-circle text-warning me-2"></i> Custom System
+                                    Design</li>
+                            </ul>
 
-                            <div class="col-sm-6">
-                                <label class="form-label">Service *</label>
-                                <select name="property_type" class="form-select" required>
-                                    <option value="" disabled selected>Select Services</option>
-                                    <option value="Residential">Residential Solar</option>
-                                    <option value="Commercial">Commercial Solar</option>
-                                    <option value="Site Inspection">Free Site Inspection</option>
-                                    <option value="Other">Other</option>
-                                </select>
-                            </div>
+                            <hr class="border-white opacity-10 my-4">
 
-                            <div class="col-12">
-                                <label class="form-label">Inspection Date *</label>
-                                <input type="date" name="inspection_date" class="form-control" required>
-                            </div>
+                            <p class="small opacity-50 mb-0">
+                                <i class="fas fa-shield-alt me-1"></i>
+                                Your information is secure and will never be shared.
+                            </p>
+                        </div>
+                    </div>
 
-                            <div class="col-sm-6">
-                                <label class="form-label">Monthly Bill (₱)</label>
-                                <div class="input-group">
-                                    <span class="input-group-text">₱</span>
-                                    <input type="number" name="bill" class="form-control" placeholder="e.g. 5000">
-                                </div>
-                            </div>
-
-                            <div class="col-sm-6">
-                                <label class="form-label">Roof Type</label>
-                                <select name="roof_type" id="roofTypeSelect" class="form-select">
-                                    <option value="" disabled selected>Select roof type</option>
-                                    <option value="Concrete/Flat Roof">Concrete / Flat Roof</option>
-                                    <option value="Corrugated Metal">Corrugated Metal</option>
-                                    <option value="Tile (Clay/Concrete)">Tile (Clay / Concrete)</option>
-                                    <option value="Asphalt Shingles">Asphalt Shingles</option>
-                                    <option value="Other">Other (Please specify)</option>
-                                </select>
-                                <input type="text" name="roof_type_other" id="roofOtherInput"
-                                    class="form-control mt-2 d-none" placeholder="Please describe your roof type">
-                            </div>
-
-                            <div class="col-12">
-                                <label class="form-label">Your Message *</label>
-                                <textarea name="notes" class="form-control" rows="4"
-                                    placeholder="Enter here..."></textarea>
-                            </div>
-
+                    <!-- RIGHT: Form Panel -->
+                    <div class="col-lg-7 bg-white p-4 p-md-5">
+                        <div class="mb-3">
+                            <h2 class="fw-bold" style="color: var(--clr-secondary); font-size: 1.5rem;">Get Your Free Solar Estimate</h2>
+                            <p class="text-muted small">We'll contact you within 24 hours.</p>
                         </div>
 
-                        <div class="mt-4">
-                            <button type="submit" class="btn" id="inspectionBtn">
-                                <span class="btn-text"><i class="fas fa-calendar-check me-2"></i>Book a Services</span>
+                        <form id="inspectionForm" class="inspection-form">
+                            <div class="row">
+
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-semibold small text-uppercase">Full Name</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fas fa-user"></i></span>
+                                        <input type="text" name="fullname" class="form-control"
+                                            placeholder="Juan Dela Cruz" required>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-semibold small text-uppercase">Email Address</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fas fa-envelope"></i></span>
+                                        <input type="email" name="email" class="form-control"
+                                            placeholder="juan@email.com" required>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                     <label class="form-label fw-semibold small text-uppercase">Contact Number</label>
+                                     <div class="input-group">
+                                         <span class="input-group-text"
+                                             style="background:#e8f4ef;border-color:#dee2e6;color:#0a5c3d;font-weight:700;font-size:0.93rem;">+63</span>
+                                         <input type="tel" name="phone" class="form-control" placeholder="9XXXXXXXXX"
+                                             required maxlength="10" pattern="[0-9]{10}"
+                                             oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+                                     </div>
+                                     <input type="hidden" name="phone_full" class="insp-phone-full">
+                                 </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-semibold small text-uppercase">Property Type</label>
+                                    <select name="property_type" class="form-select" required>
+                                        <option value="" disabled selected>Select type</option>
+                                        <option value="Residential">Residential</option>
+                                        <option value="Commercial">Commercial</option>
+                                    </select>
+                                </div>
+
+                                <div class="col-12 mb-3">
+                                    <label class="form-label fw-semibold small text-uppercase">Complete Address</label>
+                                    <textarea name="address" class="form-control" rows="2"
+                                        placeholder="House No., Street, Brgy, City" required></textarea>
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-semibold small text-uppercase">Preferred Assessment Date</label>
+                                    <input type="date" name="inspection_date" class="form-control" required>
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-semibold small text-uppercase">Monthly Bill (₱)</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">₱</span>
+                                        <input type="number" name="bill" class="form-control" placeholder="e.g. 5000"
+                                            required>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-semibold small text-uppercase">Roof Type</label>
+                                    <select name="roof_type" id="roofTypeSelect" class="form-select" required>
+                                        <option value="" disabled selected>Select roof type</option>
+                                        <option value="Concrete/Flat Roof"> Concrete / Flat Roof</option>
+                                        <option value="Corrugated Metal"> Corrugated Metal</option>
+                                        <option value="Tile (Clay/Concrete)"> Tile (Clay / Concrete)</option>
+                                        <option value="Asphalt Shingles"> Asphalt Shingles</option>
+                                        <option value="Other">Other (Please specify)</option>
+                                    </select>
+                                    <input type="text" name="roof_type_other" id="roofOtherInput"
+                                        class="form-control mt-2 d-none" placeholder="Please describe your roof type">
+                                </div>
+
+                                <div class="col-12 mb-4">
+                                    <label class="form-label fw-semibold small text-uppercase">Additional Notes
+                                        (Optional)</label>
+                                    <textarea name="notes" class="form-control" rows="3"
+                                        placeholder="Tell us about your roof type or any specific concerns..."></textarea>
+                                </div>
+
+                            </div>
+
+                            <button type="submit" class="btn w-100 py-3 fw-bold text-uppercase" id="inspectionBtn"
+                                style="background:linear-gradient(135deg,#f39c12,#e67e22);color:#fff;border:none;border-radius:10px !important;">
+                                <span class="btn-text"><i class="fas fa-calculator me-2"></i>GET MY FREE ESTIMATE</span>
                                 <span class="spinner-border spinner-border-sm d-none ms-2"></span>
                             </button>
-                        </div>
-                    </form>
-                </div>
-
-                <!-- RIGHT: Info Panel -->
-                <div class="book-info-panel">
-
-                    <div class="book-info-group">
-                        <h4>Address</h4>
-                        <p>Unit 102, Ground Floor, Corporate Center,<br>Madrigal Business Park,<br>1906 Finance St,
-                            Muntinlupa, 1770<br>Metro Manila</p>
-                    </div>
-
-                    <hr class="book-info-divider">
-
-                    <div class="book-info-group">
-                        <h4>Contact</h4>
-                        <p>Phone : <a href="tel:+639953947379">+639953947379</a></p>
-                        <p>Email : <a href="mailto:solar@solarpower.com.ph">solar@solarpower.com.ph</a></p>
-                    </div>
-
-                    <hr class="book-info-divider">
-
-                    <div class="book-info-group">
-                        <h4>Open Time</h4>
-                        <p>Monday – Friday : 8:00 AM – 5:00 PM</p>
-                        <p>Saturday – Sunday : 8:00 AM – 12:00 PM</p>
-                    </div>
-
-                    <hr class="book-info-divider">
-
-                    <div class="book-info-group">
-                        <h4>Stay Connected</h4>
-                        <div class="book-socials">
-                            <a href="https://www.facebook.com/p/SolarPower-Energy-Corporation-61578373983187/" class="book-social-btn" aria-label="Facebook" target="_blank"><i class="fab fa-facebook-f"></i></a>
-                            <a href="https://www.instagram.com/solarpowerenergycorporation?igsh=MWh4YTEyYWpzbDNlNQ==" class="book-social-btn" aria-label="Instagram" target="_blank"><i class="fab fa-instagram"></i></a>
-                            <a href="https://www.tiktok.com/@solarpower.energy?_r=1&_t=ZS-92HlpTBUuzF" class="book-social-btn" aria-label="TikTok" target="_blank"><i class="fab fa-tiktok"></i></a>
-                            <a href="https://youtube.com/@solarpowerenergycorporation?si=-kln0fTid4zMZDXq" class="book-social-btn" aria-label="YouTube" target="_blank"><i class="fab fa-youtube"></i></a>
-                            <a href="https://www.linkedin.com/in/solar-power-6792283aa" class="book-social-btn" aria-label="LinkedIn" target="_blank"><i class="fab fa-linkedin-in"></i></a>
-                            <a href="https://api.whatsapp.com/send?phone=639953947379" class="book-social-btn" aria-label="WhatsApp" target="_blank"><i class="fab fa-whatsapp"></i></a>
-                        </div>
+                        </form>
                     </div>
 
                 </div>
-                <!-- /Right Info Panel -->
-
             </div>
-            <!-- /Two-column card -->
 
             <!-- Google Maps embed -->
             <div class="book-map">
@@ -1361,10 +1320,11 @@ async function submitContactForm(event) {
         }
     });
 
-    /* ── Inspection form submit ── */
     function initializeInspectionForm() {
         const inspectionForm = document.getElementById('inspectionForm');
         if (!inspectionForm) return;
+        if (inspectionForm.dataset.initialized) return;
+        inspectionForm.dataset.initialized = 'true';
 
         inspectionForm.addEventListener('submit', async function (e) {
             e.preventDefault();
@@ -1377,9 +1337,17 @@ async function submitContactForm(event) {
             spinner.classList.remove('d-none');
             submitBtn.disabled = true;
 
+            const phoneInput = inspectionForm.querySelector('input[name="phone"]');
+            const phoneFullInput = inspectionForm.querySelector('.insp-phone-full');
+            if (phoneFullInput && phoneInput) {
+                phoneFullInput.value = '+63' + phoneInput.value;
+            }
+
             try {
                 const formData = new FormData(inspectionForm);
-                const phpResponse = await fetch('controllers/send-inspection-email.php', {
+                formData.append('action', 'submit_estimate');
+
+                const phpResponse = await fetch('index.php', {
                     method: 'POST',
                     body: formData
                 });
@@ -1389,36 +1357,15 @@ async function submitContactForm(event) {
                     showSuccessAndReset();
                     return;
                 } else {
-                    throw new Error('PHP handler failed');
+                    throw new Error(phpResult.message || 'PHP handler failed');
                 }
 
             } catch (phpError) {
-                try {
-                    const formData2 = new FormData(inspectionForm);
-                    formData2.append('_subject', '🌞 New Solar Inspection Request');
-                    formData2.append('_captcha', 'false');
-                    formData2.append('_template', 'box');
-
-                    const fsResponse = await fetch('https://formsubmit.co/solar@solarpower.com.ph', {
-                        method: 'POST',
-                        body: formData2,
-                        headers: { 'Accept': 'application/json' }
-                    });
-
-                    if (fsResponse.ok) {
-                        showSuccessAndReset();
-                    } else {
-                        throw new Error('FormSubmit also failed');
-                    }
-
-                } catch (fsError) {
-                    const btnText2 = submitBtn.querySelector('.btn-text');
-                    const spinner2 = submitBtn.querySelector('.spinner-border');
-                    btnText2.classList.remove('d-none');
-                    spinner2.classList.add('d-none');
-                    submitBtn.disabled = false;
-                    alert('There was an error submitting your request. Please try again or contact us directly.');
-                }
+                console.error('Submission error:', phpError);
+                alert('There was an error submitting your request: ' + phpError.message);
+                btnText.classList.remove('d-none');
+                spinner.classList.add('d-none');
+                submitBtn.disabled = false;
             }
         });
     }

@@ -2263,6 +2263,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 <span>Loan Applications</span>
             </div>
 
+            <div class="menu-item" onclick="showPage('subscribers', 'Potential Clients')" data-tooltip="Potential Clients">
+                <i class="fas fa-newspaper"></i>
+                <span>Potential Clients</span>
+            </div>
+
             <div class="menu-item" onclick="showPage('clients', 'Clients')" data-tooltip="Clients">
                 <i class="fas fa-users"></i>
                 <span>Clients</span>
@@ -2271,6 +2276,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
             <div class="menu-item" onclick="showPage('calculator-settings', 'Calculator Settings')" data-tooltip="Calculator Settings">
                 <i class="fas fa-calculator"></i>
                 <span>Calculator Settings</span>
+            </div>
+
+            <div class="menu-item" onclick="showPage('calculator-analytics', 'Calculator Analytics')" data-tooltip="Calculator Analytics">
+                <i class="fas fa-chart-bar"></i>
+                <span>Calculator Analytics</span>
             </div>
 
             <div class="menu-label">PRODUCT MANAGEMENT</div>
@@ -2367,7 +2377,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 <div class="stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; margin-bottom: 25px;">
                     
                     <!-- Card 1: Total Clients -->
-                    <div class="stat-card" style="background: white; padding: 22px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.02); border: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; transition: all 0.3s ease; cursor: pointer; position: relative;" onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='0 8px 30px rgba(0,0,0,0.06)';" onmouseout="this.style.transform='none'; this.style.boxShadow='0 4px 20px rgba(0,0,0,0.02)';">
+                    <div class="stat-card" onclick="showPage('clients', 'Clients')" style="background: white; padding: 22px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.02); border: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; transition: all 0.3s ease; cursor: pointer; position: relative;" onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='0 8px 30px rgba(0,0,0,0.06)';" onmouseout="this.style.transform='none'; this.style.boxShadow='0 4px 20px rgba(0,0,0,0.02)';">
                         <div style="display: flex; flex-direction: column; justify-content: space-between; height: 100%;">
                             <div>
                                 <div style="display: flex; align-items: center; gap: 8px; color: #64748b; font-size: 13px; font-weight: 600; margin-bottom: 12px;">
@@ -2395,7 +2405,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                     </div>
 
                     <!-- Card 2: Total Orders -->
-                    <div class="stat-card" style="background: white; padding: 22px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.02); border: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; transition: all 0.3s ease; cursor: pointer; position: relative;" onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='0 8px 30px rgba(0,0,0,0.06)';" onmouseout="this.style.transform='none'; this.style.boxShadow='0 4px 20px rgba(0,0,0,0.02)';">
+                    <div class="stat-card" onclick="showPage('tracking', 'Tracking')" style="background: white; padding: 22px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.02); border: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; transition: all 0.3s ease; cursor: pointer; position: relative;" onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='0 8px 30px rgba(0,0,0,0.06)';" onmouseout="this.style.transform='none'; this.style.boxShadow='0 4px 20px rgba(0,0,0,0.02)';">
                         <div style="display: flex; flex-direction: column; justify-content: space-between; height: 100%;">
                             <div>
                                 <div style="display: flex; align-items: center; gap: 8px; color: #64748b; font-size: 13px; font-weight: 600; margin-bottom: 12px;">
@@ -2423,7 +2433,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                     </div>
 
                     <!-- Card 3: Total Products & Revenue (₱) -->
-                    <div class="stat-card" style="background: white; padding: 22px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.02); border: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; transition: all 0.3s ease; cursor: pointer; position: relative;" onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='0 8px 30px rgba(0,0,0,0.06)';" onmouseout="this.style.transform='none'; this.style.boxShadow='0 4px 20px rgba(0,0,0,0.02)';">
+                    <div class="stat-card" onclick="showPage('orders', 'Revenue')" style="background: white; padding: 22px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.02); border: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; transition: all 0.3s ease; cursor: pointer; position: relative;" onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='0 8px 30px rgba(0,0,0,0.06)';" onmouseout="this.style.transform='none'; this.style.boxShadow='0 4px 20px rgba(0,0,0,0.02)';">
                         <div style="display: flex; flex-direction: column; justify-content: space-between; height: 100%;">
                             <div>
                                 <div style="display: flex; align-items: center; gap: 8px; color: #64748b; font-size: 13px; font-weight: 600; margin-bottom: 12px;">
@@ -2440,7 +2450,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                                 <span style="background: #f0fdf4; color: #16a34a; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 6px;">
                                     +18% MTD
                                 </span>
-                                <span style="background: #f1f5f9; color: #475569; font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px;">
+                                <span style="background: #f1f5f9; color: #475569; font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px;" onclick="event.stopPropagation(); showPage('product', 'Product');">
                                     <i class="fas fa-box" style="font-size: 9px; color: #64748b;"></i> <?php echo $stats['products']; ?> Products
                                 </span>
                             </div>
@@ -2454,7 +2464,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                     </div>
 
                     <!-- Card 4: Pending Inquiries -->
-                    <div class="stat-card" style="background: white; padding: 22px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.02); border: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; transition: all 0.3s ease; cursor: pointer; position: relative;" onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='0 8px 30px rgba(0,0,0,0.06)';" onmouseout="this.style.transform='none'; this.style.boxShadow='0 4px 20px rgba(0,0,0,0.02)';">
+                    <div class="stat-card" onclick="showPage('inquiries', 'Inquiries')" style="background: white; padding: 22px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.02); border: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; transition: all 0.3s ease; cursor: pointer; position: relative;" onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='0 8px 30px rgba(0,0,0,0.06)';" onmouseout="this.style.transform='none'; this.style.boxShadow='0 4px 20px rgba(0,0,0,0.02)';">
                         <div style="display: flex; flex-direction: column; justify-content: space-between; height: 100%;">
                             <div>
                                 <div style="display: flex; align-items: center; gap: 8px; color: #64748b; font-size: 13px; font-weight: 600; margin-bottom: 12px;">
@@ -2483,18 +2493,32 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
 
                 </div>
 
-                <div style="background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-top: 25px; margin-bottom: 25px;">
-                    <h3 style="margin-bottom: 20px; color: #333; display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: 600;">
-                        <i class="fas fa-chart-line" style="color: #ffc107;"></i> Monthly Revenue Trend
-                    </h3>
-                    <div style="position: relative; height: 300px; width: 100%;">
-                        <canvas id="revenueTrendChart"></canvas>
+                <div class="charts-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px; margin-top: 25px; margin-bottom: 25px;">
+                    <!-- Monthly Revenue Trend -->
+                    <div style="background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+                        <h3 style="margin-bottom: 20px; color: #333; display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: 600;">
+                            <i class="fas fa-chart-line" style="color: #ffc107;"></i> Monthly Revenue Trend
+                        </h3>
+                        <div style="position: relative; height: 300px; width: 100%;">
+                            <canvas id="revenueTrendChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Calculator Analytics -->
+                    <div style="background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+                        <h3 style="margin-bottom: 20px; color: #333; display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: 600;">
+                            <i class="fas fa-calculator" style="color: #0d5c3a;"></i> Calculator Analytics (Weekly Usage)
+                        </h3>
+                        <div style="position: relative; height: 300px; width: 100%;">
+                            <canvas id="calculatorUsageChart"></canvas>
+                        </div>
                     </div>
                 </div>
 
                 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
                 <script>
                 document.addEventListener("DOMContentLoaded", function() {
+                    // 1. Monthly Revenue Trend Chart
                     const ctx = document.getElementById('revenueTrendChart').getContext('2d');
                     
                     const months = <?php echo json_encode($revenue_trend['months']); ?>;
@@ -2546,6 +2570,78 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                             }
                         }
                     });
+
+                    // 2. Calculator Analytics Chart (Weekly Trends)
+                    fetch('../../api/get_calculator_logs.php?date_filter=week')
+                        .then(response => response.json())
+                        .then(data => {
+                            const calcCtx = document.getElementById('calculatorUsageChart').getContext('2d');
+                            
+                            const calcGradient = calcCtx.createLinearGradient(0, 0, 0, 300);
+                            calcGradient.addColorStop(0, 'rgba(13, 92, 58, 0.15)');
+                            calcGradient.addColorStop(1, 'rgba(13, 92, 58, 0.0)');
+
+                            new Chart(calcCtx, {
+                                type: 'line',
+                                data: {
+                                    labels: data.chart.labels,
+                                    datasets: [{
+                                        label: 'Interactions',
+                                        data: data.chart.data,
+                                        borderColor: '#0d5c3a', // Deep green
+                                        backgroundColor: calcGradient,
+                                        borderWidth: 3,
+                                        fill: true,
+                                        tension: 0.4,
+                                        pointBackgroundColor: '#f2a900', // Gold/yellow point center
+                                        pointBorderColor: '#0d5c3a', // Deep green point border
+                                        pointBorderWidth: 3,
+                                        pointRadius: 6,
+                                        pointHoverRadius: 8,
+                                        pointHoverBackgroundColor: '#f2a900',
+                                        pointHoverBorderColor: '#0d5c3a',
+                                        pointHoverBorderWidth: 3
+                                    }]
+                                },
+                                options: {
+                                    responsive: true,
+                                    maintainAspectRatio: false,
+                                    plugins: {
+                                        legend: {
+                                            display: false
+                                        }
+                                    },
+                                    scales: {
+                                        y: {
+                                            beginAtZero: true,
+                                            grid: {
+                                                color: '#f1f5f9'
+                                            },
+                                            ticks: {
+                                                color: '#64748b',
+                                                font: {
+                                                    family: "'Inter', sans-serif",
+                                                    size: 11
+                                                }
+                                            }
+                                        },
+                                        x: {
+                                            grid: {
+                                                color: '#f1f5f9'
+                                            },
+                                            ticks: {
+                                                color: '#64748b',
+                                                font: {
+                                                    family: "'Inter', sans-serif",
+                                                    size: 11
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            });
+                        })
+                        .catch(err => console.error('Error loading calculator analytics for dashboard:', err));
                 });
                 </script>
 
@@ -2721,9 +2817,19 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 <iframe src="estimates.php" style="width: 100%; height: calc(100vh - 120px); border: none; border-radius: 12px; background: white; box-shadow: 0 4px 20px rgba(0,0,0,0.05);"></iframe>
             </div>
 
+            <!-- Potential Clients Page -->
+            <div id="subscribers" class="page-content">
+                <iframe src="subscribers.php" style="width: 100%; height: calc(100vh - 120px); border: none; border-radius: 12px; background: white; box-shadow: 0 4px 20px rgba(0,0,0,0.05);"></iframe>
+            </div>
+
             <!-- Loan Applications Page -->
             <div id="loans" class="page-content">
                 <iframe src="loan_applications.php" style="width: 100%; height: calc(100vh - 120px); border: none; border-radius: 12px; background: white; box-shadow: 0 4px 20px rgba(0,0,0,0.05);"></iframe>
+            </div>
+
+            <!-- Calculator Analytics Page -->
+            <div id="calculator-analytics" class="page-content">
+                <iframe src="calculator_analytics.php" style="width: 100%; height: calc(100vh - 120px); border: none; border-radius: 12px; background: white; box-shadow: 0 4px 20px rgba(0,0,0,0.05);"></iframe>
             </div>
 
             <div id="inquiries" class="page-content">

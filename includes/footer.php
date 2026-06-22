@@ -558,6 +558,8 @@
             <li><a href="loans.php">SOLAR LOANS</a></li>
             <li><a href="contact.php">CONTACT</a></li>
             <li><a href="privacy-policy.php">PRIVACY POLICY</a></li>
+            <li><a href="terms-of-service.php">TERMS OF SERVICE</a></li>
+            <li><a href="refund-policy.php">REFUND POLICY</a></li>
           </ul>
         </div>
       </div>

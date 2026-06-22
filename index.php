@@ -839,17 +839,29 @@ $conn->close();
                         <!-- ── CTA: Talk to Our Team ── -->
                         <div class="mt-3 pt-3" style="border-top: 1px solid #F1F5F9;">
 
-                            <p class="text-center mb-2" style="font-size: 0.71rem; font-weight: 600; color: #64748B; letter-spacing: 0.25px; line-height: 1.5; margin: 0 0 10px 0;">
+                            <p class="text-center mb-3" style="font-size: 0.75rem; font-weight: 700; color: #475569; letter-spacing: 0.25px; line-height: 1.5; margin: 0 0 10px 0;">
                                 Ready to lock in these savings? Talk to our team:
                             </p>
+
+                            <!-- Simple inline form inside calculator body -->
+                            <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px;">
+                                <input type="text" id="inlineLeadName" placeholder="Full Name (Required)" style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 0.8rem; outline: none; box-shadow: inset 0 1px 2px rgba(0,0,0,0.02);" onchange="autoSaveLead()" onblur="autoSaveLead()" oninput="handleFormInput()" required>
+                                <input type="text" id="inlineLeadContact" placeholder="Phone Number or Email (Required)" style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 0.8rem; outline: none; box-shadow: inset 0 1px 2px rgba(0,0,0,0.02);" onchange="autoSaveLead()" onblur="autoSaveLead()" oninput="handleFormInput()" required>
+                                
+                                <!-- Submit Estimate Button -->
+                                <button type="button" id="inlineSubmitBtn" onclick="handleInlineSubmit()" style="display: none; width: 100%; align-items: center; justify-content: center; padding: 10px 12px; border-radius: 10px; background-color: #0D5C3A; color: #ffffff; font-size: 0.8rem; font-weight: 700; border: none; cursor: pointer; transition: background-color 0.2s, transform 0.2s; box-shadow: 0 4px 12px rgba(13, 92, 58, 0.15); margin-top: 4px;"
+                                        onmouseover="this.style.backgroundColor='#083D26';this.style.transform='translateY(-1px)';"
+                                        onmouseout="this.style.backgroundColor='#0D5C3A';this.style.transform='translateY(0)';">
+                                    Submit Estimate
+                                </button>
+                            </div>
 
                             <!-- Button Row: side-by-side desktop, stacked mobile -->
                             <div style="display: flex; flex-wrap: wrap; gap: 8px;">
 
                                 <!-- ① Messenger Button -->
-                                <a href="https://m.me/61578373983187"
-                                   target="_blank"
-                                   rel="noopener noreferrer"
+                                <a href="javascript:void(0)"
+                                   onclick="handleInlineLead('messenger', 'https://m.me/61578373983187')"
                                    style="flex: 1 1 120px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 9px 12px; border-radius: 10px; background-color: #0084FF; color: #ffffff; font-size: 0.74rem; font-weight: 700; text-decoration: none; letter-spacing: 0.2px; transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease; white-space: nowrap;"
                                    onmouseover="this.style.backgroundColor='#006ACC';this.style.transform='translateY(-2px)';this.style.boxShadow='0 8px 20px rgba(0,132,255,0.32)';"
                                    onmouseout="this.style.backgroundColor='#0084FF';this.style.transform='translateY(0)';this.style.boxShadow='none';">
@@ -861,9 +873,8 @@ $conn->close();
                                 </a>
 
                                 <!-- ② Viber Button -->
-                                <a href="viber://chat?number=639953947379&text=Hi%20SolarPower!%20I%20just%20used%20your%20solar%20calculator%20and%20I%20want%20to%20request%20a%20formal%20quotation."
-                                   target="_blank"
-                                   rel="noopener noreferrer"
+                                <a href="javascript:void(0)"
+                                   onclick="handleInlineLead('viber', 'viber://chat?number=639953947379&text=Hi%20SolarPower!%20I%20just%20used%20your%20solar%20calculator%20and%20I%20want%20to%20request%20a%20formal%20quotation.')"
                                    style="flex: 1 1 120px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 9px 12px; border-radius: 10px; background-color: #7360F2; color: #ffffff; font-size: 0.74rem; font-weight: 700; text-decoration: none; letter-spacing: 0.2px; transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease; white-space: nowrap;"
                                    onmouseover="this.style.backgroundColor='#5A4BD1';this.style.transform='translateY(-2px)';this.style.boxShadow='0 8px 20px rgba(115,96,242,0.32)';"
                                    onmouseout="this.style.backgroundColor='#7360F2';this.style.transform='translateY(0)';this.style.boxShadow='none';">
@@ -883,6 +894,46 @@ $conn->close();
             </div>
         </section>
     </div>
+
+    <!-- Savings Estimate Received Popup Notification Modal -->
+    <div id="calcThankYouModal" style="display: none; position: fixed; inset: 0; background-color: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); z-index: 99999; align-items: center; justify-content: center; padding: 16px;">
+        <div style="background-color: #ffffff; border-radius: 20px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15); max-width: 440px; width: 100%; overflow: hidden; border: 1px solid #f1f5f9; animation: thankYouModalFadeIn 0.3s ease; text-align: center; padding: 32px 24px;">
+            <div style="display: inline-flex; align-items: center; justify-content: center; background-color: #d1fae5; color: #059669; border-radius: 50%; width: 64px; height: 64px; margin-bottom: 20px;">
+                <i class="fas fa-check-circle" style="font-size: 2.2rem;"></i>
+            </div>
+            <h4 style="margin: 0 0 12px 0; font-size: 1.35rem; font-weight: 700; color: #0d5c3a; letter-spacing: 0.3px;">Savings Estimate Received!</h4>
+            <p style="margin: 0 0 24px 0; font-size: 0.88rem; color: #475569; line-height: 1.6;">Thank you for using our Solar Power Calculator. One of our solar experts will contact you via message or call shortly to discuss your personalized solar plan.</p>
+            <button type="button" onclick="closeThankYouModal()" style="width: 100%; padding: 12px; border-radius: 10px; background-color: #0d5c3a; color: #ffffff; border: none; font-weight: 700; font-size: 0.88rem; cursor: pointer; transition: background-color 0.2s;">
+                Okay, got it!
+            </button>
+        </div>
+    </div>
+
+    <!-- Don't Lose Your Savings Estimate Exit Intent Popup Modal -->
+    <div id="calcReminderModal" style="display: none; position: fixed; inset: 0; background-color: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); z-index: 99999; align-items: center; justify-content: center; padding: 16px;">
+        <div style="background-color: #ffffff; border-radius: 20px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15); max-width: 440px; width: 100%; overflow: hidden; border: 1px solid #f1f5f9; animation: reminderModalFadeIn 0.3s ease; text-align: center; padding: 32px 24px;">
+            <div style="display: inline-flex; align-items: center; justify-content: center; background-color: #fef3c7; color: #d97706; border-radius: 50%; width: 64px; height: 64px; margin-bottom: 20px;">
+                <i class="fas fa-exclamation-triangle" style="font-size: 2rem;"></i>
+            </div>
+            <h4 style="margin: 0 0 12px 0; font-size: 1.35rem; font-weight: 700; color: #0d5c3a; letter-spacing: 0.3px;">Don't lose your savings estimate!</h4>
+            <p style="margin: 0 0 24px 0; font-size: 0.88rem; color: #475569; line-height: 1.6;">We noticed you checked your potential solar savings. Would you like our team to send this full computation to your Messenger or Viber so you can review it anytime? No pressure at all!</p>
+            <button type="button" onclick="focusLeadForm()" style="width: 100%; padding: 12px; border-radius: 10px; background-color: #0d5c3a; color: #ffffff; border: none; font-weight: 700; font-size: 0.88rem; cursor: pointer; transition: background-color 0.2s;">
+                Save My Estimate
+            </button>
+        </div>
+    </div>
+
+    <style>
+        @keyframes thankYouModalFadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        @keyframes reminderModalFadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+    </style>
+
 
 
     <!-- Trusted Partners Marquee Section -->
@@ -1668,6 +1719,7 @@ $conn->close();
     </section>
 
     <!-- ── SECTION 3: LIVE ENERGY & CARBON TRACKER WIDGET ── -->
+    <?php /*
     <section class="py-5" style="background-color: var(--solar-bg-gray);" id="trackerSection" data-checkout-hide>
         <div class="container py-lg-4">
             <div class="row justify-content-center">
@@ -1705,6 +1757,7 @@ $conn->close();
             </div>
         </div>
     </section>
+    */ ?>
 
     <!-- ── SECTION 4: SOLAR INSIGHTS & LATEST BLOGS ── -->
     <section id="blog" class="py-5 bg-white" data-checkout-hide>
@@ -1909,6 +1962,8 @@ $conn->close();
             }
         }
 
+        let sliderLogTimeout = null;
+
         function updateHeroCalculator(val) {
             let sanitized = String(val).replace(/[^0-9.]/g, '');
             let bill = parseFloat(sanitized);
@@ -1937,12 +1992,304 @@ $conn->close();
             });
             document.getElementById('twMonthlySavingsHero').textContent = '₱' + formatter.format(monthlySavings);
             document.getElementById('twYearlySavingsHero').textContent = '₱' + formatter.format(yearlySavings);
+
+            // Debounced guest tracking log
+            clearTimeout(sliderLogTimeout);
+            sliderLogTimeout = setTimeout(() => {
+                logSliderToDatabase(bill, kwpRequired.toFixed(1) + ' kWp');
+            }, 2000);
+        }
+
+        function logSliderToDatabase(bill, kwp) {
+            fetch('api/log_calculator_lead.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'calculated',
+                    bill: bill,
+                    system_size: kwp
+                })
+            }).catch(err => console.error('Slider log failed:', err));
+        }
+
+        let submitBtnTimeout = null;
+
+        function handleFormInput() {
+            const name = document.getElementById('inlineLeadName').value.trim();
+            const contact = document.getElementById('inlineLeadContact').value.trim();
+
+            if (!name && !contact) {
+                document.getElementById('inlineSubmitBtn').style.display = 'none';
+                clearTimeout(submitBtnTimeout);
+                submitBtnTimeout = null;
+                return;
+            }
+
+            if (!submitBtnTimeout) {
+                submitBtnTimeout = setTimeout(() => {
+                    const currentName = document.getElementById('inlineLeadName').value.trim();
+                    const currentContact = document.getElementById('inlineLeadContact').value.trim();
+                    if (currentName || currentContact) {
+                        document.getElementById('inlineSubmitBtn').style.display = 'flex';
+                    }
+                }, 5000);
+            }
+        }
+
+        function handleInlineSubmit() {
+            const nameInput = document.getElementById('inlineLeadName');
+            const contactInput = document.getElementById('inlineLeadContact');
+            
+            const name = nameInput.value.trim();
+            const contact = contactInput.value.trim();
+            
+            if (!name || !contact) {
+                alert('Please provide your Name and Contact details (Phone or Email) first.');
+                nameInput.focus();
+                return;
+            }
+
+            const bill = parseFloat(document.getElementById('twBillSliderHero').value);
+            const systemSize = document.getElementById('twKwValueHero').textContent + ' kWp';
+
+            let lead_phone = null;
+            let lead_email = null;
+            if (contact.includes('@')) {
+                lead_email = contact;
+            } else {
+                lead_phone = contact;
+            }
+
+            fetch('api/log_calculator_lead.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'submitted',
+                    bill: bill,
+                    system_size: systemSize,
+                    lead_name: name,
+                    lead_phone: lead_phone,
+                    lead_email: lead_email
+                })
+            })
+            .then(() => {
+                nameInput.value = '';
+                contactInput.value = '';
+                document.getElementById('inlineSubmitBtn').style.display = 'none';
+                clearTimeout(submitBtnTimeout);
+                submitBtnTimeout = null;
+                
+                isLeadSubmitted = true;
+                sliderInteracted = false;
+                document.body.style.overflow = '';
+                document.documentElement.style.overflow = '';
+                
+                document.getElementById('calcThankYouModal').style.display = 'flex';
+            })
+            .catch(err => {
+                console.error('Lead submission failed:', err);
+            });
+        }
+
+        // Inline lead form handler
+        function handleInlineLead(action, redirectUrl) {
+            const nameInput = document.getElementById('inlineLeadName');
+            const contactInput = document.getElementById('inlineLeadContact');
+            
+            const name = nameInput.value.trim();
+            const contact = contactInput.value.trim();
+            
+            if (!name || !contact) {
+                alert('Please provide your Name and Contact details (Phone or Email) first.');
+                nameInput.focus();
+                return;
+            }
+
+            const bill = parseFloat(document.getElementById('twBillSliderHero').value);
+            const systemSize = document.getElementById('twKwValueHero').textContent + ' kWp';
+
+            // Detect if contact input is email or phone number
+            let lead_phone = null;
+            let lead_email = null;
+            if (contact.includes('@')) {
+                lead_email = contact;
+            } else {
+                lead_phone = contact;
+            }
+
+            fetch('api/log_calculator_lead.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: action,
+                    bill: bill,
+                    system_size: systemSize,
+                    lead_name: name,
+                    lead_phone: lead_phone,
+                    lead_email: lead_email
+                })
+            })
+            .then(() => {
+                // Clear fields on success
+                nameInput.value = '';
+                contactInput.value = '';
+                document.getElementById('inlineSubmitBtn').style.display = 'none';
+                clearTimeout(submitBtnTimeout);
+                submitBtnTimeout = null;
+                
+                isLeadSubmitted = true;
+                sliderInteracted = false;
+                document.body.style.overflow = '';
+                document.documentElement.style.overflow = '';
+                
+                // Show thank you popup modal and redirect after user dismisses it or redirect immediately
+                document.getElementById('calcThankYouModal').style.display = 'flex';
+                // Trigger background tab redirect
+                window.open(redirectUrl, '_blank');
+            })
+            .catch(err => {
+                console.error('Lead submission failed:', err);
+                window.open(redirectUrl, '_blank');
+            });
+        }
+
+        // Auto save lead details when inputs are filled (even without clicking button)
+        let autoSaveTimeout = null;
+        let lastSavedName = '';
+        let lastSavedContact = '';
+
+        function autoSaveLead() {
+            const name = document.getElementById('inlineLeadName').value.trim();
+            const contact = document.getElementById('inlineLeadContact').value.trim();
+
+            // Only save if name and contact are filled out and have changed
+            if (!name || !contact || (name === lastSavedName && contact === lastSavedContact)) {
+                return;
+            }
+
+            clearTimeout(autoSaveTimeout);
+            autoSaveTimeout = setTimeout(() => {
+                const bill = parseFloat(document.getElementById('twBillSliderHero').value);
+                const systemSize = document.getElementById('twKwValueHero').textContent + ' kWp';
+
+                let lead_phone = null;
+                let lead_email = null;
+                if (contact.includes('@')) {
+                    lead_email = contact;
+                } else {
+                    lead_phone = contact;
+                }
+
+                fetch('api/log_calculator_lead.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'calculated', // logged as interaction
+                        bill: bill,
+                        system_size: systemSize,
+                        lead_name: name,
+                        lead_phone: lead_phone,
+                        lead_email: lead_email
+                    })
+                })
+                .then(() => {
+                    lastSavedName = name;
+                    lastSavedContact = contact;
+                    console.log('Lead auto-saved successfully');
+                    
+                    // Show thank you popup modal when auto-saved successfully
+                    document.getElementById('calcThankYouModal').style.display = 'flex';
+                })
+                .catch(err => console.error('Lead auto-save failed:', err));
+            }, 1000);
+        }
+
+        function closeThankYouModal() {
+            document.getElementById('calcThankYouModal').style.display = 'none';
+        }
+
+        // Reminder modal triggers
+        let sliderInteracted = false;
+        let isLeadSubmitted = false;
+
+        // Monitor slider interactions to toggle tracker
+        document.addEventListener('DOMContentLoaded', () => {
+            const slider = document.getElementById('twBillSliderHero');
+            const billInput = document.getElementById('twBillAmountHero');
+            
+            const markInteracted = () => {
+                sliderInteracted = true;
+            };
+
+            if (slider) {
+                slider.addEventListener('input', markInteracted);
+                slider.addEventListener('change', markInteracted);
+            }
+            if (billInput) {
+                billInput.addEventListener('input', markInteracted);
+            }
+
+            // Scroll trigger logic: if slider was interacted and user scrolls down past the hero/calculator area
+            window.addEventListener('scroll', () => {
+                if (sliderInteracted && !isLeadSubmitted && window.scrollY > 600) {
+                    const name = document.getElementById('inlineLeadName').value.trim();
+                    const contact = document.getElementById('inlineLeadContact').value.trim();
+                    if (!name || !contact) {
+                        window.scrollTo({ top: 0, behavior: 'instant' });
+                        showReminderModal();
+                    }
+                }
+            });
+        });
+
+        function showReminderModal() {
+            document.getElementById('calcReminderModal').style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+            document.documentElement.style.overflow = 'hidden';
+        }
+
+        function closeReminderModal() {
+            document.getElementById('calcReminderModal').style.display = 'none';
+            document.body.style.overflow = '';
+            document.documentElement.style.overflow = '';
+        }
+
+        function focusLeadForm() {
+            closeReminderModal();
+            const nameInput = document.getElementById('inlineLeadName');
+            if (nameInput) {
+                nameInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                setTimeout(() => nameInput.focus(), 800);
+            }
         }
 
         // Initialize on load
         document.addEventListener('DOMContentLoaded', () => {
             let initialBillVal = document.getElementById('twBillAmountHero') ? document.getElementById('twBillAmountHero').value : "5000";
-            updateHeroCalculator(initialBillVal);
+            
+            // Temporarily suspend tracking on initial load
+            clearTimeout(sliderLogTimeout);
+            
+            let billVal = String(initialBillVal).replace(/[^0-9.]/g, '');
+            let bill = parseFloat(billVal);
+            if (isNaN(bill) || bill < 0) bill = 0;
+
+            let kwhUsed = Math.round(bill / CALC_CONFIG.kwhRate);
+            let kwpRequired = Math.ceil((kwhUsed / (30 * CALC_CONFIG.sunHours)) * 0.95);
+            let panelsNeeded = Math.ceil((kwpRequired * 1000) / CALC_CONFIG.panelWattage);
+            let savingsKwh = kwpRequired * CALC_CONFIG.sunHours * 30 * 0.95;
+            let monthlySavings = savingsKwh * CALC_CONFIG.kwhRate;
+            let yearlySavings = monthlySavings * 12;
+
+            document.getElementById('twKwValueHero').textContent = kwpRequired.toFixed(1);
+            document.getElementById('twPanelsValueHero').textContent = panelsNeeded;
+
+            const formatter = new Intl.NumberFormat('en-PH', {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            });
+            document.getElementById('twMonthlySavingsHero').textContent = '₱' + formatter.format(monthlySavings);
+            document.getElementById('twYearlySavingsHero').textContent = '₱' + formatter.format(yearlySavings);
         });
     </script>
 
@@ -2596,25 +2943,19 @@ $conn->close();
         </div>
     </section>
 
-    <section class="subscription-section" data-checkout-hide>
-        <div class="container">
+    <!-- ── SECTION: NEWSLETTER SUBSCRIPTION ── -->
+    <section class="newsletter-subscription py-5" style="background-color: #0D5C3A; color: #FFFFFF;" data-checkout-hide>
+        <div class="container text-center">
+            <h2 class="fw-bold mb-2" style="font-family: var(--ff-poppins); font-size: 2rem; color: #FFFFFF;">Subscribe Now!</h2>
+            <p class="mb-4" style="font-size: 0.95rem; color: rgba(255, 255, 255, 0.9);">Get weekly solar tips, updates, and exclusive offers delivered to your inbox</p>
             <div class="row justify-content-center">
-                <div class="col-lg-8" data-aos="zoom-in">
-                    <div class="subscription-bar">
-                        <h3>Subscribe Now!</h3>
-                        <p style="color: rgba(255,255,255,0.9); margin-bottom: 20px;">Get weekly solar tips, updates,
-                            and exclusive offers delivered to your inbox</p>
-                        <form id="subscribe-form" class="d-flex">
-                            <input type="email" name="email" id="subscribe-email" class="form-control"
-                                placeholder="Enter your email address" required>
-                            <button type="submit" class="btn btn-subscribe" id="subscribe-btn">
-                                <span class="btn-text">Subscribe!</span>
-                                <span class="btn-spinner d-none">
-                                    <i class="fas fa-spinner fa-spin"></i>
-                                </span>
-                            </button>
-                        </form>
-                    </div>
+                <div class="col-lg-6 col-md-8 px-4">
+                    <form id="subscribeForm" class="d-flex align-items-center bg-white shadow-sm" style="border-radius: 50px; padding: 4px; max-width: 500px; margin: 0 auto;">
+                        <input type="email" name="email" class="form-control border-0 bg-transparent px-4 py-2" placeholder="Enter your email address" style="box-shadow: none; font-size: 0.95rem; color: #333; outline: none; flex-grow: 1;" required>
+                        <button type="submit" class="btn fw-bold text-uppercase px-4" style="background-color: #F2A900; border: none; color: #1A1A1A; border-radius: 40px; font-size: 0.85rem; height: 42px; white-space: nowrap; transition: background-color 0.2s;">SUBSCRIBE!</button>
+                    </form>
+                    <!-- UI Notification Messages -->
+                    <div id="subscribeMessage" class="mt-3 text-center d-none fw-semibold" style="font-size: 0.9rem;"></div>
                 </div>
             </div>
         </div>
@@ -2728,9 +3069,9 @@ $conn->close();
                                     <label class="form-label fw-semibold small text-uppercase">Contact Number</label>
                                     <div class="input-group">
                                         <span class="input-group-text"
-                                            style="background:#e8f4ef;border-color:#dee2e6;color:#0a5c3d;font-weight:700;font-size:0.93rem;">+639</span>
-                                        <input type="tel" name="phone" class="form-control" placeholder="XXXXXXXXX"
-                                            required maxlength="9" pattern="[0-9]{9}"
+                                            style="background:#e8f4ef;border-color:#dee2e6;color:#0a5c3d;font-weight:700;font-size:0.93rem;">+63</span>
+                                        <input type="tel" name="phone" class="form-control" placeholder="9XXXXXXXXX"
+                                            required maxlength="10" pattern="[0-9]{10}"
                                             oninput="this.value=this.value.replace(/[^0-9]/g,'')">
                                     </div>
                                     <input type="hidden" name="phone_full" class="insp-phone-full">
@@ -4815,13 +5156,50 @@ $conn->close();
 
     function initializeSubscription() {
         const form = document.getElementById('subscribeForm');
+        const msgDiv = document.getElementById('subscribeMessage');
         if (!form) return;
 
-        form.addEventListener('submit', (e) => {
+        form.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const email = form.querySelector('input[type="email"]').value;
-            showNotificationModal('success', `Salamat! ${email} has been subscribed to our newsletter.`);
-            form.reset();
+            const emailInput = form.querySelector('input[type="email"]');
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const email = emailInput.value.trim();
+
+            if (!email) return;
+
+            // Simple UI loading state
+            submitBtn.disabled = true;
+            submitBtn.textContent = '...';
+
+            try {
+                const response = await fetch('subscribe.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: email })
+                });
+                const result = await response.json();
+
+                msgDiv.classList.remove('d-none', 'text-danger', 'text-success');
+                if (result.success) {
+                    msgDiv.classList.add('text-success');
+                    msgDiv.textContent = result.message || 'Subscribed successfully!';
+                    form.reset();
+                } else {
+                    msgDiv.classList.add('text-danger');
+                    msgDiv.textContent = result.message || 'Subscription failed.';
+                }
+            } catch (err) {
+                console.error(err);
+                msgDiv.classList.remove('d-none', 'text-success');
+                msgDiv.classList.add('text-danger');
+                msgDiv.textContent = 'Network error. Please try again later.';
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'SUBSCRIBE!';
+                setTimeout(() => {
+                    msgDiv.classList.add('d-none');
+                }, 5000);
+            }
         });
     }
 
@@ -4901,6 +5279,8 @@ $conn->close();
         const inspectionForm = document.getElementById('inspectionForm');
 
         if (!inspectionForm) return;
+        if (inspectionForm.dataset.initialized) return;
+        inspectionForm.dataset.initialized = 'true';
 
         inspectionForm.addEventListener('submit', async function(e) {
             e.preventDefault();
@@ -4917,7 +5297,7 @@ $conn->close();
             const phoneInput = inspectionForm.querySelector('input[name="phone"]');
             const phoneFullInput = inspectionForm.querySelector('.insp-phone-full');
             if (phoneFullInput && phoneInput) {
-                phoneFullInput.value = '+639' + phoneInput.value;
+                phoneFullInput.value = '+63' + phoneInput.value;
             }
 
             try {
@@ -4978,10 +5358,7 @@ $conn->close();
         successModal.show();
     }
 
-    // Initialize when page loads
-    document.addEventListener('DOMContentLoaded', function() {
-        initializeInspectionForm();
-    });
+
 
     // ===========================
     // UTILITIES
