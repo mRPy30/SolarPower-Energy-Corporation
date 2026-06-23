@@ -1,6 +1,6 @@
 <?php
 
-$logo_path = 'assets/img/logo_no_background.png';
+$logo_path = 'assets/img/solarpower_energy_corp.png';
 $home_link = 'index.php';
 
 // Get current page filename
@@ -423,7 +423,7 @@ function isActive($page)
             <div class="logo">
                 <div class="logo-img">
                     <a href="index.php">
-                        <img src="assets/img/new_logo.png" alt="Solar Power Logo">
+                        <img src="assets/img/solarpower_energy_corp.png" alt="Solar Power Logo" style="max-height: 70px; width: auto; object-fit: contain;">
                     </a>
                 </div>
             </div>

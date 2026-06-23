@@ -44,12 +44,27 @@ try {
         exit;
     }
 
-    // Insert new subscriber
-    $insertStmt = $db->prepare("INSERT INTO `subscribers` (`email`, `status`) VALUES (?, 'potential_client')");
-    if ($insertStmt->execute([$email])) {
-        echo json_encode(['success' => true, 'message' => 'Thank you for subscribing!']);
-    } else {
-        echo json_encode(['success' => false, 'message' => 'An error occurred. Please try again later.']);
+    // Insert new subscriber with fallback support for old enum status
+    try {
+        $insertStmt = $db->prepare("INSERT INTO `subscribers` (`email`, `status`) VALUES (?, 'potential_client')");
+        if ($insertStmt->execute([$email])) {
+            echo json_encode(['success' => true, 'message' => 'Thank you for subscribing!']);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'An error occurred. Please try again later.']);
+        }
+    } catch (Exception $e) {
+        // Fallback: If 'potential_client' fails (e.g. because status is still an ENUM like 'active','inactive','unsubscribed')
+        try {
+            $insertStmtFallback = $db->prepare("INSERT INTO `subscribers` (`email`, `status`) VALUES (?, 'active')");
+            if ($insertStmtFallback->execute([$email])) {
+                echo json_encode(['success' => true, 'message' => 'Thank you for subscribing!']);
+            } else {
+                echo json_encode(['success' => false, 'message' => 'An error occurred. Please try again later.']);
+            }
+        } catch (Exception $fallbackEx) {
+            // If even fallback fails, throw the original exception
+            throw $e;
+        }
     }
 
 } catch (Exception $e) {

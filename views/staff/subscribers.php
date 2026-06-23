@@ -65,7 +65,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         </html>";
 
         $payload = [
-            'from' => 'SolarPower Info <onboarding@resend.dev>',
+            'from' => 'SolarPower Energy Corporation <solar@solarpower.com.ph>',
             'to' => [$email],
             'subject' => $subject,
             'html' => $emailBody
@@ -83,13 +83,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
 
-        if ($httpCode === 200 || $httpCode === 201) {
-            // Update subscriber status to show engagement
-            $updateStmt = $db->prepare("UPDATE `subscribers` SET `status` = 'contacted' WHERE `email` = ?");
-            $updateStmt->execute([$email]);
-            echo json_encode(['success' => true, 'message' => 'Email sent successfully!']);
+        $resendSuccess = ($httpCode === 200 || $httpCode === 201);
+        $mailSent = false;
+
+        if ($resendSuccess) {
+            $mailSent = true;
         } else {
-            echo json_encode(['success' => false, 'message' => 'Resend API failed with status ' . $httpCode]);
+            // Fallback to standard PHP mail() if Resend API fails (e.g. 403 Forbidden due to unverified domain)
+            $headers = "MIME-Version: 1.0" . "\r\n";
+            $headers .= "Content-Type: text/html; charset=UTF-8" . "\r\n";
+            $headers .= "From: SolarPower Energy Corporation <solar@solarpower.com.ph>" . "\r\n";
+            $headers .= "Reply-To: solar@solarpower.com.ph" . "\r\n";
+            
+            if (mail($email, $subject, $emailBody, $headers)) {
+                $mailSent = true;
+            }
+        }
+
+        if ($mailSent) {
+            // Update subscriber status to show engagement
+            try {
+                $updateStmt = $db->prepare("UPDATE `subscribers` SET `status` = 'contacted' WHERE `email` = ?");
+                $updateStmt->execute([$email]);
+            } catch (Exception $updateEx) {
+                try {
+                    // Fallback to 'inactive' if 'contacted' is not a valid enum value
+                    $updateStmtFallback = $db->prepare("UPDATE `subscribers` SET `status` = 'inactive' WHERE `email` = ?");
+                    $updateStmtFallback->execute([$email]);
+                } catch (Exception $fallbackEx) {
+                    error_log("Failed to update subscriber status: " . $fallbackEx->getMessage());
+                }
+            }
+            
+            $msg = $resendSuccess ? 'Email sent successfully via Resend API!' : 'Email sent successfully via server mail!';
+            echo json_encode(['success' => true, 'message' => $msg]);
+        } else {
+            echo json_encode([
+                'success' => false,
+                'message' => "Failed to send email. Resend API returned status {$httpCode} and PHP mail() fallback failed. Please check your Resend key/domain configuration."
+            ]);
         }
     } catch (Exception $e) {
         echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
@@ -102,7 +134,28 @@ try {
     $stmt = $db->query("SELECT * FROM `subscribers` ORDER BY `created_at` DESC");
     $subscribers = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (Exception $e) {
-    $subscribers = [];
+    try {
+        // Fallback if created_at column doesn't exist
+        $stmt = $db->query("SELECT * FROM `subscribers` ORDER BY `id` DESC");
+        $subscribers = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (Exception $e2) {
+        $subscribers = [];
+    }
+}
+
+// Normalize subscriber status and dates
+if (!empty($subscribers)) {
+    foreach ($subscribers as &$s) {
+        if ($s['status'] !== 'contacted') {
+            $s['status'] = 'potential_client';
+        }
+        if (!isset($s['created_at']) && isset($s['subscribed_at'])) {
+            $s['created_at'] = $s['subscribed_at'];
+        } elseif (!isset($s['created_at'])) {
+            $s['created_at'] = date('Y-m-d H:i:s');
+        }
+    }
+    unset($s);
 }
 
 // Statistics count helper

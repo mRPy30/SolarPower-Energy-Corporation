@@ -2238,7 +2238,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
             </button>
             <div class="logo">
                 <a href="dashboard.php">
-                    <img src="../../assets/img/new_logo.png" alt="Solar Power Logo">
+                    <img src="../../assets/img/solarpower_energy_corp.png" alt="Solar Power Logo" style="max-height: 50px; width: auto; object-fit: contain;">
                 </a>
             </div>
 
@@ -5487,7 +5487,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                                 <div id="qb_pdf_content" style="background: white; padding: 10px;">
                                     <div class="border-b border-slate-200 pb-4 mb-4">
                                     <div class="flex justify-between items-center">
-                                        <img src="../../assets/img/new_logo.png" alt="SolarPower Logo" style="height: 35px; width: auto; object-fit: contain; margin: 0;">
+                                        <img src="../../assets/img/solarpower_energy_corp.png" alt="SolarPower Logo" style="height: 35px; width: auto; object-fit: contain; margin: 0;">
                                         <span id="prev_qid" class="text-sm font-mono text-slate-500 bg-slate-100 px-2 py-1 rounded">Q20260000</span>
                                     </div>
                                     <div class="mt-4 text-sm text-slate-600">

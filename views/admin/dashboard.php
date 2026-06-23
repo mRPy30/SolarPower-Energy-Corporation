@@ -523,7 +523,7 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
                 </button>
         <div class="logo">
             <a href="dashboard.php">
-                <img src="../../assets/img/logo_no_background.png" alt="Solar Power Logo">
+                <img src="../../assets/img/solarpower_energy_corp.png" alt="Solar Power Logo" style="max-height: 50px; width: auto; object-fit: contain;">
             </a>    
         </div>
 

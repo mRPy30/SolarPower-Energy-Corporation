@@ -1116,7 +1116,7 @@
 <div class="page" id="page3">
   <div class="summary-wrap">
     <div class="summary-title" style="display:flex;align-items:center;gap:16px;margin-bottom:18px;">
-      <img src="/SolarPower-Energy-Corporation/assets/img/logo_no_background.png" alt="Solarpower LOGO" style="height:48px;width:auto;border-radius:8px;box-shadow:0 2px 12px rgba(58,92,26,0.09);background:#fff;padding:4px;">
+      <img src="/SolarPower-Energy-Corporation/assets/img/solarpower_energy_corp.png" alt="Solarpower LOGO" style="height:48px;width:auto;border-radius:8px;box-shadow:0 2px 12px rgba(58,92,26,0.09);background:#fff;padding:4px;">
       <span style="font-size:1.35rem;font-weight:900;color:var(--green);">SolarPower Energy Corporation</span>
     </div>
     <div class="summary-sub">Review your solar system configuration before adding to cart.</div>

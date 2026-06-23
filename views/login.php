@@ -75,7 +75,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <nav class="navbar navbar-expand-lg navbar-light fixed-top bg-transparent">
     <div class="container">
         <a class="navbar-brand" href="../index.php">
-            <img src="../assets/img/new_logo.png" alt="Site Logo" style="height: 200px;">
+            <img src="../assets/img/solarpower_energy_corp.png" alt="Site Logo" style="max-height: 100px; width: auto; object-fit: contain;">
         </a>
     </div>
 </nav>

@@ -220,7 +220,7 @@ Greener Future</h1>
             <div class="row g-5 align-items-center">
                 <!-- Left Column: Logo Only -->
                 <div class="col-lg-5 pe-lg-5 text-center" data-aos="fade-right">
-                    <img src="assets/img/new_logo.png" alt="SolarPower Logo" style="max-height: 180px; width: auto; object-fit: contain;">
+                    <img src="assets/img/solarpower_energy_corp.png" alt="SolarPower Logo" style="max-height: 180px; width: auto; object-fit: contain;">
                 </div>
 
                 <!-- Right Column: Corporate Profile Text & DOE Status Hub -->

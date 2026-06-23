@@ -535,7 +535,7 @@
     <div class="row">
       <div class="col-lg-3 col-md-6 mb-4">
         <div class="footer-logo-social">
-          <img src="assets/img/new_logo.png" alt="Logo">
+          <img src="assets/img/solarpower_energy_corp.png" alt="Logo" style="max-height: 85px; width: auto; object-fit: contain; margin-bottom: 15px;">
           <div class="footer-social-links">
             <a href="https://www.facebook.com/p/SolarPower-Energy-Corporation-61578373983187/"><i class="fab fa-facebook-f"></i></a>
             <a href="https://www.instagram.com/solarpowerenergycorporation?igsh=MWh4YTEyYWpzbDNlNQ=="><i class="fab fa-instagram"></i></a>

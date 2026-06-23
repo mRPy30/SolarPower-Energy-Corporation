@@ -159,7 +159,7 @@ if ($stmt->execute()) {
             </html>";
             
             $payload = [
-                'from' => 'SolarPower Calculator <onboarding@resend.dev>',
+                'from' => 'SolarPower Energy Corporation <solar@solarpower.com.ph>',
                 'to' => ['solar@solarpower.com.ph'],
                 'subject' => $subject,
                 'html' => $emailBody
@@ -173,10 +173,28 @@ if ($stmt->execute()) {
                 'Content-Type: application/json'
             ]);
             curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
-            curl_exec($ch);
+            $res = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
             curl_close($ch);
+
+            if ($httpCode !== 200 && $httpCode !== 201) {
+                // Fallback to standard PHP mail()
+                $headers = "MIME-Version: 1.0" . "\r\n";
+                $headers .= "Content-Type: text/html; charset=UTF-8" . "\r\n";
+                $headers .= "From: SolarPower Energy Corporation <solar@solarpower.com.ph>" . "\r\n";
+                
+                mail('solar@solarpower.com.ph', $subject, $emailBody, $headers);
+            }
         } catch (Exception $e) {
-            // Silence mail exceptions so the API response isn't broken
+            // Fallback if cURL or Resend fails
+            try {
+                $headers = "MIME-Version: 1.0" . "\r\n";
+                $headers .= "Content-Type: text/html; charset=UTF-8" . "\r\n";
+                $headers .= "From: SolarPower Energy Corporation <solar@solarpower.com.ph>" . "\r\n";
+                mail('solar@solarpower.com.ph', $subject ?? 'New Solar Estimate Request', $emailBody ?? 'Inquiry details saved.', $headers);
+            } catch (Exception $mailEx) {
+                // Silence mail exceptions
+            }
         }
     }
 

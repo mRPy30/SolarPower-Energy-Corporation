@@ -40,4 +40,24 @@
     <lastmod>2026-05-07</lastmod>
     <priority>0.50</priority>
   </url>
+  <url>
+    <loc>https://solarpower.com.ph/privacy-policy.php</loc>
+    <lastmod>2026-06-23</lastmod>
+    <priority>0.40</priority>
+  </url>
+  <url>
+    <loc>https://solarpower.com.ph/terms-of-service.php</loc>
+    <lastmod>2026-06-23</lastmod>
+    <priority>0.40</priority>
+  </url>
+  <url>
+    <loc>https://solarpower.com.ph/refund-policy.php</loc>
+    <lastmod>2026-06-23</lastmod>
+    <priority>0.40</priority>
+  </url>
+  <url>
+    <loc>https://solarpower.com.ph/terms-of-payment.php</loc>
+    <lastmod>2026-06-23</lastmod>
+    <priority>0.45</priority>
+  </url>
 </urlset>

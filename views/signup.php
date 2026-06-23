@@ -152,7 +152,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <nav class="navbar navbar-expand-lg navbar-light fixed-top">
     <div class="container">
         <a class="navbar-brand" href="../index.php">
-            <img src="../assets/img/logo_no_background.png" alt="Site Logo">
+            <img src="../assets/img/solarpower_energy_corp.png" alt="Site Logo" style="max-height: 100px; width: auto; object-fit: contain;">
         </a>
 
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">

@@ -85,7 +85,7 @@ try {
     </html>";
     
     $payload = [
-        'from' => 'SolarPower Contact Form <onboarding@resend.dev>',
+        'from' => 'SolarPower Energy Corporation <solar@solarpower.com.ph>',
         'to' => ['solar@solarpower.com.ph'],
         'reply_to' => $email,
         'subject' => $subject,
@@ -100,10 +100,30 @@ try {
         'Content-Type: application/json'
     ]);
     curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
-    curl_exec($ch);
+    $res = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     curl_close($ch);
+
+    if ($httpCode !== 200 && $httpCode !== 201) {
+        // Fallback to standard PHP mail()
+        $headers = "MIME-Version: 1.0" . "\r\n";
+        $headers .= "Content-Type: text/html; charset=UTF-8" . "\r\n";
+        $headers .= "From: SolarPower Energy Corporation <solar@solarpower.com.ph>" . "\r\n";
+        $headers .= "Reply-To: " . $email . "\r\n";
+        
+        mail('solar@solarpower.com.ph', $subject, $emailBody, $headers);
+    }
 } catch (Exception $e) {
-    // Silence exceptions
+    // Fallback if cURL or anything else fails
+    try {
+        $headers = "MIME-Version: 1.0" . "\r\n";
+        $headers .= "Content-Type: text/html; charset=UTF-8" . "\r\n";
+        $headers .= "From: SolarPower Energy Corporation <solar@solarpower.com.ph>" . "\r\n";
+        $headers .= "Reply-To: " . $email . "\r\n";
+        mail('solar@solarpower.com.ph', $subject, $emailBody, $headers);
+    } catch (Exception $mailEx) {
+        // Silence secondary exceptions
+    }
 }
 
 echo json_encode(["success" => true, "message" => "Message sent successfully"]);
