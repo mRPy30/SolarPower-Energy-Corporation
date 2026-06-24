@@ -65,7 +65,8 @@ $sql = "SELECT
     p.category,
     p.description,
     p.stockQuantity,
-    p.warranty
+    p.warranty,
+    p.imagePath
 FROM product p
 WHERE p.id = ? AND p.status = 'Active'";
 
@@ -81,6 +82,36 @@ if ($result->num_rows > 0) {
     exit;
 }
 $stmt->close();
+
+/* ---------- Fetch variant products (sharing same displayName) ---------- */
+$variants = [];
+$is_variant_cat = in_array(strtolower($product['category'] ?? ''), ['panel', 'panels', 'battery', 'batteries', 'inverter', 'inverters']);
+if ($product) {
+    if ($is_variant_cat) {
+        $vSql = "SELECT pbv.id as variant_junction_id, sb.id as brand_id, sb.brandName, pbv.price, pbv.variant_image as imagePath 
+                 FROM product_brand_variants pbv 
+                 JOIN supplier_brands sb ON pbv.brand_id = sb.id 
+                 WHERE pbv.product_id = ? AND sb.status = 'Active'";
+        $vStmt = $conn->prepare($vSql);
+        $vStmt->bind_param("i", $product['id']);
+        $vStmt->execute();
+        $vResult = $vStmt->get_result();
+        while ($vRow = $vResult->fetch_assoc()) {
+            $variants[] = $vRow;
+        }
+        $vStmt->close();
+    } else {
+        $vSql = "SELECT id, brandName, price, imagePath FROM product WHERE displayName = ? AND status = 'Active'";
+        $vStmt = $conn->prepare($vSql);
+        $vStmt->bind_param("s", $product['displayName']);
+        $vStmt->execute();
+        $vResult = $vStmt->get_result();
+        while ($vRow = $vResult->fetch_assoc()) {
+            $variants[] = $vRow;
+        }
+        $vStmt->close();
+    }
+}
 
 /* ---------- Fetch product images ---------- */
 $sql = "SELECT image_path FROM product_images WHERE product_id = ?";
@@ -150,6 +181,46 @@ $conn->close();
             --clr-bg: #ffffff;
             --clr-bg-light: #fafafa;
             --transition: all 0.3s ease;
+        }
+
+        /* Minimalist Variant Buttons UI */
+        .variant-chips-wrapper {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        .variant-option-chip {
+            position: relative;
+        }
+        .variant-option-chip input[type="radio"] {
+            position: absolute;
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .variant-option-chip label {
+            display: inline-block;
+            padding: 6px 12px;
+            background-color: transparent;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #495057;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            user-select: none;
+            margin: 0;
+        }
+        .variant-option-chip label:hover {
+            border-color: #ced4da;
+        }
+        .variant-option-chip input[type="radio"]:checked + label {
+            border-color: #f59e0b; /* Primary Accent Color */
+            border-width: 1px;
+            background-color: transparent;
+            color: #f59e0b;
         }
 
         * {
@@ -421,11 +492,20 @@ $conn->close();
             margin-bottom: 20px;
         }
 
-        .description-text {
+        .description-text,
+        .product-specs-list {
             font-size: 15px;
             line-height: 1.8;
             color: var(--clr-text);
         }
+
+        /* Quill-generated HTML inside .product-specs-list */
+        .product-specs-list p   { margin: 0 0 6px; }
+        .product-specs-list ul,
+        .product-specs-list ol  { padding-left: 1.4rem; margin: 0 0 8px; }
+        .product-specs-list li  { margin-bottom: 4px; }
+        .product-specs-list br  { display: block; content: ""; margin-top: 6px; }
+        .product-specs-list strong { color: var(--clr-dark); }
 
         /* Features List */
         .features-list {
@@ -620,17 +700,19 @@ $conn->close();
                             id="mainImage">
                     </div>
 
-                    <?php if (count($productImages) > 1): ?>
-                        <div class="thumbnail-gallery">
-                            <?php foreach ($productImages as $index => $image): ?>
-                                <div class="thumbnail-item <?= $index === 0 ? 'active' : '' ?>"
-                                    onclick="changeMainImage(this, '<?= htmlspecialchars($image) ?>')">
-                                    <img src="<?= htmlspecialchars($image) ?>"
-                                        alt="Thumbnail <?= $index + 1 ?>">
-                                </div>
-                            <?php endforeach; ?>
-                        </div>
-                    <?php endif; ?>
+                    <div id="thumbnailGalleryWrapper">
+                        <?php if (count($productImages) > 1): ?>
+                            <div class="thumbnail-gallery">
+                                <?php foreach ($productImages as $index => $image): ?>
+                                    <div class="thumbnail-item <?= $index === 0 ? 'active' : '' ?>"
+                                        onclick="changeMainImage(this, '<?= htmlspecialchars($image) ?>')">
+                                        <img src="<?= htmlspecialchars($image) ?>"
+                                            alt="Thumbnail <?= $index + 1 ?>">
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                        <?php endif; ?>
+                    </div>
                 </div>
 
                 <!-- Product Info -->
@@ -644,6 +726,42 @@ $conn->close();
                     <div class="price-section">
                         <div class="product-price">₱<?= number_format($product['price'], 2) ?></div>
                     </div>
+
+                    <!-- Hidden Product ID Field -->
+                    <input type="hidden" name="product_id" id="hidden_product_id" value="<?= $product['id'] ?>">
+
+                    <!-- Brand Variant Selector -->
+                    <?php 
+                    $eligible_categories = ['panel', 'panels', 'battery', 'batteries', 'inverter', 'inverters'];
+                    $is_eligible = in_array(strtolower($product['category'] ?? ''), $eligible_categories);
+                    if ($is_eligible && count($variants) > 0): 
+                    ?>
+                        <div class="brand-variants-section my-3">
+                            <label class="fw-bold text-uppercase text-secondary" style="font-size: 11px; letter-spacing: 0.5px; margin-bottom: 8px; display: block;">Select Brand / Supplier</label>
+                            <div class="variant-chips-wrapper">
+                                <?php foreach ($variants as $index => $variant): ?>
+                                    <?php 
+                                    $v_id = $variant['variant_junction_id'] ?? $variant['id'];
+                                    $v_img = !empty($variant['imagePath']) ? $variant['imagePath'] : $product['imagePath'];
+                                    ?>
+                                        <div class="variant-option-chip">
+                                            <input type="radio" 
+                                                   class="variant-radio" 
+                                                   name="brand_variant" 
+                                                   id="variant_brand_<?= $v_id ?>" 
+                                                   value="<?= $v_id ?>"
+                                                   data-price="<?= $variant['price'] ?>"
+                                                   data-image="<?= htmlspecialchars($v_img) ?>"
+                                                   data-brand="<?= htmlspecialchars($variant['brandName']) ?>"
+                                                   <?= $index === 0 ? 'checked' : '' ?>>
+                                            <label for="variant_brand_<?= $v_id ?>">
+                                                <?= htmlspecialchars($variant['brandName']) ?>
+                                            </label>
+                                        </div>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+                    <?php endif; ?>
 
                     <!-- Stock Status & Warranty -->
                     <div style="display: none;">
@@ -699,17 +817,32 @@ $conn->close();
                     <!-- Description -->
                     <div class="description-section">
                         <h2 class="section-heading">Description</h2>
-                        <p class="description-text">
-                            <?php
-                            $desc = $product['description'] ?? 'No description available for this product.';
-                            $cleanDesc = str_replace(
-                                ['\r\n', '\r', '\n', '\\r\\n', '\\r', '\\n', '/n/n', '/n'], 
-                                "\n", 
+                        <?php
+                        $desc = $product['description'] ?? '';
+
+                        if (empty(trim($desc))) {
+                            // Nothing stored at all
+                            echo '<p class="description-text">No description available for this product.</p>';
+
+                        } elseif (strip_tags($desc) !== $desc) {
+                            // ── HTML content (posted by Quill.js) ──────────────────────────
+                            // Allow the safe subset of HTML Quill produces:
+                            // <p><br><strong><em><u><h2><h3><ul><ol><li>
+                            $allowedTags = '<p><br><strong><em><u><h2><h3><ul><ol><li><span>';
+                            $safeHtml = strip_tags($desc, $allowedTags);
+                            echo '<div class="product-specs-list">' . $safeHtml . '</div>';
+
+                        } else {
+                            // ── Legacy plain-text (stored before Quill was added) ──────────
+                            // Normalise every flavour of escaped newline that may exist in DB
+                            $cleanDesc = preg_replace(
+                                '/\\\\r\\\\n|\\\\r|\\\\n/',  // literal \r\n, \r, \n in stored string
+                                "\n",
                                 $desc
                             );
-                            echo nl2br(htmlspecialchars($cleanDesc));
-                            ?>
-                        </p>
+                            echo '<p class="product-specs-list">' . nl2br(htmlspecialchars($cleanDesc)) . '</p>';
+                        }
+                        ?>
                     </div>
 
                     <div class="product-info-section p-4 border rounded bg-light shadow-sm">
@@ -1063,8 +1196,7 @@ $conn->close();
             </div>
 
             <!-- Thumbnail sidebar -->
-            <?php if (count($productImages) > 1): ?>
-            <div style="width:140px;flex-shrink:0;border-left:1px solid #f0f0f0;background:#fafafa;overflow-y:auto;padding:16px 12px;display:flex;flex-direction:column;gap:10px;">
+            <div id="modalGalleryWrapper" style="width:140px;flex-shrink:0;border-left:1px solid #f0f0f0;background:#fafafa;overflow-y:auto;padding:16px 12px;display:flex;flex-direction:column;gap:10px; <?= count($productImages) > 1 ? '' : 'display:none;' ?>">
                 <p style="font-size:12px;color:#999;margin:0 0 6px;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;">All Photos</p>
                 <?php foreach ($productImages as $index => $image): ?>
                 <div class="modal-thumb <?= $index === 0 ? 'modal-thumb-active' : '' ?>"
@@ -1074,7 +1206,6 @@ $conn->close();
                 </div>
                 <?php endforeach; ?>
             </div>
-            <?php endif; ?>
         </div>
     </div>
 
@@ -1082,7 +1213,98 @@ $conn->close();
     <script>
         // ── Product data passed from PHP ──
         const productData = <?= json_encode($product) ?>;
-        productData.image_path = '<?= $productImages[0] ?>';
+        productData.image_path = '<?= htmlspecialchars($productImages[0] ?? $product['imagePath']) ?>';
+        const originalProductId = <?= intval($product['id']) ?>;
+
+        // ── Brand Variant Change Event Listener ──
+        document.addEventListener('DOMContentLoaded', function() {
+            const variantRadios = document.querySelectorAll('.variant-radio');
+            variantRadios.forEach(radio => {
+                radio.addEventListener('change', function() {
+                    if (this.checked) {
+                        const selectedId = this.value;
+                        const price = parseFloat(this.getAttribute('data-price')) || 0;
+                        const mainImage = this.getAttribute('data-image') || 'assets/img/placeholder.png';
+                        const brandName = this.getAttribute('data-brand') || '';
+
+                        // 1. Update productData properties for cart session
+                        productData.id = originalProductId; // Keep original product id for order placement
+                        productData.price = price;
+                        productData.image_path = mainImage;
+                        productData.brandName = brandName;
+
+                        // 2. Update screen inputs & text values
+                        const hiddenInput = document.getElementById('hidden_product_id');
+                        if (hiddenInput) hiddenInput.value = originalProductId;
+
+                        const priceDisplay = document.querySelector('.product-price');
+                        if (priceDisplay) {
+                            priceDisplay.textContent = '₱' + price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                        }
+
+                        const brandDisplay = document.querySelector('.product-brand');
+                        if (brandDisplay) brandDisplay.textContent = brandName;
+
+                        // 3. Update main image view & modal primary image
+                        const mainImgEl = document.getElementById('mainImage');
+                        if (mainImgEl) mainImgEl.src = mainImage;
+                        
+                        const modalImgEl = document.getElementById('modalImage');
+                        if (modalImgEl) modalImgEl.src = mainImage;
+
+                        // 4. Trigger fetch to update thumbnail gallery
+                        fetch(`get-gallery.php?product_id=${originalProductId}`)
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.success && data.images) {
+                                    const thumbWrapper = document.getElementById('thumbnailGalleryWrapper');
+                                    const modalWrapper = document.getElementById('modalGalleryWrapper');
+
+                                    // Render main thumbnail gallery list
+                                    if (data.images.length > 1) {
+                                        let thumbHtml = '<div class="thumbnail-gallery">';
+                                        data.images.forEach((img, index) => {
+                                            thumbHtml += `
+                                                <div class="thumbnail-item ${index === 0 ? 'active' : ''}" onclick="changeMainImage(this, '${img}')">
+                                                    <img src="${img}" alt="Thumbnail ${index + 1}">
+                                                </div>
+                                            `;
+                                        });
+                                        thumbHtml += '</div>';
+                                        if (thumbWrapper) thumbWrapper.innerHTML = thumbHtml;
+                                    } else {
+                                        if (thumbWrapper) thumbWrapper.innerHTML = '';
+                                    }
+
+                                    // Render modal thumbnail sidebar list
+                                    if (data.images.length > 1) {
+                                        let modalHtml = '<p style="font-size:12px;color:#999;margin:0 0 6px;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;">All Photos</p>';
+                                        data.images.forEach((img, index) => {
+                                            modalHtml += `
+                                                <div class="modal-thumb ${index === 0 ? 'modal-thumb-active' : ''}"
+                                                     onclick="changeModalImage(this, '${img}')"
+                                                     style="border:2px solid ${index === 0 ? 'var(--clr-primary)' : '#e0e0e0'};border-radius:6px;overflow:hidden;cursor:pointer;aspect-ratio:1;transition:all 0.2s;">
+                                                    <img src="${img}" alt="Thumb ${index + 1}" style="width:100%;height:100%;object-fit:cover;display:block;">
+                                                </div>
+                                            `;
+                                        });
+                                        if (modalWrapper) {
+                                            modalWrapper.innerHTML = modalHtml;
+                                            modalWrapper.style.display = 'flex';
+                                        }
+                                    } else {
+                                        if (modalWrapper) {
+                                            modalWrapper.innerHTML = '';
+                                            modalWrapper.style.display = 'none';
+                                        }
+                                    }
+                                }
+                            })
+                            .catch(err => console.error('Error fetching image gallery:', err));
+                    }
+                });
+            });
+        });
 
         // ── Cart ──
         let cart = JSON.parse(localStorage.getItem('solarCart') || '[]');

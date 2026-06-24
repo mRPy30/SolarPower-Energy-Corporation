@@ -1439,90 +1439,165 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
         $_SESSION['add_product_msg_type'] = 'error';
     } else {
         $category = $conn_post->real_escape_string($_POST['category'] ?? '');
-        $brand = $conn_post->real_escape_string($_POST['brand'] ?? '');
-        // If brand is empty and it's a package, default it to "Package"
-        if (empty($brand) && (stripos($category, 'Package') !== false || empty($category))) {
-            $brand = 'Package';
-        }
-        
+        $categoryLower = strtolower($category);
+        $isVariantCategory = strpos($categoryLower, 'panel') !== false || strpos($categoryLower, 'battery') !== false || strpos($categoryLower, 'inverter') !== false;
+
         $packageType = $conn_post->real_escape_string($_POST['package-type'] ?? '');
         if (empty($packageType)) $packageType = NULL;
         $status = $conn_post->real_escape_string($_POST['status'] ?? 'Active');
         
         $productName = $conn_post->real_escape_string($_POST['product-name'] ?? '');
         $warranty = $conn_post->real_escape_string($_POST['warranty'] ?? '');
-        $price = (float) ($_POST['price'] ?? 0);
-        // Default stock to 9999 to keep it "enabled"
         $stockQuantity = isset($_POST['stock-quantity']) && $_POST['stock-quantity'] !== '' ? (int)$_POST['stock-quantity'] : 9999;
-        $description = $conn_post->real_escape_string($_POST['description'] ?? '');
-        $imagePath = 'path/to/uploaded/image.jpg';
+        // NOTE: Do NOT call real_escape_string on description.
+        // The description may contain HTML from Quill.js (e.g. <p>, <ul>, <li>).
+        // Prepared statements bind the raw value safely — no manual escaping needed.
+        $description = $_POST['description'] ?? '';
 
-        if (empty($category) || empty($brand) || empty($productName) || $price <= 0) {
+        // Gather Brands & Prices
+        $brand_ids = $_POST['brand_ids'] ?? [];
+        $brand_prices = $_POST['brand_price'] ?? [];
+
+        if (empty($category) || empty($productName)) {
             $_SESSION['add_product_msg'] = 'Please fill all required fields correctly.';
             $_SESSION['add_product_msg_type'] = 'error';
+        } elseif ($isVariantCategory && empty($brand_ids)) {
+            $_SESSION['add_product_msg'] = 'Please select at least one supplier brand for this category.';
+            $_SESSION['add_product_msg_type'] = 'error';
         } else {
-            $stmt = $conn_post->prepare("INSERT INTO product (displayName, brandName, price, category, packageType, stockQuantity, warranty, description, imagePath, postedByStaffId, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-            if (!$stmt) {
-                $_SESSION['add_product_msg'] = 'Database error: ' . $conn_post->error;
-                $_SESSION['add_product_msg_type'] = 'error';
+            // First we need to determine the default Brand Name and Price for the product table fallbacks
+            $first_brand_name = 'Various';
+            $fallback_price = 0.00;
+
+            if ($isVariantCategory && !empty($brand_ids)) {
+                $first_brand_id = (int)$brand_ids[0];
+                $fallback_price = (float)($brand_prices[$first_brand_id] ?? 0);
+                
+                // Fetch first brand name from the real `brands` table
+                $bRes = $conn_post->query("SELECT brand_name FROM brands WHERE brand_id = $first_brand_id");
+                if ($bRes && $bRow = $bRes->fetch_assoc()) {
+                    $first_brand_name = $bRow['brand_name'];
+                }
             } else {
-                $stmt->bind_param("ssdssisssis", $productName, $brand, $price, $category, $packageType, $stockQuantity, $warranty, $description, $imagePath, $user_id, $status);
+                $first_brand_name = $conn_post->real_escape_string($_POST['brand'] ?? '');
+                if (empty($first_brand_name) && (stripos($category, 'Package') !== false || empty($category))) {
+                    $first_brand_name = 'Package';
+                }
+                $fallback_price = (float) ($_POST['price'] ?? 0);
+            }
 
-                if ($stmt->execute()) {
-                    $product_id = $stmt->insert_id;
+            // Start Transaction to guarantee integrity
+            $conn_post->begin_transaction();
+            try {
+                // Placeholder image path, will update once we get ID
+                $imagePath = 'path/to/uploaded/image.jpg';
 
-                    // ===== IMAGE UPLOAD =====
-                    $uploadDir = "../../uploads/products/$product_id/";
-                    if (!is_dir($uploadDir)) {
-                        mkdir($uploadDir, 0777, true);
+                $stmt = $conn_post->prepare("INSERT INTO product (displayName, brandName, price, category, packageType, stockQuantity, warranty, description, imagePath, postedByStaffId, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                if (!$stmt) {
+                    throw new Exception('Database prepare error: ' . $conn_post->error);
+                }
+                $stmt->bind_param("ssdssisssis", $productName, $first_brand_name, $fallback_price, $category, $packageType, $stockQuantity, $warranty, $description, $imagePath, $user_id, $status);
+                
+                if (!$stmt->execute()) {
+                    throw new Exception('Error executing insert query: ' . $stmt->error);
+                }
+                $product_id = $stmt->insert_id;
+                $stmt->close();
+
+                // Create folder for product
+                $uploadDir = "../../uploads/products/$product_id/";
+                if (!is_dir($uploadDir)) {
+                    mkdir($uploadDir, 0777, true);
+                }
+
+                $allowedTypes = ['jpg', 'jpeg', 'png', 'webp'];
+                $first_variant_img_path = '';
+
+                // If Variant Category, process each checked brand
+                if ($isVariantCategory) {
+                    foreach ($brand_ids as $b_id) {
+                        $b_id = (int)$b_id;
+                        $v_price = (float)($brand_prices[$b_id] ?? 0);
+                        $uploaded_path = NULL;
+
+                        // Check image file for this brand
+                        $file_key = 'brand_image_' . $b_id;
+                        if (isset($_FILES[$file_key]) && $_FILES[$file_key]['error'] === 0) {
+                            $ext = strtolower(pathinfo($_FILES[$file_key]['name'], PATHINFO_EXTENSION));
+                            if (in_array($ext, $allowedTypes)) {
+                                $newName = "variant_" . $b_id . "_" . uniqid() . "." . $ext;
+                                $targetPath = $uploadDir . $newName;
+                                if (move_uploaded_file($_FILES[$file_key]['tmp_name'], $targetPath)) {
+                                    $uploaded_path = "uploads/products/$product_id/$newName";
+                                    if (empty($first_variant_img_path)) {
+                                        $first_variant_img_path = $uploaded_path;
+                                    }
+                                }
+                            }
+                        }
+
+                        // Insert variant junction row
+                        $vStmt = $conn_post->prepare("INSERT INTO product_brand_variants (product_id, brand_id, price, variant_image) VALUES (?, ?, ?, ?)");
+                        if ($vStmt) {
+                            $vStmt->bind_param("iids", $product_id, $b_id, $v_price, $uploaded_path);
+                            $vStmt->execute();
+                            $vStmt->close();
+                        }
                     }
+                }
 
-                    $allowedTypes = ['jpg', 'jpeg', 'png', 'webp'];
-                    $maxImages = 15;
-                    $count = 0;
+                // ===== STANDARD IMAGES GALLERY UPLOAD =====
+                $maxImages = 15;
+                $count = 0;
+                if (!empty($_FILES['product-images']['name'][0])) {
+                    foreach ($_FILES['product-images']['tmp_name'] as $key => $tmpName) {
+                        if ($count >= $maxImages) break;
+                        if ($_FILES['product-images']['error'][$key] !== 0) continue;
 
-                    if (!empty($_FILES['product-images']['name'][0])) {
-                        foreach ($_FILES['product-images']['tmp_name'] as $key => $tmpName) {
-                            if ($count >= $maxImages)
-                                break;
-                            if ($_FILES['product-images']['error'][$key] !== 0)
-                                continue;
+                        $ext = strtolower(pathinfo($_FILES['product-images']['name'][$key], PATHINFO_EXTENSION));
+                        if (!in_array($ext, $allowedTypes)) continue;
 
-                            $ext = strtolower(pathinfo($_FILES['product-images']['name'][$key], PATHINFO_EXTENSION));
-                            if (!in_array($ext, $allowedTypes))
-                                continue;
+                        $newName = "img_" . uniqid() . "." . $ext;
+                        $targetPath = $uploadDir . $newName;
 
-                            $newName = uniqid("img_") . "." . $ext;
-                            $targetPath = $uploadDir . $newName;
-
-                            if (move_uploaded_file($tmpName, $targetPath)) {
-                                $relativePath = "uploads/products/$product_id/$newName";
-
-                                $imgStmt = $conn_post->prepare("
-                                    INSERT INTO product_images (product_id, image_path)
-                                    VALUES (?, ?)
-                                ");
+                        if (move_uploaded_file($tmpName, $targetPath)) {
+                            $relativePath = "uploads/products/$product_id/$newName";
+                            
+                            $imgStmt = $conn_post->prepare("INSERT INTO product_images (product_id, image_path) VALUES (?, ?)");
+                            if ($imgStmt) {
                                 $imgStmt->bind_param("is", $product_id, $relativePath);
                                 $imgStmt->execute();
                                 $imgStmt->close();
-
-                                $count++;
                             }
+                            if (empty($first_variant_img_path) && $count === 0) {
+                                $first_variant_img_path = $relativePath;
+                            }
+                            $count++;
                         }
                     }
-
-                    $_SESSION['add_product_msg'] = "Product '{$productName}' added successfully with {$count} image(s)!";
-                    $_SESSION['add_product_msg_type'] = 'success';
-                } else {
-                    $_SESSION['add_product_msg'] = 'Error adding product: ' . $stmt->error;
-                    $_SESSION['add_product_msg_type'] = 'error';
                 }
-                $stmt->close();
+
+                // If we uploaded variant images or gallery images, update main product imagePath fallback
+                $finalCover = !empty($first_variant_img_path) ? $first_variant_img_path : 'uploads/products/placeholder.png';
+                $upStmt = $conn_post->prepare("UPDATE product SET imagePath = ? WHERE id = ?");
+                if ($upStmt) {
+                    $upStmt->bind_param("si", $finalCover, $product_id);
+                    $upStmt->execute();
+                    $upStmt->close();
+                }
+
+                // Commit transaction
+                $conn_post->commit();
+                $_SESSION['add_product_msg'] = "Product '{$productName}' with brand variants added successfully!";
+                $_SESSION['add_product_msg_type'] = 'success';
+            } catch (Exception $e) {
+                $conn_post->rollback();
+                $_SESSION['add_product_msg'] = 'Transaction failed: ' . $e->getMessage();
+                $_SESSION['add_product_msg_type'] = 'error';
             }
         }
         $conn_post->close();
     }
-    // PRG redirect — converts POST to GET, prevents duplicate on reload
     header("Location: dashboard.php");
     exit;
 }
@@ -1544,6 +1619,32 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
     <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- Quill.js WYSIWYG – description editor -->
+    <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
+    <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
+    <style>
+        /* ── Quill editor inside the Add Product form ── */
+        #quill-description-editor {
+            min-height: 140px;
+            max-height: 320px;
+            overflow-y: auto;
+            background: #fff;
+            border-radius: 0 0 8px 8px;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        .ql-toolbar.ql-snow {
+            border-radius: 8px 8px 0 0;
+            border-color: #cbd5e1 !important;
+            background: #f8fafc;
+        }
+        .ql-container.ql-snow {
+            border-color: #cbd5e1 !important;
+            border-radius: 0 0 8px 8px;
+        }
+        .ql-toolbar .ql-stroke { stroke: #475569; }
+        .ql-toolbar .ql-fill  { fill:  #475569; }
+    </style>
 
     <style>
         /* ======= GLOBAL BODY STYLES ======= */
@@ -3162,9 +3263,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                                 </div>
 
                                 <div class="product-actions-btn-group">
-                                    <button class="btn-card-edit" title="Edit Product">
+                                    <a href="edit-product.php?id=<?php echo (int)$product['id']; ?>"
+                                       class="btn-card-edit"
+                                       title="Edit Product">
                                         <i class="fas fa-edit"></i>
-                                    </button>
+                                    </a>
                                 </div>
                             </div>
                         <?php endforeach; ?>
@@ -3256,8 +3359,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 </div>
             </div>
 
-            <!-- Enhanced Edit Product Modal -->
-            <div id="editProductModal" class="modal">
+            <!-- Edit Product: Redirects to dedicated full-page editor -->
+            <!-- edit-product.php?id=[PRODUCT_ID] handles all editing UI -->
                 <div class="modal-content modal-large">
                     <span class="close" onclick="closeEditModal()">&times;</span>
                     <h2><i class="fas fa-edit"></i> Edit Product</h2>
@@ -4605,29 +4708,30 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
 
             <div id="add-product" class="page-content add-product-page">
                 <style>
-                    .alert {
-                        padding: 10px;
+                    .add-product-alert {
+                        padding: 10px 16px;
                         margin-bottom: 20px;
-                        border-radius: 5px;
+                        border-radius: 6px;
+                        font-size: 14px;
+                        font-weight: 500;
                     }
 
-                    .alert.error {
+                    .add-product-alert.error {
                         background-color: #fdd;
                         color: #a00;
                         border: 1px solid #f99;
                     }
 
-                    .alert.success {
+                    .add-product-alert.success {
                         background-color: #dfd;
                         color: #0a0;
                         border: 1px solid #9f9;
                     }
                 </style>
-
                 <?php
                 if (isset($_SESSION['add_product_msg'])) {
                     $msgType = $_SESSION['add_product_msg_type'] ?? 'success';
-                    echo "<div class='alert {$msgType}'>" . htmlspecialchars($_SESSION['add_product_msg']) . "</div>";
+                    echo "<div class='add-product-alert {$msgType}'>" . htmlspecialchars($_SESSION['add_product_msg']) . "</div>";
                     unset($_SESSION['add_product_msg'], $_SESSION['add_product_msg_type']);
                 }
                 ?>
@@ -4648,7 +4752,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                                     </select>
                                 </div>
 
-                                <div class="form-group">
+                                <div class="form-group" id="standard-brand-group">
                                     <label for="brand-select">
                                         <i class="fas fa-trademark"></i>
                                         Brand Name <span class="required">*</span>
@@ -4690,7 +4794,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                                 </div>
 
                                 <div class="form-row-group">
-                                    <div class="form-group">
+                                    <div class="form-group" id="standard-price-group">
                                         <label for="price-input">
                                             <i class="fas fa-peso-sign"></i>
                                             Price <span class="required">*</span>
@@ -4709,6 +4813,18 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                                         </label>
                                         <input type="number" id="stock-quantity-input" name="stock-quantity"
                                             placeholder="0" min="0" value="9999">
+                                    </div>
+                                </div>
+
+                                <div class="form-group" id="available-brands-checklist-section" style="display: none; grid-column: 1 / -1; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+                                    <h4 style="margin-top: 0; color: #1e293b; font-size: 16px; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                                        <i class="fas fa-certificate" style="color: #f59e0b;"></i> Available Brands Checklist
+                                    </h4>
+                                    <p style="font-size: 13px; color: #64748b; margin-top: 4px; margin-bottom: 16px;">
+                                        Select active supplier brands for this product, then assign a specific price and unique variant cover image for each.
+                                    </p>
+                                    <div id="brands-checklist-container" style="display: flex; flex-direction: column; gap: 14px;">
+                                        <!-- Dynamically populated from JS -->
                                     </div>
                                 </div>
 
@@ -4739,14 +4855,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                                     </select>
                                 </div>
 
-                                <div class="form-group">
-                                    <label for="description-input">
+                                <div class="form-group" style="grid-column: 1 / -1;">
+                                    <label>
                                         <i class="fas fa-align-left"></i>
                                         Description <span class="required">*</span>
                                     </label>
-                                    <textarea id="description-input" name="description"
-                                        placeholder="Describe your product features, specifications, and benefits..."
-                                        required></textarea>
+                                    <!-- Quill editor mounts here; hidden input carries HTML to PHP -->
+                                    <div id="quill-description-editor"></div>
+                                    <input type="hidden" id="description-hidden" name="description">
+                                    <small style="color:#94a3b8;font-size:11px;margin-top:4px;display:block;">
+                                        Tip: Use the toolbar to add <strong>bold</strong> text, bullet lists, or numbered specs.
+                                    </small>
                                 </div>
 
                                 <div class="form-group" style="grid-column: 1 / -1;">
@@ -9031,8 +9150,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                     // Parse the response to check for success
                     const parser = new DOMParser();
                     const doc = parser.parseFromString(html, 'text/html');
-                    const successAlert = doc.querySelector('.alert.success');
-                    const errorAlert = doc.querySelector('.alert.error');
+                    // Class was renamed to .add-product-alert to avoid Bootstrap .alert collision
+                    const successAlert = doc.querySelector('.add-product-alert.success');
+                    const errorAlert   = doc.querySelector('.add-product-alert.error');
 
                     if (successAlert) {
                         // Success! Show success message
@@ -11914,12 +12034,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
 
             categorySelect.addEventListener('change', function () {
                 const category = this.value;
+                const categoryLower = category.toLowerCase();
 
                 // Toggle package type group
                 const packageTypeGroup = document.getElementById('package-type-group');
                 const packageTypeSelect = document.getElementById('package-type-select');
                 if (packageTypeGroup && packageTypeSelect) {
-                    if (category.toLowerCase().includes('package')) {
+                    if (categoryLower.includes('package')) {
                         packageTypeGroup.style.display = 'block';
                         packageTypeSelect.setAttribute('required', 'required');
                     } else {
@@ -11951,42 +12072,136 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                     }
                 }
 
-                // Reset brand dropdown
-                brandSelect.innerHTML = '<option value="">Loading brands...</option>';
-                brandSelect.disabled = true;
+                // Dynamic Variants Checklist Check
+                const standardBrandGroup = document.getElementById('standard-brand-group');
+                const standardPriceGroup = document.getElementById('standard-price-group');
+                const brandChecklistSection = document.getElementById('available-brands-checklist-section');
+                const brandChecklistContainer = document.getElementById('brands-checklist-container');
+                const priceInput = document.getElementById('price-input');
 
-                if (!category) {
-                    brandSelect.innerHTML = '<option value="">Select a category first</option>';
-                    return;
-                }
+                const isVariantCategory = categoryLower.includes('panel') || categoryLower.includes('battery') || categoryLower.includes('inverter');
 
-                fetch(`../../controllers/brand_data.php?category=${encodeURIComponent(category)}`)
-                    .then(response => response.json())
-                    .then(brands => {
-                        brandSelect.innerHTML = '<option value="">Select brand</option>';
+                if (isVariantCategory) {
+                    // Hide standard fields and make them non-required
+                    if (standardBrandGroup) standardBrandGroup.style.display = 'none';
+                    if (standardPriceGroup) standardPriceGroup.style.display = 'none';
+                    if (brandSelect) brandSelect.removeAttribute('required');
+                    if (priceInput) {
+                        priceInput.removeAttribute('required');
+                        priceInput.value = '0.00'; // Default fallback
+                    }
 
-                        if (brands.length === 0) {
-                            brandSelect.innerHTML = '<option value="">No brands available</option>';
-                            // Make brand optional if no brands are available or it's a package
-                            if (category.toLowerCase().includes('package')) {
-                                brandSelect.removeAttribute('required');
-                            }
-                        } else {
-                            brands.forEach(brand => {
-                                const option = document.createElement('option');
-                                option.value = brand;
-                                option.textContent = brand;
-                                brandSelect.appendChild(option);
+                    // Show brand variant checklist section
+                    if (brandChecklistSection) brandChecklistSection.style.display = 'block';
+                    if (brandChecklistContainer) {
+                        brandChecklistContainer.innerHTML = '<p style="color: #64748b; font-size: 13px;">Loading brands...</p>';
+
+                        fetch(`../../get-supplier-brands.php?category=${encodeURIComponent(category)}`)
+                            .then(response => response.json())
+                            .then(brands => {
+                                if (brands.length === 0) {
+                                    brandChecklistContainer.innerHTML = '<p style="color: #ef4444; font-size: 13px;">No brands found for this category. Add brands under <strong>Categories & Brands</strong> first.</p>';
+                                    return;
+                                }
+
+                                brandChecklistContainer.innerHTML = '';
+                                brands.forEach(brand => {
+                                    const row = document.createElement('div');
+                                    row.className = 'brand-variant-row';
+                                    row.style = 'display: grid; grid-template-columns: auto 1fr 1fr; gap: 15px; align-items: center; background: #ffffff; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0;';
+                                    row.innerHTML = `
+                                        <div style="display: flex; align-items: center; gap: 8px; min-width: 150px;">
+                                            <input type="checkbox" name="brand_ids[]" value="${brand.brand_id}" class="brand-checkbox" style="width: 18px; height: 18px; cursor: pointer;">
+                                            <span style="font-weight: 500; color: #334155;">${brand.brand_name}</span>
+                                        </div>
+                                        <div>
+                                            <label style="font-size: 11px; color: #64748b; display: block; margin-bottom: 4px;">Variant Price (PHP) <span style="color:red;">*</span></label>
+                                            <input type="number" name="brand_price[${brand.brand_id}]" placeholder="0.00" step="0.01" class="brand-price-input" disabled style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; box-sizing: border-box;">
+                                        </div>
+                                        <div>
+                                            <label style="font-size: 11px; color: #64748b; display: block; margin-bottom: 4px;">Variant Image <span style="color:red;">*</span></label>
+                                            <input type="file" name="brand_image_${brand.brand_id}" accept="image/*" class="brand-image-input" disabled style="width: 100%; font-size: 12px;">
+                                        </div>
+                                    `;
+
+                                    // Checkbox toggle — enable/disable price & image inputs
+                                    const checkbox = row.querySelector('.brand-checkbox');
+                                    const pInput  = row.querySelector('.brand-price-input');
+                                    const fInput  = row.querySelector('.brand-image-input');
+
+                                    checkbox.addEventListener('change', function () {
+                                        if (this.checked) {
+                                            pInput.removeAttribute('disabled');
+                                            pInput.setAttribute('required', 'required');
+                                            fInput.removeAttribute('disabled');
+                                            fInput.setAttribute('required', 'required');
+                                        } else {
+                                            pInput.setAttribute('disabled', 'disabled');
+                                            pInput.removeAttribute('required');
+                                            pInput.value = '';
+                                            fInput.setAttribute('disabled', 'disabled');
+                                            fInput.removeAttribute('required');
+                                            fInput.value = '';
+                                        }
+                                    });
+
+                                    brandChecklistContainer.appendChild(row);
+                                });
+                            })
+                            .catch(err => {
+                                console.error('Error loading brands:', err);
+                                brandChecklistContainer.innerHTML = '<p style="color: #ef4444; font-size: 13px;">Error loading brands. Please try again.</p>';
                             });
-                            brandSelect.setAttribute('required', 'required');
-                        }
+                    }
+                } else {
+                    // Show standard inputs and restore requirements
+                    if (standardBrandGroup) standardBrandGroup.style.display = 'block';
+                    if (standardPriceGroup) standardPriceGroup.style.display = 'block';
+                    if (brandSelect) brandSelect.setAttribute('required', 'required');
+                    if (priceInput) {
+                        priceInput.setAttribute('required', 'required');
+                        priceInput.value = '';
+                    }
 
-                        brandSelect.disabled = false;
-                    })
-                    .catch(error => {
-                        console.error('Error loading brands:', error);
-                        brandSelect.innerHTML = '<option value="">Failed to load brands</option>';
-                    });
+                    if (brandChecklistSection) brandChecklistSection.style.display = 'none';
+                    if (brandChecklistContainer) brandChecklistContainer.innerHTML = '';
+
+                    // Reset standard brand dropdown
+                    brandSelect.innerHTML = '<option value="">Loading brands...</option>';
+                    brandSelect.disabled = true;
+
+                    if (!category) {
+                        brandSelect.innerHTML = '<option value="">Select a category first</option>';
+                        return;
+                    }
+
+                    fetch(`../../controllers/brand_data.php?category=${encodeURIComponent(category)}`)
+                        .then(response => response.json())
+                        .then(brands => {
+                            brandSelect.innerHTML = '<option value="">Select brand</option>';
+
+                            if (brands.length === 0) {
+                                brandSelect.innerHTML = '<option value="">No brands available</option>';
+                                if (categoryLower.includes('package')) {
+                                    brandSelect.removeAttribute('required');
+                                }
+                            } else {
+                                brands.forEach(brand => {
+                                    const option = document.createElement('option');
+                                    option.value = brand;
+                                    option.textContent = brand;
+                                    brandSelect.appendChild(option);
+                                });
+                                brandSelect.setAttribute('required', 'required');
+                            }
+
+                            brandSelect.disabled = false;
+                        })
+                        .catch(error => {
+                            console.error('Error loading brands:', error);
+                            brandSelect.innerHTML = '<option value="">Failed to load brands</option>';
+                        });
+                }
             });
         });
 
@@ -12370,17 +12585,62 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
         document.addEventListener('DOMContentLoaded', function () {
             ProductPreview.init();
 
-            // Handle form reset
-            const form = document.querySelector('form[enctype="multipart/form-data"]');
-            if (form) {
-                form.addEventListener('reset', () => {
-                    setTimeout(() => {
-                        ProductPreview.reset();
-                    }, 10);
+            // ── Quill.js Description Editor ─────────────────────────────────
+            const quillEditorEl = document.getElementById('quill-description-editor');
+            if (quillEditorEl && typeof Quill !== 'undefined') {
+                const quill = new Quill('#quill-description-editor', {
+                    theme: 'snow',
+                    placeholder: 'Describe your product features, specifications, and benefits...',
+                    modules: {
+                        toolbar: [
+                            [{ header: [2, 3, false] }],
+                            ['bold', 'italic', 'underline'],
+                            [{ list: 'ordered' }, { list: 'bullet' }],
+                            ['clean']
+                        ]
+                    }
                 });
+
+                const hiddenInput = document.getElementById('description-hidden');
+
+                // Sync Quill HTML → hidden input on every keystroke
+                quill.on('text-change', function () {
+                    // If editor is empty Quill returns '<p><br></p>' — store '' instead
+                    const raw = quill.root.innerHTML;
+                    hiddenInput.value = (raw === '<p><br></p>') ? '' : raw;
+                });
+
+                // Intercept the form's submit to flush the editor value first
+                const productForm = quillEditorEl.closest('form');
+                if (productForm) {
+                    productForm.addEventListener('submit', function () {
+                        const raw = quill.root.innerHTML;
+                        hiddenInput.value = (raw === '<p><br></p>') ? '' : raw;
+                    }, { capture: true }); // capture=true runs BEFORE the AJAX handler
+                }
+
+                // Clear the editor when the form is reset
+                const form = document.querySelector('form[enctype="multipart/form-data"]');
+                if (form) {
+                    form.addEventListener('reset', () => {
+                        setTimeout(() => {
+                            quill.setContents([]);
+                            hiddenInput.value = '';
+                            ProductPreview.reset();
+                        }, 10);
+                    });
+                }
+            } else {
+                // ── Fallback: no Quill → keep the plain form working ──
+                const form = document.querySelector('form[enctype="multipart/form-data"]');
+                if (form) {
+                    form.addEventListener('reset', () => {
+                        setTimeout(() => { ProductPreview.reset(); }, 10);
+                    });
+                }
             }
 
-            console.log('✅ Product Preview initialized with multi-image support');
+            console.log('✅ Product Preview & Quill description editor initialized');
         });
 
         // Form Submit Handler with Animation

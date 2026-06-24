@@ -259,18 +259,17 @@ $products = [];
 $sql = "SELECT 
     p.id,
     p.displayName,
-    CASE WHEN TRIM(p.brandName) = 'Hybrid System' THEN 'Package' ELSE TRIM(p.brandName) END AS brandName,
+    TRIM(p.brandName) AS brandName,
     p.price,
     p.stockQuantity,
     p.category,
+    p.packageType,
     COALESCE(p.moq, 1) AS moq,
-    pi.image_path
+    COALESCE(pi.image_path, p.imagePath) AS image_path
 FROM product p
 LEFT JOIN product_images pi 
     ON p.id = pi.product_id
-WHERE pi.image_path IS NOT NULL 
-  AND p.status = 'Active'
-  AND (TRIM(p.brandName) = 'Hybrid' OR TRIM(p.brandName) = 'Package')
+WHERE p.status = 'Active'
 GROUP BY p.id
 ORDER BY p.price ASC";
 
@@ -1010,17 +1009,25 @@ $conn->close();
             <?php include "includes/product-search-bar.php" ?>
 
             <!-- Filter Bar -->
-            <!-- Filter Bar commented out
             <div class="filter-bar" data-aos="fade-up">
                 <div class="filter-buttons" id="categoryFilters">
                     <button class="filter-btn active" data-filter="all">
                         <i class="fas fa-th"></i> All
                     </button>
-                    <button class="filter-btn" data-filter="Grid-tie">
-                        <i class="fas fa-solar-panel"></i> Grid-tie
+                    <button class="filter-btn" data-filter="Panel">
+                        <i class="fas fa-solar-panel"></i> Panels
                     </button>
-                    <button class="filter-btn" data-filter="Package">
-                        <i class="fas fa-box-open"></i> Package Deals
+                    <button class="filter-btn" data-filter="Inverter">
+                        <i class="fas fa-plug"></i> Inverters
+                    </button>
+                    <button class="filter-btn" data-filter="Battery">
+                        <i class="fas fa-battery-full"></i> Batteries
+                    </button>
+                    <button class="filter-btn" data-filter="Mounting & Accessories">
+                        <i class="fas fa-tools"></i> Mounting & Accessories
+                    </button>
+                    <button class="filter-btn" data-filter="Package Setup">
+                        <i class="fas fa-box-open"></i> Package Setup
                     </button>
                 </div>
 
@@ -1035,16 +1042,16 @@ $conn->close();
                     </select>
                 </div>
             </div>
-            -->
 
             <!-- Products Grid - FIXED onclick handlers -->
             <div class="products-grid" id="productsGrid">
                 <?php if ($products): ?>
                     <?php foreach ($products as $index => $p): ?>
                         <!-- Replace the product card section in index.php with this -->
-                        <div class="product-card <?= $index >= 4 ? 'hidden-product' : '' ?>"
+                        <div class="product-card"
                             data-category="<?= htmlspecialchars($p['category']) ?>"
                             data-brand="<?= htmlspecialchars($p['brandName']) ?>"
+                            data-package-type="<?= htmlspecialchars($p['packageType'] ?? '') ?>"
                             data-name="<?= htmlspecialchars($p['displayName']) ?>"
                             data-price="<?= htmlspecialchars($p['price']) ?>">
 
@@ -5076,13 +5083,31 @@ $conn->close();
         const products = document.querySelectorAll('.product-card');
         const viewMoreContainer = document.getElementById('viewMoreContainer');
         const viewMoreBtn = document.getElementById('viewMoreBtn');
+        const packageTypes = ['hybrid', 'on-grid', 'off-grid', 'grid-tie'];
 
         let visibleCount = 0;
 
         products.forEach(product => {
-            const productBrand = product.getAttribute('data-brand');
+            const productCategory = product.getAttribute('data-category') || '';
+            const productPackageType = (product.getAttribute('data-package-type') || '').toLowerCase();
+            let show = false;
 
-            if (filterValue === 'all' || productBrand === filterValue) {
+            if (filterValue === 'all') {
+                show = true;
+            } else if (filterValue === 'Package Setup') {
+                // Show products whose category is 'Package' OR whose packageType matches any package keyword
+                show = productCategory.toLowerCase() === 'package' || packageTypes.includes(productPackageType);
+            } else if (filterValue === 'Panel') {
+                show = productCategory === 'Panel' || productCategory === 'Panels';
+            } else if (filterValue === 'Inverter') {
+                show = productCategory === 'Inverter' || productCategory === 'Inverters';
+            } else if (filterValue === 'Battery') {
+                show = productCategory === 'Battery' || productCategory === 'Batteries';
+            } else {
+                show = productCategory === filterValue;
+            }
+
+            if (show) {
                 product.style.display = 'flex';
                 visibleCount++;
 

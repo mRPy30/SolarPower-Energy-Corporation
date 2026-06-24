@@ -22,18 +22,17 @@ $products = [];
 $sql = "SELECT 
     p.id,
     p.displayName,
-    CASE WHEN TRIM(p.brandName) = 'Hybrid' THEN 'Package' ELSE TRIM(p.brandName) END AS brandName,
+    TRIM(p.brandName) AS brandName,
     p.price,
     p.stockQuantity,
     p.category,
+    p.packageType,
     COALESCE(p.moq, 1) AS moq,
-    pi.image_path
+    COALESCE(pi.image_path, p.imagePath) AS image_path
 FROM product p
 LEFT JOIN product_images pi 
     ON p.id = pi.product_id
-WHERE pi.image_path IS NOT NULL
-  AND p.status = 'Active'
-  AND (TRIM(p.brandName) = 'Hybrid' OR TRIM(p.brandName) = 'Package' OR TRIM(p.brandName) = 'Hybrid System')
+WHERE p.status = 'Active'
 GROUP BY p.id
 ORDER BY p.price ASC";
 
@@ -207,7 +206,6 @@ $conn->close();
             <?php include "includes/product-search-bar.php" ?>
 
             <!-- Filter Bar -->
-            <!-- Filter Bar commented out
             <div class="filter-bar" data-aos="fade-up">
                 <div class="filter-buttons" id="categoryFilters">
                     <button class="filter-btn active" data-category="all">
@@ -241,15 +239,15 @@ $conn->close();
                     </select>
                 </div>
             </div>
-            -->
 
             <!-- Products Grid - FIXED onclick handlers -->
             <div class="products-grid" id="productsGrid">
                 <?php if ($products): ?>
                     <?php foreach ($products as $index => $p): ?>
-                        <div class="product-card <?= $index >= 4 ? 'hidden-product' : '' ?>"
+                        <div class="product-card"
                             data-category="<?= htmlspecialchars($p['category']) ?>"
                             data-brand="<?= htmlspecialchars($p['brandName']) ?>"
+                            data-package-type="<?= htmlspecialchars($p['packageType'] ?? '') ?>"
                             data-name="<?= htmlspecialchars($p['displayName']) ?>"
                             data-price="<?= htmlspecialchars($p['price']) ?>">
 
@@ -1795,10 +1793,29 @@ function initializeFilters() {
 
 function filterProducts(category) {
     const products = document.querySelectorAll('.product-card');
+    const packageTypes = ['hybrid', 'on-grid', 'off-grid', 'grid-tie'];
     let visibleCount = 0;
     products.forEach(product => {
-        const productCategory = product.getAttribute('data-category');
-        if (category === 'all' || productCategory === category) {
+        const productCategory = product.getAttribute('data-category') || '';
+        const productPackageType = (product.getAttribute('data-package-type') || '').toLowerCase();
+        let show = false;
+
+        if (category === 'all') {
+            show = true;
+        } else if (category === 'Package Setup') {
+            // Show products whose category is 'Package' OR whose packageType matches any package keyword
+            show = productCategory.toLowerCase() === 'package' || packageTypes.includes(productPackageType);
+        } else if (category === 'Panel') {
+            show = productCategory === 'Panel' || productCategory === 'Panels';
+        } else if (category === 'Inverter') {
+            show = productCategory === 'Inverter' || productCategory === 'Inverters';
+        } else if (category === 'Battery') {
+            show = productCategory === 'Battery' || productCategory === 'Batteries';
+        } else {
+            show = productCategory === category;
+        }
+
+        if (show) {
             product.style.display = 'block';
             visibleCount++;
         } else {
