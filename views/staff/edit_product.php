@@ -99,6 +99,55 @@ try {
         }
     }
     
+    // 2.5 Update variants
+    $categoryLower = strtolower($category);
+    $isVariantCategory = strpos($categoryLower, 'panel') !== false || strpos($categoryLower, 'battery') !== false || strpos($categoryLower, 'inverter') !== false;
+
+    if ($isVariantCategory) {
+        $brand_ids = isset($_POST['brand_ids']) ? $_POST['brand_ids'] : [];
+        $brand_prices = isset($_POST['brand_price']) ? $_POST['brand_price'] : [];
+        
+        // Fetch existing variants to preserve images
+        $existing_variants = [];
+        $evRes = $conn->query("SELECT brand_id, variant_image FROM product_brand_variants WHERE product_id = " . $product_id);
+        while($evRow = $evRes->fetch_assoc()){
+            $existing_variants[$evRow['brand_id']] = $evRow['variant_image'];
+        }
+
+        // Delete all variants to cleanly recreate them
+        $conn->query("DELETE FROM product_brand_variants WHERE product_id = " . $product_id);
+        
+        $uploadDir = "../../uploads/products/$product_id/";
+        if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, 0777, true);
+        }
+        $allowedTypes = ['jpg', 'jpeg', 'png', 'webp'];
+
+        foreach ($brand_ids as $b_id) {
+            $b_id = (int)$b_id;
+            $v_price = (float)($brand_prices[$b_id] ?? 0);
+            
+            $uploaded_path = $existing_variants[$b_id] ?? NULL;
+            
+            $file_key = 'brand_image_' . $b_id;
+            if (isset($_FILES[$file_key]) && $_FILES[$file_key]['error'] === 0) {
+                $ext = strtolower(pathinfo($_FILES[$file_key]['name'], PATHINFO_EXTENSION));
+                if (in_array($ext, $allowedTypes)) {
+                    $newName = "variant_" . $b_id . "_" . uniqid() . "." . $ext;
+                    $targetPath = $uploadDir . $newName;
+                    if (move_uploaded_file($_FILES[$file_key]['tmp_name'], $targetPath)) {
+                        $uploaded_path = "uploads/products/$product_id/$newName";
+                    }
+                }
+            }
+            
+            $vStmt = $conn->prepare("INSERT INTO product_brand_variants (product_id, brand_id, price, variant_image) VALUES (?, ?, ?, ?)");
+            $vStmt->bind_param("iids", $product_id, $b_id, $v_price, $uploaded_path);
+            $vStmt->execute();
+            $vStmt->close();
+        }
+    }
+    
     // 3. Upload new images
     if (isset($_FILES['new_images']) && !empty($_FILES['new_images']['name'][0])) {
         $uploadDir = "../../uploads/products/{$product_id}/";

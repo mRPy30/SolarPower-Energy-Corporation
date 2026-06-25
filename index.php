@@ -260,7 +260,7 @@ $sql = "SELECT
     p.id,
     p.displayName,
     TRIM(p.brandName) AS brandName,
-    p.price,
+    COALESCE(MIN(pbv.price), p.price) AS price,
     p.stockQuantity,
     p.category,
     p.packageType,
@@ -269,9 +269,11 @@ $sql = "SELECT
 FROM product p
 LEFT JOIN product_images pi 
     ON p.id = pi.product_id
+LEFT JOIN product_brand_variants pbv
+    ON p.id = pbv.product_id
 WHERE p.status = 'Active'
 GROUP BY p.id
-ORDER BY p.price ASC";
+ORDER BY price ASC";
 
 $stmt = $conn->prepare($sql);
 if ($stmt) {
@@ -1432,199 +1434,60 @@ $conn->close();
                 </div>
 
                 <div id="checkoutStep2" class="checkout-card" style="display:none;">
-                    <h3>Order Summary & Payment</h3>
+                    <h3>Order Summary & Secure Payment via Maya</h3>
 
-                    <!-- Payment Method Section -->
+                    <!-- Trust Assurance Notice (Risk Reversal) -->
+                    <div class="alert alert-success mb-4" style="border-left: 4px solid #0D5C3A; background-color: rgba(13, 92, 58, 0.04); color: #1E293B;">
+                        <div class="d-flex gap-2 align-items-start">
+                            <i class="fas fa-shield-alt text-success mt-1" style="font-size: 1.2rem;"></i>
+                            <div>
+                                <strong style="color: #0D5C3A;">Risk-Free Booking Guarantee:</strong>
+                                <p class="mb-0 small text-muted mt-1">Your payment is fully secured through Maya Checkout (BSP regulated). If our technical site survey reveals roof structural, spacing, or shading issues that prevent solar installation, your payment is 100% refundable.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- B2B & Government Touchpoint -->
+                    <div class="p-3 mb-4 rounded border text-start" style="background-color: #f8fafc; border-left: 4px solid #F2A900 !important;">
+                        <h6 class="fw-bold mb-1 text-dark"><i class="fas fa-building text-warning me-2"></i>Corporate or Government Buyer?</h6>
+                        <p class="small text-muted mb-2">If you represent an SME, large commercial company, or government institution requiring formal bids, corporate invoices, or grid-tie feasibility studies, skip digital checkouts and request a formal proposal directly.</p>
+                        <a href="loans.php#checklist" class="btn btn-sm text-dark fw-bold border-0" style="background-color: #F2A900; border-radius: 4px; padding: 6px 12px; font-size: 0.75rem;"><i class="fas fa-file-contract me-1"></i> Request B2B Engineering Proposal</a>
+                    </div>
+
+                    <!-- Payment Summary Card -->
                     <div class="card mb-4">
                         <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
                             <h5 class="mb-0">
-                                <i class="fas fa-credit-card me-2"></i>Secure Payment Portal
+                                <i class="fas fa-file-invoice-dollar me-2"></i>Order Summary
                             </h5>
                             <span class="badge bg-light text-primary" style="font-size: 0.75rem;"><i class="fas fa-lock me-1"></i> BSP Regulated</span>
                         </div>
                         <div class="card-body">
-                            <!-- Trust Assurance Notice (Risk Reversal) -->
-                            <div class="alert alert-success mb-4" style="border-left: 4px solid #0D5C3A; background-color: rgba(13, 92, 58, 0.04); color: #1E293B;">
-                                <div class="d-flex gap-2 align-items-start">
-                                    <i class="fas fa-shield-alt text-success mt-1" style="font-size: 1.2rem;"></i>
-                                    <div>
-                                        <strong style="color: #0D5C3A;">Risk-Free Booking Guarantee:</strong>
-                                        <p class="mb-0 small text-muted mt-1">Your payment is fully secured. If our technical site survey reveals roof structural, spacing, or shading issues that prevent solar installation, your booking downpayment is 100% refundable.</p>
-                                    </div>
-                                </div>
+                            <div class="summary-row d-flex justify-content-between mb-3 pb-2">
+                                <span>Items Subtotal:</span>
+                                <span id="checkoutSubtotal" class="fw-bold"></span>
                             </div>
 
-                            <!-- B2B & Government Touchpoint -->
-                            <div class="p-3 mb-4 rounded border text-start" style="background-color: #f8fafc; border-left: 4px solid #F2A900 !important;">
-                                <h6 class="fw-bold mb-1 text-dark"><i class="fas fa-building text-warning me-2"></i>Corporate or Government Buyer?</h6>
-                                <p class="small text-muted mb-2">If you represent an SME, large commercial company, or government institution requiring formal bids, corporate invoices, or grid-tie feasibility studies, skip digital checkouts and request a formal proposal directly.</p>
-                                <a href="loans.php#checklist" class="btn btn-sm text-dark fw-bold border-0" style="background-color: #F2A900; border-radius: 4px; padding: 6px 12px; font-size: 0.75rem;"><i class="fas fa-file-contract me-1"></i> Request B2B Engineering Proposal</a>
+                            <div class="summary-row d-flex justify-content-between mb-3 pb-2">
+                                <span>Installation Fee:</span>
+                                <span id="installationFeeDisplay" class="fw-bold"></span>
                             </div>
 
-                            <!-- Payment Term Selection -->
-                            <div class="payment-options mb-4">
-                                <h6 class="fw-bold mb-3"><i class="fas fa-tasks me-2 text-primary"></i>1. Select Payment Option:</h6>
-
-                                <!-- Full Payment (100%) -->
-                                <div class="form-check payment-option mb-3 p-3 border rounded" style="cursor: pointer; transition: background 0.2s;">
-                                    <input class="form-check-input ms-0 me-2" type="radio" name="paymentMethod" id="paymentFull"
-                                        value="full" checked onchange="updatePaymentDisplay()">
-                                    <label class="form-check-label w-100 ps-4" for="paymentFull">
-                                        <div class="d-flex justify-content-between align-items-center">
-                                            <div>
-                                                <strong class="text-dark">Full Payment (100% upfront)</strong>
-                                                <p class="text-muted mb-0 small">Saves 3% off your total system cost (Discount applied manually on billing verification)</p>
-                                            </div>
-                                            <span class="badge bg-success">Best Value</span>
-                                        </div>
-                                    </label>
-                                </div>
-
-                                <!-- 50% Down Payment -->
-                                <div class="form-check payment-option mb-3 p-3 border rounded" style="cursor: pointer; transition: background 0.2s;">
-                                    <input class="form-check-input ms-0 me-2" type="radio" name="paymentMethod" id="paymentDown"
-                                        value="downpayment" onchange="updatePaymentDisplay()">
-                                    <label class="form-check-label w-100 ps-4" for="paymentDown">
-                                        <div class="d-flex justify-content-between align-items-center">
-                                            <div>
-                                                <strong class="text-dark">50% Down Payment (Secures Booking)</strong>
-                                                <p class="text-muted mb-0 small">Pay 50% now to initiate engineering designs, remaining 50% paid upon site delivery</p>
-                                            </div>
-                                            <span class="badge bg-warning text-dark">Standard</span>
-                                        </div>
-                                    </label>
-                                </div>
-
-                                <!-- 20% Initial Payment -->
-                                <div class="form-check payment-option mb-3 p-3 border rounded" style="cursor: pointer; transition: background 0.2s;">
-                                    <input class="form-check-input ms-0 me-2" type="radio" name="paymentMethod" id="paymentInitial"
-                                        value="initial" onchange="updatePaymentDisplay()">
-                                    <label class="form-check-label w-100 ps-4" for="paymentInitial">
-                                        <div class="d-flex justify-content-between align-items-center">
-                                            <div>
-                                                <strong class="text-dark">20% Booking Fee (Mobilization)</strong>
-                                                <p class="text-muted mb-0 small">Secure solar panels and scheduling immediately. Balance paid pre-installation</p>
-                                            </div>
-                                            <span class="badge bg-info text-white">Low Upfront</span>
-                                        </div>
-                                    </label>
-                                </div>
+                            <div class="summary-row d-flex justify-content-between mb-3 pb-2 border-bottom">
+                                <span>Delivery Fee:</span>
+                                <span id="deliveryFeeDisplay" class="fw-bold text-primary"></span>
                             </div>
 
-                            <!-- Payment Channels Tab System -->
-                            <h6 class="fw-bold mb-3"><i class="fas fa-university me-2 text-primary"></i>2. Choose Payment Channel:</h6>
-                            <ul class="nav nav-pills mb-3" id="paymentChannelsTab" role="tablist">
-                                <li class="nav-item" role="presentation">
-                                    <button class="nav-link active fw-bold text-uppercase" id="instapay-tab" data-bs-toggle="pill" data-bs-target="#p-instapay" type="button" role="tab" style="font-size: 0.8rem; border-radius: 8px;"><i class="fas fa-qrcode me-1"></i> InstaPay / GCash</button>
-                                </li>
-                                <li class="nav-item" role="presentation">
-                                    <button class="nav-link fw-bold text-uppercase" id="bank-tab" data-bs-toggle="pill" data-bs-target="#p-bank" type="button" role="tab" style="font-size: 0.8rem; border-radius: 8px;"><i class="fas fa-university me-1"></i> Bank Accounts</button>
-                                </li>
-                                <li class="nav-item" role="presentation">
-                                    <a href="viber://chat?number=639171234567" target="_blank" class="nav-link fw-bold text-uppercase" style="font-size: 0.8rem; color: #7360f2;"><i class="fab fa-viber me-1"></i> Ask Rep / Financing</a>
-                                </li>
-                            </ul>
-                            
-                            <div class="tab-content border rounded p-3 mb-4 bg-white" id="paymentTabContent">
-                                <!-- InstaPay/GCash Panel -->
-                                <div class="tab-pane fade show active text-center" id="p-instapay" role="tabpanel">
-                                    <h6 class="mb-2 fw-semibold text-dark">Scan to Pay via InstaPay QR</h6>
-                                    <img src="assets/img/UB-QR Code.jpg" alt="InstaPay QR Code" class="img-fluid"
-                                        style="max-width: 260px; border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px;">
-                                    <p class="text-muted small mt-2 mb-0">Works with GCash, PayMaya, ShopeePay, and all major Philippine Banking Apps.</p>
-                                </div>
-                                
-                                <!-- Bank Accounts Panel -->
-                                <div class="tab-pane fade" id="p-bank" role="tabpanel">
-                                    <div class="text-start">
-                                        <h6 class="mb-3 fw-bold text-dark">Direct Bank Transfer Details:</h6>
-                                        <div class="d-flex flex-column gap-3">
-                                            <div class="p-2 border rounded" style="background-color: #fafafa;">
-                                                <strong class="text-dark"><i class="fas fa-university me-1 text-danger"></i> Bank of the Philippine Islands (BPI)</strong>
-                                                <div class="small text-muted mt-1">Account Name: <strong>SolarPower Energy Corporation</strong></div>
-                                                <div class="small text-muted">Account Number: <strong>1234-5678-90</strong></div>
-                                            </div>
-                                            <div class="p-2 border rounded" style="background-color: #fafafa;">
-                                                <strong class="text-dark"><i class="fas fa-university me-1 text-primary"></i> Metropolitan Bank & Trust Company (Metrobank)</strong>
-                                                <div class="small text-muted mt-1">Account Name: <strong>SolarPower Energy Corporation</strong></div>
-                                                <div class="small text-muted">Account Number: <strong>9876-5432-10</strong></div>
-                                            </div>
-                                            <div class="p-2 border rounded" style="background-color: #fafafa;">
-                                                <strong class="text-dark"><i class="fas fa-university me-1 text-warning"></i> UnionBank of the Philippines</strong>
-                                                <div class="small text-muted mt-1">Account Name: <strong>SolarPower Energy Corporation</strong></div>
-                                                <div class="small text-muted">Account Number: <strong>0011-2233-4455</strong></div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                            <div class="summary-row d-flex justify-content-between" style="font-size: 1.3rem;">
+                                <span class="fw-bold">Total Order Amount:</span>
+                                <span id="checkoutTotal" class="fw-bold text-success"></span>
                             </div>
 
-                            <!-- Receipt Upload Section -->
-                            <div class="alert alert-light border mt-3">
-                                <div class="d-flex align-items-start">
-                                    <i class="fas fa-upload text-primary me-3"
-                                        style="font-size: 1.5rem; margin-top:2px;"></i>
-                                    <div class="w-100">
-                                        <strong>Upload Your Transaction Receipt</strong>
-                                        <p class="text-muted small mb-2 mt-1">Once you complete the payment via InstaPay, GCash, or Direct Bank Transfer, take a screenshot or photo of your transaction confirmation receipt and upload it below. Our billing team will verify it instantly.</p>
-                                        <div class="mb-2 text-start">
-                                            <label for="receiptUpload" class="form-label fw-bold">
-                                                <i class="fas fa-file-image me-1 text-primary"></i> Transaction Receipt
-                                                <span class="text-danger">*</span>
-                                            </label>
-                                            <input type="file" class="form-control" id="receiptUpload"
-                                                accept="image/*,.pdf" onchange="previewReceipt(this)">
-                                            <div class="form-text">Accepted formats: JPG, PNG, PDF (Max 5MB)</div>
-                                        </div>
-                                        <div id="receiptPreviewContainer" style="display:none; margin-top:10px;">
-                                            <p class="small fw-bold text-success"><i
-                                                    class="fas fa-check-circle me-1"></i> Receipt ready to upload:</p>
-                                            <img id="receiptPreviewImg" src="" alt="Receipt Preview"
-                                                style="max-width:200px; max-height:200px; border-radius:8px; border:2px solid #28a745; object-fit:cover;">
-                                            <p id="receiptFileName" class="small text-muted mt-1 mb-0"></p>
-                                        </div>
-                                    </div>
-                                </div>
+                            <div class="alert alert-info mt-3 mb-0">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <small>You will be securely redirected to Maya to complete your payment via GCash, Maya Wallet, or Card.</small>
                             </div>
                         </div>
-                    </div>
-
-                    <!-- Order Summary (hidden from checkout display, values still computed by JS) -->
-                    <div class="payment-summary-box p-3 bg-light rounded mb-4" style="display:none;">
-                        <h5 class="mb-3"><i class="fas fa-file-invoice-dollar me-2"></i>Payment Summary</h5>
-
-                        <div class="summary-row">
-                            <span>Items Subtotal:</span>
-                            <span id="checkoutSubtotal" class="fw-bold"></span>
-                        </div>
-
-                        <div class="summary-row">
-                            <span>Installation Fee:</span>
-                            <span id="installationFeeDisplay" class="fw-bold"></span>
-                        </div>
-
-                        <div class="summary-row">
-                            <span>Delivery Fee:</span>
-                            <span id="deliveryFeeDisplay" class="fw-bold text-primary"></span>
-                        </div>
-
-                        <hr>
-
-                        <div class="summary-row" style="font-size: 1.2rem;">
-                            <span class="fw-bold">Amount to Pay Now:</span>
-                            <span id="amountToPay" class="fw-bold text-primary"></span>
-                        </div>
-
-                        <div class="summary-row total-row" style="font-size: 1.3rem; color: #2c3e50;">
-                            <span class="fw-bold">Total Order Amount:</span>
-                            <span id="checkoutTotal" class="fw-bold text-dark"></span>
-                        </div>
-                    </div>
-
-                    <!-- Payment Note (hidden from view, computed by JS internally) -->
-                    <div id="paymentNote" class="alert alert-success" style="display:none;">
-                        <i class="fas fa-info-circle"></i> You are paying the <strong>Full Amount (100%)</strong> via
-                        InstaPay.
                     </div>
 
                     <!-- Action Buttons -->
@@ -1632,8 +1495,8 @@ $conn->close();
                         <button class="btn-outline" onclick="goToStep(1)">
                             <i class="fas fa-arrow-left me-2"></i>Edit Details
                         </button>
-                        <button id="confirmPaymentBtn" class="btn-primary" onclick="confirmInstapayOrder()">
-                            <i class="fas fa-check-circle me-2"></i>Confirm &amp; Submit Order
+                        <button id="confirmPaymentBtn" class="btn-primary" onclick="proceedToMayaCheckout()">
+                            <i class="fas fa-lock me-2"></i>Proceed to Secure Payment via Maya
                         </button>
                     </div>
                 </div>
@@ -4437,10 +4300,14 @@ $conn->close();
             return;
         }
 
-        console.log('✅ Validation passed!');
+        if (cart.length === 0) {
+            showNotificationModal('error', 'Your cart is empty.');
+            return;
+        }
+
+        console.log('✅ Validation passed! Moving to Maya checkout...');
         goToStep(2);
         renderCheckoutSummary();
-        updatePaymentDisplay();
     }
 
     function setErrorState(inputId) {
@@ -4517,6 +4384,119 @@ $conn->close();
             return brand.includes('grid-tie') || brand.includes('hybrid') ||
                 name.includes('grid-tie') || name.includes('hybrid');
         });
+    }
+
+    function proceedToMayaCheckout() {
+        console.log('🔐 Proceeding to Maya Checkout...');
+
+        const custName = document.getElementById('cust_name')?.value.trim();
+        const custEmail = document.getElementById('cust_email')?.value.trim();
+        const custPhone = document.getElementById('cust_phone')?.value.trim();
+        const custAddress = document.getElementById('cust_address')?.value.trim();
+
+        if (!custName || !custEmail || !custPhone || !custAddress) {
+            showNotificationModal('error', 'Please complete all required customer details.');
+            return;
+        }
+
+        if (cart.length === 0) {
+            showNotificationModal('error', 'Your cart is empty.');
+            return;
+        }
+
+        const confirmBtn = document.getElementById('confirmPaymentBtn');
+        confirmBtn.disabled = true;
+        confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Redirecting to Maya...';
+
+        const totalAmount = window.currentTotalAmount || 0;
+
+        // Build order data for Maya (always full payment)
+        const orderData = {
+            customerName: custName,
+            customerEmail: custEmail,
+            customerPhone: custPhone,
+            customerAddress: custAddress,
+            paymentType: 'full',
+            amountToPay: totalAmount,
+            totalAmount: totalAmount,
+            items: getCartItems()
+        };
+
+        console.log('📋 Order data:', orderData);
+
+        // Send to backend to create Maya checkout
+        fetch('process_payment.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(orderData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            confirmBtn.disabled = false;
+            confirmBtn.innerHTML = '<i class="fas fa-lock me-2"></i>Proceed to Secure Payment via Maya';
+
+            if (data.success) {
+                console.log('✅ Maya checkout created:', data.orderRef);
+                sessionStorage.setItem('currentOrderRef', data.orderRef);
+                console.log('🔗 Redirecting to Maya payment URL...');
+                window.location.href = data.paymentUrl;
+            } else {
+                console.error('❌ Maya checkout failed:', data.error);
+                showNotificationModal('error', data.error || 'Failed to create payment. Please try again.');
+            }
+        })
+        .catch(error => {
+            console.error('❌ Maya checkout error:', error);
+            confirmBtn.disabled = false;
+            confirmBtn.innerHTML = '<i class="fas fa-lock me-2"></i>Proceed to Secure Payment via Maya';
+            showNotificationModal('error', 'An error occurred. Please try again.');
+        });
+    }
+
+    function renderCheckoutSummary() {
+        console.log('📊 Rendering checkout summary...');
+
+        const deliveryFee = calculateDeliveryFee();
+        const installationFee = hasGridTieOrHybridProduct() ? 2000 : 0;
+
+        // Calculate cart subtotal
+        let cartTotal = 0;
+        if (cart && cart.length > 0) {
+            cartTotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        }
+
+        const totalAmount = cartTotal + installationFee + deliveryFee;
+        window.currentTotalAmount = totalAmount;
+
+        // Update display elements
+        const subtotalEl = document.getElementById('checkoutSubtotal');
+        const installationEl = document.getElementById('installationFeeDisplay');
+        const deliveryEl = document.getElementById('deliveryFeeDisplay');
+        const totalEl = document.getElementById('checkoutTotal');
+
+        if (subtotalEl) {
+            subtotalEl.textContent = '₱' + cartTotal.toLocaleString(undefined, { minimumFractionDigits: 2 });
+        }
+
+        if (installationEl) {
+            installationEl.textContent = installationFee > 0 ? 
+                '₱' + installationFee.toLocaleString(undefined, { minimumFractionDigits: 2 }) : 
+                'FREE';
+        }
+
+        if (deliveryEl) {
+            if (deliveryFee === 0) {
+                deliveryEl.innerHTML = '<span class="text-info">Contact us</span>';
+            } else {
+                deliveryEl.textContent = '₱' + deliveryFee.toLocaleString(undefined, { minimumFractionDigits: 2 });
+            }
+        }
+
+        if (totalEl) {
+            totalEl.textContent = '₱' + totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2 });
+        }
     }
 
     function updatePaymentDisplay() {
@@ -4606,6 +4586,8 @@ $conn->close();
         if (cart && cart.length > 0) {
             cart.forEach(item => {
                 items.push({
+                    id: item.id,
+                    brand_id: item.brand_id || null,
                     name: item.displayName || 'Solar Product',
                     price: parseFloat(item.price) || 0,
                     quantity: parseInt(item.quantity) || 1

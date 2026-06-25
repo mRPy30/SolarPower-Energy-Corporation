@@ -3263,9 +3263,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                                 </div>
 
                                 <div class="product-actions-btn-group">
-                                    <a href="edit-product.php?id=<?php echo (int)$product['id']; ?>"
-                                       class="btn-card-edit"
-                                       title="Edit Product">
+                                    <a href="edit-product.php?id=<?php echo $product['id']; ?>" class="btn-card-edit" title="Edit Product">
                                         <i class="fas fa-edit"></i>
                                     </a>
                                 </div>
@@ -3359,154 +3357,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 </div>
             </div>
 
-            <!-- Edit Product: Redirects to dedicated full-page editor -->
-            <!-- edit-product.php?id=[PRODUCT_ID] handles all editing UI -->
-                <div class="modal-content modal-large">
-                    <span class="close" onclick="closeEditModal()">&times;</span>
-                    <h2><i class="fas fa-edit"></i> Edit Product</h2>
-
-                    <form id="editProductForm" method="POST" action="edit_product.php" enctype="multipart/form-data">
-                        <input type="hidden" name="product_id" id="editProductId">
-
-                        <!-- Product Images Section -->
-                        <div class="form-section">
-                            <h3><i class="fas fa-images"></i> Product Images</h3>
-
-                            <!-- Image Carousel -->
-                            <div class="edit-product-carousel" id="editProductCarousel">
-                                <div class="carousel-main">
-                                    <div id="carouselImageContainer" class="carousel-image-container">
-                                        <!-- Main image will be loaded here -->
-                                        <div class="no-images-placeholder">
-                                            <i class="fas fa-image"></i>
-                                            <p>No images uploaded yet</p>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="carousel-counter" id="carouselCounter"></div>
-                                <div class="carousel-thumbnails-wrapper">
-                                    <button type="button" class="carousel-nav carousel-prev" id="carouselPrevBtn"
-                                        onclick="carouselPrev()" style="display: none;">
-                                        <i class="fas fa-chevron-left"></i>
-                                    </button>
-                                    <div id="carouselThumbnails" class="carousel-thumbnails">
-                                        <!-- Thumbnails will be loaded here -->
-                                    </div>
-                                    <button type="button" class="carousel-nav carousel-next" id="carouselNextBtn"
-                                        onclick="carouselNext()" style="display: none;">
-                                        <i class="fas fa-chevron-right"></i>
-                                    </button>
-                                </div>
-                            </div>
-
-                            <!-- Add New Images -->
-                            <div class="form-group">
-                                <label><i class="fas fa-plus-circle"></i> Add New Images</label>
-                                <input type="file" name="new_images[]" id="newImagesInput" accept="image/*" multiple>
-                                <small>You can select multiple images at once</small>
-                                <div id="newImagesPreview" class="new-images-preview-grid"></div>
-                            </div>
-                        </div>
-
-                        <!-- Product Details Section -->
-                        <div class="form-section">
-                            <h3><i class="fas fa-info-circle"></i> Product Details</h3>
-
-                            <div class="form-group">
-                                <label><i class="fas fa-cube"></i> Display Name</label>
-                                <input type="text" name="displayName" id="editDisplayName" required>
-                            </div>
-
-                            <div class="form-group">
-                                <label><i class="fas fa-trademark"></i> Brand Name</label>
-                                <input type="text" name="brandName" id="editBrandName" required>
-                            </div>
-
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label><i class="fas fa-peso-sign"></i> Price</label>
-                                    <input type="number" step="0.01" name="price" id="editPrice" required>
-                                </div>
-
-                                <div class="form-group">
-                                    <label><i class="fas fa-tag"></i> Category</label>
-                                    <select name="category" id="editCategory" required>
-                                        <option value="">Loading categories…</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div class="form-group" id="edit-package-type-group" style="display: none;">
-                                <label for="editPackageType">
-                                    <i class="fas fa-solar-panel"></i>
-                                    Package Type <span class="required">*</span>
-                                </label>
-                                <select id="editPackageType" name="package-type">
-                                    <option value="">Select Package Type</option>
-                                    <option value="On-Grid">On-Grid</option>
-                                    <option value="Hybrid">Hybrid</option>
-                                    <option value="Off-Grid">Off-Grid</option>
-                                </select>
-                            </div>
-
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label><i class="fas fa-boxes"></i> Stock Quantity</label>
-                                    <input type="number" name="stockQuantity" id="editStockQuantity" required>
-                                </div>
-
-                                <div class="form-group">
-                                    <label><i class="fas fa-shield-alt"></i> Warranty</label>
-                                    <input type="text" name="warranty" id="editWarranty">
-                                </div>
-                            </div>
-
-                            <div class="form-row" id="editMoqWrapper" style="display:none;">
-                                <div class="form-group">
-                                    <label>
-                                        <i class="fas fa-layer-group"></i> Min. Order Qty (MOQ)
-                                        <span
-                                            title="Minimum units a customer must order. Applies to Solar Panels and Mounting &amp; Accessories."
-                                            style="cursor:help; color:#888;">&#9432;</span>
-                                    </label>
-                                    <input type="number" name="moq" id="editMoq" min="1" value="1">
-                                    <small id="editMoqHint" style="color:#888;">Solar Panels: recommended MOQ ≥
-                                        2</small>
-                                </div>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="editStatus">
-                                    <i class="fas fa-eye"></i>
-                                    Visibility Status <span class="required">*</span>
-                                </label>
-                                <select id="editStatus" name="status" required>
-                                    <option value="Active">Active (Visible)</option>
-                                    <option value="Hidden">Hidden (Draft)</option>
-                                </select>
-                            </div>
-
-                            <div class="form-group">
-                                <label><i class="fas fa-align-left"></i> Description</label>
-                                <textarea name="description" id="editDescription" rows="5" required></textarea>
-                            </div>
-                        </div>
-
-                        <input type="hidden" name="delete_images" id="deleteImagesInput" value="">
-
-                        <div class="modal-actions">
-                            <button type="button" onclick="closeEditModal()" class="btn-cancel">
-                                <i class="fas fa-times"></i> Cancel
-                            </button>
-                            <button type="submit" class="btn-save">
-                                <i class="fas fa-save"></i> Save Changes
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-
-
+            
             <!-- Delete Confirmation Modal -->
             <div id="deleteProductModal" class="modal">
                 <div class="modal-content">
@@ -9268,9 +9119,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                                      </div>
                                  </div>
                                  <div class="product-actions-btn-group">
-                                     <button class="btn-card-edit" title="Edit Product">
+                                     <a href="edit-product.php?id=${product.id}" class="btn-card-edit" title="Edit Product">
                                          <i class="fas fa-edit"></i>
-                                     </button>
+                                     </a>
                                  </div>
                              </div>
                     `;
@@ -10617,7 +10468,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                     if (card) {
                         const productId = card.getAttribute('data-product-id');
                         if (editBtn) {
-                            openEditModal(productId);
+                            // Link handles this now, prevent any overlapping JS behavior just in case
+                            return true;
                         } else {
                             openProductReviewModal(productId);
                         }

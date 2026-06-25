@@ -47,6 +47,29 @@ if ($requestData['action'] === 'create_maya_checkout') {
         echo json_encode(['error' => 'Missing required fields']);
         exit;
     }
+
+    // Enforce MOQ validations
+    foreach ($items as $item) {
+        $productId = intval($item['id'] ?? 0);
+        $qty = intval($item['quantity'] ?? 1);
+        if ($productId > 0) {
+            $pStmt = $conn->prepare("SELECT category, COALESCE(moq, 1) as moq FROM product WHERE id = ?");
+            $pStmt->bind_param("i", $productId);
+            $pStmt->execute();
+            $pRes = $pStmt->get_result()->fetch_assoc();
+            $pStmt->close();
+            if ($pRes) {
+                $category = strtolower($pRes['category'] ?? '');
+                $moq = intval($pRes['moq'] ?? 1);
+                if (in_array($category, ['panel', 'panels', 'mounting & accessories', 'mounting and accessories', 'mounting', 'accessories'])) {
+                    if ($qty < $moq) {
+                        echo json_encode(['error' => "Error: Minimum purchased order quantity for this product category is {$moq} pcs."]);
+                        exit;
+                    }
+                }
+            }
+        }
+    }
     
     // Generate unique reference
     $referenceNumber = 'ORD-' . strtoupper(uniqid());
@@ -102,14 +125,37 @@ if ($requestData['action'] === 'create_maya_checkout') {
     
     // Add items to payload
     foreach ($items as $item) {
+        $productId = isset($item['id']) ? intval($item['id']) : 0;
+        $brandId = isset($item['brand_id']) ? intval($item['brand_id']) : 0;
+        $itemName = $item['name'];
+        $itemPrice = floatval($item['price']);
+
+        if ($productId > 0 && $brandId > 0) {
+            $stmt_pbv = $conn->prepare("SELECT p.displayName, b.brandName, pbv.price 
+                                        FROM product_brand_variants pbv
+                                        INNER JOIN product p ON pbv.product_id = p.id
+                                        INNER JOIN brands b ON pbv.brand_id = b.id
+                                        WHERE pbv.product_id = ? AND pbv.brand_id = ?");
+            if ($stmt_pbv) {
+                $stmt_pbv->bind_param("ii", $productId, $brandId);
+                $stmt_pbv->execute();
+                $res_pbv = $stmt_pbv->get_result();
+                if ($row = $res_pbv->fetch_assoc()) {
+                    $itemName = $row['displayName'] . " - " . $row['brandName'];
+                    $itemPrice = floatval($row['price']);
+                }
+                $stmt_pbv->close();
+            }
+        }
+
         $checkoutData['items'][] = [
-            'name' => $item['name'],
+            'name' => $itemName,
             'quantity' => intval($item['quantity']),
             'amount' => [
-                'value' => floatval($item['price'])
+                'value' => $itemPrice
             ],
             'totalAmount' => [
-                'value' => floatval($item['price']) * intval($item['quantity'])
+                'value' => $itemPrice * intval($item['quantity'])
             ]
         ];
     }

@@ -1,21 +1,21 @@
-<?php
-header('Content-Type: application/json');
+// 1. ILAGAY ANG KEY DITO: 
+// Kung pang-test: gamitin ang sandbox key (sk-...) at siguraduhing ang $is_production ay false.
+// Kung totoong pera na: gamitin ang totoong live key mula kay boss at gawing true ang $is_production.
+$secret_key = "sk-dDHeLd2o6TV52ZXTpRrIBk7ZgLOWf5uLqjdpaAwdRVS"; 
+$is_production = false; // Gawing true kung live key na ang gamit mo
 
-// Maya API Configuration
-class MayaConfig {
-    const PUBLIC_KEY = 'pk-jfJcy6j57jBSKH5ZcOSqZ16uaRa0z1lFqH18mlFk3IV';  // Get from Maya Dashboard
-    const SECRET_KEY = 'sk-VhThe0VYWe92H7y42goqAyNInbJhHeA0DXzZLzHRCAn';  // Get from Maya Dashboard
-    
-    // For TESTING (Sandbox)
-    const API_BASE_URL = 'https://pg-sandbox.paymaya.com';
+// 2. Automated Endpoint Router
+$url = $is_production 
+    ? "https://pg.paymaya.com/checkout/v1/checkouts" 
+    : "https://pg-sandbox.paymaya.com/checkout/v1/checkouts";
 
-const CREATE_CHECKOUT_URL = '/checkout/v1/checkouts';
-    
-    // Update these URLs to your actual domain
-    const SUCCESS_URL = 'https://solarpower.com.ph/payment-success.php';
-    const FAILURE_URL = 'https://solarpower.com.ph/payment-failed.php';
-    const CANCEL_URL = 'https://solarpower.com.ph/payment-cancelled.php';
-}
+// 3. Perfect Base64 Header Compilation with the mandatory trailing colon
+$base64_secret = base64_encode($secret_key . ":");
+$headers = [
+    "Content-Type: application/json",
+    "Authorization: Basic " . $base64_secret
+];
+
 // Database connection (using your config)
 require_once 'config/dbconn.php';
 
@@ -39,6 +39,30 @@ foreach ($required as $field) {
     }
 }
 
+// Enforce MOQ validations
+foreach ($input['items'] as $item) {
+    $productId = intval($item['id'] ?? 0);
+    $qty = intval($item['quantity'] ?? 1);
+    if ($productId > 0) {
+        $pStmt = $conn->prepare("SELECT category, COALESCE(moq, 1) as moq FROM product WHERE id = ?");
+        $pStmt->bind_param("i", $productId);
+        $pStmt->execute();
+        $pRes = $pStmt->get_result()->fetch_assoc();
+        $pStmt->close();
+        if ($pRes) {
+            $category = strtolower($pRes['category'] ?? '');
+            $moq = intval($pRes['moq'] ?? 1);
+            if (in_array($category, ['panel', 'panels', 'mounting & accessories', 'mounting and accessories', 'mounting', 'accessories'])) {
+                if ($qty < $moq) {
+                    http_response_code(400);
+                    echo json_encode(['success' => false, 'error' => "Error: Minimum purchased order quantity for this product category is {$moq} pcs."]);
+                    exit;
+                }
+            }
+        }
+    }
+}
+
 // Generate unique order reference
 $orderRef = 'ORD-' . date('YmdHis') . '-' . strtoupper(substr(md5(uniqid()), 0, 6));
 
@@ -47,30 +71,68 @@ $nameParts = explode(' ', trim($input['customerName']), 2);
 $firstName = $nameParts[0];
 $lastName = $nameParts[1] ?? '';
 
-// Parse address for city
-$addressParts = explode(',', $input['customerAddress']);
-$city = trim($addressParts[count($addressParts) - 2] ?? 'Manila');
+// Parse address for city and province
+$addressParts = array_map('trim', explode(',', $input['customerAddress']));
+$count = count($addressParts);
+$provinceText = $addressParts[$count - 1] ?? 'Metro Manila';
+$cityText = $addressParts[$count - 2] ?? 'Manila';
+$line1Text = implode(', ', array_slice($addressParts, 0, max(1, $count - 2)));
+
+$clean_province = preg_replace('/[\r\n\t\\\\]+/', ' ', trim($input['province'] ?? $provinceText));
+$clean_city     = preg_replace('/[\r\n\t\\\\]+/', ' ', trim($input['city'] ?? $cityText));
+$clean_line1    = preg_replace('/[\r\n\t\\\\]+/', ' ', trim($input['line1'] ?? $line1Text));
+
 $zipCode = '1000';
 
 // Prepare items for Maya API
 $mayaItems = [];
 foreach ($input['items'] as $item) {
+    $productId = isset($item['id']) ? intval($item['id']) : 0;
+    $brandId = isset($item['brand_id']) ? intval($item['brand_id']) : 0;
+    $itemName = $item['name'];
+    $itemPrice = floatval($item['price']);
+
+    if ($productId > 0 && $brandId > 0) {
+        $stmt_pbv = $conn->prepare("SELECT p.displayName, b.brand_name AS brandName, pbv.price 
+                                    FROM product_brand_variants pbv
+                                    INNER JOIN product p ON pbv.product_id = p.id
+                                    INNER JOIN brands b ON pbv.brand_id = b.brand_id
+                                    WHERE pbv.product_id = ? AND pbv.brand_id = ?");
+        if ($stmt_pbv) {
+            $stmt_pbv->bind_param("ii", $productId, $brandId);
+            $stmt_pbv->execute();
+            $res_pbv = $stmt_pbv->get_result();
+            if ($row = $res_pbv->fetch_assoc()) {
+                $itemName = $row['brandName'] . " " . $row['displayName'];
+                $itemPrice = floatval($row['price']);
+            }
+            $stmt_pbv->close();
+        }
+    }
+
     $mayaItems[] = [
-        'name' => $item['name'],
+        'name' => $itemName,
         'quantity' => intval($item['quantity']),
         'amount' => [
-            'value' => floatval($item['price'])
+            'value' => $itemPrice
         ],
         'totalAmount' => [
-            'value' => floatval($item['price']) * intval($item['quantity'])
+            'value' => $itemPrice * intval($item['quantity'])
         ]
     ];
+}
+
+$protocol  = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+$host      = $_SERVER['HTTP_HOST'] ?? 'localhost';
+$siteRoot  = $protocol . '://' . $host;
+if ($host === 'localhost' || strpos($host, '127.0.0.1') !== false) {
+    $siteRoot .= '/SolarPower-Energy-Corporation';
 }
 
 // Prepare Maya checkout payload
 $payload = [
     'totalAmount' => [
-        'value' => floatval($input['amountToPay']),
+        'value' => number_format(floatval($input['amountToPay']), 2, '.', ''),
         'currency' => 'PHP'
     ],
     'buyer' => [
@@ -81,16 +143,18 @@ $payload = [
             'email' => $input['customerEmail']
         ],
         'shippingAddress' => [
-            'line1' => $input['customerAddress'],
-            'city' => $city,
-            'zipCode' => $zipCode
+            'line1' => $clean_line1,
+            'city' => $clean_city,
+            'province' => $clean_province,
+            'zipCode' => $zipCode,
+            'countryCode' => 'PH'
         ]
     ],
     'items' => $mayaItems,
     'redirectUrl' => [
-        'success' => MayaConfig::SUCCESS_URL . '?ref=' . $orderRef,
-        'failure' => MayaConfig::FAILURE_URL . '?ref=' . $orderRef,
-        'cancel' => MayaConfig::CANCEL_URL . '?ref=' . $orderRef
+        'success' => $siteRoot . '/payment-success.php?ref=' . $orderRef,
+        'failure' => $siteRoot . '/payment-failed.php?ref=' . $orderRef,
+        'cancel' => $siteRoot . '/payment-cancelled.php?ref=' . $orderRef
     ],
     'requestReferenceNumber' => $orderRef,
     'metadata' => [
@@ -101,8 +165,7 @@ $payload = [
 
 // Make API request to Maya
 $ch = curl_init();
-$apiKey = MayaConfig::PUBLIC_KEY;
-$auth = base64_encode($apiKey . ':');
+$auth = base64_encode($secret_key . ':');
 
 $headers = [
     'Content-Type: application/json',
@@ -110,7 +173,7 @@ $headers = [
 ];
 
 curl_setopt_array($ch, [
-    CURLOPT_URL => MayaConfig::API_BASE_URL . MayaConfig::CREATE_CHECKOUT_URL,
+    CURLOPT_URL => $url,
     CURLOPT_RETURNTRANSFER => true,
     CURLOPT_CUSTOMREQUEST => 'POST',
     CURLOPT_POSTFIELDS => json_encode($payload),

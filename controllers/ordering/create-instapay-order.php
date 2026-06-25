@@ -69,6 +69,29 @@ try {
     // Generate order reference
     $orderReference = 'ORD-' . date('Ymd') . '-' . strtoupper(substr(md5(uniqid(rand(), true)), 0, 6));
 
+    // Enforce MOQ validations
+    foreach ($items as $item) {
+        $productId = intval($item['id'] ?? 0);
+        $qty = intval($item['quantity'] ?? 1);
+        if ($productId > 0) {
+            $pStmt = $conn->prepare("SELECT category, COALESCE(moq, 1) as moq FROM product WHERE id = ?");
+            $pStmt->bind_param("i", $productId);
+            $pStmt->execute();
+            $pRes = $pStmt->get_result()->fetch_assoc();
+            $pStmt->close();
+            if ($pRes) {
+                $category = strtolower($pRes['category'] ?? '');
+                $moq = intval($pRes['moq'] ?? 1);
+                if (in_array($category, ['panel', 'panels', 'mounting & accessories', 'mounting and accessories', 'mounting', 'accessories'])) {
+                    if ($qty < $moq) {
+                        echo json_encode(['success' => false, 'message' => "Error: Minimum purchased order quantity for this product category is {$moq} pcs."]);
+                        exit;
+                    }
+                }
+            }
+        }
+    }
+
     // Begin transaction
     $conn->begin_transaction();
 

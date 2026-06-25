@@ -23,7 +23,7 @@ $sql = "SELECT
     p.id,
     p.displayName,
     TRIM(p.brandName) AS brandName,
-    p.price,
+    COALESCE(MIN(pbv.price), p.price) AS price,
     p.stockQuantity,
     p.category,
     p.packageType,
@@ -32,9 +32,11 @@ $sql = "SELECT
 FROM product p
 LEFT JOIN product_images pi 
     ON p.id = pi.product_id
+LEFT JOIN product_brand_variants pbv
+    ON p.id = pbv.product_id
 WHERE p.status = 'Active'
 GROUP BY p.id
-ORDER BY p.price ASC";
+ORDER BY price ASC";
 
 $stmt = $conn->prepare($sql);
 if ($stmt) {
@@ -1558,6 +1560,8 @@ function getCartItems() {
     if (cart && cart.length > 0) {
         cart.forEach(item => {
             items.push({
+                id: item.id,
+                brand_id: item.brand_id || null,
                 name: item.displayName || 'Solar Product',
                 price: parseFloat(item.price) || 0,
                 quantity: parseInt(item.quantity) || 1
