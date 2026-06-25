@@ -4,6 +4,12 @@
 // Success redirect page from Maya
 // ============================================
 
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+// Clear the session cart on successful payment
+unset($_SESSION['cart']);
+
 $orderRef = $_GET['ref'] ?? 'Unknown';
 
 // Update order status
