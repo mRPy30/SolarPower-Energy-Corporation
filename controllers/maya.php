@@ -1,6 +1,11 @@
 <?php
+/**
+ * Maya Checkout configuration - LIVE CHECKOUT API ONLY.
+ * This must point to Maya Checkout API, not PayMaya.me manual payment links.
+ */
 return [
-    'public_key' => 'pk-Fnu0UQgHnY5KVbifzz4U8KUGKrh7JTYB2dt3ELq6m42',
-    'secret_key' => 'sk-PISBgIKotnChEf73H7BHHHcZP00rmiBZ8FQKIj7Qzyc',
-    'base_url' => 'https://pg-sandbox.paymaya.com'
+    'public_key' => getenv('MAYA_LIVE_PUBLIC_KEY') ?: getenv('MAYA_PUBLIC_KEY') ?: 'pk-qHHZGTX1Bw3soTrLl2OqFTIyDk2lflGj7zQSkKGKsxr',
+    'secret_key' => getenv('MAYA_LIVE_SECRET_KEY') ?: getenv('MAYA_SECRET_KEY') ?: 'sk-bJShA5MHzwgqWUl9AtdpchYMiY5ZjdVfm2i75MHbH2X',
+    'base_url' => 'https://pg.maya.ph',
+    'is_live' => true,
 ];

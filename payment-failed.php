@@ -43,7 +43,7 @@ $orderRef = $_GET['ref'] ?? 'Unknown';
         </div>
         <p class="text-muted">Please try again or contact our support team.</p>
         <div class="mt-4">
-            <a href="index.php#checkout" class="btn btn-primary btn-lg me-2">
+            <a href="checkout.php" class="btn btn-primary btn-lg me-2">
                 <i class="fas fa-redo me-2"></i> Try Again
             </a>
             <a href="index.php" class="btn btn-secondary btn-lg">

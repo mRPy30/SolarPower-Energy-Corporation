@@ -1,39 +1,11 @@
 <?php
 /**
- * ============================================================
- *  MAYA PAYMENT GATEWAY — CONFIGURATION FILE
- * ============================================================
- *  PLACEMENT:  Put this file ONE FOLDER ABOVE your project.
- *
- *  Example folder structure:
- *    /htdocs/                          ← place maya.php HERE
- *    /htdocs/SolarPower-Energy-Corporation/   ← your project
- *
- *  HOW TO GET YOUR KEYS:
- *    1. Go to https://developers.maya.ph
- *    2. Log in → Dashboard → Select your app
- *    3. Copy your Secret Key and Public Key
- *    4. Paste them below (replace the placeholder text)
- * ============================================================
+ * Maya Checkout configuration - LIVE CHECKOUT API ONLY.
+ * This must point to Maya Checkout API, not PayMaya.me manual payment links.
  */
-
-// ── SET THIS TO true WHEN YOU ARE READY TO ACCEPT REAL PAYMENTS ─────────────
-$is_live = false;
-
-// ── SANDBOX KEYS (for testing only — get from Maya Developer Portal) ─────────
-$sandbox_public_key = 'pk-PASTE-YOUR-SANDBOX-PUBLIC-KEY-HERE';
-$sandbox_secret_key = 'sk-PASTE-YOUR-SANDBOX-SECRET-KEY-HERE';
-
-// ── LIVE KEYS (real money — get from Maya Developer Portal) ──────────────────
-$live_public_key = 'pk-PASTE-YOUR-LIVE-PUBLIC-KEY-HERE';
-$live_secret_key = 'sk-PASTE-YOUR-LIVE-SECRET-KEY-HERE';
-
-// ── AUTO-SELECTS THE RIGHT KEY AND URL BASED ON $is_live ─────────────────────
 return [
-    'public_key' => $is_live ? $live_public_key : $sandbox_public_key,
-    'secret_key' => $is_live ? $live_secret_key : $sandbox_secret_key,
-    'base_url'   => $is_live
-        ? 'https://pg.paymaya.com'
-        : 'https://pg-sandbox.paymaya.com',
-    'is_live'    => $is_live,
+    'public_key' => getenv('MAYA_LIVE_PUBLIC_KEY') ?: getenv('MAYA_PUBLIC_KEY') ?: 'pk-qHHZGTX1Bw3soTrLl2OqFTIyDk2lflGj7zQSkKGKsxr',
+    'secret_key' => getenv('MAYA_LIVE_SECRET_KEY') ?: getenv('MAYA_SECRET_KEY') ?: 'sk-bJShA5MHzwgqWUl9AtdpchYMiY5ZjdVfm2i75MHbH2X',
+    'base_url' => 'https://pg.maya.ph',
+    'is_live' => true,
 ];

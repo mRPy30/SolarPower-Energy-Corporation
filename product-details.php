@@ -89,9 +89,11 @@ $variants = [];
 $is_variant_cat = in_array(strtolower($product['category'] ?? ''), ['panel', 'panels', 'battery', 'batteries', 'inverter', 'inverters']);
 if ($product) {
     if ($is_variant_cat) {
-        $vSql = "SELECT pbv.id as variant_junction_id, b.brand_id as brand_id, b.brand_name as brandName, pbv.price, pbv.variant_image as imagePath 
+        $vSql = "SELECT pbv.id as variant_junction_id, pbv.brand_id as brand_id, COALESCE(b.brand_name, sb.brandName, p.brandName) as brandName, pbv.price, pbv.variant_image as imagePath 
                  FROM product_brand_variants pbv 
-                 JOIN brands b ON pbv.brand_id = b.brand_id 
+                 INNER JOIN product p ON pbv.product_id = p.id
+                 LEFT JOIN brands b ON pbv.brand_id = b.brand_id
+                 LEFT JOIN supplier_brands sb ON pbv.brand_id = sb.id
                  WHERE pbv.product_id = ?";
         $vStmt = $conn->prepare($vSql);
         $vStmt->bind_param("i", $product['id']);
@@ -990,7 +992,10 @@ $conn->close();
                                 <option value="">Select Barangay</option>
                             </select>
                         </div>
-                        <input type="hidden" id="cust_address">
+                        <input type="hidden" id="cust_address" name="customerAddress">
+                        <input type="hidden" id="total_items_amount" name="total_items_amount">
+                        <input type="hidden" id="calculated_delivery_fee" name="calculated_delivery_fee">
+                        <input type="hidden" id="selected_location_name" name="selected_location_name">
                         <div class="col-md-12">
                             <div class="alert alert-info">
                                 <div class="d-flex justify-content-between align-items-center">
@@ -1009,47 +1014,21 @@ $conn->close();
                 <div id="checkoutStep2" class="checkout-card" style="display:none;">
                     <h3>Order Summary &amp; Payment</h3>
 
-                    <!-- Risk-Free Notice -->
-                    <div class="alert alert-success mb-4" style="border-left:4px solid #0D5C3A;background-color:rgba(13,92,58,0.04);color:#1E293B;">
-                        <div class="d-flex gap-2 align-items-start">
-                            <i class="fas fa-shield-alt text-success mt-1" style="font-size:1.2rem;"></i>
-                            <div>
-                                <strong style="color:#0D5C3A;">Risk-Free Booking Guarantee:</strong>
-                                <p class="mb-0 small text-muted mt-1">Your payment is fully secured via Maya. If our technical site survey reveals issues that prevent solar installation, your booking downpayment is 100% refundable.</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- B2B Notice -->
-                    <div class="p-3 mb-4 rounded border text-start" style="background-color:#f8fafc;border-left:4px solid #F2A900 !important;">
-                        <h6 class="fw-bold mb-1 text-dark"><i class="fas fa-building text-warning me-2"></i>Corporate or Government Buyer?</h6>
-                        <p class="small text-muted mb-2">For formal bids, corporate invoices, or grid-tie feasibility studies, request a formal proposal directly.</p>
-                        <a href="loans.php#checklist" class="btn btn-sm text-dark fw-bold border-0" style="background-color:#F2A900;border-radius:4px;padding:6px 12px;font-size:0.75rem;"><i class="fas fa-file-contract me-1"></i>Request B2B Engineering Proposal</a>
-                    </div>
-
-                    <!-- Payment Term Selection -->
                     <input type="hidden" name="paymentMethod" value="full">
-
-                    <!-- Payment Summary Box -->
-                    <div class="payment-summary-box p-4 rounded mb-4" style="background:linear-gradient(135deg,#f0f9ff,#e8f5e9);border:1px solid #b3d9f0;">
-                        <h5 class="mb-3 fw-bold"><i class="fas fa-file-invoice-dollar me-2 text-primary"></i>Payment Breakdown</h5>
-                        <div class="summary-row d-flex justify-content-between mb-2"><span class="text-muted">Items Subtotal:</span><span id="checkoutSubtotal" class="fw-bold"></span></div>
-                        <div class="summary-row d-flex justify-content-between mb-2"><span class="text-muted">Delivery Fee:</span><span id="deliveryFeeDisplay" class="fw-bold text-primary"></span></div>
-                        <hr class="my-2">
-                        <div class="summary-row d-flex justify-content-between mb-1" style="font-size:1.15rem;"><span class="fw-bold">Grand Total:</span><span id="checkoutTotal" class="fw-bold text-dark"></span></div>
-                        <div class="summary-row d-flex justify-content-between" style="font-size:1.3rem;"><span class="fw-bold text-primary">You Pay Now:</span><span id="amountToPay" class="fw-bold text-primary"></span></div>
+                    <div class="d-none" aria-hidden="true">
+                        <span id="checkoutSubtotal"></span>
+                        <span id="deliveryFeeDisplay"></span>
+                        <span id="checkoutTotal"></span>
+                        <span id="amountToPay"></span>
                     </div>
 
-                    <!-- Maya Secure Payment Notice -->
-                    <div class="d-flex align-items-center gap-3 p-3 mb-4 rounded" style="background:#fff7ed;border:1px solid #fed7aa;">
-                        <img src="https://developers.maya.ph/img/maya-logo.png" alt="Maya" style="height:32px;" onerror="this.style.display='none'">
-                        <div>
-                            <strong class="text-dark" style="font-size:0.9rem;">Powered by Maya Checkout</strong>
-                            <p class="mb-0 text-muted" style="font-size:0.78rem;">You will be securely redirected to Maya's payment gateway. Supports GCash, credit/debit cards, Maya wallet, and more.</p>
-                        </div>
-                        <i class="fas fa-lock text-success ms-auto" style="font-size:1.4rem;"></i>
+                    <!-- Compact Trust + Maya Notice -->
+                    <div class="d-flex flex-wrap align-items-center gap-2 mb-3 small text-muted">
+                        <span class="d-inline-flex align-items-center gap-1 px-2 py-1 rounded border bg-light">
+                            <i class="fas fa-lock text-success"></i> Secure Maya checkout
+                        </span>
+                        <a href="loans.php#checklist" class="ms-auto small fw-semibold text-decoration-none" style="color:#0D5C3A;">Corporate buyer?</a>
                     </div>
-
                     <!-- Maya Error Display -->
                     <div id="mayaErrorBox" class="alert alert-danger" style="display:none;"></div>
 
@@ -1352,7 +1331,7 @@ $conn->close();
 
             const existing = cart.find(i => i.id === productData.id && (i.brand_id === productData.brand_id || (!i.brand_id && !productData.brand_id)));
             if (existing) { existing.quantity = (existing.quantity || 1) + qty; }
-            else { cart.push({ id: productData.id, brand_id: productData.brand_id || null, displayName: productData.displayName, brandName: productData.brandName || '', price: parseFloat(productData.price), image_path: productData.image_path, quantity: qty }); }
+            else { cart.push({ id: productData.id, product_id: productData.id, brand_id: productData.brand_id || null, displayName: productData.displayName, brandName: productData.brandName || '', category: productData.category || '', price: parseFloat(productData.price), image_path: productData.image_path, quantity: qty, moq: productMOQ }); }
             localStorage.setItem('solarCart', JSON.stringify(cart));
             alert('Added to cart!');
         }
@@ -1368,9 +1347,32 @@ $conn->close();
             }
 
             // Clear cart and add this product
-            cart = [{ id: productData.id, brand_id: productData.brand_id || null, displayName: productData.displayName, brandName: productData.brandName || '', price: parseFloat(productData.price), image_path: productData.image_path, quantity: qty }];
+            cart = [{ id: productData.id, product_id: productData.id, brand_id: productData.brand_id || null, displayName: productData.displayName, brandName: productData.brandName || '', category: productData.category || '', price: parseFloat(productData.price), image_path: productData.image_path, quantity: qty, moq: productMOQ }];
             localStorage.setItem('solarCart', JSON.stringify(cart));
-            showCheckout();
+            window.location.href = '<?= htmlspecialchars($base_url) ?>checkout.php';
+        }
+
+        function buyNowFromButton(btn) {
+            const product = JSON.parse(btn.getAttribute('data-product'));
+            const moq = parseInt(product.moq) || 1;
+            localStorage.setItem('solarCart', JSON.stringify([{
+                id: product.id,
+                product_id: product.product_id || product.id,
+                brand_id: product.brand_id || null,
+                displayName: product.displayName || product.name || 'Solar Product',
+                brandName: product.brandName || '',
+                category: product.category || '',
+                price: parseFloat(product.price) || 0,
+                image_path: product.image_path || product.imagePath || 'assets/img/product-placeholder.png',
+                quantity: moq,
+                moq: moq
+            }]));
+            window.location.href = '<?= htmlspecialchars($base_url) ?>checkout.php';
+        }
+
+        function proceedToCheckout() {
+            localStorage.setItem('solarCart', JSON.stringify(cart));
+            window.location.href = '<?= htmlspecialchars($base_url) ?>checkout.php';
         }
 
         function showCheckout() {
@@ -1478,6 +1480,10 @@ $conn->close();
 
         // ── Maya Checkout ──
         async function mayaCheckout() {
+            localStorage.setItem('solarCart', JSON.stringify(cart));
+            window.location.href = '<?= htmlspecialchars($base_url) ?>checkout.php';
+            return;
+
             const btn       = document.getElementById('mayaPayBtn');
             const errorBox  = document.getElementById('mayaErrorBox');
             const payTerm   = document.querySelector('input[name="paymentMethod"]:checked')?.value || document.querySelector('input[name="paymentMethod"]')?.value || 'full';
@@ -1487,23 +1493,39 @@ $conn->close();
             btn.disabled = true;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Redirecting to Maya…';
 
-            const payload = new FormData();
-            payload.append('customerName',    document.getElementById('cust_name').value);
-            payload.append('customerEmail',   document.getElementById('cust_email').value);
-            payload.append('customerPhone',   document.getElementById('cust_phone').value);
-            payload.append('customerAddress', document.getElementById('cust_address').value);
-            payload.append('province',        province);
-            payload.append('paymentTerm',     payTerm);
-            payload.append('items',           JSON.stringify(cart.map(i => ({
-                id:          i.id,
-                brand_id:    i.brand_id || null,
+            const items = cart.map(i => ({
+                id: i.id,
+                product_id: i.product_id || i.id,
+                brand_id: i.brand_id || null,
                 displayName: i.displayName || i.name || 'Product',
-                price:       i.price,
-                quantity:    i.quantity || 1
-            }))));
+                name: i.displayName || i.name || 'Product',
+                brandName: i.brandName || '',
+                category: i.category || '',
+                price: parseFloat(i.price) || 0,
+                quantity: parseInt(i.quantity) || 1
+            }));
+            const itemsSubtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            const orderData = {
+                customerName: document.getElementById('cust_name').value,
+                customerEmail: document.getElementById('cust_email').value,
+                customerPhone: document.getElementById('cust_phone').value,
+                customerAddress: document.getElementById('cust_address').value,
+                province: province,
+                paymentType: payTerm,
+                paymentTerm: payTerm,
+                totalAmount: itemsSubtotal + (parseFloat(deliveryFee) || 0),
+                total_items_amount: itemsSubtotal,
+                calculated_delivery_fee: parseFloat(deliveryFee) || 0,
+                selected_location_name: province || document.getElementById('delivery_location_select')?.value || 'Selected Location',
+                items: items
+            };
 
             try {
-                const res  = await fetch('controllers/ordering/create-maya-checkout.php', { method: 'POST', body: payload });
+                const res  = await fetch('process_payment.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(orderData)
+                });
                 const data = await res.json();
                 if (data.success && data.checkoutUrl) {
                     // Clear cart and redirect
@@ -1630,4 +1652,29 @@ $conn->close();
     </script>
 </body>
 
+<script>window.SOLAR_APP_BASE = '/SolarPower-Energy-Corporation/';</script>
+<script src="/SolarPower-Energy-Corporation/assets/checkout-auth.js"></script>
+<script>
+(function () {
+    function wrapCheckoutFunction(name) {
+        const original = window[name];
+        if (typeof original !== 'function' || original.__authWrapped) return;
+        window[name] = function () {
+            const args = arguments;
+            const context = this;
+            window.SolarCheckoutAuth.requireCheckoutAuth(function () {
+                original.apply(context, args);
+            });
+        };
+        window[name].__authWrapped = true;
+    }
+
+    wrapCheckoutFunction('proceedToCheckout');
+    wrapCheckoutFunction('mayaCheckout');
+    wrapCheckoutFunction('proceedToMayaCheckout');
+    wrapCheckoutFunction('payWithMaya');
+})();
+</script>
 </html>
+
+

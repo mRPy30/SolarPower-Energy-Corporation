@@ -22,18 +22,30 @@ $products = [];
 $sql = "SELECT 
     p.id,
     p.displayName,
-    TRIM(p.brandName) AS brandName,
+    COALESCE(
+        SUBSTRING_INDEX(GROUP_CONCAT(COALESCE(b.brand_name, sb.brandName) ORDER BY pbv.price ASC, pbv.id ASC), ',', 1),
+        TRIM(p.brandName)
+    ) AS brandName,
     COALESCE(MIN(pbv.price), p.price) AS price,
+    CAST(SUBSTRING_INDEX(GROUP_CONCAT(pbv.brand_id ORDER BY pbv.price ASC, pbv.id ASC), ',', 1) AS UNSIGNED) AS brand_id,
     p.stockQuantity,
     p.category,
     p.packageType,
     COALESCE(p.moq, 1) AS moq,
-    COALESCE(pi.image_path, p.imagePath) AS image_path
+    COALESCE(
+        SUBSTRING_INDEX(GROUP_CONCAT(NULLIF(pbv.variant_image, '') ORDER BY pbv.price ASC, pbv.id ASC), ',', 1),
+        pi.image_path,
+        p.imagePath
+    ) AS image_path
 FROM product p
 LEFT JOIN product_images pi 
     ON p.id = pi.product_id
 LEFT JOIN product_brand_variants pbv
     ON p.id = pbv.product_id
+LEFT JOIN brands b
+    ON pbv.brand_id = b.brand_id
+LEFT JOIN supplier_brands sb
+    ON pbv.brand_id = sb.id
 WHERE p.status = 'Active'
 GROUP BY p.id
 ORDER BY price ASC";
@@ -383,7 +395,10 @@ $conn->close();
                         </div>
                         
                         <!-- Hidden full address (for saving/submitting) -->
-                        <input type="hidden" id="cust_address">
+                        <input type="hidden" id="cust_address" name="customerAddress">
+                        <input type="hidden" id="total_items_amount" name="total_items_amount">
+                        <input type="hidden" id="calculated_delivery_fee" name="calculated_delivery_fee">
+                        <input type="hidden" id="selected_location_name" name="selected_location_name">
 
                         <!-- Delivery Fee Information -->
                         <div class="col-md-12">
@@ -519,43 +534,19 @@ $conn->close();
                         </div>
                     </div>
                 
-                    <!-- Order Summary -->
-                    <div class="payment-summary-box p-3 bg-light rounded mb-4">
-                        <h5 class="mb-3"><i class="fas fa-file-invoice-dollar me-2"></i>Payment Summary</h5>
-                        
-                        <div class="summary-row">
-                            <span>Items Subtotal:</span>
-                            <span id="checkoutSubtotal" class="fw-bold"></span>
-                        </div>
-                        
-                        <div class="summary-row">
-                            <span>Installation Fee:</span>
-                            <span id="installationFeeDisplay" class="fw-bold"></span>
-                        </div>
+                    <div class="d-none" aria-hidden="true">
+                        <span id="checkoutSubtotal"></span>
+                        <span id="installationFeeDisplay"></span>
+                        <span id="deliveryFeeDisplay"></span>
+                        <span id="checkoutTotal"></span>
+                        <span id="amountToPay"></span>
+                    </div>
 
-                        <div class="summary-row">
-                            <span>Delivery Fee:</span>
-                            <span id="deliveryFeeDisplay" class="fw-bold text-primary"></span>
-                        </div>
-                        
-                        <hr>
-                        
-                        <div class="summary-row" style="font-size: 1.2rem;">
-                            <span class="fw-bold">Amount to Pay Now:</span>
-                            <span id="amountToPay" class="fw-bold text-primary"></span>
-                        </div>
-                        
-                        <div class="summary-row total-row" style="font-size: 1.3rem; color: #2c3e50;">
-                            <span class="fw-bold">Total Order Amount:</span>
-                            <span id="checkoutTotal" class="fw-bold text-dark"></span>
-                        </div>
+                    <div id="paymentNote" class="d-flex flex-wrap align-items-center gap-2 mb-3 small text-muted">
+                        <span class="d-inline-flex align-items-center gap-1 px-2 py-1 rounded border bg-light">
+                            <i class="fas fa-lock text-success"></i> Secure payment processing
+                        </span>
                     </div>
-                
-                    <!-- Payment Note -->
-                    <div id="paymentNote" class="alert alert-success">
-                        <i class="fas fa-info-circle"></i> You are paying the <strong>Full Amount (100%)</strong> via InstaPay.
-                    </div>
-                
                     <!-- Action Buttons -->
                     <div class="checkout-actions mt-4">
                         <button class="btn-outline" onclick="goToStep(1)">
@@ -755,6 +746,15 @@ $conn->close();
     }
 
     function loadCartFromMemory() {
+        try {
+            cart = JSON.parse(localStorage.getItem('solarCart') || '[]');
+            console.log('Cart loaded:', cart.length, 'items');
+        } catch (error) {
+            console.error('Error loading cart:', error);
+            cart = [];
+        }
+        return;
+
         if (window.cartStorage) {
             try {
                 cart = JSON.parse(window.cartStorage);
@@ -767,6 +767,14 @@ $conn->close();
     }
 
     function saveCartToMemory() {
+        try {
+            localStorage.setItem('solarCart', JSON.stringify(cart));
+            console.log('Cart saved');
+        } catch (error) {
+            console.error('Error saving cart:', error);
+        }
+        return;
+
         try {
             window.cartStorage = JSON.stringify(cart);
             console.log('💾 Cart saved');
@@ -797,8 +805,11 @@ $conn->close();
         } else {
             cart.push({
                 id: product.id,
+                product_id: product.id,
+                brand_id: product.brand_id || null,
                 displayName: product.displayName,
                 brandName: product.brandName || '',
+                category: product.category || '',
                 price: parseFloat(product.price),
                 image_path: product.image_path,
                 quantity: moq,
@@ -1191,6 +1202,10 @@ $conn->close();
             return;
         }
 
+        saveCartToMemory();
+        window.location.href = 'checkout.php';
+        return;
+
         const cartModal = bootstrap.Modal.getInstance(document.getElementById('cartModal'));
         if (cartModal) {
             cartModal.hide();
@@ -1561,8 +1576,11 @@ function getCartItems() {
         cart.forEach(item => {
             items.push({
                 id: item.id,
+                product_id: item.product_id || item.id,
                 brand_id: item.brand_id || null,
                 name: item.displayName || 'Solar Product',
+                brandName: item.brandName || '',
+                category: item.category || '',
                 price: parseFloat(item.price) || 0,
                 quantity: parseInt(item.quantity) || 1
             });
@@ -1923,4 +1941,28 @@ function showNoProductsMessage(visibleCount) {
 }
 
 </script>
+<script>window.SOLAR_APP_BASE = '/SolarPower-Energy-Corporation/';</script>
+<script src="/SolarPower-Energy-Corporation/assets/checkout-auth.js"></script>
+<script>
+(function () {
+    function wrapCheckoutFunction(name) {
+        const original = window[name];
+        if (typeof original !== 'function' || original.__authWrapped) return;
+        window[name] = function () {
+            const args = arguments;
+            const context = this;
+            window.SolarCheckoutAuth.requireCheckoutAuth(function () {
+                original.apply(context, args);
+            });
+        };
+        window[name].__authWrapped = true;
+    }
+
+    wrapCheckoutFunction('proceedToCheckout');
+    wrapCheckoutFunction('mayaCheckout');
+    wrapCheckoutFunction('proceedToMayaCheckout');
+    wrapCheckoutFunction('payWithMaya');
+})();
+</script>
 </html>
+

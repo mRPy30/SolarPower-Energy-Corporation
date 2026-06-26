@@ -43,7 +43,7 @@ $orderRef = $_GET['ref'] ?? 'Unknown';
         </div>
         <p class="text-muted">Your order is still saved. You can complete it anytime.</p>
         <div class="mt-4">
-            <a href="index.php#checkout" class="btn btn-primary btn-lg me-2">
+            <a href="checkout.php" class="btn btn-primary btn-lg me-2">
                 <i class="fas fa-shopping-cart me-2"></i> Complete Order
             </a>
             <a href="index.php" class="btn btn-secondary btn-lg">
