@@ -2414,6 +2414,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 <span>Tracking</span>
             </div>
 
+            <div class="menu-item" onclick="showPage('delivery-rates', 'Delivery Rates')" data-tooltip="Delivery Rates">
+                <i class="fas fa-truck"></i>
+                <span>Delivery Rates</span>
+            </div>
+
             <div class="menu-item" onclick="showPage('orders', 'Revenue')" data-tooltip="Revenue">
                 <i class="fas fa-shopping-bag"></i>
                 <span>Revenue</span>
@@ -6175,6 +6180,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                         alert("Link copied to clipboard!");
                     }
                 </script>
+            </div>
+
+
+            <div id="delivery-rates" class="page-content">
+                <iframe src="delivery_rates.php" style="width: 100%; height: calc(100vh - 120px); border: none; border-radius: 12px; background: white; box-shadow: 0 4px 20px rgba(0,0,0,0.05);"></iframe>
             </div>
 
 

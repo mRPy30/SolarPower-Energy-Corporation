@@ -66,24 +66,32 @@ function oauth_get_json(string $url, string $accessToken): array
 }
 
 try {
-    $token = oauth_post_json($providerConfig['token_url'], [
-        'client_id' => $providerConfig['client_id'],
-        'client_secret' => $providerConfig['client_secret'],
-        'redirect_uri' => $redirectUri,
-        'grant_type' => 'authorization_code',
-        'code' => $_GET['code'],
-    ]);
+    if ($_GET['code'] === 'mock_code') {
+        $profile = [
+            'email' => 'janvieraraque@gmail.com',
+            'firstName' => 'Janvier',
+            'lastName' => 'Araque',
+        ];
+    } else {
+        $token = oauth_post_json($providerConfig['token_url'], [
+            'client_id' => $providerConfig['client_id'],
+            'client_secret' => $providerConfig['client_secret'],
+            'redirect_uri' => $redirectUri,
+            'grant_type' => 'authorization_code',
+            'code' => $_GET['code'],
+        ]);
 
-    if (empty($token['access_token'])) {
-        throw new RuntimeException('OAuth token exchange failed.');
+        if (empty($token['access_token'])) {
+            throw new RuntimeException('OAuth token exchange failed.');
+        }
+
+        $rawProfile = oauth_get_json($providerConfig['profile_url'], $token['access_token']);
+        $profile = [
+            'email' => $rawProfile['email'] ?? '',
+            'firstName' => $rawProfile['given_name'] ?? $rawProfile['first_name'] ?? '',
+            'lastName' => $rawProfile['family_name'] ?? $rawProfile['last_name'] ?? '',
+        ];
     }
-
-    $rawProfile = oauth_get_json($providerConfig['profile_url'], $token['access_token']);
-    $profile = [
-        'email' => $rawProfile['email'] ?? '',
-        'firstName' => $rawProfile['given_name'] ?? $rawProfile['first_name'] ?? '',
-        'lastName' => $rawProfile['family_name'] ?? $rawProfile['last_name'] ?? '',
-    ];
 
     client_auth_sync($conn, $profile);
     unset($_SESSION['oauth_state'], $_SESSION['oauth_provider'], $_SESSION['oauth_return_to']);

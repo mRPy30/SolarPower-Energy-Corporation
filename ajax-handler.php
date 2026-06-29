@@ -19,19 +19,55 @@ if (!$requestData || !isset($requestData['action'])) {
     exit;
 }
 
+if ($requestData['action'] === 'create_maya_checkout') {
+    require_once __DIR__ . '/includes/checkout-service.php';
+
+    if (isset($requestData['customer']) && is_array($requestData['customer'])) {
+        $requestData['customerName'] = $requestData['customerName'] ?? ($requestData['customer']['name'] ?? '');
+        $requestData['customerEmail'] = $requestData['customerEmail'] ?? ($requestData['customer']['email'] ?? '');
+        $requestData['customerPhone'] = $requestData['customerPhone'] ?? ($requestData['customer']['phone'] ?? '');
+        $requestData['customerAddress'] = $requestData['customerAddress'] ?? ($requestData['customer']['address'] ?? '');
+    }
+
+    try {
+        $result = checkout_create_maya_checkout($conn, $requestData);
+        if (empty($result['success'])) {
+            http_response_code(502);
+        }
+        echo json_encode($result);
+    } catch (RuntimeException $e) {
+        http_response_code(400);
+        echo json_encode([
+            'success' => false,
+            'message' => $e->getMessage(),
+            'error' => $e->getMessage(),
+        ]);
+    } catch (Throwable $e) {
+        http_response_code(500);
+        echo json_encode([
+            'success' => false,
+            'message' => $e->getMessage(),
+            'error' => $e->getMessage(),
+        ]);
+    }
+
+    $conn->close();
+    exit;
+}
+
 // ============================================
 // PAYMAYA CHECKOUT HANDLER
 // ============================================
 if ($requestData['action'] === 'create_maya_checkout') {
     
     // PayMaya API Configuration
-    define('PAYMAYA_ENV', 'sandbox'); // Change to 'production' for live
-    define('PAYMAYA_PUBLIC_KEY', 'pk-Z0OSzLvIcOI2UIvDhdTGVVfRSSeiGStnceqwUE7n0Ah');
-    define('PAYMAYA_SECRET_KEY', 'sk-X0vDFlRfJMyVUlqCqapYVVRLvWnLHzf1LcmivehzLK8');
+    define('PAYMAYA_ENV', 'production');
+    define('PAYMAYA_PUBLIC_KEY', getenv('MAYA_LIVE_PUBLIC_KEY') ?: getenv('MAYA_PUBLIC_KEY') ?: '');
+    define('PAYMAYA_SECRET_KEY', getenv('MAYA_LIVE_SECRET_KEY') ?: getenv('MAYA_SECRET_KEY') ?: '');
     
     $apiUrls = [
         'sandbox' => 'https://pg-sandbox.paymaya.com/checkout/v1/checkouts',
-        'production' => 'https://pg.paymaya.com/checkout/v1/checkouts'
+        'production' => 'https://pg.maya.ph/checkout/v1/checkouts'
     ];
     $PAYMAYA_API_URL = $apiUrls[PAYMAYA_ENV];
     
@@ -207,7 +243,7 @@ if ($requestData['action'] === 'create_maya_checkout') {
     curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($checkoutData));
     curl_setopt($ch, CURLOPT_HTTPHEADER, [
         'Content-Type: application/json',
-        'Authorization: Basic ' . base64_encode(PAYMAYA_SECRET_KEY . ':')
+        'Authorization: Basic ' . base64_encode(PAYMAYA_PUBLIC_KEY . ':')
     ]);
     
     $response = curl_exec($ch);

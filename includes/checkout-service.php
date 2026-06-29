@@ -79,6 +79,85 @@ function checkout_insert_row(mysqli $conn, string $table, array $values, array $
     return (int) $insertId;
 }
 
+function checkout_ensure_delivery_rates_table(mysqli $conn): void
+{
+    $conn->query("
+        CREATE TABLE IF NOT EXISTS delivery_rates (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            origin_address VARCHAR(255) DEFAULT 'Madrigal Business Park, Alabang, Muntinlupa',
+            rate_type VARCHAR(50),
+            location_name VARCHAR(100),
+            price DECIMAL(10,2) NOT NULL,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        )
+    ");
+}
+
+function checkout_assert_order_schema(mysqli $conn): void
+{
+    $required = [
+        'client_id',
+        'order_reference',
+        'customer_name',
+        'customer_email',
+        'customer_phone',
+        'customer_address',
+        'delivery_location',
+        'items_subtotal',
+        'delivery_fee',
+        'total_amount',
+        'payment_method',
+        'payment_status',
+        'order_status',
+    ];
+
+    $columns = checkout_table_columns($conn, 'orders');
+    $missing = [];
+
+    foreach ($required as $column) {
+        if (!isset($columns[$column])) {
+            $missing[] = $column;
+        }
+    }
+
+    if ($missing) {
+        throw new RuntimeException('The active orders table is missing checkout columns: ' . implode(', ', $missing) . '. Do not create a new orders table; apply the checkout migration to the existing table.');
+    }
+}
+
+function checkout_delivery_rate_from_input(mysqli $conn, array $input): array
+{
+    checkout_ensure_delivery_rates_table($conn);
+
+    $rateId = (int) ($input['delivery_rate_id'] ?? $input['deliveryRateId'] ?? 0);
+    if ($rateId <= 0) {
+        throw new RuntimeException('Please select a delivery location.');
+    }
+
+    $stmt = $conn->prepare(
+        'SELECT id, origin_address, rate_type, location_name, price
+         FROM delivery_rates
+         WHERE id = ?
+         LIMIT 1'
+    );
+    $stmt->bind_param('i', $rateId);
+    $stmt->execute();
+    $rate = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+
+    if (!$rate) {
+        throw new RuntimeException('Selected delivery rate is no longer available.');
+    }
+
+    return [
+        'id' => (int) $rate['id'],
+        'origin_address' => checkout_clean_text($rate['origin_address'] ?? 'Madrigal Business Park, Alabang, Muntinlupa'),
+        'rate_type' => checkout_clean_text($rate['rate_type'] ?? ''),
+        'location_name' => checkout_clean_text($rate['location_name'] ?? ''),
+        'price' => round((float) $rate['price'], 2),
+    ];
+}
+
 function checkout_input_items(array $input): array
 {
     $items = $input['items'] ?? [];
@@ -346,10 +425,12 @@ function checkout_name_parts(string $customerName): array
     return [$firstName ?: 'Customer', $lastName ?: '-'];
 }
 
-function checkout_build_maya_payload(int $orderId, string $orderRef, array $customer, array $validated, float $deliveryFee, string $deliveryLocation): array
+function checkout_build_maya_payload(int $orderId, string $orderRef, array $customer, array $validated, array $deliveryRate): array
 {
     [$firstName, $lastName] = checkout_name_parts($customer['name']);
     $lineItems = [];
+    $deliveryFee = $deliveryRate['price'];
+    $deliveryLocation = $deliveryRate['location_name'];
 
     foreach ($validated['items'] as $item) {
         $lineItems[] = [
@@ -401,6 +482,8 @@ function checkout_build_maya_payload(int $orderId, string $orderRef, array $cust
         'metadata' => [
             'orderId' => $orderId,
             'orderRef' => $orderRef,
+            'deliveryRateId' => (string) $deliveryRate['id'],
+            'deliveryOrigin' => $deliveryRate['origin_address'],
             'itemsSubtotal' => number_format($validated['subtotal'], 2, '.', ''),
             'deliveryFee' => number_format($deliveryFee, 2, '.', ''),
             'deliveryLocation' => $deliveryLocation,
@@ -409,40 +492,54 @@ function checkout_build_maya_payload(int $orderId, string $orderRef, array $cust
     ];
 }
 
-function checkout_create_order(mysqli $conn, array $customer, array $validated, float $deliveryFee, string $deliveryLocation): array
+function checkout_create_order(mysqli $conn, array $customer, array $validated, array $deliveryRate): array
 {
+    checkout_assert_order_schema($conn);
+
     $orderRef = 'SP-' . date('YmdHis') . '-' . strtoupper(substr(bin2hex(random_bytes(4)), 0, 6));
+    $deliveryFee = $deliveryRate['price'];
+    $deliveryLocation = $deliveryRate['location_name'];
     $grandTotal = round($validated['subtotal'] + $deliveryFee, 2);
-    $remarks = 'Items subtotal: PHP ' . number_format($validated['subtotal'], 2, '.', '') . '; Delivery: PHP ' . number_format($deliveryFee, 2, '.', '') . '; Location: ' . $deliveryLocation;
+    $paymentMethod = 'maya';
+    $clientId = isset($_SESSION['client_id']) && (int) $_SESSION['client_id'] > 0 ? (int) $_SESSION['client_id'] : null;
 
     $conn->begin_transaction();
 
     try {
-        $orderId = checkout_insert_row($conn, 'orders', [
-            'client_id' => isset($_SESSION['client_id']) ? (int) $_SESSION['client_id'] : null,
-            'order_reference' => $orderRef,
-            'customer_name' => $customer['name'],
-            'customer_email' => $customer['email'],
-            'customer_phone' => $customer['phone'],
-            'customer_address' => $customer['address'],
-            'customer_city' => $deliveryLocation,
-            'items_subtotal' => $validated['subtotal'],
-            'delivery_fee' => $deliveryFee,
-            'delivery_location' => $deliveryLocation,
-            'total_amount' => $grandTotal,
-            'payment_method' => 'maya',
-            'payment_status' => 'pending',
-            'order_status' => 'pending',
-            'sales_channel' => 'Website',
-            'service_type' => 'Product Checkout',
-            'remarks' => $remarks,
-            'created_at' => date('Y-m-d H:i:s'),
-        ], [
-            'client_id' => 'i',
-            'items_subtotal' => 'd',
-            'delivery_fee' => 'd',
-            'total_amount' => 'd',
-        ]);
+        $stmt = $conn->prepare(
+            "INSERT INTO orders (
+                client_id,
+                order_reference,
+                customer_name,
+                customer_email,
+                customer_phone,
+                customer_address,
+                delivery_location,
+                items_subtotal,
+                delivery_fee,
+                total_amount,
+                payment_method,
+                payment_status,
+                order_status
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'pending')"
+        );
+        $stmt->bind_param(
+            'issssssddds',
+            $clientId,
+            $orderRef,
+            $customer['name'],
+            $customer['email'],
+            $customer['phone'],
+            $customer['address'],
+            $deliveryLocation,
+            $validated['subtotal'],
+            $deliveryFee,
+            $grandTotal,
+            $paymentMethod
+        );
+        $stmt->execute();
+        $orderId = (int) $conn->insert_id;
+        $stmt->close();
 
         $itemStmt = $conn->prepare(
             'INSERT INTO order_items (order_id, product_id, product_name, quantity, price, subtotal) VALUES (?, ?, ?, ?, ?, ?)'
@@ -498,6 +595,10 @@ function checkout_call_maya(array $payload): array
 
     if ($publicKey === '') {
         throw new RuntimeException('Maya Checkout public key is not configured.');
+    }
+
+    if (strpos($publicKey, 'pk-') !== 0) {
+        throw new RuntimeException('Maya Checkout Create Checkout must use the PUBLIC API key that starts with pk-. Using an sk- secret key causes K003 invalid authentication credentials.');
     }
 
     $endpoint = rtrim($config['base_url'] ?? 'https://pg.maya.ph', '/') . '/checkout/v1/checkouts';
@@ -562,21 +663,20 @@ function checkout_create_maya_checkout(mysqli $conn, array $input): array
 {
     $customer = checkout_customer_from_input($input);
     $validated = checkout_validate_items($conn, $input);
-    $deliveryLocation = checkout_clean_text($input['selected_location_name'] ?? $input['deliveryLocation'] ?? $input['province'] ?? '');
-    $clientDeliveryFee = isset($input['calculated_delivery_fee']) ? (float) $input['calculated_delivery_fee'] : null;
-    $deliveryFee = checkout_delivery_fee($deliveryLocation, $clientDeliveryFee);
-    $order = checkout_create_order($conn, $customer, $validated, $deliveryFee, $deliveryLocation);
-    $payload = checkout_build_maya_payload($order['id'], $order['reference'], $customer, $validated, $deliveryFee, $deliveryLocation);
+    $deliveryRate = checkout_delivery_rate_from_input($conn, $input);
+    $order = checkout_create_order($conn, $customer, $validated, $deliveryRate);
+    $payload = checkout_build_maya_payload($order['id'], $order['reference'], $customer, $validated, $deliveryRate);
     $maya = checkout_call_maya($payload);
 
     if (!$maya['ok']) {
-        $message = $maya['body']['message'] ?? $maya['body']['error'] ?? 'Maya Checkout creation failed.';
+        $message = $maya['body']['message'] ?? $maya['body']['error']['message'] ?? $maya['body']['error'] ?? 'Maya Checkout creation failed.';
         checkout_mark_order_failed($conn, $order['id'], $message);
 
         return [
             'success' => false,
             'error' => $message,
             'message' => $message,
+            'mayaCode' => $maya['body']['code'] ?? $maya['body']['error']['code'] ?? null,
             'code' => $maya['status'],
         ];
     }

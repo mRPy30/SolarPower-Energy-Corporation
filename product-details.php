@@ -1317,6 +1317,216 @@ $conn->close();
                     alert(`Error: Minimum purchased order quantity for this product category is ${productMOQ} pcs.`);
                 }
             }
+            <!-- Main image area -->
+            <div style="flex:1;display:flex;align-items:center;justify-content:center;background:#fff;padding:32px 24px;min-height:480px;">
+                <img id="modalImage" src="<?= htmlspecialchars($productImages[0]) ?>" style="max-width:100%;max-height:68vh;object-fit:contain;display:block;">
+            </div>
+
+            <!-- Thumbnail sidebar -->
+            <div id="modalGalleryWrapper" style="width:140px;flex-shrink:0;border-left:1px solid #f0f0f0;background:#fafafa;overflow-y:auto;padding:16px 12px;display:flex;flex-direction:column;gap:10px; <?= count($productImages) > 1 ? '' : 'display:none;' ?>">
+                <p style="font-size:12px;color:#999;margin:0 0 6px;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;">All Photos</p>
+                <?php foreach ($productImages as $index => $image): ?>
+                <div class="modal-thumb <?= $index === 0 ? 'modal-thumb-active' : '' ?>"
+                    onclick="changeModalImage(this, '<?= htmlspecialchars($image) ?>')"
+                    style="border:2px solid <?= $index === 0 ? 'var(--clr-primary)' : '#e0e0e0' ?>;border-radius:6px;overflow:hidden;cursor:pointer;aspect-ratio:1;transition:all 0.2s;">
+                    <img src="<?= htmlspecialchars($image) ?>" alt="Thumb <?= $index + 1 ?>" style="width:100%;height:100%;object-fit:cover;display:block;">
+                </div>
+                <?php endforeach; ?>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // ── Product data passed from PHP ──
+        const productData = <?= json_encode($product) ?>;
+        productData.image_path = '<?= htmlspecialchars($productImages[0] ?? $product['imagePath']) ?>';
+        <?php if ($is_eligible && count($variants) > 0): ?>
+            productData.brand_id = <?= json_encode($variants[0]['brand_id']) ?>;
+            productData.brandName = <?= json_encode($variants[0]['brandName']) ?>;
+            productData.price = <?= json_encode($variants[0]['price']) ?>;
+        <?php endif; ?>
+        const originalProductId = <?= intval($product['id']) ?>;
+
+        // ── Brand Variant Change Event Listener ──
+        document.addEventListener('DOMContentLoaded', function() {
+            const variantRadios = document.querySelectorAll('.variant-radio');
+            variantRadios.forEach(radio => {
+                radio.addEventListener('change', function() {
+                    if (this.checked) {
+                        const selectedId = this.value;
+                        const price = parseFloat(this.getAttribute('data-price')) || 0;
+                        const mainImage = this.getAttribute('data-image') || 'assets/img/placeholder.png';
+                        const brandName = this.getAttribute('data-brand') || '';
+                        const brandId = this.getAttribute('data-brand-id') || null;
+
+                        // 1. Update productData properties for cart session
+                        productData.id = originalProductId; // Keep original product id for order placement
+                        productData.price = price;
+                        productData.image_path = mainImage;
+                        productData.brandName = brandName;
+                        productData.brand_id = brandId;
+
+                        // 2. Update screen inputs & text values
+                        const hiddenInput = document.getElementById('hidden_product_id');
+                        if (hiddenInput) hiddenInput.value = originalProductId;
+
+                        const priceDisplay = document.querySelector('.product-price');
+                        if (priceDisplay) {
+                            priceDisplay.textContent = '₱' + price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                        }
+
+                        const brandDisplay = document.querySelector('.product-brand');
+                        if (brandDisplay) brandDisplay.textContent = brandName;
+
+                        // 3. Update main image view & modal primary image
+                        const mainImgEl = document.getElementById('mainImage');
+                        if (mainImgEl) mainImgEl.src = mainImage;
+                        
+                        const modalImgEl = document.getElementById('modalImage');
+                        if (modalImgEl) modalImgEl.src = mainImage;
+
+                        // 4. Trigger fetch to update thumbnail gallery
+                        fetch(`get-gallery.php?product_id=${originalProductId}`)
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.success && data.images) {
+                                    const thumbWrapper = document.getElementById('thumbnailGalleryWrapper');
+                                    const modalWrapper = document.getElementById('modalGalleryWrapper');
+
+                                    // Render main thumbnail gallery list
+                                    if (data.images.length > 1) {
+                                        let thumbHtml = '<div class="thumbnail-gallery">';
+                                        data.images.forEach((img, index) => {
+                                            thumbHtml += `
+                                                <div class="thumbnail-item ${index === 0 ? 'active' : ''}" onclick="changeMainImage(this, '${img}')">
+                                                    <img src="${img}" alt="Thumbnail ${index + 1}">
+                                                </div>
+                                            `;
+                                        });
+                                        thumbHtml += '</div>';
+                                        if (thumbWrapper) thumbWrapper.innerHTML = thumbHtml;
+                                    } else {
+                                        if (thumbWrapper) thumbWrapper.innerHTML = '';
+                                    }
+
+                                    // Render modal thumbnail sidebar list
+                                    if (data.images.length > 1) {
+                                        let modalHtml = '<p style="font-size:12px;color:#999;margin:0 0 6px;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;">All Photos</p>';
+                                        data.images.forEach((img, index) => {
+                                            modalHtml += `
+                                                <div class="modal-thumb ${index === 0 ? 'modal-thumb-active' : ''}"
+                                                     onclick="changeModalImage(this, '${img}')"
+                                                     style="border:2px solid ${index === 0 ? 'var(--clr-primary)' : '#e0e0e0'};border-radius:6px;overflow:hidden;cursor:pointer;aspect-ratio:1;transition:all 0.2s;">
+                                                    <img src="${img}" alt="Thumb ${index + 1}" style="width:100%;height:100%;object-fit:cover;display:block;">
+                                                </div>
+                                            `;
+                                        });
+                                        if (modalWrapper) {
+                                            modalWrapper.innerHTML = modalHtml;
+                                            modalWrapper.style.display = 'flex';
+                                        }
+                                    } else {
+                                        if (modalWrapper) {
+                                            modalWrapper.innerHTML = '';
+                                            modalWrapper.style.display = 'none';
+                                        }
+                                    }
+                                }
+                            })
+                            .catch(err => console.error('Error fetching image gallery:', err));
+                    }
+                });
+            });
+        });
+
+        // ── Cart ──
+        let cart = JSON.parse(localStorage.getItem('solarCart') || '[]');
+        let deliveryFee = 0;
+        let installationFee = 0;
+
+        // ── Image gallery ──
+        function closeImgModal() {
+            document.getElementById('imgModal').style.display = 'none';
+            document.body.style.overflow = '';
+        }
+        document.addEventListener('keydown', e => { if (e.key === 'Escape') closeImgModal(); });
+        function openImgModal() {
+            document.getElementById('imgModal').style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        }
+        function handleModalBackdropClick(e) {
+            if (e.target === document.getElementById('imgModal')) closeImgModal();
+        }
+        function changeMainImage(el, src) {
+            document.getElementById('mainImage').src = src;
+            document.getElementById('modalImage').src = src;
+            document.querySelectorAll('.thumbnail-item').forEach(t => t.classList.remove('active'));
+            el.classList.add('active');
+            document.querySelectorAll('.modal-thumb').forEach(t => {
+                const isMatch = t.querySelector('img').src === el.querySelector('img').src;
+                t.style.borderColor = isMatch ? 'var(--clr-primary)' : '#e0e0e0';
+                t.classList.toggle('modal-thumb-active', isMatch);
+            });
+        }
+        function changeModalImage(el, src) {
+            document.getElementById('modalImage').src = src;
+            document.querySelectorAll('.modal-thumb').forEach(t => { t.style.borderColor = '#e0e0e0'; t.classList.remove('modal-thumb-active'); });
+            el.style.borderColor = 'var(--clr-primary)';
+            el.classList.add('modal-thumb-active');
+            document.querySelectorAll('.thumbnail-item').forEach(t => {
+                const isMatch = t.querySelector('img') && t.querySelector('img').src === el.querySelector('img').src;
+                t.classList.toggle('active', isMatch);
+            });
+            document.getElementById('mainImage').src = src;
+        }
+
+        // Qty Increment/Decrement & Validation
+        const productMOQ = <?= $moq_value ?>;
+        const isMOQCategory = <?= $is_moq_cat ? 'true' : 'false' ?>;
+
+        function decrementQty() {
+            const input = document.getElementById('product-qty');
+            let val = parseInt(input.value) || 1;
+            const min = parseInt(input.getAttribute('min')) || 1;
+            if (val > min) {
+                input.value = val - 1;
+            } else if (isMOQCategory && val <= productMOQ) {
+                alert(`Error: Minimum purchased order quantity for this product category is ${productMOQ} pcs.`);
+            }
+        }
+
+        function incrementQty() {
+            const input = document.getElementById('product-qty');
+            let val = parseInt(input.value) || 1;
+            input.value = val + 1;
+        }
+
+        function validateQtyInput(input) {
+            let val = parseInt(input.value) || 1;
+            const min = parseInt(input.getAttribute('min')) || 1;
+            if (val < min) {
+                input.value = min;
+                if (isMOQCategory) {
+                    alert(`Error: Minimum purchased order quantity for this product category is ${productMOQ} pcs.`);
+                }
+            }
+        }
+
+        function syncSession(cartData, callback) {
+            fetch('<?= htmlspecialchars($base_url) ?>controllers/cart.php?action=sync', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ cart: cartData })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (callback) callback(data);
+            })
+            .catch(err => {
+                console.error(err);
+                if (callback) callback();
+            });
         }
 
         // ── Cart helpers ──
@@ -1333,7 +1543,9 @@ $conn->close();
             if (existing) { existing.quantity = (existing.quantity || 1) + qty; }
             else { cart.push({ id: productData.id, product_id: productData.id, brand_id: productData.brand_id || null, displayName: productData.displayName, brandName: productData.brandName || '', category: productData.category || '', price: parseFloat(productData.price), image_path: productData.image_path, quantity: qty, moq: productMOQ }); }
             localStorage.setItem('solarCart', JSON.stringify(cart));
-            alert('Added to cart!');
+            syncSession(cart, function() {
+                alert('Added to cart!');
+            });
         }
 
         // ── Buy Now: show checkout, hide product page ──
@@ -1346,16 +1558,17 @@ $conn->close();
                 return;
             }
 
-            // Clear cart and add this product
             cart = [{ id: productData.id, product_id: productData.id, brand_id: productData.brand_id || null, displayName: productData.displayName, brandName: productData.brandName || '', category: productData.category || '', price: parseFloat(productData.price), image_path: productData.image_path, quantity: qty, moq: productMOQ }];
             localStorage.setItem('solarCart', JSON.stringify(cart));
-            window.location.href = '<?= htmlspecialchars($base_url) ?>checkout.php';
+            syncSession(cart, function() {
+                window.location.href = '<?= htmlspecialchars($base_url) ?>checkout.php';
+            });
         }
 
         function buyNowFromButton(btn) {
             const product = JSON.parse(btn.getAttribute('data-product'));
             const moq = parseInt(product.moq) || 1;
-            localStorage.setItem('solarCart', JSON.stringify([{
+            const singleCart = [{
                 id: product.id,
                 product_id: product.product_id || product.id,
                 brand_id: product.brand_id || null,
@@ -1366,8 +1579,11 @@ $conn->close();
                 image_path: product.image_path || product.imagePath || 'assets/img/product-placeholder.png',
                 quantity: moq,
                 moq: moq
-            }]));
-            window.location.href = '<?= htmlspecialchars($base_url) ?>checkout.php';
+            }];
+            localStorage.setItem('solarCart', JSON.stringify(singleCart));
+            syncSession(singleCart, function() {
+                window.location.href = '<?= htmlspecialchars($base_url) ?>checkout.php';
+            });
         }
 
         function proceedToCheckout() {

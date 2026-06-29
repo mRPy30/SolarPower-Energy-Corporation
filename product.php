@@ -770,20 +770,15 @@ $conn->close();
         try {
             localStorage.setItem('solarCart', JSON.stringify(cart));
             console.log('Cart saved');
+            
+            fetch('/SolarPower-Energy-Corporation/controllers/cart.php?action=sync', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ cart: cart })
+            }).catch(err => console.error('Session sync error:', err));
         } catch (error) {
             console.error('Error saving cart:', error);
         }
-        return;
-
-        try {
-            window.cartStorage = JSON.stringify(cart);
-            console.log('💾 Cart saved');
-        } catch (error) {
-            console.error('❌ Error saving cart:', error);
-        }
-    }
-
-    // keep old name aliases for compatibility
     function loadCartFromStorage() { loadCartFromMemory(); }
     function saveCartToStorage()   { saveCartToMemory(); }
 

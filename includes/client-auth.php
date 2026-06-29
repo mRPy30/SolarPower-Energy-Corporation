@@ -5,16 +5,16 @@ if (session_status() === PHP_SESSION_NONE) {
 
 function client_auth_is_logged_in(): bool
 {
-    return isset($_SESSION['client_id']) && intval($_SESSION['client_id']) > 0;
+    return (isset($_SESSION['client_id']) && intval($_SESSION['client_id']) > 0) || (isset($_SESSION['user_id']) && intval($_SESSION['user_id']) > 0);
 }
 
 function client_auth_session_payload(): array
 {
     return [
-        'client_id' => $_SESSION['client_id'] ?? null,
-        'email' => $_SESSION['client_email'] ?? '',
-        'firstName' => $_SESSION['client_firstName'] ?? '',
-        'lastName' => $_SESSION['client_lastName'] ?? '',
+        'client_id' => $_SESSION['client_id'] ?? $_SESSION['user_id'] ?? null,
+        'email' => $_SESSION['client_email'] ?? $_SESSION['user_email'] ?? '',
+        'firstName' => $_SESSION['client_firstName'] ?? $_SESSION['first_name'] ?? '',
+        'lastName' => $_SESSION['client_lastName'] ?? $_SESSION['last_name'] ?? '',
         'contact_number' => $_SESSION['client_contact_number'] ?? '',
         'address' => $_SESSION['client_address'] ?? '',
     ];
@@ -61,6 +61,12 @@ function client_auth_sync(mysqli $conn, array $profile): int
     $_SESSION['client_lastName'] = $client['lastName'];
     $_SESSION['client_contact_number'] = $client['contact_number'];
     $_SESSION['client_address'] = $client['address'];
+
+    // Sync with requested user session keys
+    $_SESSION['user_id'] = intval($client['id']);
+    $_SESSION['user_email'] = $client['email'];
+    $_SESSION['first_name'] = $client['firstName'];
+    $_SESSION['last_name'] = $client['lastName'];
 
     return intval($client['id']);
 }

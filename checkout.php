@@ -5,6 +5,9 @@ if (session_status() === PHP_SESSION_NONE) {
 
 $basePath = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? ''));
 $basePath = ($basePath === '/' || $basePath === '\\') ? '/' : rtrim($basePath, '/') . '/';
+$sessionCart = isset($_SESSION['cart']) && is_array($_SESSION['cart'])
+    ? array_values(array_filter($_SESSION['cart'], 'is_array'))
+    : [];
 
 $client = [
     'email' => '',
@@ -21,8 +24,8 @@ if (file_exists($clientAuthPath)) {
         $client = array_merge($client, client_auth_session_payload());
     }
 }
-
 $fullName = trim(($client['firstName'] ?? '') . ' ' . ($client['lastName'] ?? ''));
+$isLoggedIn = isset($_SESSION['user_id']) || isset($_SESSION['client_id']);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -290,14 +293,33 @@ $fullName = trim(($client['firstName'] ?? '') . ' ' . ($client['lastName'] ?? ''
                     <h2>Customer Details</h2>
                 </div>
                 <div class="panel-body">
-                    <form id="checkoutForm" novalidate>
+                    <?php if (!$isLoggedIn): ?>
+                        <div class="bg-light p-3 rounded mb-4 border text-center">
+                            <div class="small fw-semibold mb-2"><i class="fas fa-info-circle text-info me-1"></i> Speed up your checkout:</div>
+                            <div class="d-flex gap-2 justify-content-center">
+                                <a class="btn btn-sm btn-outline-dark fw-semibold py-1 px-3 d-flex align-items-center gap-1" href="<?= $basePath ?>controllers/auth/oauth-start.php?provider=google&return_to=<?= urlencode($_SERVER['REQUEST_URI']) ?>">
+                                    <i class="fab fa-google text-danger"></i> Google
+                                </a>
+                                <a class="btn btn-sm btn-primary fw-semibold py-1 px-3 d-flex align-items-center gap-1" href="<?= $basePath ?>controllers/auth/oauth-start.php?provider=facebook&return_to=<?= urlencode($_SERVER['REQUEST_URI']) ?>" style="background-color: #1877F2; border-color: #1877F2;">
+                                    <i class="fab fa-facebook-f"></i> Facebook
+                                </a>
+                            </div>
+                        </div>
+                    <?php endif; ?>
+
+                    <form id="checkoutForm" action="process-payment.php" method="POST" novalidate>
+                        <input type="hidden" id="total_items_amount" name="total_items_amount" value="0.00">
+                        <input type="hidden" id="calculated_delivery_fee" name="calculated_delivery_fee" value="0.00">
+                        <input type="hidden" id="selected_location_name" name="selected_location_name" value="">
+                        <input type="hidden" name="paymentType" value="full">
+
                         <div class="mb-3">
                             <label class="form-label" for="cust_name">Full name</label>
                             <input class="form-control" id="cust_name" name="customerName" value="<?= htmlspecialchars($fullName) ?>" required>
                         </div>
                         <div class="mb-3">
                             <label class="form-label" for="cust_email">Email</label>
-                            <input class="form-control" id="cust_email" name="customerEmail" type="email" value="<?= htmlspecialchars($client['email'] ?? '') ?>" required>
+                            <input class="form-control" id="cust_email" name="customerEmail" type="email" value="<?= htmlspecialchars($client['email'] ?? $_SESSION['user_email'] ?? '') ?>" required>
                         </div>
                         <div class="mb-3">
                             <label class="form-label" for="cust_phone">Mobile number</label>
@@ -310,20 +332,9 @@ $fullName = trim(($client['firstName'] ?? '') . ' ' . ($client['lastName'] ?? ''
                         <div class="mb-3">
                             <label class="form-label" for="delivery_location">Delivery location</label>
                             <select class="form-select" id="delivery_location" name="deliveryLocation" required>
-                                <option value="">Select location</option>
-                                <option value="mm_1_5km">Metro Manila 1-5km</option>
-                                <option value="mm_6_10km">Metro Manila 6-10km</option>
-                                <option value="mm_11_20km">Metro Manila 11-20km</option>
-                                <option value="mm_21_30km">Metro Manila 21-30km</option>
-                                <option value="cavite">Cavite</option>
-                                <option value="laguna">Laguna</option>
-                                <option value="batangas">Batangas</option>
-                                <option value="rizal">Rizal</option>
-                                <option value="bulacan">Bulacan</option>
-                                <option value="pampanga">Pampanga</option>
-                                <option value="tarlac">Tarlac</option>
-                                <option value="vismin">Visayas / Mindanao</option>
+                                <option value="">Loading delivery rates...</option>
                             </select>
+                            <div class="form-text">Origin: Madrigal Business Park, Alabang, Muntinlupa</div>
                         </div>
 
                         <div class="my-4">
@@ -359,10 +370,12 @@ $fullName = trim(($client['firstName'] ?? '') . ' ' . ($client['lastName'] ?? ''
 
     <script>
         window.SOLAR_APP_BASE = <?= json_encode($basePath) ?>;
+        window.SOLAR_SESSION_CART = <?= json_encode($sessionCart) ?>;
         window.SOLAR_MAYA_CHECKOUT_ENDPOINT = <?= json_encode($basePath . 'controllers/ordering/create-maya-checkout.php') ?>;
+        window.SOLAR_DELIVERY_RATES_ENDPOINT = <?= json_encode($basePath . 'controllers/checkout/get-delivery-rates.php') ?>;
     </script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="assets/checkout-auth.js"></script>
-    <script src="assets/checkout.js"></script>
+    <script src="assets/checkout-auth.js?v=<?= filemtime(__DIR__ . '/assets/checkout-auth.js') ?>"></script>
+    <script src="assets/checkout.js?v=<?= filemtime(__DIR__ . '/assets/checkout.js') ?>"></script>
 </body>
 </html>

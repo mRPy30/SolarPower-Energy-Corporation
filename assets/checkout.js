@@ -1,25 +1,13 @@
 (function () {
     const CART_KEY = 'solarCart';
+    const APP_BASE = window.SOLAR_APP_BASE || '';
     const endpoint = window.SOLAR_MAYA_CHECKOUT_ENDPOINT || 'controllers/ordering/create-maya-checkout.php';
+    const ratesEndpoint = window.SOLAR_DELIVERY_RATES_ENDPOINT || 'controllers/checkout/get-delivery-rates.php';
     const imageFallback = 'assets/img/product-placeholder.png';
 
     let cart = [];
+    let deliveryRates = [];
     let deliveryFee = 0;
-
-    const deliveryFees = {
-        mm_1_5km: 2000,
-        mm_6_10km: 2500,
-        mm_11_20km: 4000,
-        mm_21_30km: 6000,
-        cavite: 4200,
-        laguna: 6000,
-        batangas: 8500,
-        rizal: 7000,
-        bulacan: 7000,
-        pampanga: 10000,
-        tarlac: 10000,
-        vismin: 0
-    };
 
     function money(value) {
         const amount = Number(value) || 0;
@@ -29,21 +17,21 @@
         });
     }
 
-    function loadCart() {
-        try {
-            const parsed = JSON.parse(localStorage.getItem(CART_KEY) || '[]');
-            cart = Array.isArray(parsed) ? parsed : [];
-        } catch (error) {
-            cart = [];
-        }
+    function cartRows(source) {
+        if (Array.isArray(source)) return source;
+        if (source && typeof source === 'object') return Object.values(source);
+        return [];
+    }
 
-        cart = cart
+    function normalizeCart(source) {
+        return cartRows(source)
             .map((item) => ({
                 id: parseInt(item.product_id || item.id, 10) || 0,
                 product_id: parseInt(item.product_id || item.id, 10) || 0,
+                variant_id: item.variant_id || '',
                 brand_id: item.brand_id ? parseInt(item.brand_id, 10) : null,
-                displayName: item.displayName || item.name || 'Solar Product',
-                brandName: item.brandName || '',
+                displayName: item.displayName || item.product_name || item.name || 'Solar Product',
+                brandName: item.brandName || item.brand_name || '',
                 category: item.category || '',
                 price: parseFloat(item.price) || 0,
                 image_path: item.image_path || item.imagePath || imageFallback,
@@ -51,6 +39,40 @@
                 moq: parseInt(item.moq, 10) || 1
             }))
             .filter((item) => item.product_id > 0);
+    }
+
+    function storedCart() {
+        try {
+            return JSON.parse(localStorage.getItem(CART_KEY) || '[]');
+        } catch (error) {
+            return [];
+        }
+    }
+
+    async function loadCart() {
+        cart = normalizeCart(window.SOLAR_SESSION_CART || []);
+
+        renderCart();
+
+        try {
+            const response = await fetch(APP_BASE + 'controllers/cart.php?action=get', {
+                credentials: 'same-origin'
+            });
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+                cart = normalizeCart(data.cart || []);
+                saveCart();
+                renderCart();
+                return;
+            }
+        } catch (error) {
+            console.error('Session cart load error:', error);
+        }
+
+        cart = normalizeCart(storedCart());
+        saveCart();
+        renderCart();
     }
 
     function saveCart() {
@@ -61,10 +83,31 @@
         return cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
     }
 
-    function selectedDeliveryLabel() {
+    function selectedDeliveryRate() {
         const select = document.getElementById('delivery_location');
-        if (!select || !select.value) return '';
-        return select.options[select.selectedIndex].text;
+        if (!select || !select.value) return null;
+
+        const rateId = parseInt(select.value, 10);
+        return deliveryRates.find((rate) => rate.id === rateId) || null;
+    }
+
+    function selectedDeliveryLabel() {
+        const rate = selectedDeliveryRate();
+        return rate ? rate.location_name : '';
+    }
+
+    function setError(message) {
+        const errorBox = document.getElementById('checkoutError');
+        if (!errorBox) return;
+
+        if (!message) {
+            errorBox.classList.add('d-none');
+            errorBox.textContent = '';
+            return;
+        }
+
+        errorBox.textContent = message;
+        errorBox.classList.remove('d-none');
     }
 
     function renderSummary() {
@@ -80,6 +123,68 @@
             const count = cart.reduce((sum, item) => sum + item.quantity, 0);
             badge.textContent = count + (count === 1 ? ' item' : ' items');
         }
+    }
+
+    function rateTypeLabel(rateType) {
+        return rateType === 'km_range' ? 'Metro Manila' : 'Luzon Provinces';
+    }
+
+    function populateDeliveryRates() {
+        const select = document.getElementById('delivery_location');
+        if (!select) return;
+
+        select.innerHTML = '';
+
+        const placeholder = document.createElement('option');
+        placeholder.value = '';
+        placeholder.textContent = deliveryRates.length ? 'Select location' : 'No delivery rates configured';
+        select.appendChild(placeholder);
+
+        const groups = {};
+        deliveryRates.forEach((rate) => {
+            const groupKey = rate.rate_type || 'province';
+            if (!groups[groupKey]) {
+                const group = document.createElement('optgroup');
+                group.label = rateTypeLabel(groupKey);
+                groups[groupKey] = group;
+                select.appendChild(group);
+            }
+
+            const option = document.createElement('option');
+            option.value = String(rate.id);
+            option.dataset.price = String(rate.price);
+            option.dataset.locationName = rate.location_name;
+            option.dataset.rateType = rate.rate_type;
+            option.textContent = rate.location_name + ' - ' + money(rate.price);
+            groups[groupKey].appendChild(option);
+        });
+
+        select.disabled = deliveryRates.length === 0;
+    }
+
+    async function loadDeliveryRates() {
+        const select = document.getElementById('delivery_location');
+        if (!select) return;
+
+        select.disabled = true;
+        select.innerHTML = '<option value="">Loading delivery rates...</option>';
+
+        const response = await fetch(ratesEndpoint, { credentials: 'same-origin' });
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+            throw new Error(data.message || data.error || 'Unable to load delivery rates.');
+        }
+
+        deliveryRates = (data.rates || []).map((rate) => ({
+            id: parseInt(rate.id, 10),
+            origin_address: rate.origin_address || '',
+            rate_type: rate.rate_type || 'province',
+            location_name: rate.location_name || '',
+            price: Number(rate.price) || 0
+        })).filter((rate) => rate.id > 0 && rate.location_name);
+
+        populateDeliveryRates();
     }
 
     function createQuantityControl(item, index) {
@@ -162,9 +267,21 @@
             remove.className = 'icon-btn';
             remove.innerHTML = '<i class="fas fa-trash-alt" aria-hidden="true"></i>';
             remove.addEventListener('click', function () {
-                cart.splice(index, 1);
-                saveCart();
-                renderCart();
+                fetch(APP_BASE + 'controllers/cart.php?action=remove', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ index: index })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        cart = normalizeCart(data.cart || []);
+                        saveCart();
+                        renderCart();
+                    }
+                });
             });
             actions.appendChild(remove);
 
@@ -179,23 +296,22 @@
         const item = cart[index];
         if (!item) return;
 
-        item.quantity = Math.max(item.moq || 1, item.quantity + change);
-        saveCart();
-        renderCart();
-    }
-
-    function setError(message) {
-        const errorBox = document.getElementById('checkoutError');
-        if (!errorBox) return;
-
-        if (!message) {
-            errorBox.classList.add('d-none');
-            errorBox.textContent = '';
-            return;
-        }
-
-        errorBox.textContent = message;
-        errorBox.classList.remove('d-none');
+        const newQty = Math.max(item.moq || 1, item.quantity + change);
+        fetch(APP_BASE + 'controllers/cart.php?action=update', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ index: index, quantity: newQty })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                cart = normalizeCart(data.cart || []);
+                saveCart();
+                renderCart();
+            }
+        });
     }
 
     function formPayload() {
@@ -203,9 +319,9 @@
         const email = document.getElementById('cust_email').value.trim();
         const phone = document.getElementById('cust_phone').value.trim();
         const address = document.getElementById('cust_address').value.trim();
-        const deliverySelect = document.getElementById('delivery_location');
+        const rate = selectedDeliveryRate();
 
-        if (!name || !email || !phone || !address || !deliverySelect.value) {
+        if (!name || !email || !phone || !address || !rate) {
             throw new Error('Please complete all required checkout details.');
         }
 
@@ -218,11 +334,10 @@
             customerEmail: email,
             customerPhone: phone,
             customerAddress: address,
-            deliveryLocation: deliverySelect.value,
+            delivery_rate_id: rate.id,
+            deliveryLocation: String(rate.id),
             selected_location_name: selectedDeliveryLabel(),
-            calculated_delivery_fee: deliveryFee,
             total_items_amount: subtotal(),
-            totalAmount: subtotal() + deliveryFee,
             items: cart.map((item) => ({
                 id: item.product_id,
                 product_id: item.product_id,
@@ -240,19 +355,48 @@
         event.preventDefault();
         setError('');
 
-        const button = document.getElementById('mayaCheckoutBtn');
-        let payload;
+        const name = document.getElementById('cust_name')?.value.trim();
+        const email = document.getElementById('cust_email')?.value.trim();
+        const phone = document.getElementById('cust_phone')?.value.trim();
+        const address = document.getElementById('cust_address')?.value.trim();
+        const rate = selectedDeliveryRate();
 
-        try {
-            payload = formPayload();
-        } catch (error) {
-            setError(error.message);
+        if (!name || !email || !phone || !address || !rate) {
+            event.preventDefault();
+            setError('Please complete all required checkout details.');
             return;
         }
 
-        button.disabled = true;
-        button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Opening Maya';
+        if (!cart.length) {
+            event.preventDefault();
+            setError('Your cart is empty.');
+            return;
+        }
 
+        let payload;
+        try {
+            payload = formPayload();
+        } catch (error) {
+            setError(error.message || 'Please complete all required checkout details.');
+            return;
+        }
+
+        // Set hidden input fields
+        const totalItemsAmountEl = document.getElementById('total_items_amount');
+        const calculatedDeliveryFeeEl = document.getElementById('calculated_delivery_fee');
+        const selectedLocationNameEl = document.getElementById('selected_location_name');
+
+        if (totalItemsAmountEl) totalItemsAmountEl.value = subtotal();
+        if (calculatedDeliveryFeeEl) calculatedDeliveryFeeEl.value = deliveryFee;
+        if (selectedLocationNameEl) selectedLocationNameEl.value = selectedDeliveryLabel();
+
+        // Start Maya checkout asynchronously.
+        const button = document.getElementById('mayaCheckoutBtn');
+        if (button) {
+            button.disabled = true;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Redirecting to Maya…';
+            button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Redirecting to Maya...';
+        }
         try {
             const response = await fetch(endpoint, {
                 method: 'POST',
@@ -262,16 +406,9 @@
                 credentials: 'same-origin',
                 body: JSON.stringify(payload)
             });
-            const text = await response.text();
-            let data;
+            const data = await response.json();
 
-            try {
-                data = JSON.parse(text);
-            } catch (error) {
-                throw new Error('Checkout server returned an invalid response.');
-            }
-
-            if (!response.ok || !data.success) {
+            if (!response.ok || !data.success || !(data.checkoutUrl || data.paymentUrl)) {
                 throw new Error(data.message || data.error || 'Maya Checkout could not be created.');
             }
 
@@ -279,21 +416,104 @@
             window.location.href = data.checkoutUrl || data.paymentUrl;
         } catch (error) {
             setError(error.message || 'Payment could not be started.');
-            button.disabled = false;
-            button.innerHTML = '<i class="fas fa-lock me-2"></i>Pay Securely with Maya';
+            if (button) {
+                button.disabled = false;
+                button.innerHTML = '<i class="fas fa-lock me-2"></i>Pay Securely with Maya';
+            }
+        }
+    }
+
+    function autodetectDeliveryRate() {
+        const addressInput = document.getElementById('cust_address');
+        const deliverySelect = document.getElementById('delivery_location');
+        if (!addressInput || !deliverySelect || deliveryRates.length === 0) return;
+
+        const text = addressInput.value.toUpperCase();
+        if (!text) return;
+
+        let matchedOptionValue = null;
+        const options = Array.from(deliverySelect.options);
+        const validOptions = options.filter(opt => opt.value !== "");
+
+        // Try to match provinces first
+        for (const opt of validOptions) {
+            const locName = (opt.dataset.locationName || opt.textContent).toUpperCase();
+            if (locName.includes("METRO MANILA")) continue;
+            
+            if (text.includes(locName)) {
+                matchedOptionValue = opt.value;
+                break;
+            }
+        }
+
+        // Fallback to Metro Manila / NCR cities if no province matched
+        if (!matchedOptionValue) {
+            const isMetroManila = text.includes("METRO MANILA") || 
+                                  text.includes("NCR") || 
+                                  text.includes("MANILA") ||
+                                  text.includes("MUNTINLUPA") ||
+                                  text.includes("LAS PIÑAS") ||
+                                  text.includes("MAKATI") ||
+                                  text.includes("QUEZON CITY") ||
+                                  text.includes("TAGUIG") ||
+                                  text.includes("PASIG") ||
+                                  text.includes("CALOOCAN") ||
+                                  text.includes("PASAY") ||
+                                  text.includes("PARAÑAQUE") ||
+                                  text.includes("MARIKINA") ||
+                                  text.includes("VALENZUELA") ||
+                                  text.includes("MALABON") ||
+                                  text.includes("NAVOTAS") ||
+                                  text.includes("MANDALUYONG") ||
+                                  text.includes("SAN JUAN");
+            if (isMetroManila) {
+                const mmOpt = validOptions.find(opt => {
+                    const locName = (opt.dataset.locationName || opt.textContent).toUpperCase();
+                    return locName.includes("METRO MANILA");
+                });
+                if (mmOpt) {
+                    matchedOptionValue = mmOpt.value;
+                }
+            }
+        }
+
+        if (matchedOptionValue && deliverySelect.value !== matchedOptionValue) {
+            deliverySelect.value = matchedOptionValue;
+            deliverySelect.dispatchEvent(new Event('change'));
         }
     }
 
     document.addEventListener('DOMContentLoaded', function () {
         loadCart();
-        renderCart();
 
         const deliverySelect = document.getElementById('delivery_location');
-        deliverySelect.addEventListener('change', function () {
-            deliveryFee = deliveryFees[this.value] || 0;
-            renderSummary();
-        });
+        if (deliverySelect) {
+            deliverySelect.addEventListener('change', function () {
+                const rate = selectedDeliveryRate();
+                deliveryFee = rate ? Number(rate.price) || 0 : 0;
+                renderSummary();
+            });
+        }
 
-        document.getElementById('checkoutForm').addEventListener('submit', submitCheckout);
+        const addressInput = document.getElementById('cust_address');
+        if (addressInput) {
+            addressInput.addEventListener('input', autodetectDeliveryRate);
+        }
+
+        const form = document.getElementById('checkoutForm');
+        if (form) {
+            form.addEventListener('submit', submitCheckout);
+        }
+
+        loadDeliveryRates()
+            .then(() => {
+                renderSummary();
+                autodetectDeliveryRate();
+            })
+            .catch((error) => {
+                deliveryFee = 0;
+                renderSummary();
+                setError(error.message || 'Unable to load delivery rates.');
+            });
     });
 })();

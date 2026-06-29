@@ -1,7 +1,18 @@
 <?php
+if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
+    session_start();
+}
 
 $logo_path = 'assets/img/solarpower_energy_corp.png';
 $home_link = 'index.php';
+$cart_count = session_status() === PHP_SESSION_ACTIVE && isset($_SESSION['cart']) && is_array($_SESSION['cart'])
+    ? count($_SESSION['cart'])
+    : 0;
+$cart_base_path = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? ''));
+$cart_base_path = ($cart_base_path === '/' || $cart_base_path === '\\') ? '/' : rtrim($cart_base_path, '/') . '/';
+$cart_checkout_href = $cart_base_path . 'checkout.php';
+$cart_ajax_endpoint = $cart_base_path . 'add-to-cart-ajax.php';
+$cart_ajax_script = __DIR__ . '/../assets/cart-ajax.js';
 
 // Get current page filename
 $current_page = basename($_SERVER['PHP_SELF']);
@@ -192,6 +203,56 @@ function isActive($page)
         width: 100%;
     }
 
+    .nav-cart-item {
+        display: flex;
+        align-items: center;
+    }
+
+    .nav-cart-link {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 42px;
+        height: 42px;
+        border: 1px solid rgba(45, 80, 22, 0.16);
+        border-radius: 50%;
+        background: #fff;
+        color: var(--clr-primary);
+    }
+
+    .nav-cart-link::after {
+        display: none;
+    }
+
+    .nav-cart-link:hover {
+        background: rgba(45, 80, 22, 0.08);
+        color: var(--clr-primary);
+    }
+
+    .nav-cart-link svg {
+        width: 22px;
+        height: 22px;
+        display: block;
+    }
+
+    .cart-count-badge {
+        position: absolute;
+        top: -7px;
+        right: -8px;
+        min-width: 20px;
+        height: 20px;
+        padding: 0 5px;
+        border-radius: 999px;
+        background: #f3a712;
+        color: #1f2a1d;
+        border: 2px solid #fff;
+        font-size: 11px;
+        font-weight: 800;
+        line-height: 16px;
+        text-align: center;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+    }
+
     /* Mobile Menu Button */
     .mobile-menu-btn {
         display: none;
@@ -350,6 +411,22 @@ function isActive($page)
             border-left: 4px solid var(--clr-primary);
         }
 
+        .nav-cart-item {
+            padding: 12px 25px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .nav-cart-link {
+            width: 44px;
+            height: 44px;
+            padding: 0;
+        }
+
+        .nav-cart-link.active {
+            border-left: 0;
+            background: rgba(45, 80, 22, 0.08);
+        }
+
         /* Mobile Menu Overlay */
         .mobile-overlay {
             display: none;
@@ -444,6 +521,16 @@ function isActive($page)
                     <li><a href="projects.php" class="<?php echo isActive('projects.php'); ?>">PROJECTS</a></li>
                     <li><a href="loans.php" class="<?php echo isActive('loans.php'); ?>">SOLAR LOANS</a></li>
                     <li><a href="contact.php" class="<?php echo isActive('contact.php'); ?>">CONTACT</a></li>
+                    <li class="nav-cart-item">
+                        <a href="<?php echo htmlspecialchars($cart_checkout_href); ?>" class="nav-cart-link <?php echo isActive('checkout.php'); ?>" aria-label="View cart and checkout">
+                            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="9" cy="21" r="1"></circle>
+                                <circle cx="20" cy="21" r="1"></circle>
+                                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h8.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                            </svg>
+                            <span id="cart-count" class="cart-count-badge"><?php echo $cart_count; ?></span>
+                        </a>
+                    </li>
                 </ul>
             </nav>
         </div>
@@ -451,6 +538,9 @@ function isActive($page)
 </header>
 
 <script>
+    window.SOLAR_APP_BASE = window.SOLAR_APP_BASE || <?php echo json_encode($cart_base_path); ?>;
+    window.SOLAR_CART_AJAX_ENDPOINT = <?php echo json_encode($cart_ajax_endpoint); ?>;
+
     // Scroll effect for header
     window.addEventListener('scroll', function() {
         const header = document.getElementById('mainHeader');
@@ -527,3 +617,6 @@ function isActive($page)
         document.getElementById('profileDropdown').classList.toggle('show');
     });
 </script>
+<?php if (file_exists($cart_ajax_script)): ?>
+    <script src="<?php echo htmlspecialchars($cart_base_path . 'assets/cart-ajax.js?v=' . filemtime($cart_ajax_script)); ?>"></script>
+<?php endif; ?>
