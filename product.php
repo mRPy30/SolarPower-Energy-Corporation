@@ -33,7 +33,6 @@ $sql = "SELECT
     p.packageType,
     COALESCE(p.moq, 1) AS moq,
     COALESCE(
-        SUBSTRING_INDEX(GROUP_CONCAT(NULLIF(pbv.variant_image, '') ORDER BY pbv.price ASC, pbv.id ASC), ',', 1),
         pi.image_path,
         p.imagePath
     ) AS image_path
@@ -104,6 +103,7 @@ $conn->close();
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
 
     <link rel="stylesheet" href="assets/style.css">
+    <link rel="stylesheet" href="assets/checkout-gateway.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
     <!-- Tailwind CSS for Marquee -->
@@ -301,6 +301,7 @@ $conn->close();
 
                                 <button type="button"
                                     class="btn-buy-now"
+                                    data-product-id="<?= (int)$p['id'] ?>"
                                     data-product='<?= json_encode($p, JSON_HEX_APOS | JSON_HEX_QUOT) ?>'
                                     onclick="buyNowFromButton(this)">
                                     Buy Now
@@ -710,6 +711,38 @@ $conn->close();
         });
     </script>
 
+    <div class="modal fade checkout-gateway-modal" id="checkoutGatewayModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-body">
+                    <button type="button" class="checkout-gateway-close" data-bs-dismiss="modal" aria-label="Close">&times;</button>
+                    <h2 class="checkout-gateway-title">Welcome!</h2>
+                    <p class="checkout-gateway-copy">Choose how you want to continue to checkout</p>
+
+                    <div id="modal-google-anchor"></div>
+
+                    <div class="checkout-gateway-divider">
+                        <span>OR</span>
+                    </div>
+
+                    <button type="button" class="checkout-gateway-guest" id="orderAsGuestBtn">
+                        Order as Guest
+                    </button>
+
+                    <p class="checkout-gateway-legal">
+                        By continuing, you agree to our
+                        <a href="terms-of-service.php" target="_blank" rel="noopener">Terms of Service</a>
+                        and
+                        <a href="privacy-policy.php" target="_blank" rel="noopener">Privacy Policy</a>.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="assets/checkout-gateway.js"></script>
 </body>
 <script src="assets/script.js"></script>
 <script>

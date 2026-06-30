@@ -1,0 +1,111 @@
+﻿.checkout-gateway-modal .modal-dialog {
+    max-width: 420px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.checkout-gateway-modal .modal-content {
+    border: 0;
+    border-radius: 16px;
+    box-shadow: 0 24px 70px rgba(15, 23, 42, 0.22);
+    overflow: hidden;
+}
+
+.checkout-gateway-modal .modal-body {
+    position: relative;
+    padding: 34px 30px 26px;
+    text-align: center;
+}
+
+.checkout-gateway-close {
+    position: absolute;
+    top: 14px;
+    right: 16px;
+    width: 34px;
+    height: 34px;
+    border: 0;
+    border-radius: 999px;
+    background: #f3f4f6;
+    color: #111827;
+    font-size: 24px;
+    line-height: 30px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 180ms ease, color 180ms ease;
+}
+
+.checkout-gateway-close:hover {
+    background: #111827;
+    color: #fff;
+}
+
+.checkout-gateway-title {
+    margin: 6px 0 8px;
+    font-size: 1.65rem;
+    font-weight: 800;
+    color: #0f172a;
+}
+
+.checkout-gateway-copy {
+    margin: 0 0 22px;
+    color: #64748b;
+    font-size: 0.95rem;
+}
+
+#modal-google-anchor {
+    min-height: 44px;
+    display: flex;
+    justify-content: center;
+}
+
+.checkout-gateway-divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 22px 0 18px;
+    color: #94a3b8;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+}
+
+.checkout-gateway-divider::before,
+.checkout-gateway-divider::after {
+    content: '';
+    height: 1px;
+    flex: 1;
+    background: #e5e7eb;
+}
+
+.checkout-gateway-guest {
+    width: 100%;
+    min-height: 46px;
+    border: 1px solid #111827;
+    border-radius: 10px;
+    background: #fff;
+    color: #111827;
+    font-weight: 800;
+    transition: background 180ms ease, color 180ms ease, transform 180ms ease;
+}
+
+.checkout-gateway-guest:hover,
+.checkout-gateway-guest:focus {
+    background: #111827;
+    color: #fff;
+    transform: translateY(-1px);
+}
+
+.checkout-gateway-legal {
+    margin: 18px 0 0;
+    color: #6b7280;
+    font-size: 11px;
+    line-height: 1.5;
+}
+
+.checkout-gateway-legal a {
+    color: #0f172a;
+    font-weight: 700;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}

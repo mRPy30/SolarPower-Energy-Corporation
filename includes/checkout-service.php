@@ -149,12 +149,39 @@ function checkout_delivery_rate_from_input(mysqli $conn, array $input): array
         throw new RuntimeException('Selected delivery rate is no longer available.');
     }
 
+    $price = (float) ($rate['price'] ?? 0);
+    if ($price <= 0) {
+        throw new RuntimeException("We're sorry, but we don't offer delivery to your location at the moment. Please contact our customer support at [Insert Corporate Hotline/Email Here] to assist you with alternative shipping arrangements.");
+    }
+
+    // Apply delivery tier modifier
+    $tier = trim((string) ($input['delivery_service_tier'] ?? 'SunSpeed Standard'));
+    $validTiers = [
+        'Eco-Saver Shipping',
+        'SunSpeed Standard',
+        'SolarFlash Express'
+    ];
+    if (!in_array($tier, $validTiers, true)) {
+        $tier = 'SunSpeed Standard';
+    }
+
+    $modifier = 1.00;
+    if ($tier === 'Eco-Saver Shipping') {
+        $modifier = 0.85;
+    } elseif ($tier === 'SolarFlash Express') {
+        $modifier = 1.40;
+    }
+
+    $finalPrice = round($price * $modifier, 2);
+    $locationName = checkout_clean_text($rate['location_name'] ?? '');
+    $locationNameWithTier = $locationName . ' [' . $tier . ']';
+
     return [
         'id' => (int) $rate['id'],
         'origin_address' => checkout_clean_text($rate['origin_address'] ?? 'Madrigal Business Park, Alabang, Muntinlupa'),
         'rate_type' => checkout_clean_text($rate['rate_type'] ?? ''),
-        'location_name' => checkout_clean_text($rate['location_name'] ?? ''),
-        'price' => round((float) $rate['price'], 2),
+        'location_name' => $locationNameWithTier,
+        'price' => $finalPrice,
     ];
 }
 

@@ -13,7 +13,10 @@ include "../../config/dbconn.php";
 // ── Validate product ID ──────────────────────────────────────────────────
 $product_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 if ($product_id <= 0) {
-    die('Invalid Product ID.');
+    $_SESSION['edit_product_msg'] = 'Invalid Product ID.';
+    $_SESSION['edit_product_msg_type'] = 'error';
+    header("Location: dashboard.php?page=product");
+    exit();
 }
 
 // ── Fetch product row ────────────────────────────────────────────────────
@@ -21,7 +24,13 @@ $stmt = $conn->prepare("SELECT * FROM product WHERE id = ?");
 $stmt->bind_param("i", $product_id);
 $stmt->execute();
 $prod = $stmt->get_result()->fetch_assoc();
-if (!$prod) die('Product not found.');
+if (!$prod) {
+    $stmt->close();
+    $_SESSION['edit_product_msg'] = 'Product not found.';
+    $_SESSION['edit_product_msg_type'] = 'error';
+    header("Location: dashboard.php?page=product");
+    exit();
+}
 $stmt->close();
 
 // ── Fetch existing brand variants (keyed by brand_id) ───────────────────
@@ -37,7 +46,7 @@ $sv->close();
 
 // ── Fetch all categories ─────────────────────────────────────────────────
 $categories = [];
-$rc = $conn->query("SELECT id, categoryName FROM categories ORDER BY categoryName");
+$rc = $conn->query("SELECT category_id AS id, category_name AS categoryName FROM categories ORDER BY category_name");
 while ($r = $rc->fetch_assoc()) $categories[] = $r;
 
 // ── Handle POST (update) ─────────────────────────────────────────────────
@@ -587,11 +596,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                     </select>
                 </div>
 
-                <!-- MOQ (panels / mounting) -->
-                <div class="form-group" id="moq-field-wrapper" style="display:none;">
+                <!-- MOQ (Always Visible) -->
+                <div class="form-group" id="moq-field-wrapper">
                     <label><i class="fas fa-layer-group"></i> Min. Order Qty (MOQ)</label>
-                    <input type="number" name="moq" id="moq-input" min="1"
-                           value="<?= (int)($prod['moq'] ?? 1) ?>">
+                    <div style="display: flex; gap: 8px;">
+                        <input type="number" name="moq" id="moq-input" min="1"
+                               value="<?= (int)($prod['moq'] ?? 1) ?>" <?= (int)($prod['moq'] ?? 1) <= 1 ? 'disabled style="background:#e2e8f0;opacity:0.7;"' : '' ?>>
+                        <button type="button" id="moq-toggle-btn" class="btn-cancel" style="margin-top:0; white-space:nowrap; padding: 10px 14px; border-radius: 10px; cursor: pointer; transition: all 0.2s; <?= (int)($prod['moq'] ?? 1) > 1 ? 'background:#f59e0b; color:#fff; border-color:#f59e0b;' : '' ?>">
+                            <?= (int)($prod['moq'] ?? 1) > 1 ? '<i class="fas fa-check"></i> MOQ Set' : 'Set as MOQ' ?>
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Stock -->
@@ -758,15 +772,11 @@ catSelect.addEventListener('change', function() {
     const lower = cat.toLowerCase();
     const isVariant = lower.includes('panel') || lower.includes('battery') || lower.includes('inverter');
     const isPkg = lower.includes('package');
-    const isMoq = lower.includes('panel') || lower.includes('mounting');
 
     document.getElementById('preview-cat').textContent = cat || 'Category';
 
     // Package type
     pkgGrp.style.display = isPkg ? 'block' : 'none';
-
-    // MOQ
-    moqWrap.style.display = isMoq ? 'block' : 'none';
 
     if (isVariant) {
         stdBrandGrp.style.display = 'none';
@@ -880,6 +890,37 @@ document.getElementById('editProductForm').addEventListener('submit', function(e
     document.getElementById('saveBtn').disabled = true;
     document.getElementById('saveBtn').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving…';
 }, { capture: true });
+
+// ── MOQ Toggle Handler ────────────────────────────────────────────────────
+const moqToggleBtn = document.getElementById('moq-toggle-btn');
+const moqInput     = document.getElementById('moq-input');
+
+if (moqToggleBtn && moqInput) {
+    moqToggleBtn.addEventListener('click', function () {
+        const isEnabled = moqInput.hasAttribute('disabled');
+        if (isEnabled) {
+            moqInput.removeAttribute('disabled');
+            moqInput.style.background = '#f8fafc';
+            moqInput.style.opacity = '1';
+            if (parseInt(moqInput.value) <= 1) {
+                moqInput.value = 2;
+            }
+            moqToggleBtn.innerHTML = '<i class="fas fa-check"></i> MOQ Set';
+            moqToggleBtn.style.background = '#f59e0b';
+            moqToggleBtn.style.color = '#fff';
+            moqToggleBtn.style.borderColor = '#f59e0b';
+        } else {
+            moqInput.setAttribute('disabled', 'disabled');
+            moqInput.style.background = '#e2e8f0';
+            moqInput.style.opacity = '0.7';
+            moqInput.value = 1;
+            moqToggleBtn.innerHTML = 'Set as MOQ';
+            moqToggleBtn.style.background = '#fff';
+            moqToggleBtn.style.color = '#64748b';
+            moqToggleBtn.style.borderColor = '#e2e8f0';
+        }
+    });
+}
 
 // ── Boot on DOM ready ─────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {

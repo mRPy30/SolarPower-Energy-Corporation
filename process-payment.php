@@ -41,10 +41,29 @@ function process_payment_session_items(): array
     return $items;
 }
 
+function process_payment_assert_delivery_rate(mysqli $conn, int $deliveryRateId): void
+{
+    if ($deliveryRateId <= 0) {
+        throw new RuntimeException("We're sorry, but we don't offer delivery to your location at the moment. Please contact our customer support at [Insert Corporate Hotline/Email Here] to assist you with alternative shipping arrangements.");
+    }
+
+    $stmt = $conn->prepare('SELECT price FROM delivery_rates WHERE id = ? LIMIT 1');
+    $stmt->bind_param('i', $deliveryRateId);
+    $stmt->execute();
+    $rate = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+
+    if (!$rate || (float) $rate['price'] <= 0) {
+        throw new RuntimeException("We're sorry, but we don't offer delivery to your location at the moment. Please contact our customer support at [Insert Corporate Hotline/Email Here] to assist you with alternative shipping arrangements.");
+    }
+}
+
 try {
     $input = $_POST;
     $input['delivery_rate_id'] = $input['delivery_rate_id'] ?? $input['deliveryLocation'] ?? null;
     $input['items'] = process_payment_session_items();
+
+    process_payment_assert_delivery_rate($conn, (int) $input['delivery_rate_id']);
 
     $result = checkout_create_maya_checkout($conn, $input);
 
