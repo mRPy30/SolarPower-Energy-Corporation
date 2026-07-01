@@ -1514,16 +1514,18 @@ tbody tr:last-child td {
     height: 110px;
     border-radius: 12px;
     overflow: hidden;
-    background: #f6f6f6;
+    background: #ffffff;
     display: flex;
     align-items: center;
     justify-content: center;
+    border: 1px solid #eef0f2;
 }
 
 .product-image img {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain;
+    display: block;
 }
 
 /* Content */
@@ -1543,6 +1545,29 @@ tbody tr:last-child td {
 .product-brand {
     font-size: 13px;
     color: #6b7280;
+}
+
+.product-brand-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin: 0;
+    line-height: 1.2;
+}
+
+.product-brand-chip {
+    display: inline-flex;
+    align-items: center;
+    max-width: 100%;
+    padding: 4px 8px;
+    border-radius: 999px;
+    background: #eef7f2;
+    color: #0a5c3d;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1.2;
+    text-transform: uppercase;
+    overflow-wrap: anywhere;
 }
 
 /* Meta */
@@ -5448,4 +5473,4 @@ tbody tr:last-child td {
 .crop-btn-save:hover {
     background: #e6ad06;
     transform: translateY(-1px);
-}
+}

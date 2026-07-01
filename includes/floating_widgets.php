@@ -1,40 +1,5 @@
-<!-- Multi-Channel Floating Chat Dock & Standalone Tracking System Include -->
+<!-- Multi-Channel Floating Chat Dock Include -->
 <style>
-    /* -------------------------------------------------------------
-       STANDALONE TRACKING BUTTON (Inspired by image_3769e9.png)
-       ------------------------------------------------------------- */
-    .custom-floating-track-btn {
-        position: fixed;
-        bottom: 260px; /* Positioned exactly at 260px as requested */
-        right: 25px;
-        width: 60px;
-        height: 60px;
-        border-radius: 50%;
-        background: #F2A900; /* Rich Solar Gold/Orange */
-        box-shadow: 0 4px 15px rgba(242, 169, 0, 0.4);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 1045;
-        transition: all 0.2s ease-in-out;
-        border: none;
-        text-decoration: none;
-        cursor: pointer;
-    }
-    
-    .custom-floating-track-btn svg {
-        width: 28px;
-        height: 28px;
-        fill: #ffffff;
-        transition: transform 0.2s ease-in-out;
-    }
-    
-    .custom-floating-track-btn:hover {
-        transform: translateY(-3px) scale(1.05);
-        filter: drop-shadow(0 0 8px rgba(242, 169, 0, 0.6));
-        box-shadow: 0 6px 20px rgba(242, 169, 0, 0.6);
-    }
-
     /* -------------------------------------------------------------
        MULTI-CHANNEL FLOATING CHAT DOCK (Inspired by image_3769cd.png)
        ------------------------------------------------------------- */
@@ -197,14 +162,6 @@
             transform: scale(0.85);
             transform-origin: bottom right;
         }
-        
-        .custom-floating-track-btn {
-            bottom: 210px;
-            right: 15px;
-            transform: scale(0.85);
-            transform-origin: bottom right;
-        }
-
         /* Dynamically hide tooltip to prevent screen clutter */
         .floating-chat-tooltip {
             display: none !important;
@@ -213,13 +170,6 @@
         }
     }
 </style>
-
-<!-- Standalone Tracking System Button -->
-<button onclick="triggerTracking()" class="custom-floating-track-btn" aria-label="Track Order" title="Track Order">
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-        <path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm12 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm1.5-6.5H17V9h2.5l2 3H19.5z"/>
-    </svg>
-</button>
 
 <!-- Multi-Channel Floating Chat Dock -->
 <div class="floating-chat-dock-container">
@@ -315,15 +265,6 @@
             } else {
                 console.warn("CRM / Live Chat toggle function (toggleChat) not found.");
             }
-        }
-    }
-
-    // Function to handle standalone tracking button action
-    function triggerTracking() {
-        if (typeof toggleTrackPanel === 'function') {
-            toggleTrackPanel();
-        } else {
-            window.location.href = "track-order.php";
         }
     }
 </script>

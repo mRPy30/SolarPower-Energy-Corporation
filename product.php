@@ -12,6 +12,24 @@ if (!function_exists('createSlug')) {
         return empty($text) ? 'n-a' : $text;
     }
 }
+
+if (!function_exists('renderProductBrandChips')) {
+    function renderProductBrandChips($brandNames) {
+        $brands = preg_split('/\s*,\s*/', (string) $brandNames);
+        $chips = '';
+
+        foreach ($brands as $brand) {
+            $brand = trim($brand);
+            if ($brand === '') {
+                continue;
+            }
+
+            $chips .= '<span class="product-brand-chip">' . htmlspecialchars($brand) . '</span>';
+        }
+
+        return $chips !== '' ? $chips : '<span class="product-brand-chip">Brand TBA</span>';
+    }
+}
 /* ---------- 1.  DB connection ---------- */
 include "config/dbconn.php";
 
@@ -23,11 +41,11 @@ $sql = "SELECT
     p.id,
     p.displayName,
     COALESCE(
-        SUBSTRING_INDEX(GROUP_CONCAT(COALESCE(b.brand_name, sb.brandName) ORDER BY pbv.price ASC, pbv.id ASC), ',', 1),
+        NULLIF(v.brand_names, ''),
         TRIM(p.brandName)
     ) AS brandName,
-    COALESCE(MIN(pbv.price), p.price) AS price,
-    CAST(SUBSTRING_INDEX(GROUP_CONCAT(pbv.brand_id ORDER BY pbv.price ASC, pbv.id ASC), ',', 1) AS UNSIGNED) AS brand_id,
+    COALESCE(v.min_price, p.price) AS price,
+    v.brand_id,
     p.stockQuantity,
     p.category,
     p.packageType,
@@ -37,16 +55,32 @@ $sql = "SELECT
         p.imagePath
     ) AS image_path
 FROM product p
-LEFT JOIN product_images pi 
+LEFT JOIN (
+    SELECT
+        pbv.product_id,
+        GROUP_CONCAT(DISTINCT COALESCE(NULLIF(TRIM(sb.brandName), ''), NULLIF(TRIM(b.brand_name), '')) ORDER BY pbv.price ASC, pbv.id ASC SEPARATOR ', ') AS brand_names,
+        MIN(pbv.price) AS min_price,
+        CAST(SUBSTRING_INDEX(GROUP_CONCAT(pbv.brand_id ORDER BY pbv.price ASC, pbv.id ASC), ',', 1) AS UNSIGNED) AS brand_id
+    FROM product_brand_variants pbv
+    LEFT JOIN supplier_brands sb
+        ON pbv.brand_id = sb.id
+    LEFT JOIN brands b
+        ON pbv.brand_id = b.brand_id
+    GROUP BY pbv.product_id
+) v
+    ON p.id = v.product_id
+LEFT JOIN (
+    SELECT pi1.product_id, pi1.image_path
+    FROM product_images pi1
+    INNER JOIN (
+        SELECT product_id, MIN(id) AS first_image_id
+        FROM product_images
+        GROUP BY product_id
+    ) first_pi
+        ON pi1.id = first_pi.first_image_id
+) pi
     ON p.id = pi.product_id
-LEFT JOIN product_brand_variants pbv
-    ON p.id = pbv.product_id
-LEFT JOIN brands b
-    ON pbv.brand_id = b.brand_id
-LEFT JOIN supplier_brands sb
-    ON pbv.brand_id = sb.id
 WHERE p.status = 'Active'
-GROUP BY p.id
 ORDER BY price ASC";
 
 $stmt = $conn->prepare($sql);
@@ -274,7 +308,7 @@ $conn->close();
                                 </div>
 
                             <div class="product-info">
-                                    <div class="product-brand"><?= htmlspecialchars($p['brandName']) ?></div>
+                                    <div class="product-brand product-brand-list"><?= renderProductBrandChips($p['brandName']) ?></div>
                                     <h3 class="product-name"><?= htmlspecialchars($p['displayName']) ?></h3>
                                     <div class="product-price">
                                         ₱<?= number_format($p['price'], 2) ?>

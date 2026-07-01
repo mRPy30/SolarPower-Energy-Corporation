@@ -420,14 +420,50 @@ $best_seller = get_most_sold_product($conn);
 $all_inquiries = get_all_inquiries($conn);
 $total_inquiries = count($all_inquiries);
 
+function render_staff_product_brand_chips($brandNames)
+{
+    $brands = preg_split('/\s*,\s*/', (string) $brandNames);
+    $chips = '';
+
+    foreach ($brands as $brand) {
+        $brand = trim($brand);
+        if ($brand === '') {
+            continue;
+        }
+
+        $chips .= '<span class="product-brand-chip">' . htmlspecialchars($brand) . '</span>';
+    }
+
+    return $chips !== '' ? $chips : '<span class="product-brand-chip">Brand TBA</span>';
+}
+
 function get_all_products($conn)
 {
     $products = [];
-    $query = "SELECT * FROM product ORDER BY id DESC";
+    $query = "SELECT
+        p.*,
+        COALESCE(NULLIF(v.brand_names, ''), TRIM(p.brandName)) AS allBrandNames
+    FROM product p
+    LEFT JOIN (
+        SELECT
+            pbv.product_id,
+            GROUP_CONCAT(DISTINCT COALESCE(NULLIF(TRIM(sb.brandName), ''), NULLIF(TRIM(b.brand_name), '')) ORDER BY pbv.price ASC, pbv.id ASC SEPARATOR ', ') AS brand_names
+        FROM product_brand_variants pbv
+        LEFT JOIN supplier_brands sb
+            ON pbv.brand_id = sb.id
+        LEFT JOIN brands b
+            ON pbv.brand_id = b.brand_id
+        GROUP BY pbv.product_id
+    ) v
+        ON p.id = v.product_id
+    ORDER BY p.id DESC";
     $result = $conn->query($query);
 
     if ($result && $result->num_rows > 0) {
         while ($row = $result->fetch_assoc()) {
+            if (!empty($row['allBrandNames'])) {
+                $row['brandName'] = $row['allBrandNames'];
+            }
             if (!isset($row['staffFName']))
                 $row['staffFName'] = '';
             if (!isset($row['staffLName']))
@@ -3242,7 +3278,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
 
                                 <div class="product-content">
                                     <h3 class="product-title"><?php echo htmlspecialchars($product['displayName']); ?></h3>
-                                    <p class="product-brand"><?php echo htmlspecialchars($product['brandName']); ?></p>
+                                    <p class="product-brand product-brand-list"><?php echo render_staff_product_brand_chips($product['brandName']); ?></p>
 
                                     <div class="product-meta" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
                                         <span class="product-category">
@@ -9112,7 +9148,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
 
                                  <div class="product-content">
                                      <h3 class="product-title">${this.escapeHtml(product.displayName)}</h3>
-                                     <p class="product-brand">${this.escapeHtml(product.brandName)}</p>
+                                     <p class="product-brand product-brand-list">${this.renderBrandChips(product.brandName)}</p>
 
                                      <div class="product-meta" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
                                          <span class="product-category">${this.escapeHtml(categoryText)}</span>
@@ -9144,6 +9180,21 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
 
                 // Re-initialize bulk actions for new checkboxes
                 BulkActions.init();
+            },
+
+            renderBrandChips(brandNames) {
+                const brands = String(brandNames || '')
+                    .split(',')
+                    .map(brand => brand.trim())
+                    .filter(Boolean);
+
+                if (!brands.length) {
+                    return '<span class="product-brand-chip">Brand TBA</span>';
+                }
+
+                return brands
+                    .map(brand => `<span class="product-brand-chip">${this.escapeHtml(brand)}</span>`)
+                    .join('');
             },
 
             showSuccessNotification(message) {

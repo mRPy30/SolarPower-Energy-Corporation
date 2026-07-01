@@ -12,6 +12,24 @@ if (!function_exists('createSlug')) {
     }
 }
 
+if (!function_exists('renderProductBrandChips')) {
+    function renderProductBrandChips($brandNames) {
+        $brands = preg_split('/\s*,\s*/', (string) $brandNames);
+        $chips = '';
+
+        foreach ($brands as $brand) {
+            $brand = trim($brand);
+            if ($brand === '') {
+                continue;
+            }
+
+            $chips .= '<span class="product-brand-chip">' . htmlspecialchars($brand) . '</span>';
+        }
+
+        return $chips !== '' ? $chips : '<span class="product-brand-chip">Brand TBA</span>';
+    }
+}
+
 // Handle Estimate Form Submission POST Request
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'submit_estimate') {
     header('Content-Type: application/json');
@@ -260,11 +278,11 @@ $sql = "SELECT
     p.id,
     p.displayName,
     COALESCE(
-        SUBSTRING_INDEX(GROUP_CONCAT(COALESCE(b.brand_name, sb.brandName) ORDER BY pbv.price ASC, pbv.id ASC), ',', 1),
+        NULLIF(v.brand_names, ''),
         TRIM(p.brandName)
     ) AS brandName,
-    COALESCE(MIN(pbv.price), p.price) AS price,
-    CAST(SUBSTRING_INDEX(GROUP_CONCAT(pbv.brand_id ORDER BY pbv.price ASC, pbv.id ASC), ',', 1) AS UNSIGNED) AS brand_id,
+    COALESCE(v.min_price, p.price) AS price,
+    v.brand_id,
     p.stockQuantity,
     p.category,
     p.packageType,
@@ -274,16 +292,32 @@ $sql = "SELECT
         p.imagePath
     ) AS image_path
 FROM product p
-LEFT JOIN product_images pi 
+LEFT JOIN (
+    SELECT
+        pbv.product_id,
+        GROUP_CONCAT(DISTINCT COALESCE(NULLIF(TRIM(sb.brandName), ''), NULLIF(TRIM(b.brand_name), '')) ORDER BY pbv.price ASC, pbv.id ASC SEPARATOR ', ') AS brand_names,
+        MIN(pbv.price) AS min_price,
+        CAST(SUBSTRING_INDEX(GROUP_CONCAT(pbv.brand_id ORDER BY pbv.price ASC, pbv.id ASC), ',', 1) AS UNSIGNED) AS brand_id
+    FROM product_brand_variants pbv
+    LEFT JOIN supplier_brands sb
+        ON pbv.brand_id = sb.id
+    LEFT JOIN brands b
+        ON pbv.brand_id = b.brand_id
+    GROUP BY pbv.product_id
+) v
+    ON p.id = v.product_id
+LEFT JOIN (
+    SELECT pi1.product_id, pi1.image_path
+    FROM product_images pi1
+    INNER JOIN (
+        SELECT product_id, MIN(id) AS first_image_id
+        FROM product_images
+        GROUP BY product_id
+    ) first_pi
+        ON pi1.id = first_pi.first_image_id
+) pi
     ON p.id = pi.product_id
-LEFT JOIN product_brand_variants pbv
-    ON p.id = pbv.product_id
-LEFT JOIN brands b
-    ON pbv.brand_id = b.brand_id
-LEFT JOIN supplier_brands sb
-    ON pbv.brand_id = sb.id
 WHERE p.status = 'Active'
-GROUP BY p.id
 ORDER BY price ASC";
 
 $stmt = $conn->prepare($sql);
@@ -1079,7 +1113,7 @@ $conn->close();
                                 </div>
 
                                 <div class="product-info">
-                                    <div class="product-brand"><?= htmlspecialchars($p['brandName']) ?></div>
+                                    <div class="product-brand product-brand-list"><?= renderProductBrandChips($p['brandName']) ?></div>
                                     <h3 class="product-name"><?= htmlspecialchars($p['displayName']) ?></h3>
                                     <div class="product-price">
                                         ₱<?= number_format($p['price'], 2) ?>
@@ -5815,397 +5849,6 @@ $conn->close();
 <!-- Toast Notification Container -->
 <div id="toast-container" style="position:fixed; top:20px; right:20px; z-index:99999; min-width:300px;"></div>
 
-<!-- ====================================================
-     FLOATING TRACK ORDER BUTTON + PANEL
-     Ilagay sa taas ng floating chat button
-     ==================================================== -->
-
-<style>
-    /* ── Floating Button ── */
-    .float-track-btn {
-        position: fixed;
-        bottom: 150px;
-        /* taas ng ibang floating btn — i-adjust kung kailangan */
-        right: 20px;
-        z-index: 9990;
-        width: 54px;
-        height: 54px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, #f39c12, #e67e22);
-        color: white;
-        border: none;
-        box-shadow: 0 4px 15px rgba(243, 156, 18, 0.5);
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 20px;
-        transition: transform 0.2s, box-shadow 0.2s;
-    }
-
-    .float-track-btn:hover {
-        transform: scale(1.1);
-        box-shadow: 0 6px 20px rgba(243, 156, 18, 0.65);
-    }
-
-    .float-track-btn .track-tooltip {
-        position: absolute;
-        right: 62px;
-        background: #2c3e50;
-        color: #fff;
-        font-size: 12px;
-        font-weight: 600;
-        padding: 5px 10px;
-        border-radius: 6px;
-        white-space: nowrap;
-        opacity: 0;
-        pointer-events: none;
-        transition: opacity 0.2s;
-    }
-
-    .float-track-btn:hover .track-tooltip {
-        opacity: 1;
-    }
-
-    /* ── Slide-up Panel ── */
-    .track-panel {
-        position: fixed;
-        bottom: 215px;
-        /* taas ng button */
-        right: 20px;
-        width: 370px;
-        max-width: calc(100vw - 30px);
-        background: #fff;
-        border-radius: 18px;
-        box-shadow: 0 15px 50px rgba(0, 0, 0, 0.18);
-        z-index: 9991;
-        overflow: hidden;
-        transform: translateY(20px) scale(0.97);
-        opacity: 0;
-        pointer-events: none;
-        transition: transform 0.3s ease, opacity 0.3s ease;
-    }
-
-    .track-panel.open {
-        transform: translateY(0) scale(1);
-        opacity: 1;
-        pointer-events: all;
-    }
-
-    /* Panel Header */
-    .track-panel-header {
-        background: linear-gradient(135deg, #2d5016, #3d6b1e);
-        color: white;
-        padding: 16px 20px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-    }
-
-    .track-panel-header h6 {
-        margin: 0;
-        font-weight: 700;
-        font-size: 15px;
-    }
-
-    .track-panel-header .close-panel {
-        background: rgba(255, 255, 255, 0.2);
-        border: none;
-        color: white;
-        width: 28px;
-        height: 28px;
-        border-radius: 50%;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 14px;
-        transition: background 0.2s;
-    }
-
-    .track-panel-header .close-panel:hover {
-        background: rgba(255, 255, 255, 0.35);
-    }
-
-    /* Panel Body */
-    .track-panel-body {
-        padding: 20px;
-    }
-
-    /* Search Input */
-    .track-input-wrap {
-        position: relative;
-        margin-bottom: 12px;
-    }
-
-    .track-input-wrap i {
-        position: absolute;
-        left: 13px;
-        top: 50%;
-        transform: translateY(-50%);
-        color: #aaa;
-        font-size: 14px;
-    }
-
-    .track-input-wrap input {
-        width: 100%;
-        padding: 11px 12px 11px 36px;
-        border: 2px solid #eee;
-        border-radius: 10px;
-        font-size: 14px;
-        outline: none;
-        transition: border 0.2s;
-    }
-
-    .track-input-wrap input:focus {
-        border-color: #f39c12;
-    }
-
-    /* Search Button */
-    .track-search-btn {
-        width: 100%;
-        padding: 11px;
-        background: linear-gradient(135deg, #f39c12, #e67e22);
-        color: white;
-        border: none;
-        border-radius: 10px;
-        font-weight: 700;
-        font-size: 14px;
-        cursor: pointer;
-        transition: opacity 0.2s;
-    }
-
-    .track-search-btn:hover {
-        opacity: 0.9;
-    }
-
-    .track-search-btn:disabled {
-        opacity: 0.6;
-        cursor: not-allowed;
-    }
-
-    /* Results */
-    .track-results {
-        margin-top: 14px;
-        max-height: 260px;
-        overflow-y: auto;
-    }
-
-    .track-results::-webkit-scrollbar {
-        width: 4px;
-    }
-
-    .track-results::-webkit-scrollbar-thumb {
-        background: #ddd;
-        border-radius: 4px;
-    }
-
-    /* Order Row */
-    .track-order-row {
-        border: 1px solid #f0f0f0;
-        border-radius: 12px;
-        padding: 14px;
-        margin-bottom: 10px;
-        transition: box-shadow 0.2s;
-    }
-
-    .track-order-row:hover {
-        box-shadow: 0 3px 12px rgba(0, 0, 0, 0.08);
-    }
-
-    .track-order-ref {
-        font-size: 11px;
-        color: #999;
-        font-weight: 600;
-    }
-
-    .track-order-items {
-        font-size: 13px;
-        font-weight: 700;
-        color: #2c3e50;
-        margin: 4px 0;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    .track-order-location {
-        font-size: 12px;
-        color: #888;
-    }
-
-    .track-status-badge {
-        font-size: 10px;
-        font-weight: 700;
-        text-transform: uppercase;
-        background: rgba(243, 156, 18, 0.12);
-        color: #e67e22;
-        padding: 3px 9px;
-        border-radius: 20px;
-    }
-
-    .track-order-amount {
-        font-size: 13px;
-        font-weight: 700;
-        color: #27ae60;
-    }
-
-    /* States */
-    .track-empty {
-        text-align: center;
-        padding: 20px 0;
-    }
-
-    .track-empty img {
-        width: 55px;
-        opacity: 0.4;
-        margin-bottom: 8px;
-    }
-
-    .track-empty p {
-        color: #bbb;
-        font-size: 13px;
-        margin: 0;
-    }
-
-    .track-loading {
-        text-align: center;
-        padding: 20px;
-        color: #f39c12;
-    }
-
-    /* Full details link */
-    .track-full-link {
-        display: block;
-        text-align: center;
-        margin-top: 10px;
-        font-size: 12px;
-        color: #f39c12;
-        text-decoration: none;
-        font-weight: 600;
-    }
-
-    .track-full-link:hover {
-        text-decoration: underline;
-    }
-</style>
-
-<!-- Floating Button Removed to avoid overlap with new float widgets -->
-
-<!-- Slide-up Panel -->
-<div class="track-panel" id="trackPanel">
-    <div class="track-panel-header">
-        <h6><i class="fas fa-shipping-fast me-2"></i> Track My Order</h6>
-        <button class="close-panel" onclick="toggleTrackPanel()"><i class="fas fa-times"></i></button>
-    </div>
-    <div class="track-panel-body">
-        <div class="track-input-wrap">
-            <i class="fas fa-phone"></i>
-            <input type="tel" id="floatTrackPhone" placeholder="e.g. +639805926760"
-                onkeydown="if(event.key==='Enter') doFloatTrack()">
-        </div>
-        <button class="track-search-btn" id="floatTrackBtn" onclick="doFloatTrack()">
-            <i class="fas fa-search me-1"></i> TRACK ORDERS
-        </button>
-        <div id="floatTrackResults"></div>
-    </div>
-</div>
-
-<script>
-    // ── Toggle panel open/close ──────────────────────────────────────────────────
-    function toggleTrackPanel() {
-        const panel = document.getElementById('trackPanel');
-        panel.classList.toggle('open');
-        if (panel.classList.contains('open')) {
-            setTimeout(() => document.getElementById('floatTrackPhone').focus(), 200);
-        }
-    }
-
-    // Close panel when clicking outside
-    document.addEventListener('click', function(e) {
-        const panel = document.getElementById('trackPanel');
-        const btn = document.querySelector('.float-track-btn');
-        if (!panel.contains(e.target) && !btn.contains(e.target)) {
-            panel.classList.remove('open');
-        }
-    });
-
-    // ── Status label map (same as track-order.php) ──────────────────────────────
-    function getStatusLabel(status) {
-        const map = {
-            'maya_initial': 'Initial Payment',
-            'maya_full': 'Full Payment',
-            'down_payment': 'Down Payment',
-            'pending': 'Pending',
-            'confirmed': 'To Ship',
-            'in_transit': 'To Receive',
-            'delivered': 'Completed',
-        };
-        if (!status) return 'Pending';
-        return map[status] || status.charAt(0).toUpperCase() + status.slice(1);
-    }
-
-    // ── Fetch orders ─────────────────────────────────────────────────────────────
-    function doFloatTrack() {
-        const phone = document.getElementById('floatTrackPhone').value.trim();
-        const btn = document.getElementById('floatTrackBtn');
-        const result = document.getElementById('floatTrackResults');
-
-        if (!phone) {
-            result.innerHTML = `<p class="text-danger small mt-2"><i class="fas fa-exclamation-circle me-1"></i>Please enter your cellphone number.</p>`;
-            return;
-        }
-
-        // Loading state
-        btn.disabled = true;
-        btn.innerHTML = `<i class="fas fa-spinner fa-spin me-1"></i> Searching...`;
-        result.innerHTML = `<div class="track-loading"><i class="fas fa-spinner fa-spin fa-lg"></i></div>`;
-
-        fetch(`controllers/customer_track_order.php?phone=${encodeURIComponent(phone)}`)
-            .then(res => res.json())
-            .then(data => {
-                btn.disabled = false;
-                btn.innerHTML = `<i class="fas fa-search me-1"></i> TRACK ORDERS`;
-
-                if (!data.success) {
-                    result.innerHTML = `
-                    <div class="track-empty">
-                        <img src="https://cdn-icons-png.flaticon.com/512/4076/4076432.png" alt="">
-                        <p>${data.message || 'No orders found.'}</p>
-                    </div>`;
-                    return;
-                }
-
-                const rows = data.orders.map(order => `
-                <div class="track-order-row">
-                    <div class="d-flex justify-content-between align-items-center mb-1">
-                        <span class="track-order-ref">${order.order_reference}</span>
-                        <span class="track-status-badge">${getStatusLabel(order.order_status)}</span>
-                    </div>
-                    <div class="track-order-items">${order.items_ordered || 'Solar Product'}</div>
-                    <div class="d-flex justify-content-between align-items-center mt-1">
-                        <span class="track-order-location">
-                            <i class="fas fa-map-marker-alt me-1"></i>${order.current_location || 'Warehouse'}
-                        </span>
-                        <span class="track-order-amount">₱${parseFloat(order.total_amount).toLocaleString()}</span>
-                    </div>
-                </div>
-            `).join('');
-
-                result.innerHTML = `
-                <div class="track-results">${rows}</div>
-                <a href="track-order.php" class="track-full-link">
-                    <i class="fas fa-external-link-alt me-1"></i> View full order details
-                </a>`;
-            })
-            .catch(() => {
-                btn.disabled = false;
-                btn.innerHTML = `<i class="fas fa-search me-1"></i> TRACK ORDERS`;
-                result.innerHTML = `<p class="text-danger small mt-2"><i class="fas fa-exclamation-circle me-1"></i>Connection error. Please try again.</p>`;
-            });
-    }
-</script>
-<!-- END FLOATING TRACK ORDER -->
 
 <script>window.SOLAR_APP_BASE = '/SolarPower-Energy-Corporation/';</script>
 <script src="/SolarPower-Energy-Corporation/assets/checkout-auth.js"></script>

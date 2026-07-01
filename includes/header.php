@@ -13,6 +13,8 @@ $cart_base_path = ($cart_base_path === '/' || $cart_base_path === '\\') ? '/' : 
 $cart_checkout_href = $cart_base_path . 'checkout.php';
 $cart_ajax_endpoint = $cart_base_path . 'add-to-cart-ajax.php';
 $cart_ajax_script = __DIR__ . '/../assets/cart-ajax.js';
+$order_tracking_css = __DIR__ . '/../assets/order-tracking.css';
+$order_tracking_script = __DIR__ . '/../assets/order-tracking.js';
 
 // Get current page filename
 $current_page = basename($_SERVER['PHP_SELF']);
@@ -24,6 +26,11 @@ function isActive($page)
     return $current_page === $page ? 'active' : '';
 }
 ?>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<?php if (file_exists($order_tracking_css)): ?>
+    <link rel="stylesheet" href="<?php echo htmlspecialchars($cart_base_path . 'assets/order-tracking.css?v=' . filemtime($order_tracking_css)); ?>">
+<?php endif; ?>
 
 <style>
     html,
@@ -203,11 +210,65 @@ function isActive($page)
         width: 100%;
     }
 
-    .nav-cart-item {
+    .nav-actions-item {
         display: flex;
         align-items: center;
+        gap: 10px;
     }
 
+    .nav-icon-tooltip {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .nav-icon-tooltip::before,
+    .nav-icon-tooltip::after {
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%) translateY(6px);
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        transition: opacity 160ms ease, transform 160ms ease, visibility 160ms ease;
+        z-index: 30;
+    }
+
+    .nav-icon-tooltip::before {
+        content: attr(data-tooltip);
+        bottom: calc(100% + 10px);
+        min-width: max-content;
+        max-width: 150px;
+        padding: 6px 9px;
+        border-radius: 7px;
+        background: #17211c;
+        color: #fff;
+        font-size: 12px;
+        font-weight: 800;
+        line-height: 1.2;
+        text-align: center;
+        white-space: nowrap;
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.18);
+    }
+
+    .nav-icon-tooltip::after {
+        content: '';
+        bottom: calc(100% + 4px);
+        border: 6px solid transparent;
+        border-top-color: #17211c;
+    }
+
+    .nav-icon-tooltip:hover::before,
+    .nav-icon-tooltip:hover::after,
+    .nav-icon-tooltip:focus-within::before,
+    .nav-icon-tooltip:focus-within::after {
+        opacity: 1;
+        visibility: visible;
+        transform: translateX(-50%) translateY(0);
+    }
+
+    .order-tracking-nav-link,
     .nav-cart-link {
         display: inline-flex;
         align-items: center;
@@ -218,15 +279,35 @@ function isActive($page)
         border-radius: 50%;
         background: #fff;
         color: var(--clr-primary);
+        position: relative;
     }
 
+    .order-tracking-nav-link {
+        border: 1px solid rgba(45, 80, 22, 0.16);
+        padding: 0;
+        cursor: pointer;
+    }
+
+    .order-tracking-nav-link i {
+        font-size: 21px;
+        line-height: 1;
+    }
+
+    .order-tracking-nav-link span {
+        display: none;
+    }
+
+    .order-tracking-nav-link::after,
     .nav-cart-link::after {
         display: none;
     }
 
+    .order-tracking-nav-link:hover,
+    .order-tracking-nav-link:focus,
     .nav-cart-link:hover {
         background: rgba(45, 80, 22, 0.08);
         color: var(--clr-primary);
+        outline: 0;
     }
 
     .nav-cart-link svg {
@@ -411,11 +492,12 @@ function isActive($page)
             border-left: 4px solid var(--clr-primary);
         }
 
-        .nav-cart-item {
+        .nav-actions-item {
             padding: 12px 25px;
             border-bottom: 1px solid #eee;
         }
 
+        .order-tracking-nav-link,
         .nav-cart-link {
             width: 44px;
             height: 44px;
@@ -521,21 +603,67 @@ function isActive($page)
                     <li><a href="projects.php" class="<?php echo isActive('projects.php'); ?>">PROJECTS</a></li>
                     <li><a href="loans.php" class="<?php echo isActive('loans.php'); ?>">SOLAR LOANS</a></li>
                     <li><a href="contact.php" class="<?php echo isActive('contact.php'); ?>">CONTACT</a></li>
-                    <li class="nav-cart-item">
-                        <a href="<?php echo htmlspecialchars($cart_checkout_href); ?>" class="nav-cart-link <?php echo isActive('checkout.php'); ?>" aria-label="View cart and checkout">
-                            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <circle cx="9" cy="21" r="1"></circle>
-                                <circle cx="20" cy="21" r="1"></circle>
-                                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h8.72a2 2 0 0 0 2-1.61L23 6H6"></path>
-                            </svg>
-                            <span id="cart-count" class="cart-count-badge"><?php echo $cart_count; ?></span>
-                        </a>
+                    <li class="nav-actions-item">
+                        <span class="nav-icon-tooltip" data-tooltip="Track Order">
+                            <button type="button" class="order-tracking-nav-link" id="openOrderTracking" aria-label="Track Order">
+                                <i class="bi bi-truck" aria-hidden="true"></i>
+                                <span>Track Order</span>
+                            </button>
+                        </span>
+                        <span class="nav-icon-tooltip" data-tooltip="Cart">
+                            <a href="<?php echo htmlspecialchars($cart_checkout_href); ?>" class="nav-cart-link <?php echo isActive('checkout.php'); ?>" aria-label="View cart and checkout">
+                                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="9" cy="21" r="1"></circle>
+                                    <circle cx="20" cy="21" r="1"></circle>
+                                    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h8.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                                </svg>
+                                <span id="cart-count" class="cart-count-badge"><?php echo $cart_count; ?></span>
+                            </a>
+                        </span>
                     </li>
                 </ul>
             </nav>
         </div>
     </div>
 </header>
+
+<div class="modal fade order-tracking-modal" id="orderTrackingModal" tabindex="-1" aria-labelledby="orderTrackingModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="orderTrackingModalLabel">
+                    <i class="bi bi-truck" aria-hidden="true"></i> Track Order
+                </h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="orderTrackingForm" novalidate>
+                    <label class="visually-hidden" for="orderTrackingReference">Enter your Order Reference Number</label>
+                    <div class="tracking-search-wrap">
+                        <input
+                            type="text"
+                            class="tracking-reference-input"
+                            id="orderTrackingReference"
+                            name="order_reference"
+                            placeholder="Enter your Order Reference Number"
+                            autocomplete="off"
+                            inputmode="text">
+                        <button type="submit" class="tracking-submit-btn" id="orderTrackingSubmit">Track</button>
+                    </div>
+                </form>
+
+                <div class="tracking-message" id="orderTrackingMessage" role="status" aria-live="polite"></div>
+
+                <div class="tracking-placeholder" id="orderTrackingPlaceholder">
+                    Enter your reference number above to see your order progress.
+                </div>
+
+                <div class="tracking-order-summary" id="orderTrackingSummary"></div>
+                <div class="tracking-stepper" id="orderTrackingTimeline"></div>
+            </div>
+        </div>
+    </div>
+</div>
 
 <script>
     window.SOLAR_APP_BASE = window.SOLAR_APP_BASE || <?php echo json_encode($cart_base_path); ?>;
@@ -576,7 +704,7 @@ function isActive($page)
     }
 
     // Close menu when a link is clicked
-    const navLinks = document.querySelectorAll('nav a');
+    const navLinks = document.querySelectorAll('nav a, nav button');
     navLinks.forEach(link => {
         link.addEventListener('click', function() {
             if (window.innerWidth <= 768) {
@@ -619,4 +747,15 @@ function isActive($page)
 </script>
 <?php if (file_exists($cart_ajax_script)): ?>
     <script src="<?php echo htmlspecialchars($cart_base_path . 'assets/cart-ajax.js?v=' . filemtime($cart_ajax_script)); ?>"></script>
+<?php endif; ?>
+<script>
+    if (!window.jQuery) {
+        var solarJqueryScript = document.createElement('script');
+        solarJqueryScript.src = 'https://code.jquery.com/jquery-3.7.1.min.js';
+        solarJqueryScript.defer = true;
+        document.head.appendChild(solarJqueryScript);
+    }
+</script>
+<?php if (file_exists($order_tracking_script)): ?>
+    <script src="<?php echo htmlspecialchars($cart_base_path . 'assets/order-tracking.js?v=' . filemtime($order_tracking_script)); ?>" defer></script>
 <?php endif; ?>

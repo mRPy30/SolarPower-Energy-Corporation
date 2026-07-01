@@ -17,7 +17,7 @@ if ($productId <= 0) {
 $sql = "SELECT 
     p.id,
     p.displayName,
-    p.brandName,
+    COALESCE(NULLIF(v.brand_names, ''), TRIM(p.brandName)) AS brandName,
     p.price,
     p.stockQuantity,
     p.category,
@@ -26,6 +26,18 @@ $sql = "SELECT
     p.description,
     p.status
 FROM product p
+LEFT JOIN (
+    SELECT
+        pbv.product_id,
+        GROUP_CONCAT(DISTINCT COALESCE(NULLIF(TRIM(sb.brandName), ''), NULLIF(TRIM(b.brand_name), '')) ORDER BY pbv.price ASC, pbv.id ASC SEPARATOR ', ') AS brand_names
+    FROM product_brand_variants pbv
+    LEFT JOIN supplier_brands sb
+        ON pbv.brand_id = sb.id
+    LEFT JOIN brands b
+        ON pbv.brand_id = b.brand_id
+    GROUP BY pbv.product_id
+) v
+    ON p.id = v.product_id
 WHERE p.id = ?";
 
 $stmt = $conn->prepare($sql);
