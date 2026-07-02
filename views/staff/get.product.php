@@ -24,6 +24,7 @@ $sql = "SELECT
     p.packageType,
     p.warranty,
     p.description,
+    COALESCE(p.moq, 1) AS moq,
     p.status
 FROM product p
 LEFT JOIN (

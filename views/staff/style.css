@@ -1548,25 +1548,9 @@ tbody tr:last-child td {
 }
 
 .product-brand-list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 5px;
+    display: block;
     margin: 0;
     line-height: 1.2;
-}
-
-.product-brand-chip {
-    display: inline-flex;
-    align-items: center;
-    max-width: 100%;
-    padding: 4px 8px;
-    border-radius: 999px;
-    background: #eef7f2;
-    color: #0a5c3d;
-    font-size: 11px;
-    font-weight: 700;
-    line-height: 1.2;
-    text-transform: uppercase;
     overflow-wrap: anywhere;
 }
 

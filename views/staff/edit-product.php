@@ -64,6 +64,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     $status     = trim($_POST['status'] ?? 'Active');
     $description = $_POST['description'] ?? '';
     $moq        = isset($_POST['moq']) && $_POST['moq'] !== '' ? intval($_POST['moq']) : 1;
+    if (strpos($catLower, 'panel') !== false && $moq < 5) {
+        $moq = 5;
+    }
 
     $brand_ids    = $_POST['brand_ids'] ?? [];
     $brand_prices = $_POST['brand_price'] ?? [];
@@ -902,8 +905,8 @@ if (moqToggleBtn && moqInput) {
             moqInput.removeAttribute('disabled');
             moqInput.style.background = '#f8fafc';
             moqInput.style.opacity = '1';
-            if (parseInt(moqInput.value) <= 1) {
-                moqInput.value = 2;
+            if (parseInt(moqInput.value) < 5) {
+                moqInput.value = 5;
             }
             moqToggleBtn.innerHTML = '<i class="fas fa-check"></i> MOQ Set';
             moqToggleBtn.style.background = '#f59e0b';

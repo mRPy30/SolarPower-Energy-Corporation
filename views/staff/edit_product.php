@@ -20,6 +20,10 @@ $category = isset($_POST['category']) ? trim($_POST['category']) : '';
 $packageType = isset($_POST['package-type']) ? trim($_POST['package-type']) : NULL;
 if (empty($packageType)) $packageType = NULL;
 $status = isset($_POST['status']) ? trim($_POST['status']) : 'Active';
+$moq = isset($_POST['moq']) && $_POST['moq'] !== '' ? max(1, intval($_POST['moq'])) : 1;
+if (stripos($category, 'panel') !== false && $moq < 5) {
+    $moq = 5;
+}
 
 // Default brand for packages if empty
 if (empty($brandName) && (stripos($category, 'Package') !== false || empty($category))) {
@@ -58,11 +62,12 @@ try {
                   stockQuantity = ?, 
                   warranty = ?, 
                   description = ?,
-                  status = ?
+                  status = ?,
+                  moq = ?
               WHERE id = ?";
     
     $stmt = $conn->prepare($query);
-    $stmt->bind_param("ssdsissssi", $displayName, $brandName, $price, $category, $packageType, $stockQuantity, $warranty, $description, $status, $product_id);
+    $stmt->bind_param("ssdsissssii", $displayName, $brandName, $price, $category, $packageType, $stockQuantity, $warranty, $description, $status, $moq, $product_id);
     
     if (!$stmt->execute()) {
         throw new Exception('Failed to update product details');

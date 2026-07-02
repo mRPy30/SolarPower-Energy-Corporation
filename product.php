@@ -16,7 +16,7 @@ if (!function_exists('createSlug')) {
 if (!function_exists('renderProductBrandChips')) {
     function renderProductBrandChips($brandNames) {
         $brands = preg_split('/\s*,\s*/', (string) $brandNames);
-        $chips = '';
+        $cleanBrands = [];
 
         foreach ($brands as $brand) {
             $brand = trim($brand);
@@ -24,10 +24,10 @@ if (!function_exists('renderProductBrandChips')) {
                 continue;
             }
 
-            $chips .= '<span class="product-brand-chip">' . htmlspecialchars($brand) . '</span>';
+            $cleanBrands[] = $brand;
         }
 
-        return $chips !== '' ? $chips : '<span class="product-brand-chip">Brand TBA</span>';
+        return $cleanBrands ? htmlspecialchars(implode(', ', $cleanBrands)) : 'Brand TBA';
     }
 }
 /* ---------- 1.  DB connection ---------- */
@@ -94,6 +94,7 @@ if ($stmt) {
 }
 
 $logo_brands = [];
+$uploaded_logo_brands = [];
 $res_logos = $conn->query("SELECT brand_name, logo_image FROM brands WHERE logo_image IS NOT NULL AND logo_image != '' AND COALESCE(is_visible, 1) = 1");
 if ($res_logos) {
     while ($row = $res_logos->fetch_assoc()) {
@@ -104,6 +105,7 @@ if ($res_logos) {
         ];
     }
 }
+$uploaded_logo_brands = $logo_brands;
 if (empty($logo_brands)) {
     $logo_brands = [
         ['brand_name' => 'Ian Solar', 'logo_image' => 'assets/img/iansolar.png', 'is_fallback' => true],
@@ -165,24 +167,447 @@ $conn->close();
             --transition-fast: all 0.3s ease;
         }
         
-        /* Hero Section */
-        .hero-about {
-            background: linear-gradient(to right, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.4)), 
-                url('assets/img/products.png') no-repeat center center/cover;
-            height: 50vh;
+        .promo-banners-section {
+            padding-top: 24px;
+        }
+
+        .promo-banners-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+
+        .promo-banner-card {
+            display: block;
+            overflow: hidden;
+            border-radius: 8px;
+            background: #fff;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            transition: transform 0.25s ease-in-out, box-shadow 0.25s ease-in-out;
+        }
+
+        .promo-banner-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 24px rgba(0, 0, 0, 0.1);
+        }
+
+        .promo-banner-card img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            object-position: center;
+            display: block;
+            transition: transform 0.3s ease-in-out;
+        }
+
+        .promo-banner-card:hover img {
+            transform: scale(1.03);
+        }
+
+        .product-hero-cover {
+            min-height: clamp(360px, 42vw, 560px);
             display: flex;
             align-items: center;
-            color: white;
+            justify-content: center;
+            background:
+                linear-gradient(rgba(0, 0, 0, 0.38), rgba(0, 0, 0, 0.38)),
+                url('assets/img/products.png') center center / cover no-repeat;
+            color: #fff;
             text-align: center;
+        }
+
+        .product-hero-cover .hero-label {
+            display: inline-block;
+            margin-bottom: 14px;
+            color: #ffc107;
+            font-size: 14px;
+            font-weight: 800;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+        }
+
+        .product-hero-cover h1 {
+            margin: 0 0 12px;
+            color: #fff;
+            font-size: clamp(38px, 4.4vw, 66px);
+            font-weight: 800;
+            line-height: 1.15;
+            text-shadow: 0 4px 16px rgba(0, 0, 0, 0.48);
+        }
+
+        .product-hero-cover p {
+            max-width: 720px;
+            margin: 0 auto;
+            color: rgba(255, 255, 255, 0.94);
+            font-size: clamp(15px, 1.25vw, 18px);
+            line-height: 1.6;
+            text-shadow: 0 3px 10px rgba(0, 0, 0, 0.42);
+        }
+
+        #catalogSection .product-card {
+            overflow: hidden;
+            padding-top: 0;
+            padding-left: 0;
+            padding-right: 0;
+        }
+
+        #catalogSection .product-card > div[onclick] {
+            display: flex;
+            flex-direction: column;
+            flex: 1 1 auto;
+            min-height: 0;
+        }
+
+        #catalogSection .product-image {
+            width: 100%;
+            height: 260px;
+            aspect-ratio: auto;
+            margin: 0;
+            padding: 0;
+            border-radius: 0;
+            overflow: hidden;
+            background: #f8fafc;
+            flex: 0 0 auto;
+        }
+
+        #catalogSection .product-image img,
+        #catalogSection .card-img-top {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            display: block;
+            object-fit: cover;
+            object-position: center;
+        }
+
+        #catalogSection .product-info,
+        #catalogSection .card-body {
+            padding: 16px;
+        }
+
+        #catalogSection .product-actions {
+            display: flex !important;
+            flex-direction: row !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            gap: 8px !important;
+            width: 100% !important;
+            align-self: stretch !important;
+            flex-wrap: nowrap !important;
+            padding: 0 16px 16px !important;
+        }
+
+        #catalogSection .btn-add-cart {
+            flex: 0 0 44px !important;
+            width: 44px !important;
+            min-width: 44px !important;
+            max-width: 44px !important;
+            height: 44px !important;
+            padding: 0 !important;
+        }
+
+        #catalogSection .btn-buy-now {
+            flex: 1 1 auto !important;
+            width: auto !important;
+            min-width: 0 !important;
+            max-width: none !important;
+            height: 44px !important;
+            padding: 0 14px !important;
+        }
+
+        .shop-by-brand-section {
+            background: #ffffff;
+            padding: 48px 0 54px;
+            border-bottom: 1px solid #edf1f4;
+        }
+
+        .shop-brand-header {
+            text-align: center;
+            margin-bottom: 26px;
+        }
+
+        .shop-brand-header span {
+            display: inline-block;
+            margin-bottom: 8px;
+            color: #e7ad00;
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: 1.8px;
+            text-transform: uppercase;
+        }
+
+        .shop-brand-header h2 {
+            margin: 0;
+            color: #1f2933;
+            font-size: 28px;
+            font-weight: 800;
+        }
+
+        .shop-brand-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+        }
+
+        .shop-brand-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 130px;
+            padding: 18px;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            background: #fff;
+            text-decoration: none;
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+            transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+        }
+
+        .shop-brand-card:hover {
+            border-color: #e7ad00;
+            transform: translateY(-4px);
+            box-shadow: 0 14px 32px rgba(15, 23, 42, 0.12);
+        }
+
+        .shop-brand-logo {
+            width: 100%;
+            max-width: 145px;
+            height: 62px;
+            object-fit: contain;
+            display: block;
+            margin-bottom: 12px;
+            filter: grayscale(20%);
+            transition: filter 0.2s ease, transform 0.2s ease;
+        }
+
+        .shop-brand-card:hover .shop-brand-logo {
+            filter: grayscale(0%);
+            transform: scale(1.04);
+        }
+
+        .shop-brand-name {
+            color: #0a5c3d;
+            font-size: 14px;
+            font-weight: 800;
+            text-align: center;
+        }
+
+        .marketplace-category-section {
+            margin-top: 28px;
+            margin-bottom: 28px;
+        }
+
+        .marketplace-category-layout {
+            display: grid;
+            grid-template-columns: minmax(260px, 0.32fr) minmax(0, 1fr);
+            gap: 16px;
+            align-items: stretch;
+        }
+
+        .category-poster-card {
+            min-height: 100%;
+            overflow: hidden;
+            border-radius: 8px;
+            background: #f7f9fb;
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+        }
+
+        .category-poster-card .carousel,
+        .category-poster-card .carousel-inner,
+        .category-poster-card .carousel-item {
+            height: 100%;
+            min-height: 370px;
+        }
+
+        .category-poster-card img {
+            width: 100%;
+            height: 100%;
+            min-height: 370px;
+            object-fit: cover;
+            display: block;
+            border-radius: 8px;
+        }
+
+        .category-poster-card .carousel-control-prev,
+        .category-poster-card .carousel-control-next {
+            width: 14%;
+        }
+
+        .category-poster-card .carousel-indicators {
+            margin-bottom: 10px;
+        }
+
+        .marketplace-category-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            min-height: 100%;
+            padding: 18px;
+            border: 1px solid #eaeaea;
+            border-radius: 8px;
+            background: #fff;
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+        }
+
+        .marketplace-category-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #f1f3f5;
+        }
+
+        .marketplace-category-header h2 {
+            margin: 0;
+            color: #1f2933;
+            font-size: 20px;
+            font-weight: 800;
+        }
+
+        .marketplace-category-header span {
+            color: #e7ad00;
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: 1.2px;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+
+        .marketplace-category-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            flex: 1;
+        }
+
+        .category-option-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 154px;
+            padding: 16px 10px;
+            border: 1px solid #eaeaea;
+            border-radius: 8px;
+            background: #fff;
+            text-decoration: none;
+            transition: all 0.2s ease-in-out;
+        }
+
+        .category-option-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            border-color: #e7ad00;
+        }
+
+        .category-option-card img {
+            height: 90px;
+            width: auto;
+            max-width: 100%;
+            object-fit: contain;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .category-option-card span {
+            color: #333;
+            font-size: 13px;
+            font-weight: 600;
+            line-height: 1.25;
+            text-align: center;
+        }
+
+        @media (max-width: 991.98px) {
+            #catalogSection .product-image {
+                height: 240px;
+            }
+
+            .promo-banners-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 575.98px) {
+            .promo-banners-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .product-hero-cover {
+                min-height: 340px;
+                padding: 56px 20px;
+            }
+
+            #catalogSection .product-image {
+                height: 220px;
+            }
+
+            .shop-by-brand-section {
+                padding: 36px 0 42px;
+            }
+
+            .shop-brand-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 12px;
+            }
+
+            .marketplace-category-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .category-poster-card img {
+                min-height: 260px;
+                max-height: 360px;
+            }
+
+            .category-poster-card .carousel,
+            .category-poster-card .carousel-inner,
+            .category-poster-card .carousel-item {
+                min-height: 260px;
+                max-height: 360px;
+            }
+
+            .marketplace-category-header {
+                align-items: flex-start;
+                flex-direction: column;
+                gap: 4px;
+            }
+
+            .marketplace-category-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            #catalogSection .product-actions {
+                flex-direction: row !important;
+                gap: 8px !important;
+            }
+
+            #catalogSection .btn-add-cart {
+                flex: 0 0 42px !important;
+                width: 42px !important;
+                min-width: 42px !important;
+                max-width: 42px !important;
+                height: 42px !important;
+            }
+
+            #catalogSection .btn-buy-now {
+                flex: 1 1 auto !important;
+                width: auto !important;
+                height: 42px !important;
+            }
         }
     </style>
     
     <?php include "includes/header.php" ?>
 
-    <section class="hero-about">
-        <div class="container" data-aos="fade-up">
-            <span class="text-warning fw-bold text-uppercase">Products</span>
-            <h1 class="display-3 fw-bold">Premium Solar Solutions</h1>
+    <section class="product-hero-cover">
+        <div class="container">
+            <span class="hero-label">Products</span>
+            <h1>Premium Solar Solutions</h1>
+            <p>Shop trusted solar panels, inverters, batteries, and package systems for smarter energy projects.</p>
         </div>
     </section>
 
@@ -190,7 +615,7 @@ $conn->close();
     <section class="bg-amber-500 py-6 overflow-hidden relative shadow-inner">
         <!-- Title -->
         <div class="text-center mb-4">
-            <h3 class="text-xs sm:text-sm font-bold text-white/90 uppercase tracking-[0.2em]">Trusted by Leading Solar Brands</h3>
+            <h3 class="text-xs sm:text-sm font-bold text-white/90 uppercase tracking-[0.2em]">Our Brand Partners</h3>
         </div>
 
         <!-- Marquee Container -->
@@ -206,18 +631,18 @@ $conn->close();
                 <!-- Logos Set 1 -->
                 <div class="flex items-center gap-6 px-3">
                     <?php foreach ($logo_brands as $brand): ?>
-                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
+                    <a href="brand.php?name=<?= rawurlencode($brand['brand_name']) ?>" class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
                         <img src="<?= htmlspecialchars($brand['logo_image']) ?>" alt="<?= htmlspecialchars($brand['brand_name']) ?>" class="w-full h-full object-contain mix-blend-multiply opacity-90">
-                    </div>
+                    </a>
                     <?php endforeach; ?>
                 </div>
 
                 <!-- Logos Set 2 (Duplicate for Seamless Loop) -->
                 <div class="flex items-center gap-6 px-3" aria-hidden="true">
                     <?php foreach ($logo_brands as $brand): ?>
-                    <div class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
+                    <a href="brand.php?name=<?= rawurlencode($brand['brand_name']) ?>" class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
                         <img src="<?= htmlspecialchars($brand['logo_image']) ?>" alt="<?= htmlspecialchars($brand['brand_name']) ?>" class="w-full h-full object-contain mix-blend-multiply opacity-90">
-                    </div>
+                    </a>
                     <?php endforeach; ?>
                 </div>
             </div>
@@ -241,6 +666,109 @@ $conn->close();
             animation-play-state: paused;
         }
     </style>
+
+    <section class="container my-4 promo-banners-section">
+        <div class="promo-banners-grid">
+            <a href="brand.php?name=Huawei" class="promo-banner-card">
+                <img src="assets/img/product-cover-1.jpg" alt="Huawei solar product promotion">
+            </a>
+            <a href="brand.php?name=Solis" class="promo-banner-card">
+                <img src="assets/img/product-cover-2.jpg" alt="Solis solar product promotion">
+            </a>
+            <a href="brand.php?name=Pylontech" class="promo-banner-card">
+                <img src="assets/img/product-cover-3.jpg" alt="Pylontech solar product promotion">
+            </a>
+        </div>
+    </section>
+
+    <section class="container my-4 marketplace-category-section">
+        <div class="marketplace-category-layout">
+            <div class="category-poster-card">
+                <?php
+                    $categoryPosters = [
+                        'assets/img/poster1.jpg',
+                        'assets/img/poster2.jpg',
+                        'assets/img/poster3.jpg',
+                        'assets/img/poster4.jpg',
+                        'assets/img/poster5.jpg',
+                    ];
+                ?>
+
+                <div id="categoryPosterCarousel" class="carousel slide carousel-fade h-100" data-bs-ride="carousel" data-bs-interval="3500">
+                    <div class="carousel-indicators">
+                        <?php foreach ($categoryPosters as $posterIndex => $posterPath): ?>
+                            <button type="button"
+                                    data-bs-target="#categoryPosterCarousel"
+                                    data-bs-slide-to="<?= $posterIndex ?>"
+                                    class="<?= $posterIndex === 0 ? 'active' : '' ?>"
+                                    aria-current="<?= $posterIndex === 0 ? 'true' : 'false' ?>"
+                                    aria-label="Poster <?= $posterIndex + 1 ?>"></button>
+                        <?php endforeach; ?>
+                    </div>
+
+                    <div class="carousel-inner h-100">
+                        <?php foreach ($categoryPosters as $posterIndex => $posterPath): ?>
+                            <div class="carousel-item h-100 <?= $posterIndex === 0 ? 'active' : '' ?>">
+                                <img src="<?= htmlspecialchars($posterPath) ?>"
+                                     alt="SolarPower authorized solar poster <?= $posterIndex + 1 ?>">
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+
+                    <button class="carousel-control-prev" type="button" data-bs-target="#categoryPosterCarousel" data-bs-slide="prev">
+                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Previous</span>
+                    </button>
+                    <button class="carousel-control-next" type="button" data-bs-target="#categoryPosterCarousel" data-bs-slide="next">
+                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Next</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="marketplace-category-panel">
+                <div class="marketplace-category-header">
+                    <h2>Shop Solar Categories</h2>
+                    <span>Fast Category Access</span>
+                </div>
+
+                <div class="marketplace-category-grid">
+                    <a href="#catalogSection" class="category-option-card" data-category-jump="Panel">
+                        <img src="assets/img/panels.png" alt="Solar Panels">
+                        <span>Solar Panels</span>
+                    </a>
+                    <a href="#catalogSection" class="category-option-card" data-category-jump="Inverter">
+                        <img src="assets/img/hybrid.png" alt="Hybrid Inverters">
+                        <span>Hybrid Inverters</span>
+                    </a>
+                    <a href="#catalogSection" class="category-option-card" data-category-jump="Panel">
+                        <img src="assets/img/solar-panels.svg" alt="Bifacial Series">
+                        <span>Bifacial Series</span>
+                    </a>
+                    <a href="#catalogSection" class="category-option-card" data-category-jump="Battery">
+                        <img src="assets/img/pylontech.png" alt="Deep Cycle Batteries">
+                        <span>Deep Cycle Batteries</span>
+                    </a>
+                    <a href="#catalogSection" class="category-option-card" data-category-jump="Package Setup">
+                        <img src="assets/img/package.png" alt="Package Setup">
+                        <span>Package Setups</span>
+                    </a>
+                    <a href="#catalogSection" class="category-option-card" data-category-jump="Inverter">
+                        <img src="assets/img/grid-tie.png" alt="Grid-Tie Inverters">
+                        <span>Grid-Tie Inverters</span>
+                    </a>
+                    <a href="#catalogSection" class="category-option-card" data-category-jump="Mounting & Accessories">
+                        <img src="assets/img/Application.png" alt="Mounting Accessories">
+                        <span>Mounting Accessories</span>
+                    </a>
+                    <a href="#catalogSection" class="category-option-card" data-category-jump="all">
+                        <img src="assets/img/product-placeholder.png" alt="All Solar Products">
+                        <span>All Products</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
 
     <!-- ---------- CATALOG SECTION ---------- -->
  <section class="catalogs-section" id="catalogSection">
@@ -316,7 +844,7 @@ $conn->close();
                                     <div class="preview-stock" style="display: none;">
                                         <i class="fas fa-box"></i> Stock: <?= htmlspecialchars($p['stockQuantity']) ?> units
                                     </div>
-                                    <?php if ($p['category'] === 'Panel' && intval($p['moq']) > 1): ?>
+                                    <?php if (stripos((string)$p['category'], 'panel') !== false && intval($p['moq']) > 1): ?>
                                     <div class="moq-badge" style="margin-top:6px; display:inline-block; background:#fff3cd; color:#856404; border:1px solid #ffc107; border-radius:6px; padding:3px 10px; font-size:0.78rem; font-weight:600;">
                                         <i class="fas fa-layer-group"></i> Min. Order: <?= intval($p['moq']) ?> pcs
                                     </div>
@@ -325,10 +853,11 @@ $conn->close();
                             </div>
 
                             <!-- Action Buttons (not clickable for navigation) -->
-                            <div class="product-actions" onclick="event.stopPropagation()">
+                            <div class="product-actions" onclick="event.stopPropagation()" style="display:flex; flex-direction:row; align-items:center; gap:8px; width:100%;">
                                 <button class="btn-add-cart"
                                     data-product='<?= json_encode($p, JSON_HEX_APOS | JSON_HEX_QUOT) ?>'
                                     onclick="addToCartFromButton(this)"
+                                    style="flex:0 0 44px; width:44px;"
                                     title="Add to Cart">
                                     <i class="fas fa-shopping-cart"></i>
                                 </button>
@@ -337,6 +866,7 @@ $conn->close();
                                     class="btn-buy-now"
                                     data-product-id="<?= (int)$p['id'] ?>"
                                     data-product='<?= json_encode($p, JSON_HEX_APOS | JSON_HEX_QUOT) ?>'
+                                    style="flex:1 1 auto; width:auto;"
                                     onclick="buyNowFromButton(this)">
                                     Buy Now
                                 </button>
@@ -359,6 +889,28 @@ $conn->close();
             </div>
         </div>
     </section>
+
+    <?php if (!empty($uploaded_logo_brands)): ?>
+    <section class="shop-by-brand-section">
+        <div class="container">
+            <div class="shop-brand-header">
+                <span>Shop by Brand</span>
+                <h2>Authorized Solar Brands</h2>
+            </div>
+
+            <div class="shop-brand-grid">
+                <?php foreach ($uploaded_logo_brands as $brand): ?>
+                    <a href="brand.php?name=<?= rawurlencode($brand['brand_name']) ?>" class="shop-brand-card">
+                        <img src="<?= htmlspecialchars($brand['logo_image']) ?>"
+                             alt="<?= htmlspecialchars($brand['brand_name']) ?>"
+                             class="shop-brand-logo">
+                        <span class="shop-brand-name"><?= htmlspecialchars($brand['brand_name']) ?></span>
+                    </a>
+                <?php endforeach; ?>
+            </div>
+        </div>
+    </section>
+    <?php endif; ?>
 
     <section class="checkout-container" id="checkoutSection" style="display:none; padding-top: 100px;">
         <div class="checkout-shell">
@@ -795,6 +1347,7 @@ $conn->close();
         // Initialize all modules
         initializeCart();
         initializeFilters();
+        initializeCategoryShortcuts();
         initializeSort();
         initializeCheckout();
         initializeSubscription();
@@ -1279,8 +1832,8 @@ $conn->close();
 
     function showCheckout() {
         const sectionsToHide = [
-            '.hero-about', '.featured-brands', '.hero',
-            '#catalogSection', '.contact-us', '.subscription-section', 'footer'
+            '.product-hero-cover', '.promo-banners-section', '.featured-brands', '.hero',
+            '.shop-by-brand-section', '#catalogSection', '.contact-us', '.subscription-section', 'footer'
         ];
 
         sectionsToHide.forEach(selector => {
@@ -1300,8 +1853,8 @@ $conn->close();
         document.getElementById('checkoutSection').style.display = 'none';
 
         const sectionsToShow = [
-            '.hero-about', '.featured-brands',
-            '#catalogSection', '.contact-us', '.subscription-section', 'footer'
+            '.product-hero-cover', '.promo-banners-section', '.featured-brands',
+            '.shop-by-brand-section', '#catalogSection', '.contact-us', '.subscription-section', 'footer'
         ];
 
         sectionsToShow.forEach(selector => {
@@ -1871,6 +2424,31 @@ function initializeFilters() {
             this.classList.add('active');
             const category = this.getAttribute('data-category');
             filterProducts(category);
+        });
+    });
+}
+
+function initializeCategoryShortcuts() {
+    const categoryCards = document.querySelectorAll('.category-option-card[data-category-jump]');
+    categoryCards.forEach(card => {
+        card.addEventListener('click', function(event) {
+            event.preventDefault();
+            const category = this.getAttribute('data-category-jump') || 'all';
+            const targetFilter = document.querySelector(`.filter-btn[data-category="${category}"]`);
+
+            if (targetFilter) {
+                targetFilter.click();
+            } else {
+                filterProducts(category);
+            }
+
+            const catalog = document.getElementById('catalogSection');
+            if (catalog) {
+                window.scrollTo({
+                    top: catalog.offsetTop - 90,
+                    behavior: 'smooth'
+                });
+            }
         });
     });
 }

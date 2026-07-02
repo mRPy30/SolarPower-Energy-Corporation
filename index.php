@@ -15,7 +15,7 @@ if (!function_exists('createSlug')) {
 if (!function_exists('renderProductBrandChips')) {
     function renderProductBrandChips($brandNames) {
         $brands = preg_split('/\s*,\s*/', (string) $brandNames);
-        $chips = '';
+        $cleanBrands = [];
 
         foreach ($brands as $brand) {
             $brand = trim($brand);
@@ -23,10 +23,10 @@ if (!function_exists('renderProductBrandChips')) {
                 continue;
             }
 
-            $chips .= '<span class="product-brand-chip">' . htmlspecialchars($brand) . '</span>';
+            $cleanBrands[] = $brand;
         }
 
-        return $chips !== '' ? $chips : '<span class="product-brand-chip">Brand TBA</span>';
+        return $cleanBrands ? htmlspecialchars(implode(', ', $cleanBrands)) : 'Brand TBA';
     }
 }
 
@@ -1121,7 +1121,7 @@ $conn->close();
                                     <div class="preview-stock" style="display: none;">
                                         <i class="fas fa-box"></i> Stock: <?= htmlspecialchars($p['stockQuantity']) ?> units
                                     </div>
-                                    <?php if ($p['category'] === 'Panel' && intval($p['moq']) > 1): ?>
+                                    <?php if (stripos((string)$p['category'], 'panel') !== false && intval($p['moq']) > 1): ?>
                                         <div class="moq-badge"
                                             style="margin-top:6px; display:inline-block; background:#fff3cd; color:#856404; border:1px solid #ffc107; border-radius:6px; padding:3px 10px; font-size:0.78rem; font-weight:600;">
                                             <i class="fas fa-layer-group"></i> Min. Order: <?= intval($p['moq']) ?> pcs

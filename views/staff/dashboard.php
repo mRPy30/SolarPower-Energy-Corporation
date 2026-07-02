@@ -423,7 +423,7 @@ $total_inquiries = count($all_inquiries);
 function render_staff_product_brand_chips($brandNames)
 {
     $brands = preg_split('/\s*,\s*/', (string) $brandNames);
-    $chips = '';
+    $cleanBrands = [];
 
     foreach ($brands as $brand) {
         $brand = trim($brand);
@@ -431,10 +431,10 @@ function render_staff_product_brand_chips($brandNames)
             continue;
         }
 
-        $chips .= '<span class="product-brand-chip">' . htmlspecialchars($brand) . '</span>';
+        $cleanBrands[] = $brand;
     }
 
-    return $chips !== '' ? $chips : '<span class="product-brand-chip">Brand TBA</span>';
+    return $cleanBrands ? htmlspecialchars(implode(', ', $cleanBrands)) : 'Brand TBA';
 }
 
 function get_all_products($conn)
@@ -1485,6 +1485,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
         $productName = $conn_post->real_escape_string($_POST['product-name'] ?? '');
         $warranty = $conn_post->real_escape_string($_POST['warranty'] ?? '');
         $stockQuantity = isset($_POST['stock-quantity']) && $_POST['stock-quantity'] !== '' ? (int)$_POST['stock-quantity'] : 9999;
+        $moq = isset($_POST['moq']) && $_POST['moq'] !== '' ? max(1, (int)$_POST['moq']) : 1;
+        if (strpos($categoryLower, 'panel') !== false && $moq < 5) {
+            $moq = 5;
+        }
         // NOTE: Do NOT call real_escape_string on description.
         // The description may contain HTML from Quill.js (e.g. <p>, <ul>, <li>).
         // Prepared statements bind the raw value safely — no manual escaping needed.
@@ -1528,11 +1532,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 // Placeholder image path, will update once we get ID
                 $imagePath = 'path/to/uploaded/image.jpg';
 
-                $stmt = $conn_post->prepare("INSERT INTO product (displayName, brandName, price, category, packageType, stockQuantity, warranty, description, imagePath, postedByStaffId, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                $stmt = $conn_post->prepare("INSERT INTO product (displayName, brandName, price, category, packageType, stockQuantity, warranty, description, imagePath, postedByStaffId, status, moq) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
                 if (!$stmt) {
                     throw new Exception('Database prepare error: ' . $conn_post->error);
                 }
-                $stmt->bind_param("ssdssisssis", $productName, $first_brand_name, $fallback_price, $category, $packageType, $stockQuantity, $warranty, $description, $imagePath, $user_id, $status);
+                $stmt->bind_param("ssdssisssisi", $productName, $first_brand_name, $fallback_price, $category, $packageType, $stockQuantity, $warranty, $description, $imagePath, $user_id, $status, $moq);
                 
                 if (!$stmt->execute()) {
                     throw new Exception('Error executing insert query: ' . $stmt->error);
@@ -4732,7 +4736,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                                         <input type="number" id="moq-input" name="moq" placeholder="1" min="1"
                                             value="1">
                                         <small id="moq-hint-text" style="color:#888;">Solar Panels default to MOQ of
-                                            2</small>
+                                            5</small>
                                     </div>
                                 </div>
 
@@ -9189,12 +9193,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                     .filter(Boolean);
 
                 if (!brands.length) {
-                    return '<span class="product-brand-chip">Brand TBA</span>';
+                    return 'Brand TBA';
                 }
 
                 return brands
-                    .map(brand => `<span class="product-brand-chip">${this.escapeHtml(brand)}</span>`)
-                    .join('');
+                    .map(brand => this.escapeHtml(brand))
+                    .join(', ');
             },
 
             showSuccessNotification(message) {
@@ -10838,12 +10842,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                     const _editMoqWrapper = document.getElementById('editMoqWrapper');
                     const _editMoqInput = document.getElementById('editMoq');
                     const _editMoqHint = document.getElementById('editMoqHint');
-                    const _editMoqCats = ['Panel', 'Mounting & Accessories'];
 
                     function _applyEditMoqVisibility(cat) {
-                        if (_editMoqCats.includes(cat)) {
+                        const editCatLower = String(cat || '').toLowerCase();
+                        const isEditPanelCategory = editCatLower.includes('panel');
+                        const isEditMoqCategory = isEditPanelCategory || editCatLower.includes('mounting');
+
+                        if (isEditMoqCategory) {
                             _editMoqWrapper.style.display = 'block';
-                            if (cat === 'Panel') {
+                            if (isEditPanelCategory) {
                                 if (_editMoqHint) _editMoqHint.textContent = 'Solar Panels: bulk tiers 5 / 10 / 15 / 20 pcs';
                             } else {
                                 if (_editMoqHint) _editMoqHint.textContent = 'Mounting & Accessories: set minimum order quantity';
@@ -10863,9 +10870,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                     editCatEl.onchange = function () {
                         _applyEditMoqVisibility(this.value);
                         _applyEditPackageTypeVisibility(this.value);
-                        if (this.value === 'Panel' && parseInt(_editMoqInput.value) < 2) {
-                            _editMoqInput.value = 2;
-                        } else if (!_editMoqCats.includes(this.value)) {
+                        const editCatLower = String(this.value || '').toLowerCase();
+                        if (editCatLower.includes('panel') && parseInt(_editMoqInput.value) < 5) {
+                            _editMoqInput.value = 5;
+                        } else if (!editCatLower.includes('panel') && !editCatLower.includes('mounting')) {
                             _editMoqInput.value = 1;
                         }
                     };
@@ -11967,13 +11975,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 const moqWrapper = document.getElementById('moq-field-wrapper');
                 const moqInput = document.getElementById('moq-input');
                 const moqHint = document.getElementById('moq-hint-text');
-                const moqCategories = ['Panel', 'Mounting & Accessories'];
+                const isPanelCategory = categoryLower.includes('panel');
+                const isMoqCategory = isPanelCategory || categoryLower.includes('mounting');
 
                 if (moqWrapper && moqInput) {
-                    if (moqCategories.includes(category)) {
+                    if (isMoqCategory) {
                         moqWrapper.style.display = 'block';
-                        if (category === 'Panel') {
-                            moqInput.value = 2;
+                        if (isPanelCategory) {
+                            moqInput.value = 5;
                             if (moqHint) moqHint.textContent = 'Solar Panels: bulk tiers 5 / 10 / 15 / 20 pcs';
                         } else {
                             moqInput.value = 1;
