@@ -709,7 +709,6 @@
                 throw new Error(data.message || data.error || 'Maya Checkout could not be created.');
             }
 
-            localStorage.removeItem(CART_KEY);
             window.location.href = data.checkoutUrl || data.paymentUrl;
         } catch (error) {
             setError(error.message || 'Payment could not be started.');

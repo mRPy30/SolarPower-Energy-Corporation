@@ -519,11 +519,16 @@ function checkout_build_maya_payload(int $orderId, string $orderRef, array $cust
     ];
 }
 
-function checkout_create_order(mysqli $conn, array $customer, array $validated, array $deliveryRate): array
+function checkout_generate_order_reference(): string
+{
+    return 'SP-' . date('YmdHis') . '-' . strtoupper(substr(bin2hex(random_bytes(4)), 0, 6));
+}
+
+function checkout_create_order(mysqli $conn, array $customer, array $validated, array $deliveryRate, ?string $orderRef = null, string $paymentStatus = 'paid', string $orderStatus = 'processing'): array
 {
     checkout_assert_order_schema($conn);
 
-    $orderRef = 'SP-' . date('YmdHis') . '-' . strtoupper(substr(bin2hex(random_bytes(4)), 0, 6));
+    $orderRef = $orderRef ?: checkout_generate_order_reference();
     $deliveryFee = $deliveryRate['price'];
     $deliveryLocation = $deliveryRate['location_name'];
     $grandTotal = round($validated['subtotal'] + $deliveryFee, 2);
@@ -548,10 +553,10 @@ function checkout_create_order(mysqli $conn, array $customer, array $validated, 
                 payment_method,
                 payment_status,
                 order_status
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'pending')"
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
         );
         $stmt->bind_param(
-            'issssssddds',
+            'issssssdddsss',
             $clientId,
             $orderRef,
             $customer['name'],
@@ -562,7 +567,9 @@ function checkout_create_order(mysqli $conn, array $customer, array $validated, 
             $validated['subtotal'],
             $deliveryFee,
             $grandTotal,
-            $paymentMethod
+            $paymentMethod,
+            $paymentStatus,
+            $orderStatus
         );
         $stmt->execute();
         $orderId = (int) $conn->insert_id;
@@ -597,6 +604,164 @@ function checkout_create_order(mysqli $conn, array $customer, array $validated, 
         $conn->rollback();
         throw $e;
     }
+}
+
+function checkout_ensure_pending_maya_table(mysqli $conn): void
+{
+    $conn->query("
+        CREATE TABLE IF NOT EXISTS maya_pending_checkouts (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            order_reference VARCHAR(100) NOT NULL UNIQUE,
+            checkout_id VARCHAR(150) DEFAULT NULL,
+            checkout_url TEXT DEFAULT NULL,
+            payload_json LONGTEXT NOT NULL,
+            total_amount DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+            status VARCHAR(30) NOT NULL DEFAULT 'pending',
+            order_id INT DEFAULT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            paid_at DATETIME DEFAULT NULL,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            INDEX idx_maya_pending_status (status),
+            INDEX idx_maya_pending_order_id (order_id)
+        )
+    ");
+}
+
+function checkout_store_pending_maya_checkout(mysqli $conn, string $orderRef, ?string $checkoutId, string $checkoutUrl, array $customer, array $validated, array $deliveryRate): void
+{
+    checkout_ensure_pending_maya_table($conn);
+
+    $payload = [
+        'customer' => $customer,
+        'validated' => $validated,
+        'deliveryRate' => $deliveryRate,
+    ];
+    $payloadJson = json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+    if ($payloadJson === false) {
+        throw new RuntimeException('Unable to prepare checkout session data.');
+    }
+
+    $totalAmount = round((float) $validated['subtotal'] + (float) $deliveryRate['price'], 2);
+    $status = 'pending';
+
+    $stmt = $conn->prepare("
+        INSERT INTO maya_pending_checkouts (
+            order_reference,
+            checkout_id,
+            checkout_url,
+            payload_json,
+            total_amount,
+            status
+        ) VALUES (?, ?, ?, ?, ?, ?)
+        ON DUPLICATE KEY UPDATE
+            checkout_id = VALUES(checkout_id),
+            checkout_url = VALUES(checkout_url),
+            payload_json = VALUES(payload_json),
+            total_amount = VALUES(total_amount),
+            status = VALUES(status),
+            order_id = NULL,
+            paid_at = NULL
+    ");
+    $stmt->bind_param('ssssds', $orderRef, $checkoutId, $checkoutUrl, $payloadJson, $totalAmount, $status);
+    $stmt->execute();
+    $stmt->close();
+
+    $_SESSION['pending_maya_orders'][$orderRef] = [
+        'checkout_id' => $checkoutId,
+        'created_at' => time(),
+    ];
+}
+
+function checkout_load_pending_maya_checkout(mysqli $conn, string $orderRef): ?array
+{
+    checkout_ensure_pending_maya_table($conn);
+
+    $stmt = $conn->prepare('SELECT * FROM maya_pending_checkouts WHERE order_reference = ? LIMIT 1');
+    $stmt->bind_param('s', $orderRef);
+    $stmt->execute();
+    $pending = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+
+    if (!$pending) {
+        return null;
+    }
+
+    $payload = json_decode((string) $pending['payload_json'], true);
+    if (!is_array($payload)) {
+        throw new RuntimeException('Unable to restore checkout session data.');
+    }
+
+    $pending['payload'] = $payload;
+    return $pending;
+}
+
+function checkout_find_order_by_reference(mysqli $conn, string $orderRef): ?array
+{
+    $stmt = $conn->prepare('SELECT id, order_reference, total_amount, payment_status, order_status FROM orders WHERE order_reference = ? LIMIT 1');
+    $stmt->bind_param('s', $orderRef);
+    $stmt->execute();
+    $order = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+
+    return $order ?: null;
+}
+
+function checkout_mark_pending_maya_status(mysqli $conn, string $orderRef, string $status, ?int $orderId = null): void
+{
+    checkout_ensure_pending_maya_table($conn);
+
+    if ($status === 'paid') {
+        $stmt = $conn->prepare("UPDATE maya_pending_checkouts SET status = 'paid', order_id = ?, paid_at = NOW() WHERE order_reference = ?");
+        $stmt->bind_param('is', $orderId, $orderRef);
+    } else {
+        $stmt = $conn->prepare('UPDATE maya_pending_checkouts SET status = ? WHERE order_reference = ? AND status = \'pending\'');
+        $stmt->bind_param('ss', $status, $orderRef);
+    }
+
+    $stmt->execute();
+    $stmt->close();
+}
+
+function checkout_finalize_paid_maya_order(mysqli $conn, string $orderRef): array
+{
+    $orderRef = checkout_clean_text($orderRef);
+    if ($orderRef === '' || $orderRef === 'Unknown') {
+        throw new RuntimeException('Missing order reference.');
+    }
+
+    $existingOrder = checkout_find_order_by_reference($conn, $orderRef);
+    if ($existingOrder) {
+        return [
+            'id' => (int) $existingOrder['id'],
+            'reference' => $existingOrder['order_reference'],
+            'total' => (float) $existingOrder['total_amount'],
+            'already_saved' => true,
+        ];
+    }
+
+    $pending = checkout_load_pending_maya_checkout($conn, $orderRef);
+    if (!$pending || !isset($pending['payload']['customer'], $pending['payload']['validated'], $pending['payload']['deliveryRate'])) {
+        throw new RuntimeException('We could not verify this paid checkout session. Please contact support with your Maya payment reference.');
+    }
+
+    if (($pending['status'] ?? '') !== 'pending') {
+        throw new RuntimeException('This checkout session is not available for order finalization.');
+    }
+
+    $order = checkout_create_order(
+        $conn,
+        $pending['payload']['customer'],
+        $pending['payload']['validated'],
+        $pending['payload']['deliveryRate'],
+        $orderRef,
+        'paid',
+        'processing'
+    );
+
+    checkout_mark_pending_maya_status($conn, $orderRef, 'paid', (int) $order['id']);
+    unset($_SESSION['pending_maya_orders'][$orderRef]);
+
+    return $order;
 }
 
 function checkout_mark_order_failed(mysqli $conn, int $orderId, string $message): void
@@ -691,13 +856,13 @@ function checkout_create_maya_checkout(mysqli $conn, array $input): array
     $customer = checkout_customer_from_input($input);
     $validated = checkout_validate_items($conn, $input);
     $deliveryRate = checkout_delivery_rate_from_input($conn, $input);
-    $order = checkout_create_order($conn, $customer, $validated, $deliveryRate);
-    $payload = checkout_build_maya_payload($order['id'], $order['reference'], $customer, $validated, $deliveryRate);
+    $orderRef = checkout_generate_order_reference();
+    $grandTotal = round($validated['subtotal'] + $deliveryRate['price'], 2);
+    $payload = checkout_build_maya_payload(0, $orderRef, $customer, $validated, $deliveryRate);
     $maya = checkout_call_maya($payload);
 
     if (!$maya['ok']) {
         $message = $maya['body']['message'] ?? $maya['body']['error']['message'] ?? $maya['body']['error'] ?? 'Maya Checkout creation failed.';
-        checkout_mark_order_failed($conn, $order['id'], $message);
 
         return [
             'success' => false,
@@ -708,15 +873,17 @@ function checkout_create_maya_checkout(mysqli $conn, array $input): array
         ];
     }
 
-    $_SESSION['cart'] = [];
+    $checkoutUrl = $maya['body']['redirectUrl'];
+    $checkoutId = $maya['body']['checkoutId'] ?? null;
+    checkout_store_pending_maya_checkout($conn, $orderRef, $checkoutId, $checkoutUrl, $customer, $validated, $deliveryRate);
 
     return [
         'success' => true,
-        'orderRef' => $order['reference'],
-        'orderId' => $order['id'],
-        'checkoutId' => $maya['body']['checkoutId'] ?? null,
-        'paymentUrl' => $maya['body']['redirectUrl'],
-        'checkoutUrl' => $maya['body']['redirectUrl'],
-        'totalAmount' => $order['total'],
+        'orderRef' => $orderRef,
+        'orderId' => null,
+        'checkoutId' => $checkoutId,
+        'paymentUrl' => $checkoutUrl,
+        'checkoutUrl' => $checkoutUrl,
+        'totalAmount' => $grandTotal,
     ];
 }

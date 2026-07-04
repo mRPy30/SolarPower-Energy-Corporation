@@ -12,6 +12,13 @@ if (isset($_SERVER['PATH_INFO']) && !empty($_SERVER['PATH_INFO'])) {
     $slug = trim($_GET['slug'], '/');
 }
 
+if (empty($slug) && isset($_GET['id']) && trim((string) $_GET['id']) !== '') {
+    $idParam = trim((string) $_GET['id'], '/');
+    if (!ctype_digit($idParam)) {
+        $slug = $idParam;
+    }
+}
+
 // Function to generate slug
 function createSlug($text) {
     $text = preg_replace('~[^\pL\d]+~u', '-', $text);
@@ -36,7 +43,10 @@ if (!empty($slug)) {
 }
 
 if (!$productId && isset($_GET['id'])) {
-    $productId = intval($_GET['id']);
+    $idParam = trim((string) $_GET['id']);
+    if (ctype_digit($idParam)) {
+        $productId = intval($idParam);
+    }
 }
 
 if (!$productId) {

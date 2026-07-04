@@ -5,6 +5,21 @@
 // ============================================
 
 $orderRef = $_GET['ref'] ?? 'Unknown';
+
+if ($orderRef !== 'Unknown') {
+    require_once 'config/dbconn.php';
+    require_once 'includes/checkout-service.php';
+
+    try {
+        checkout_mark_pending_maya_status($conn, $orderRef, 'cancelled');
+    } catch (Throwable $e) {
+        // Cancelled payments must never create rows in orders/tracking.
+    }
+
+    if (isset($conn) && $conn instanceof mysqli) {
+        $conn->close();
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -41,7 +56,7 @@ $orderRef = $_GET['ref'] ?? 'Unknown';
         <div class="alert alert-warning mt-4">
             <strong>Order Reference:</strong> <?php echo htmlspecialchars($orderRef); ?>
         </div>
-        <p class="text-muted">Your order is still saved. You can complete it anytime.</p>
+        <p class="text-muted">No order was recorded because the payment was not completed.</p>
         <div class="mt-4">
             <a href="checkout.php" class="btn btn-primary btn-lg me-2">
                 <i class="fas fa-shopping-cart me-2"></i> Complete Order

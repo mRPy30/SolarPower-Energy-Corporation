@@ -30,6 +30,38 @@ if (!function_exists('renderProductBrandChips')) {
         return $cleanBrands ? htmlspecialchars(implode(', ', $cleanBrands)) : 'Brand TBA';
     }
 }
+
+if (!function_exists('getProductBrandArray')) {
+    function getProductBrandArray($brandNames) {
+        $brands = preg_split('/\s*,\s*/', (string) $brandNames);
+        $cleanBrands = [];
+
+        foreach ($brands as $brand) {
+            $brand = trim($brand);
+            if ($brand === '') {
+                continue;
+            }
+
+            $cleanBrands[] = $brand;
+        }
+
+        return array_values(array_unique($cleanBrands));
+    }
+}
+
+if (!function_exists('renderProductCardTitle')) {
+    function renderProductCardTitle($brandNames, $displayName) {
+        $displayName = trim((string) $displayName);
+        $brands = getProductBrandArray($brandNames);
+        $primaryBrand = $brands[0] ?? '';
+
+        if ($primaryBrand !== '' && stripos($displayName, $primaryBrand) === false) {
+            return htmlspecialchars($primaryBrand . ' - ' . $displayName);
+        }
+
+        return htmlspecialchars($displayName);
+    }
+}
 /* ---------- 1.  DB connection ---------- */
 include "config/dbconn.php";
 
@@ -119,6 +151,14 @@ if (empty($logo_brands)) {
         ['brand_name' => 'Trina Solar', 'logo_image' => 'assets/img/trinasolar.png', 'is_fallback' => true],
     ];
 }
+
+$product_filter_brands = [];
+foreach ($products as $productRow) {
+    foreach (getProductBrandArray($productRow['brandName'] ?? '') as $brandName) {
+        $product_filter_brands[strtolower($brandName)] = $brandName;
+    }
+}
+natcasesort($product_filter_brands);
 
 $conn->close();
 
@@ -317,6 +357,112 @@ $conn->close();
             padding: 0 14px !important;
         }
 
+        #catalogSection .catalog-layout {
+            display: grid;
+            grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
+            gap: 24px;
+            align-items: start;
+            margin-top: 28px;
+        }
+
+        #catalogSection .catalog-sidebar {
+            position: sticky;
+            top: 120px;
+            padding: 20px;
+            border: 1px solid #e5e7eb;
+            border-radius: 14px;
+            background: #fff;
+            box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
+        }
+
+        #catalogSection .catalog-sidebar-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 0 0 18px;
+            color: #122033;
+            font-size: 17px;
+            font-weight: 800;
+        }
+
+        #catalogSection .sidebar-filter-group + .sidebar-filter-group {
+            margin-top: 22px;
+            padding-top: 20px;
+            border-top: 1px solid #eef2f7;
+        }
+
+        #catalogSection .sidebar-filter-label {
+            display: block;
+            margin-bottom: 10px;
+            color: #344054;
+            font-size: 13px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+        }
+
+        #catalogSection .sidebar-sort-select {
+            width: 100%;
+            min-width: 0;
+        }
+
+        #catalogSection .brand-filter-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-height: 260px;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+
+        #catalogSection .brand-filter-option {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 9px 10px;
+            border: 1px solid #edf1f5;
+            border-radius: 9px;
+            color: #344054;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+        }
+
+        #catalogSection .brand-filter-option:hover {
+            border-color: #e7ad00;
+            background: #fff9e6;
+            color: #0a5c3d;
+        }
+
+        #catalogSection .brand-filter-option input {
+            width: 16px;
+            height: 16px;
+            accent-color: #e7ad00;
+        }
+
+        #catalogSection .catalog-results {
+            min-width: 0;
+        }
+
+        #catalogSection .no-products-filter,
+        #catalogSection .no-products {
+            grid-column: 1 / -1;
+        }
+
+        #catalogSection .products-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 24px;
+        }
+
+        #catalogSection .product-card {
+            display: flex;
+        }
+
+        #catalogSection .btn-view-details {
+            background: #e7ad00;
+        }
+
         .shop-by-brand-section {
             background: #ffffff;
             padding: 48px 0 54px;
@@ -489,8 +635,8 @@ $conn->close();
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            min-height: 154px;
-            padding: 16px 10px;
+            min-height: 142px;
+            padding: 18px 12px;
             border: 1px solid #eaeaea;
             border-radius: 8px;
             background: #fff;
@@ -504,13 +650,32 @@ $conn->close();
             border-color: #e7ad00;
         }
 
-        .category-option-card img {
-            height: 90px;
-            width: auto;
-            max-width: 100%;
-            object-fit: contain;
-            display: block;
-            margin-bottom: 8px;
+        .category-option-card.active {
+            border-color: #e7ad00;
+            background: #fff8df;
+            box-shadow: 0 8px 18px rgba(231, 173, 0, 0.16);
+        }
+
+        .category-option-card .category-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 58px;
+            height: 58px;
+            margin-bottom: 12px;
+            border-radius: 18px;
+            background: linear-gradient(135deg, #fff7d7, #eefaf4);
+            color: #0a5c3d;
+            font-size: 26px;
+            box-shadow: inset 0 0 0 1px rgba(10, 92, 61, 0.08);
+            transition: transform 0.2s ease, color 0.2s ease, background 0.2s ease;
+        }
+
+        .category-option-card:hover .category-icon,
+        .category-option-card.active .category-icon {
+            background: #e7ad00;
+            color: #fff;
+            transform: scale(1.05);
         }
 
         .category-option-card span {
@@ -524,6 +689,18 @@ $conn->close();
         @media (max-width: 991.98px) {
             #catalogSection .product-image {
                 height: 240px;
+            }
+
+            #catalogSection .catalog-layout {
+                grid-template-columns: 1fr;
+            }
+
+            #catalogSection .catalog-sidebar {
+                position: static;
+            }
+
+            #catalogSection .products-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
             }
 
             .promo-banners-grid {
@@ -543,6 +720,10 @@ $conn->close();
 
             #catalogSection .product-image {
                 height: 220px;
+            }
+
+            #catalogSection .products-grid {
+                grid-template-columns: 1fr;
             }
 
             .shop-by-brand-section {
@@ -733,36 +914,28 @@ $conn->close();
                 </div>
 
                 <div class="marketplace-category-grid">
-                    <a href="#catalogSection" class="category-option-card" data-category-jump="Panel">
-                        <img src="assets/img/panels.png" alt="Solar Panels">
+                    <a href="category.php?category=panel" class="category-option-card">
+                        <span class="category-icon"><i class="fas fa-solar-panel"></i></span>
                         <span>Solar Panels</span>
                     </a>
-                    <a href="#catalogSection" class="category-option-card" data-category-jump="Inverter">
-                        <img src="assets/img/hybrid.png" alt="Hybrid Inverters">
-                        <span>Hybrid Inverters</span>
+                    <a href="category.php?category=inverter" class="category-option-card">
+                        <span class="category-icon"><i class="fas fa-plug-circle-bolt"></i></span>
+                        <span>Inverters</span>
                     </a>
-                    <a href="#catalogSection" class="category-option-card" data-category-jump="Panel">
-                        <img src="assets/img/solar-panels.svg" alt="Bifacial Series">
-                        <span>Bifacial Series</span>
+                    <a href="category.php?category=battery" class="category-option-card">
+                        <span class="category-icon"><i class="fas fa-car-battery"></i></span>
+                        <span>Batteries</span>
                     </a>
-                    <a href="#catalogSection" class="category-option-card" data-category-jump="Battery">
-                        <img src="assets/img/pylontech.png" alt="Deep Cycle Batteries">
-                        <span>Deep Cycle Batteries</span>
-                    </a>
-                    <a href="#catalogSection" class="category-option-card" data-category-jump="Package Setup">
-                        <img src="assets/img/package.png" alt="Package Setup">
+                    <a href="category.php?category=package" class="category-option-card">
+                        <span class="category-icon"><i class="fas fa-boxes-stacked"></i></span>
                         <span>Package Setups</span>
                     </a>
-                    <a href="#catalogSection" class="category-option-card" data-category-jump="Inverter">
-                        <img src="assets/img/grid-tie.png" alt="Grid-Tie Inverters">
-                        <span>Grid-Tie Inverters</span>
-                    </a>
-                    <a href="#catalogSection" class="category-option-card" data-category-jump="Mounting & Accessories">
-                        <img src="assets/img/Application.png" alt="Mounting Accessories">
+                    <a href="category.php?category=mounting" class="category-option-card">
+                        <span class="category-icon"><i class="fas fa-screwdriver-wrench"></i></span>
                         <span>Mounting Accessories</span>
                     </a>
-                    <a href="#catalogSection" class="category-option-card" data-category-jump="all">
-                        <img src="assets/img/product-placeholder.png" alt="All Solar Products">
+                    <a href="category.php?category=all" class="category-option-card">
+                        <span class="category-icon"><i class="fas fa-border-all"></i></span>
                         <span>All Products</span>
                     </a>
                 </div>
@@ -781,45 +954,49 @@ $conn->close();
             <!--SEARCH BAR FUNCTION -->
             <?php include "includes/product-search-bar.php" ?>
 
-            <!-- Filter Bar -->
-            <div class="filter-bar" data-aos="fade-up">
-                <div class="filter-buttons" id="categoryFilters">
-                    <button class="filter-btn active" data-category="all">
-                        <i class="fas fa-th"></i> All
-                    </button>
-                    <button class="filter-btn" data-category="Panel">
-                        <i class="fas fa-solar-panel"></i> Panels
-                    </button>
-                    <button class="filter-btn" data-category="Inverter">
-                        <i class="fas fa-plug"></i> Inverters
-                    </button>
-                    <button class="filter-btn" data-category="Battery">
-                        <i class="fas fa-battery-full"></i> Batteries
-                    </button>
-                    <button class="filter-btn" data-category="Mounting & Accessories">
-                        <i class="fas fa-tools"></i> Mounting & Accessories
-                    </button>
-                    <button class="filter-btn" data-category="Package Setup">
-                        <i class="fas fa-box-open"></i> Package Setup
-                    </button>
-                </div>
+            <div class="catalog-layout">
+                <aside class="catalog-sidebar" aria-label="Product filters">
+                    <h3 class="catalog-sidebar-title">
+                        <i class="fas fa-sliders"></i>
+                        Filter Products
+                    </h3>
 
-                <div class="sort-container">
-                    <label class="sort-label">Sort by:</label>
-                    <select class="sort-select" id="sortSelect">
-                        <option value="default">Default</option>
-                        <option value="price-low">Price: Low to High</option>
-                        <option value="price-high">Price: High to Low</option>
-                        <option value="name-asc">Name: A to Z</option>
-                        <option value="name-desc">Name: Z to A</option>
-                    </select>
-                </div>
-            </div>
+                    <div class="sidebar-filter-group">
+                        <label class="sidebar-filter-label" for="sortSelect">Sort by</label>
+                        <select class="sort-select sidebar-sort-select" id="sortSelect">
+                            <option value="default">Default</option>
+                            <option value="price-low">Price: Low to High</option>
+                            <option value="price-high">Price: High to Low</option>
+                            <option value="name-asc">Name: A to Z</option>
+                            <option value="name-desc">Name: Z to A</option>
+                        </select>
+                    </div>
 
+                    <div class="sidebar-filter-group">
+                        <span class="sidebar-filter-label">Brands</span>
+                        <div class="brand-filter-list">
+                            <?php if (!empty($product_filter_brands)): ?>
+                                <?php foreach ($product_filter_brands as $filterBrand): ?>
+                                    <label class="brand-filter-option">
+                                        <input type="checkbox"
+                                               class="brand-filter-checkbox"
+                                               value="<?= htmlspecialchars($filterBrand) ?>">
+                                        <span><?= htmlspecialchars($filterBrand) ?></span>
+                                    </label>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <p class="text-muted small mb-0">No brand filters available yet.</p>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </aside>
+
+                <div class="catalog-results">
             <!-- Products Grid - FIXED onclick handlers -->
             <div class="products-grid" id="productsGrid">
                 <?php if ($products): ?>
                     <?php foreach ($products as $index => $p): ?>
+                        <?php $productDetailUrl = 'product-details.php?id=' . rawurlencode(createSlug($p['displayName'])); ?>
                         <div class="product-card"
                             data-category="<?= htmlspecialchars($p['category']) ?>"
                             data-brand="<?= htmlspecialchars($p['brandName']) ?>"
@@ -828,7 +1005,7 @@ $conn->close();
                             data-price="<?= htmlspecialchars($p['price']) ?>">
 
                             <!-- Clickable Product Image and Info -->
-                            <div onclick="location.href='product-details.php/<?= createSlug($p['displayName']) ?>'" style="cursor: pointer;">
+                            <div onclick="location.href='<?= htmlspecialchars($productDetailUrl) ?>'" style="cursor: pointer;">
                                 <div class="product-image">
                                     <img src="<?= htmlspecialchars($p['image_path'] ?? 'assets/img/placeholder.png') ?>"
                                         alt="<?= htmlspecialchars($p['displayName']) ?>">
@@ -837,7 +1014,7 @@ $conn->close();
 
                             <div class="product-info">
                                     <div class="product-brand product-brand-list"><?= renderProductBrandChips($p['brandName']) ?></div>
-                                    <h3 class="product-name"><?= htmlspecialchars($p['displayName']) ?></h3>
+                                    <h3 class="product-name"><?= renderProductCardTitle($p['brandName'], $p['displayName']) ?></h3>
                                     <div class="product-price">
                                         ₱<?= number_format($p['price'], 2) ?>
                                     </div>
@@ -863,12 +1040,11 @@ $conn->close();
                                 </button>
 
                                 <button type="button"
-                                    class="btn-buy-now"
+                                    class="btn-buy-now btn-view-details"
                                     data-product-id="<?= (int)$p['id'] ?>"
-                                    data-product='<?= json_encode($p, JSON_HEX_APOS | JSON_HEX_QUOT) ?>'
                                     style="flex:1 1 auto; width:auto;"
-                                    onclick="buyNowFromButton(this)">
-                                    Buy Now
+                                    onclick="window.location.href='<?= htmlspecialchars($productDetailUrl) ?>'">
+                                    View Details
                                 </button>
                             </div>
                         </div>
@@ -886,6 +1062,8 @@ $conn->close();
                     <span>View More Products</span>
                     <i class="fas fa-chevron-down"></i>
                 </button>
+            </div>
+                </div>
             </div>
         </div>
     </section>
@@ -1340,6 +1518,9 @@ $conn->close();
     // 1. GLOBAL VARIABLES & INITIALIZATION
     // ============================================
     let cart = [];
+    let activeCatalogCategory = 'all';
+    let selectedCatalogBrands = [];
+    const PRODUCTS_COLLAPSE_LIMIT = 8;
 
     document.addEventListener('DOMContentLoaded', function() {
         console.log('🚀 Solar Power System Initialized');
@@ -1349,6 +1530,8 @@ $conn->close();
         initializeFilters();
         initializeCategoryShortcuts();
         initializeSort();
+        initializeBrandFilters();
+        applyCatalogFilters({ preserveExpanded: false });
         initializeCheckout();
         initializeSubscription();
 
@@ -2416,14 +2599,17 @@ function initializeSubscription() {
     });
 }
 
+function normalizeCatalogValue(value) {
+    return (value || '').toString().trim().toLowerCase();
+}
+
 function initializeFilters() {
     const filterButtons = document.querySelectorAll('.filter-btn');
     filterButtons.forEach(btn => {
         btn.addEventListener('click', function() {
             filterButtons.forEach(b => b.classList.remove('active'));
             this.classList.add('active');
-            const category = this.getAttribute('data-category');
-            filterProducts(category);
+            filterProducts(this.getAttribute('data-category') || 'all');
         });
     });
 }
@@ -2434,13 +2620,10 @@ function initializeCategoryShortcuts() {
         card.addEventListener('click', function(event) {
             event.preventDefault();
             const category = this.getAttribute('data-category-jump') || 'all';
-            const targetFilter = document.querySelector(`.filter-btn[data-category="${category}"]`);
 
-            if (targetFilter) {
-                targetFilter.click();
-            } else {
-                filterProducts(category);
-            }
+            categoryCards.forEach(item => item.classList.remove('active'));
+            this.classList.add('active');
+            filterProducts(category);
 
             const catalog = document.getElementById('catalogSection');
             if (catalog) {
@@ -2453,39 +2636,104 @@ function initializeCategoryShortcuts() {
     });
 }
 
-function filterProducts(category) {
-    const products = document.querySelectorAll('.product-card');
-    const packageTypes = ['hybrid', 'on-grid', 'off-grid', 'grid-tie'];
-    let visibleCount = 0;
-    products.forEach(product => {
-        const productCategory = product.getAttribute('data-category') || '';
-        const productPackageType = (product.getAttribute('data-package-type') || '').toLowerCase();
-        let show = false;
+function initializeBrandFilters() {
+    const brandCheckboxes = document.querySelectorAll('.brand-filter-checkbox');
+    brandCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            selectedCatalogBrands = Array.from(brandCheckboxes)
+                .filter(item => item.checked)
+                .map(item => normalizeCatalogValue(item.value));
 
-        if (category === 'all') {
-            show = true;
-        } else if (category === 'Package Setup') {
-            // Show products whose category is 'Package' OR whose packageType matches any package keyword
-            show = productCategory.toLowerCase() === 'package' || packageTypes.includes(productPackageType);
-        } else if (category === 'Panel') {
-            show = productCategory === 'Panel' || productCategory === 'Panels';
-        } else if (category === 'Inverter') {
-            show = productCategory === 'Inverter' || productCategory === 'Inverters';
-        } else if (category === 'Battery') {
-            show = productCategory === 'Battery' || productCategory === 'Batteries';
-        } else {
-            show = productCategory === category;
-        }
-
-        if (show) {
-            product.style.display = 'block';
-            visibleCount++;
-        } else {
-            product.style.display = 'none';
-        }
+            applyCatalogFilters({ preserveExpanded: false });
+        });
     });
+}
+
+function productMatchesCategory(product, category) {
+    const productCategory = normalizeCatalogValue(product.getAttribute('data-category'));
+    const packageType = normalizeCatalogValue(product.getAttribute('data-package-type'));
+    const productName = normalizeCatalogValue(product.getAttribute('data-name'));
+    const selectedCategory = normalizeCatalogValue(category);
+    const packageTypes = ['hybrid', 'on-grid', 'off-grid', 'grid-tie', 'package'];
+
+    if (!selectedCategory || selectedCategory === 'all') {
+        return true;
+    }
+
+    if (selectedCategory === 'package setup') {
+        return productCategory === 'package' || packageTypes.includes(packageType) || productName.includes('package');
+    }
+
+    if (selectedCategory === 'panel') {
+        return productCategory === 'panel' || productCategory === 'panels' || productName.includes('panel');
+    }
+
+    if (selectedCategory === 'inverter') {
+        return productCategory === 'inverter' || productCategory === 'inverters' || productName.includes('inverter');
+    }
+
+    if (selectedCategory === 'battery') {
+        return productCategory === 'battery' || productCategory === 'batteries' || productName.includes('battery');
+    }
+
+    if (selectedCategory === 'mounting & accessories') {
+        return productCategory.includes('mount') ||
+            productCategory.includes('accessor') ||
+            productCategory.includes('wiring') ||
+            productName.includes('mount') ||
+            productName.includes('accessor') ||
+            productName.includes('clamp') ||
+            productName.includes('rail');
+    }
+
+    return productCategory === selectedCategory;
+}
+
+function productMatchesBrands(product) {
+    if (!selectedCatalogBrands.length) {
+        return true;
+    }
+
+    const productBrands = normalizeCatalogValue(product.getAttribute('data-brand'));
+    return selectedCatalogBrands.some(brand => productBrands.includes(brand));
+}
+
+function applyCatalogFilters(options = {}) {
+    const grid = document.getElementById('productsGrid');
+    const products = document.querySelectorAll('.product-card');
+    if (!grid) return;
+
+    if (!options.preserveExpanded) {
+        grid.classList.remove('show-all');
+    }
+
+    const isExpanded = grid.classList.contains('show-all');
+    let visibleCount = 0;
+
+    products.forEach(product => {
+        const show = productMatchesCategory(product, activeCatalogCategory) && productMatchesBrands(product);
+        product.dataset.filterMatch = show ? 'true' : 'false';
+        product.classList.remove('show-product');
+
+        if (!show) {
+            product.classList.remove('hidden-product');
+            product.style.display = 'none';
+            return;
+        }
+
+        visibleCount++;
+        const shouldCollapse = visibleCount > PRODUCTS_COLLAPSE_LIMIT;
+        product.classList.toggle('hidden-product', shouldCollapse);
+        product.style.display = (!shouldCollapse || isExpanded) ? 'flex' : 'none';
+    });
+
     updateViewMoreButton(visibleCount);
     showNoProductsMessage(visibleCount);
+}
+
+function filterProducts(category) {
+    activeCatalogCategory = category || 'all';
+    applyCatalogFilters({ preserveExpanded: false });
 }
 
 function initializeSort() {
@@ -2499,6 +2747,7 @@ function initializeSort() {
 
 function sortProducts(sortType) {
     const grid = document.getElementById('productsGrid');
+    if (!grid) return;
     const products = Array.from(document.querySelectorAll('.product-card'));
     products.sort((a, b) => {
         switch(sortType) {
@@ -2515,49 +2764,32 @@ function sortProducts(sortType) {
         }
     });
     products.forEach(product => { grid.appendChild(product); });
+    applyCatalogFilters({ preserveExpanded: true });
 }
 
 function toggleViewMore() {
+    const grid = document.getElementById('productsGrid');
     const btn = document.getElementById('viewMoreBtn');
-    const hiddenProducts = document.querySelectorAll('.product-card.hidden-product');
-    const span = btn.querySelector('span');
-    const icon = btn.querySelector('i');
-    const allHidden = Array.from(hiddenProducts).every(p => p.style.display === 'none');
-    hiddenProducts.forEach(product => {
-        if (product.style.display !== 'none' || allHidden) {
-            if (product.classList.contains('show-product')) {
-                product.classList.remove('show-product');
-                product.classList.add('hidden-product');
-            } else {
-                product.classList.remove('hidden-product');
-                product.classList.add('show-product');
-            }
-        }
-    });
-    if (span.textContent === 'View More Products') {
-        span.textContent = 'View Less Products';
-        icon.classList.remove('fa-chevron-down');
-        icon.classList.add('fa-chevron-up');
-    } else {
-        span.textContent = 'View More Products';
-        icon.classList.remove('fa-chevron-up');
-        icon.classList.add('fa-chevron-down');
-    }
+    if (!grid || !btn) return;
+
+    grid.classList.toggle('show-all');
+    applyCatalogFilters({ preserveExpanded: true });
 }
 
 function updateViewMoreButton(visibleCount) {
+    const grid = document.getElementById('productsGrid');
     const viewMoreContainer = document.getElementById('viewMoreContainer');
     const viewMoreBtn = document.getElementById('viewMoreBtn');
-    if (visibleCount <= 4) {
+    if (!viewMoreContainer || !viewMoreBtn) return;
+
+    if (visibleCount <= PRODUCTS_COLLAPSE_LIMIT) {
         if (viewMoreContainer) viewMoreContainer.style.display = 'none';
     } else {
         if (viewMoreContainer) viewMoreContainer.style.display = 'flex';
-        const hiddenProducts = document.querySelectorAll('.product-card.hidden-product[style*="display: block"], .product-card.hidden-product:not([style*="display: none"])');
-        if (hiddenProducts.length === 0 && viewMoreBtn) {
-            viewMoreBtn.querySelector('span').textContent = 'View More Products';
-            viewMoreBtn.querySelector('i').classList.remove('fa-chevron-up');
-            viewMoreBtn.querySelector('i').classList.add('fa-chevron-down');
-        }
+        const isExpanded = grid && grid.classList.contains('show-all');
+        viewMoreBtn.querySelector('span').textContent = isExpanded ? 'View Less Products' : 'View More Products';
+        viewMoreBtn.querySelector('i').classList.toggle('fa-chevron-up', isExpanded);
+        viewMoreBtn.querySelector('i').classList.toggle('fa-chevron-down', !isExpanded);
     }
 }
 
@@ -2570,7 +2802,7 @@ function showNoProductsMessage(visibleCount) {
             noProductsMsg.className = 'no-products-filter col-12 text-center py-5';
             noProductsMsg.innerHTML = `
                 <i class="fas fa-box-open" style="font-size: 48px; color: #ccc; margin-bottom: 16px;"></i>
-                <p style="color: #666;">No products found in this category</p>
+                <p style="color: #666;">No products found for the selected filters</p>
             `;
             grid.appendChild(noProductsMsg);
         }

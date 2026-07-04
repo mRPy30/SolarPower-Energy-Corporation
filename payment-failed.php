@@ -5,6 +5,21 @@
 // ============================================
 
 $orderRef = $_GET['ref'] ?? 'Unknown';
+
+if ($orderRef !== 'Unknown') {
+    require_once 'config/dbconn.php';
+    require_once 'includes/checkout-service.php';
+
+    try {
+        checkout_mark_pending_maya_status($conn, $orderRef, 'failed');
+    } catch (Throwable $e) {
+        // Failed payments must never create rows in orders/tracking.
+    }
+
+    if (isset($conn) && $conn instanceof mysqli) {
+        $conn->close();
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
