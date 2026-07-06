@@ -1474,13 +1474,18 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
         $_SESSION['add_product_msg'] = 'Connection failed: ' . $conn_post->connect_error;
         $_SESSION['add_product_msg_type'] = 'error';
     } else {
+        $variantColumnCheck = $conn_post->query("SHOW COLUMNS FROM product_brand_variants LIKE 'variant_name'");
+        if ($variantColumnCheck && $variantColumnCheck->num_rows === 0) {
+            $conn_post->query("ALTER TABLE product_brand_variants ADD COLUMN variant_name VARCHAR(255) NOT NULL DEFAULT '' AFTER brand_id");
+        }
+
         $category = $conn_post->real_escape_string($_POST['category'] ?? '');
         $categoryLower = strtolower($category);
         $isVariantCategory = strpos($categoryLower, 'panel') !== false || strpos($categoryLower, 'battery') !== false || strpos($categoryLower, 'inverter') !== false;
 
         $packageType = $conn_post->real_escape_string($_POST['package-type'] ?? '');
         if (empty($packageType)) $packageType = NULL;
-        $status = $conn_post->real_escape_string($_POST['status'] ?? 'Active');
+        $status = 'Active';
         
         $productName = $conn_post->real_escape_string($_POST['product-name'] ?? '');
         $warranty = $conn_post->real_escape_string($_POST['warranty'] ?? '');
@@ -1497,11 +1502,34 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
         // Gather Brands & Prices
         $brand_ids = $_POST['brand_ids'] ?? [];
         $brand_prices = $_POST['brand_price'] ?? [];
+        $variantUploadMode = $_POST['variant_upload_mode'] ?? 'multi_brand';
+        $isSingleBrandSeries = $isVariantCategory && $variantUploadMode === 'single_brand_series';
+        $singleSeriesBrandId = (int)($_POST['single_series_brand_id'] ?? 0);
+        $singleVariantNames = $_POST['single_variant_name'] ?? [];
+        $singleVariantPrices = $_POST['single_variant_price'] ?? [];
+
+        $validSingleVariants = [];
+        if ($isSingleBrandSeries) {
+            foreach ($singleVariantNames as $idx => $variantName) {
+                $variantName = trim((string)$variantName);
+                $variantPrice = isset($singleVariantPrices[$idx]) ? (float)$singleVariantPrices[$idx] : 0;
+                if ($variantName !== '' && $variantPrice > 0) {
+                    $validSingleVariants[] = [
+                        'index' => (int)$idx,
+                        'name' => $variantName,
+                        'price' => $variantPrice,
+                    ];
+                }
+            }
+        }
 
         if (empty($category) || empty($productName)) {
             $_SESSION['add_product_msg'] = 'Please fill all required fields correctly.';
             $_SESSION['add_product_msg_type'] = 'error';
-        } elseif ($isVariantCategory && empty($brand_ids)) {
+        } elseif ($isSingleBrandSeries && ($singleSeriesBrandId <= 0 || empty($validSingleVariants))) {
+            $_SESSION['add_product_msg'] = 'Please select one brand and add at least one panel/model row with a valid price.';
+            $_SESSION['add_product_msg_type'] = 'error';
+        } elseif ($isVariantCategory && !$isSingleBrandSeries && empty($brand_ids)) {
             $_SESSION['add_product_msg'] = 'Please select at least one supplier brand for this category.';
             $_SESSION['add_product_msg_type'] = 'error';
         } else {
@@ -1509,7 +1537,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
             $first_brand_name = 'Various';
             $fallback_price = 0.00;
 
-            if ($isVariantCategory && !empty($brand_ids)) {
+            if ($isSingleBrandSeries) {
+                $first_brand_id = $singleSeriesBrandId;
+                $fallback_price = (float)($validSingleVariants[0]['price'] ?? 0);
+
+                $bRes = $conn_post->query("SELECT brand_name FROM brands WHERE brand_id = $first_brand_id");
+                if ($bRes && $bRow = $bRes->fetch_assoc()) {
+                    $first_brand_name = $bRow['brand_name'];
+                }
+            } elseif ($isVariantCategory && !empty($brand_ids)) {
                 $first_brand_id = (int)$brand_ids[0];
                 $fallback_price = (float)($brand_prices[$first_brand_id] ?? 0);
                 
@@ -1553,8 +1589,38 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 $allowedTypes = ['jpg', 'jpeg', 'png', 'webp'];
                 $first_variant_img_path = '';
 
+                // If Single Brand Series, process multiple models under one brand.
+                if ($isSingleBrandSeries) {
+                    foreach ($validSingleVariants as $variantRow) {
+                        $b_id = $singleSeriesBrandId;
+                        $variantName = $variantRow['name'];
+                        $v_price = (float)$variantRow['price'];
+                        $uploaded_path = NULL;
+                        $fileIndex = $variantRow['index'];
+
+                        if (isset($_FILES['single_variant_image']['name'][$fileIndex]) && $_FILES['single_variant_image']['error'][$fileIndex] === 0) {
+                            $ext = strtolower(pathinfo($_FILES['single_variant_image']['name'][$fileIndex], PATHINFO_EXTENSION));
+                            if (in_array($ext, $allowedTypes)) {
+                                $newName = "series_" . $b_id . "_" . $fileIndex . "_" . uniqid() . "." . $ext;
+                                $targetPath = $uploadDir . $newName;
+                                if (move_uploaded_file($_FILES['single_variant_image']['tmp_name'][$fileIndex], $targetPath)) {
+                                    $uploaded_path = "uploads/products/$product_id/$newName";
+                                    if (empty($first_variant_img_path)) {
+                                        $first_variant_img_path = $uploaded_path;
+                                    }
+                                }
+                            }
+                        }
+
+                        $vStmt = $conn_post->prepare("INSERT INTO product_brand_variants (product_id, brand_id, variant_name, price, variant_image) VALUES (?, ?, ?, ?, ?)");
+                        if ($vStmt) {
+                            $vStmt->bind_param("iisds", $product_id, $b_id, $variantName, $v_price, $uploaded_path);
+                            $vStmt->execute();
+                            $vStmt->close();
+                        }
+                    }
                 // If Variant Category, process each checked brand
-                if ($isVariantCategory) {
+                } elseif ($isVariantCategory) {
                     foreach ($brand_ids as $b_id) {
                         $b_id = (int)$b_id;
                         $v_price = (float)($brand_prices[$b_id] ?? 0);
@@ -1577,9 +1643,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                         }
 
                         // Insert variant junction row
-                        $vStmt = $conn_post->prepare("INSERT INTO product_brand_variants (product_id, brand_id, price, variant_image) VALUES (?, ?, ?, ?)");
+                        $variantName = '';
+                        $vStmt = $conn_post->prepare("INSERT INTO product_brand_variants (product_id, brand_id, variant_name, price, variant_image) VALUES (?, ?, ?, ?, ?)");
                         if ($vStmt) {
-                            $vStmt->bind_param("iids", $product_id, $b_id, $v_price, $uploaded_path);
+                            $vStmt->bind_param("iisds", $product_id, $b_id, $variantName, $v_price, $uploaded_path);
                             $vStmt->execute();
                             $vStmt->close();
                         }
@@ -1628,7 +1695,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
 
                 // Commit transaction
                 $conn_post->commit();
-                $_SESSION['add_product_msg'] = "Product '{$productName}' with brand variants added successfully!";
+                $_SESSION['add_product_msg'] = $isSingleBrandSeries
+                    ? "Product '{$productName}' series posted and auto-approved successfully!"
+                    : "Product '{$productName}' with brand variants added and auto-approved successfully!";
                 $_SESSION['add_product_msg_type'] = 'success';
             } catch (Exception $e) {
                 $conn_post->rollback();
@@ -4719,8 +4788,33 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                                     <p style="font-size: 13px; color: #64748b; margin-top: 4px; margin-bottom: 16px;">
                                         Select active supplier brands for this product, then assign a specific price and unique variant cover image for each.
                                     </p>
+                                    <div id="variant-upload-mode-switch" style="display:none; gap:10px; flex-wrap:wrap; margin-bottom:16px;">
+                                        <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; border:1px solid #e2e8f0; border-radius:8px; background:#fff; cursor:pointer;">
+                                            <input type="radio" name="variant_upload_mode" value="multi_brand" checked>
+                                            <span style="font-size:13px; font-weight:600; color:#334155;">Different brands</span>
+                                        </label>
+                                        <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; border:1px solid #f59e0b; border-radius:8px; background:#fffbeb; cursor:pointer;">
+                                            <input type="radio" name="variant_upload_mode" value="single_brand_series">
+                                            <span style="font-size:13px; font-weight:600; color:#92400e;">One brand, multiple panel models</span>
+                                        </label>
+                                    </div>
                                     <div id="brands-checklist-container" style="display: flex; flex-direction: column; gap: 14px;">
                                         <!-- Dynamically populated from JS -->
+                                    </div>
+                                    <div id="single-brand-series-container" style="display:none; flex-direction:column; gap:14px;">
+                                        <div style="display:grid; grid-template-columns:minmax(180px, 280px) 1fr; gap:14px; align-items:end;">
+                                            <div>
+                                                <label style="font-size:12px; color:#64748b; display:block; margin-bottom:5px; font-weight:700;">Series Brand <span style="color:red;">*</span></label>
+                                                <select id="single-series-brand-select" name="single_series_brand_id" disabled style="width:100%; padding:9px; border:1px solid #cbd5e1; border-radius:6px;">
+                                                    <option value="">Select brand</option>
+                                                </select>
+                                            </div>
+                                            <button type="button" id="add-series-variant-row" style="height:40px; justify-self:start; border:0; border-radius:8px; background:#0a5c3d; color:#fff; padding:0 14px; font-weight:700;">
+                                                <i class="fas fa-plus"></i> Add Panel Model
+                                            </button>
+                                        </div>
+                                        <div id="single-series-rows" style="display:flex; flex-direction:column; gap:12px;"></div>
+                                        <small style="color:#64748b;">Example rows: LONGi 620W, LONGi 620W - Bi-Facial, LONGi Hi-MO x10 650W.</small>
                                     </div>
                                 </div>
 
@@ -11999,6 +12093,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 const standardPriceGroup = document.getElementById('standard-price-group');
                 const brandChecklistSection = document.getElementById('available-brands-checklist-section');
                 const brandChecklistContainer = document.getElementById('brands-checklist-container');
+                const variantModeSwitch = document.getElementById('variant-upload-mode-switch');
+                const singleSeriesContainer = document.getElementById('single-brand-series-container');
+                const singleSeriesBrandSelect = document.getElementById('single-series-brand-select');
+                const singleSeriesRows = document.getElementById('single-series-rows');
+                const addSeriesRowBtn = document.getElementById('add-series-variant-row');
                 const priceInput = document.getElementById('price-input');
 
                 const isVariantCategory = categoryLower.includes('panel') || categoryLower.includes('battery') || categoryLower.includes('inverter');
@@ -12015,6 +12114,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
 
                     // Show brand variant checklist section
                     if (brandChecklistSection) brandChecklistSection.style.display = 'block';
+                    if (variantModeSwitch) variantModeSwitch.style.display = 'flex';
                     if (brandChecklistContainer) {
                         brandChecklistContainer.innerHTML = '<p style="color: #64748b; font-size: 13px;">Loading brands...</p>';
 
@@ -12027,6 +12127,99 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                                 }
 
                                 brandChecklistContainer.innerHTML = '';
+                                if (singleSeriesBrandSelect) {
+                                    singleSeriesBrandSelect.innerHTML = '<option value="">Select brand</option>';
+                                    brands.forEach(brand => {
+                                        const option = document.createElement('option');
+                                        option.value = brand.brand_id;
+                                        option.textContent = brand.brand_name;
+                                        singleSeriesBrandSelect.appendChild(option);
+                                    });
+                                }
+
+                                if (singleSeriesRows) {
+                                    singleSeriesRows.innerHTML = '';
+                                    singleSeriesRows.dataset.nextIndex = '0';
+                                }
+
+                                const addSingleSeriesRow = () => {
+                                    if (!singleSeriesRows) return;
+                                    const idx = parseInt(singleSeriesRows.dataset.nextIndex || '0', 10);
+                                    singleSeriesRows.dataset.nextIndex = String(idx + 1);
+
+                                    const row = document.createElement('div');
+                                    row.className = 'single-series-row';
+                                    row.style = 'display:grid; grid-template-columns:1.4fr 0.8fr 1fr auto; gap:12px; align-items:end; background:#fff; padding:12px; border:1px solid #e2e8f0; border-radius:8px;';
+                                    row.innerHTML = `
+                                        <div>
+                                            <label style="font-size:11px; color:#64748b; display:block; margin-bottom:4px;">Panel / Model Name <span style="color:red;">*</span></label>
+                                            <input type="text" name="single_variant_name[]" placeholder="e.g. LONGi 620W - Bi-Facial" class="single-series-input" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px; font-size:13px;">
+                                        </div>
+                                        <div>
+                                            <label style="font-size:11px; color:#64748b; display:block; margin-bottom:4px;">Price (PHP) <span style="color:red;">*</span></label>
+                                            <input type="number" name="single_variant_price[]" placeholder="0.00" step="0.01" class="single-series-input" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px; font-size:13px;">
+                                        </div>
+                                        <div>
+                                            <label style="font-size:11px; color:#64748b; display:block; margin-bottom:4px;">Model Image</label>
+                                            <input type="file" name="single_variant_image[]" accept="image/*" class="single-series-input" style="width:100%; font-size:12px;">
+                                        </div>
+                                        <button type="button" class="remove-single-series-row" title="Remove row" style="height:38px; width:38px; border:0; border-radius:8px; background:#fee2e2; color:#dc2626;">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    `;
+
+                                    row.querySelector('.remove-single-series-row').addEventListener('click', () => {
+                                        row.remove();
+                                    });
+
+                                    singleSeriesRows.appendChild(row);
+                                };
+
+                                const setVariantUploadMode = (mode) => {
+                                    const isSeriesMode = mode === 'single_brand_series';
+
+                                    if (brandChecklistContainer) brandChecklistContainer.style.display = isSeriesMode ? 'none' : 'flex';
+                                    if (singleSeriesContainer) singleSeriesContainer.style.display = isSeriesMode ? 'flex' : 'none';
+
+                                    brandChecklistContainer.querySelectorAll('input').forEach(input => {
+                                        input.disabled = isSeriesMode || (input.classList.contains('brand-price-input') || input.classList.contains('brand-image-input')) && !input.closest('.brand-variant-row')?.querySelector('.brand-checkbox')?.checked;
+                                        if (isSeriesMode) input.removeAttribute('required');
+                                    });
+
+                                    if (singleSeriesBrandSelect) {
+                                        singleSeriesBrandSelect.disabled = !isSeriesMode;
+                                        if (isSeriesMode) singleSeriesBrandSelect.setAttribute('required', 'required');
+                                        else singleSeriesBrandSelect.removeAttribute('required');
+                                    }
+
+                                    if (singleSeriesRows) {
+                                        if (isSeriesMode && singleSeriesRows.children.length === 0) {
+                                            addSingleSeriesRow();
+                                        }
+                                        singleSeriesRows.querySelectorAll('.single-series-input').forEach(input => {
+                                            input.disabled = !isSeriesMode;
+                                            if (isSeriesMode && input.type !== 'file') input.setAttribute('required', 'required');
+                                            else input.removeAttribute('required');
+                                        });
+                                    }
+                                };
+
+                                if (addSeriesRowBtn && !addSeriesRowBtn.dataset.bound) {
+                                    addSeriesRowBtn.dataset.bound = '1';
+                                    addSeriesRowBtn.addEventListener('click', () => {
+                                        addSingleSeriesRow();
+                                        const activeMode = document.querySelector('input[name="variant_upload_mode"]:checked')?.value || 'multi_brand';
+                                        setVariantUploadMode(activeMode);
+                                    });
+                                }
+
+                                if (variantModeSwitch && !variantModeSwitch.dataset.bound) {
+                                    variantModeSwitch.dataset.bound = '1';
+                                    variantModeSwitch.querySelectorAll('input[name="variant_upload_mode"]').forEach(radio => {
+                                        radio.addEventListener('change', () => setVariantUploadMode(radio.value));
+                                    });
+                                }
+
                                 brands.forEach(brand => {
                                     const row = document.createElement('div');
                                     row.className = 'brand-variant-row';
@@ -12069,6 +12262,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
 
                                     brandChecklistContainer.appendChild(row);
                                 });
+
+                                const activeMode = document.querySelector('input[name="variant_upload_mode"]:checked')?.value || 'multi_brand';
+                                setVariantUploadMode(activeMode);
                             })
                             .catch(err => {
                                 console.error('Error loading brands:', err);
@@ -12087,6 +12283,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
 
                     if (brandChecklistSection) brandChecklistSection.style.display = 'none';
                     if (brandChecklistContainer) brandChecklistContainer.innerHTML = '';
+                    if (variantModeSwitch) variantModeSwitch.style.display = 'none';
+                    if (singleSeriesContainer) singleSeriesContainer.style.display = 'none';
+                    if (singleSeriesBrandSelect) {
+                        singleSeriesBrandSelect.disabled = true;
+                        singleSeriesBrandSelect.removeAttribute('required');
+                        singleSeriesBrandSelect.innerHTML = '<option value="">Select brand</option>';
+                    }
+                    if (singleSeriesRows) singleSeriesRows.innerHTML = '';
 
                     // Reset standard brand dropdown
                     brandSelect.innerHTML = '<option value="">Loading brands...</option>';

@@ -3821,6 +3821,8 @@ $conn->close();
     // 1. GLOBAL VARIABLES & INITIALIZATION
     // ============================================
     let cart = [];
+    let activeCatalogCategory = 'all';
+    let catalogSearchQuery = '';
 
     document.addEventListener('DOMContentLoaded', function() {
         console.log('🚀 Solar Power System Initialized');
@@ -3828,6 +3830,7 @@ $conn->close();
         // Initialize all modules
         initializeCart();
         initializeFilters();
+        initializeSearchFilter();
         initializeSort();
         initializeCheckout();
         initializeSubscription();
@@ -5337,6 +5340,7 @@ $conn->close();
                 }
             });
         }
+        initializeSearchFilter();
     });
     // ============================================
     // 7. FILTERS & SEARCH
@@ -5355,6 +5359,10 @@ $conn->close();
     }
 
     function filterProducts(filterValue) {
+        if (filterValue !== undefined) {
+            activeCatalogCategory = filterValue;
+        }
+
         const productsGrid = document.getElementById('productsGrid');
         const products = document.querySelectorAll('.product-card');
         const viewMoreContainer = document.getElementById('viewMoreContainer');
@@ -5366,22 +5374,24 @@ $conn->close();
         products.forEach(product => {
             const productCategory = product.getAttribute('data-category') || '';
             const productPackageType = (product.getAttribute('data-package-type') || '').toLowerCase();
-            let show = false;
+            let showCategory = false;
 
-            if (filterValue === 'all') {
-                show = true;
-            } else if (filterValue === 'Package Setup') {
+            if (activeCatalogCategory === 'all') {
+                showCategory = true;
+            } else if (activeCatalogCategory === 'Package Setup') {
                 // Show products whose category is 'Package' OR whose packageType matches any package keyword
-                show = productCategory.toLowerCase() === 'package' || packageTypes.includes(productPackageType);
-            } else if (filterValue === 'Panel') {
-                show = productCategory === 'Panel' || productCategory === 'Panels';
-            } else if (filterValue === 'Inverter') {
-                show = productCategory === 'Inverter' || productCategory === 'Inverters';
-            } else if (filterValue === 'Battery') {
-                show = productCategory === 'Battery' || productCategory === 'Batteries';
+                showCategory = productCategory.toLowerCase() === 'package' || packageTypes.includes(productPackageType);
+            } else if (activeCatalogCategory === 'Panel') {
+                showCategory = productCategory === 'Panel' || productCategory === 'Panels';
+            } else if (activeCatalogCategory === 'Inverter') {
+                showCategory = productCategory === 'Inverter' || productCategory === 'Inverters';
+            } else if (activeCatalogCategory === 'Battery') {
+                showCategory = productCategory === 'Battery' || productCategory === 'Batteries';
             } else {
-                show = productCategory === filterValue;
+                showCategory = productCategory === activeCatalogCategory;
             }
+
+            const show = showCategory && productMatchesSearch(product);
 
             if (show) {
                 product.style.display = 'flex';

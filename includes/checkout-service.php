@@ -208,17 +208,19 @@ function checkout_normalize_cart_items(array $input): array
 
         $productId = (int) ($item['product_id'] ?? $item['id'] ?? 0);
         $brandId = isset($item['brand_id']) && $item['brand_id'] !== '' ? (int) $item['brand_id'] : null;
+        $variantId = isset($item['variant_id']) && $item['variant_id'] !== '' ? (int) $item['variant_id'] : null;
         $quantity = max(1, (int) ($item['quantity'] ?? 1));
 
         if ($productId <= 0) {
             continue;
         }
 
-        $key = $productId . ':' . ($brandId ?: 'base');
+        $key = $productId . ':' . ($brandId ?: 'base') . ':' . ($variantId ?: 'base');
         if (!isset($normalized[$key])) {
             $normalized[$key] = [
                 'product_id' => $productId,
                 'brand_id' => $brandId,
+                'variant_id' => $variantId,
                 'quantity' => 0,
             ];
         }
@@ -234,13 +236,29 @@ function checkout_moq_categories(): array
     return ['panel', 'panels', 'mounting & accessories', 'mounting and accessories', 'mounting', 'accessories'];
 }
 
-function checkout_fetch_product(mysqli $conn, int $productId, ?int $brandId): array
+function checkout_ensure_variant_name_column(mysqli $conn): void
 {
-    if ($brandId) {
+    static $checked = false;
+    if ($checked) {
+        return;
+    }
+
+    $checked = true;
+    $variantColumnCheck = $conn->query("SHOW COLUMNS FROM product_brand_variants LIKE 'variant_name'");
+    if ($variantColumnCheck && $variantColumnCheck->num_rows === 0) {
+        $conn->query("ALTER TABLE product_brand_variants ADD COLUMN variant_name VARCHAR(255) NOT NULL DEFAULT '' AFTER brand_id");
+    }
+}
+
+function checkout_fetch_product(mysqli $conn, int $productId, ?int $brandId, ?int $variantId = null): array
+{
+    checkout_ensure_variant_name_column($conn);
+
+    if ($variantId) {
         $stmt = $conn->prepare(
             "SELECT
                 p.id,
-                p.displayName,
+                COALESCE(NULLIF(TRIM(pbv.variant_name), ''), p.displayName) AS displayName,
                 p.brandName AS productBrandName,
                 p.category,
                 p.packageType,
@@ -248,6 +266,32 @@ function checkout_fetch_product(mysqli $conn, int $productId, ?int $brandId): ar
                 COALESCE(p.moq, 1) AS moq,
                 COALESCE(pbv.price, p.price) AS price,
                 COALESCE(pbv.variant_image, p.imagePath) AS image_path,
+                pbv.id AS variant_id,
+                COALESCE(b.brand_name, sb.brandName, p.brandName) AS brandName
+             FROM product p
+             INNER JOIN product_brand_variants pbv
+                ON pbv.product_id = p.id AND pbv.id = ?
+             LEFT JOIN brands b
+                ON b.brand_id = pbv.brand_id
+             LEFT JOIN supplier_brands sb
+                ON sb.id = pbv.brand_id
+             WHERE p.id = ? AND p.status = 'Active'
+             LIMIT 1"
+        );
+        $stmt->bind_param('ii', $variantId, $productId);
+    } elseif ($brandId) {
+        $stmt = $conn->prepare(
+            "SELECT
+                p.id,
+                COALESCE(NULLIF(TRIM(pbv.variant_name), ''), p.displayName) AS displayName,
+                p.brandName AS productBrandName,
+                p.category,
+                p.packageType,
+                p.stockQuantity,
+                COALESCE(p.moq, 1) AS moq,
+                COALESCE(pbv.price, p.price) AS price,
+                COALESCE(pbv.variant_image, p.imagePath) AS image_path,
+                pbv.id AS variant_id,
                 COALESCE(b.brand_name, sb.brandName, p.brandName) AS brandName
              FROM product p
              INNER JOIN product_brand_variants pbv
@@ -304,7 +348,7 @@ function checkout_validate_items(mysqli $conn, array $input): array
     $subtotal = 0.00;
 
     foreach ($cartItems as $cartItem) {
-        $product = checkout_fetch_product($conn, $cartItem['product_id'], $cartItem['brand_id']);
+        $product = checkout_fetch_product($conn, $cartItem['product_id'], $cartItem['brand_id'], $cartItem['variant_id']);
         $quantity = max(1, (int) $cartItem['quantity']);
         $moq = max(1, (int) ($product['moq'] ?? 1));
         $category = checkout_clean_text($product['category'] ?? 'Solar Product');
@@ -321,7 +365,9 @@ function checkout_validate_items(mysqli $conn, array $input): array
 
         $brandName = checkout_clean_text($product['brandName'] ?? $product['productBrandName'] ?? '');
         $displayName = checkout_clean_text($product['displayName'] ?? 'Solar Product');
-        $productName = trim($brandName . ' ' . $displayName);
+        $productName = ($brandName !== '' && stripos($displayName, $brandName) === false)
+            ? trim($brandName . ' ' . $displayName)
+            : $displayName;
         $unitPrice = round((float) ($product['price'] ?? 0), 2);
 
         if ($unitPrice <= 0) {
@@ -334,6 +380,7 @@ function checkout_validate_items(mysqli $conn, array $input): array
         $items[] = [
             'product_id' => (int) $product['id'],
             'brand_id' => $cartItem['brand_id'],
+            'variant_id' => $cartItem['variant_id'],
             'product_name' => $productName ?: $displayName,
             'display_name' => $displayName,
             'brand_name' => $brandName,

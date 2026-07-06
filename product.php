@@ -92,6 +92,7 @@ LEFT JOIN (
         pbv.product_id,
         GROUP_CONCAT(DISTINCT COALESCE(NULLIF(TRIM(sb.brandName), ''), NULLIF(TRIM(b.brand_name), '')) ORDER BY pbv.price ASC, pbv.id ASC SEPARATOR ', ') AS brand_names,
         MIN(pbv.price) AS min_price,
+        CAST(SUBSTRING_INDEX(GROUP_CONCAT(pbv.id ORDER BY pbv.price ASC, pbv.id ASC), ',', 1) AS UNSIGNED) AS variant_id,
         CAST(SUBSTRING_INDEX(GROUP_CONCAT(pbv.brand_id ORDER BY pbv.price ASC, pbv.id ASC), ',', 1) AS UNSIGNED) AS brand_id
     FROM product_brand_variants pbv
     LEFT JOIN supplier_brands sb
@@ -457,10 +458,6 @@ $conn->close();
 
         #catalogSection .product-card {
             display: flex;
-        }
-
-        #catalogSection .btn-view-details {
-            background: #e7ad00;
         }
 
         .shop-by-brand-section {
@@ -1040,11 +1037,12 @@ $conn->close();
                                 </button>
 
                                 <button type="button"
-                                    class="btn-buy-now btn-view-details"
+                                    class="btn-buy-now"
+                                    data-product='<?= json_encode($p, JSON_HEX_APOS | JSON_HEX_QUOT) ?>'
                                     data-product-id="<?= (int)$p['id'] ?>"
                                     style="flex:1 1 auto; width:auto;"
-                                    onclick="window.location.href='<?= htmlspecialchars($productDetailUrl) ?>'">
-                                    View Details
+                                    onclick="buyNowFromButton(this)">
+                                    Buy Now
                                 </button>
                             </div>
                         </div>
@@ -1520,6 +1518,7 @@ $conn->close();
     let cart = [];
     let activeCatalogCategory = 'all';
     let selectedCatalogBrands = [];
+    let catalogSearchQuery = '';
     const PRODUCTS_COLLAPSE_LIMIT = 8;
 
     document.addEventListener('DOMContentLoaded', function() {
@@ -1531,16 +1530,11 @@ $conn->close();
         initializeCategoryShortcuts();
         initializeSort();
         initializeBrandFilters();
+        initializeSearchFilter();
         applyCatalogFilters({ preserveExpanded: false });
         initializeCheckout();
         initializeSubscription();
-
-        console.log('✅ All modules loaded successfully');
     });
-
-    // ============================================
-    // 2. CART MANAGEMENT
-    // ============================================
 
     function initializeCart() {
         console.log('📦 Initializing cart system...');
@@ -1594,7 +1588,11 @@ $conn->close();
     }
 
     function addToCartLogic(product) {
-        const existingItem = cart.find(item => item.id === product.id);
+        const productVariantId = product.variant_id || '';
+        const existingItem = cart.find(item => {
+            if (productVariantId) return String(item.variant_id || '') === String(productVariantId);
+            return item.id === product.id && (item.brand_id || null) === (product.brand_id || null);
+        });
         const moq = parseInt(product.moq) || 1;
 
         if (existingItem) {
@@ -1604,6 +1602,7 @@ $conn->close();
             cart.push({
                 id: product.id,
                 product_id: product.id,
+                variant_id: product.variant_id || '',
                 brand_id: product.brand_id || null,
                 displayName: product.displayName,
                 brandName: product.brandName || '',
@@ -2698,6 +2697,64 @@ function productMatchesBrands(product) {
     return selectedCatalogBrands.some(brand => productBrands.includes(brand));
 }
 
+function productMatchesSearch(product) {
+    if (!catalogSearchQuery) {
+        return true;
+    }
+    const name = normalizeCatalogValue(product.getAttribute('data-name'));
+    const brand = normalizeCatalogValue(product.getAttribute('data-brand'));
+    const query = normalizeCatalogValue(catalogSearchQuery);
+    return name.includes(query) || brand.includes(query);
+}
+
+function initializeSearchFilter() {
+    const searchInput = document.getElementById('productSearchInput');
+    const clearBtn = document.getElementById('searchClearBtn');
+    const searchMeta = document.getElementById('searchMeta');
+
+    if (!searchInput) return;
+
+    searchInput.addEventListener('input', function() {
+        catalogSearchQuery = this.value.trim();
+        if (catalogSearchQuery) {
+            if (clearBtn) clearBtn.style.display = 'block';
+        } else {
+            if (clearBtn) clearBtn.style.display = 'none';
+            if (searchMeta) searchMeta.innerHTML = '';
+        }
+        applyCatalogFilters({ preserveExpanded: false });
+
+        if (catalogSearchQuery) {
+            const matchCount = Array.from(document.querySelectorAll('.product-card')).filter(p => p.dataset.filterMatch === 'true').length;
+            if (searchMeta) {
+                searchMeta.innerHTML = `Found <span class="highlight-count">${matchCount}</span> product${matchCount === 1 ? '' : 's'} matching "<span class="text-dark fw-semibold">${escapeHtml(catalogSearchQuery)}</span>"`;
+            }
+        }
+    });
+
+    if (clearBtn) {
+        clearBtn.addEventListener('click', function() {
+            searchInput.value = '';
+            catalogSearchQuery = '';
+            this.style.display = 'none';
+            if (searchMeta) searchMeta.innerHTML = '';
+            applyCatalogFilters({ preserveExpanded: false });
+        });
+    }
+}
+
+function escapeHtml(string) {
+    return String(string).replace(/[&<>"']/g, function (s) {
+        return {
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            '"': '&quot;',
+            "'": '&#39;'
+        }[s];
+    });
+}
+
 function applyCatalogFilters(options = {}) {
     const grid = document.getElementById('productsGrid');
     const products = document.querySelectorAll('.product-card');
@@ -2711,7 +2768,7 @@ function applyCatalogFilters(options = {}) {
     let visibleCount = 0;
 
     products.forEach(product => {
-        const show = productMatchesCategory(product, activeCatalogCategory) && productMatchesBrands(product);
+        const show = productMatchesCategory(product, activeCatalogCategory) && productMatchesBrands(product) && productMatchesSearch(product);
         product.dataset.filterMatch = show ? 'true' : 'false';
         product.classList.remove('show-product');
 

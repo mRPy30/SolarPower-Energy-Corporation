@@ -43,6 +43,8 @@ if ($action === 'sync') {
         foreach ($cart as $item) {
             $_SESSION['cart'][] = [
                 'id' => intval($item['product_id'] ?? $item['id']),
+                'product_id' => intval($item['product_id'] ?? $item['id']),
+                'variant_id' => $item['variant_id'] ?? '',
                 'brand_id' => isset($item['brand_id']) ? intval($item['brand_id']) : null,
                 'displayName' => $item['displayName'] ?? $item['name'] ?? '',
                 'brandName' => $item['brandName'] ?? '',
@@ -67,7 +69,11 @@ if ($action === 'add') {
     if ($item) {
         $found = false;
         foreach ($_SESSION['cart'] as &$cartItem) {
-            if ($cartItem['id'] == $item['id'] && $cartItem['brand_id'] == $item['brand_id']) {
+            $incomingVariantId = (string)($item['variant_id'] ?? '');
+            $cartVariantId = (string)($cartItem['variant_id'] ?? '');
+            $sameVariant = $incomingVariantId !== '' && $incomingVariantId === $cartVariantId;
+            $sameBaseProduct = $incomingVariantId === '' && $cartItem['id'] == $item['id'] && $cartItem['brand_id'] == $item['brand_id'];
+            if ($sameVariant || $sameBaseProduct) {
                 $cartItem['quantity'] += intval($item['quantity'] ?? 1);
                 $found = true;
                 break;
@@ -76,6 +82,8 @@ if ($action === 'add') {
         if (!$found) {
             $_SESSION['cart'][] = [
                 'id' => intval($item['id']),
+                'product_id' => intval($item['product_id'] ?? $item['id']),
+                'variant_id' => $item['variant_id'] ?? '',
                 'brand_id' => isset($item['brand_id']) ? intval($item['brand_id']) : null,
                 'displayName' => $item['displayName'] ?? '',
                 'brandName' => $item['brandName'] ?? '',
@@ -100,6 +108,8 @@ if ($action === 'buynow') {
         $_SESSION['cart'] = [];
         $_SESSION['cart'][] = [
             'id' => intval($item['id']),
+            'product_id' => intval($item['product_id'] ?? $item['id']),
+            'variant_id' => $item['variant_id'] ?? '',
             'brand_id' => isset($item['brand_id']) ? intval($item['brand_id']) : null,
             'displayName' => $item['displayName'] ?? '',
             'brandName' => $item['brandName'] ?? '',

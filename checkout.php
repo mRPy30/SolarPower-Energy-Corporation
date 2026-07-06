@@ -18,44 +18,24 @@ function checkout_landing_product_item(int $productId): ?array
     }
 
     require __DIR__ . '/config/dbconn.php';
+    $variantColumnCheck = $conn->query("SHOW COLUMNS FROM product_brand_variants LIKE 'variant_name'");
+    if ($variantColumnCheck && $variantColumnCheck->num_rows === 0) {
+        $conn->query("ALTER TABLE product_brand_variants ADD COLUMN variant_name VARCHAR(255) NOT NULL DEFAULT '' AFTER brand_id");
+    }
 
     $sql = "
         SELECT
             p.id,
-            p.displayName,
-            COALESCE(
-                (
-                    SELECT COALESCE(b.brand_name, sb.brandName)
-                    FROM product_brand_variants pbv
-                    LEFT JOIN brands b ON pbv.brand_id = b.brand_id
-                    LEFT JOIN supplier_brands sb ON pbv.brand_id = sb.id
-                    WHERE pbv.product_id = p.id
-                    ORDER BY pbv.price ASC, pbv.id ASC
-                    LIMIT 1
-                ),
-                TRIM(p.brandName)
-            ) AS brandName,
-            COALESCE(
-                (
-                    SELECT pbv.price
-                    FROM product_brand_variants pbv
-                    WHERE pbv.product_id = p.id
-                    ORDER BY pbv.price ASC, pbv.id ASC
-                    LIMIT 1
-                ),
-                p.price
-            ) AS price,
-            (
-                SELECT pbv.brand_id
-                FROM product_brand_variants pbv
-                WHERE pbv.product_id = p.id
-                ORDER BY pbv.price ASC, pbv.id ASC
-                LIMIT 1
-            ) AS brand_id,
+            COALESCE(NULLIF(TRIM(first_variant.variant_name), ''), p.displayName) AS displayName,
+            first_variant.id AS variant_id,
+            COALESCE(b.brand_name, sb.brandName, TRIM(p.brandName)) AS brandName,
+            COALESCE(first_variant.price, p.price) AS price,
+            first_variant.brand_id AS brand_id,
             p.category,
             p.packageType,
             COALESCE(p.moq, 1) AS moq,
             COALESCE(
+                first_variant.variant_image,
                 (
                     SELECT pi.image_path
                     FROM product_images pi
@@ -66,6 +46,18 @@ function checkout_landing_product_item(int $productId): ?array
                 p.imagePath
             ) AS image_path
         FROM product p
+        LEFT JOIN product_brand_variants first_variant
+            ON first_variant.id = (
+                SELECT pbv.id
+                FROM product_brand_variants pbv
+                WHERE pbv.product_id = p.id
+                ORDER BY pbv.price ASC, pbv.id ASC
+                LIMIT 1
+            )
+        LEFT JOIN brands b
+            ON first_variant.brand_id = b.brand_id
+        LEFT JOIN supplier_brands sb
+            ON first_variant.brand_id = sb.id
         WHERE p.id = ? AND p.status = 'Active'
         LIMIT 1
     ";
@@ -94,6 +86,7 @@ function checkout_landing_product_item(int $productId): ?array
     return [
         'id' => (int) $row['id'],
         'product_id' => (int) $row['id'],
+        'variant_id' => isset($row['variant_id']) ? (string) $row['variant_id'] : '',
         'brand_id' => isset($row['brand_id']) ? (int) $row['brand_id'] : null,
         'displayName' => $name,
         'name' => $name,

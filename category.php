@@ -110,11 +110,16 @@ $products = [];
 
 if (isset($conn) && $conn instanceof mysqli) {
     $conn->set_charset('utf8mb4');
+    $variantColumnCheck = $conn->query("SHOW COLUMNS FROM product_brand_variants LIKE 'variant_name'");
+    if ($variantColumnCheck && $variantColumnCheck->num_rows === 0) {
+        $conn->query("ALTER TABLE product_brand_variants ADD COLUMN variant_name VARCHAR(255) NOT NULL DEFAULT '' AFTER brand_id");
+    }
 
     $sql = "
         SELECT
             p.id,
-            p.displayName,
+            p.displayName AS parentDisplayName,
+            COALESCE(NULLIF(TRIM(pbv.variant_name), ''), p.displayName) AS displayName,
             pbv.id AS variant_id,
             pbv.brand_id AS variant_brand_id,
             COALESCE(
@@ -148,7 +153,7 @@ if (isset($conn) && $conn instanceof mysqli) {
             ON p.id = pi.product_id
         WHERE p.status = 'Active'
             AND {$active_category['where']}
-        ORDER BY COALESCE(pbv.price, p.price) ASC, p.displayName ASC, brandName ASC
+        ORDER BY COALESCE(pbv.price, p.price) ASC, parentDisplayName ASC, displayName ASC, brandName ASC
     ";
 
     $result = $conn->query($sql);
@@ -251,15 +256,16 @@ $category_links = [
             color: #344054;
             font-size: 13px;
             font-weight: 700;
-            text-decoration: none;
+            text-decoration: none !important;
             transition: all 0.2s ease;
         }
 
         .category-switcher a:hover,
         .category-switcher a.active {
-            border-color: #e7ad00;
-            background: #fff6d7;
-            color: #0a5c3d;
+            border-color: #d39d00;
+            background: #e7ad00;
+            color: #fff;
+            box-shadow: 0 4px 12px rgba(231, 173, 0, 0.3);
         }
 
         .category-product-grid {
@@ -462,7 +468,10 @@ $category_links = [
             <?php if (!empty($products)): ?>
                 <div class="category-product-grid">
                     <?php foreach ($products as $product): ?>
-                        <?php $detailsUrl = 'product-details.php?id=' . rawurlencode(createSlug($product['displayName'])); ?>
+                        <?php
+                        $detailsSlugSource = $product['parentDisplayName'] ?? $product['displayName'];
+                        $detailsUrl = 'product-details.php?id=' . rawurlencode(createSlug($detailsSlugSource));
+                        ?>
                         <article class="category-product-card">
                             <a href="<?= htmlspecialchars($detailsUrl) ?>" class="category-product-image">
                                 <img src="<?= htmlspecialchars($product['image_path']) ?>"

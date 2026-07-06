@@ -627,12 +627,15 @@
             items: cart.map((item) => ({
                 id: item.product_id,
                 product_id: item.product_id,
+                variant_id: item.variant_id || '',
                 brand_id: item.brand_id,
                 displayName: item.displayName,
                 brandName: item.brandName,
                 category: item.category,
                 price: item.price,
-                quantity: item.quantity
+                image_path: item.image_path,
+                quantity: item.quantity,
+                moq: item.moq
             }))
         };
     }

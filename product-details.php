@@ -62,6 +62,10 @@ if (strpos($_SERVER['REQUEST_URI'], '/SolarPower-Energy-Corporation/') !== false
 
 /* ---------- DB connection ---------- */
 include "config/dbconn.php";
+$variantColumnCheck = $conn->query("SHOW COLUMNS FROM product_brand_variants LIKE 'variant_name'");
+if ($variantColumnCheck && $variantColumnCheck->num_rows === 0) {
+    $conn->query("ALTER TABLE product_brand_variants ADD COLUMN variant_name VARCHAR(255) NOT NULL DEFAULT '' AFTER brand_id");
+}
 
 /* ---------- Fetch product details ---------- */
 $product = null;
@@ -99,12 +103,13 @@ $variants = [];
 $is_variant_cat = in_array(strtolower($product['category'] ?? ''), ['panel', 'panels', 'battery', 'batteries', 'inverter', 'inverters']);
 if ($product) {
     if ($is_variant_cat) {
-        $vSql = "SELECT pbv.id as variant_junction_id, pbv.brand_id as brand_id, COALESCE(b.brand_name, sb.brandName, p.brandName) as brandName, pbv.price, pbv.variant_image as imagePath 
+        $vSql = "SELECT pbv.id as variant_junction_id, pbv.brand_id as brand_id, pbv.variant_name as variantName, COALESCE(b.brand_name, sb.brandName, p.brandName) as brandName, pbv.price, pbv.variant_image as imagePath
                  FROM product_brand_variants pbv 
                  INNER JOIN product p ON pbv.product_id = p.id
                  LEFT JOIN brands b ON pbv.brand_id = b.brand_id
                  LEFT JOIN supplier_brands sb ON pbv.brand_id = sb.id
-                 WHERE pbv.product_id = ?";
+                 WHERE pbv.product_id = ?
+                 ORDER BY pbv.price ASC, pbv.id ASC";
         $vStmt = $conn->prepare($vSql);
         $vStmt->bind_param("i", $product['id']);
         $vStmt->execute();
@@ -142,6 +147,18 @@ $stmt->close();
 if (empty($productImages)) {
     $productImages[] = 'assets/img/placeholder.png';
 }
+
+if (!empty($variants[0]['imagePath'])) {
+    array_unshift($productImages, $variants[0]['imagePath']);
+    $productImages = array_values(array_unique(array_filter($productImages)));
+}
+
+$initialProductTitle = !empty(trim((string)($variants[0]['variantName'] ?? '')))
+    ? $variants[0]['variantName']
+    : $product['displayName'];
+$initialProductPrice = isset($variants[0]['price']) && (float)$variants[0]['price'] > 0
+    ? (float)$variants[0]['price']
+    : (float)$product['price'];
 
 /* ---------- Fetch related products (same category) ---------- */
 $relatedProducts = [];
@@ -732,10 +749,10 @@ $conn->close();
                 <div class="product-info-section">
                     <span class="category-badge"><i class="fas fa-tag me-2"></i><?= htmlspecialchars($product['category']) ?></span>
 
-                    <h1 class="product-title"><?= htmlspecialchars($product['displayName']) ?></h1>
+                    <h1 class="product-title" id="productTitle"><?= htmlspecialchars($initialProductTitle) ?></h1>
 
                     <div class="price-section">
-                        <div class="product-price">₱<?= number_format($product['price'], 2) ?></div>
+                        <div class="product-price">₱<?= number_format($initialProductPrice, 2) ?></div>
                     </div>
 
                     <!-- Hidden Product ID Field -->
@@ -748,12 +765,13 @@ $conn->close();
                     if ($is_eligible && count($variants) > 0): 
                     ?>
                         <div class="brand-variants-section my-3">
-                            <label class="fw-bold text-uppercase text-secondary" style="font-size: 11px; letter-spacing: 0.5px; margin-bottom: 8px; display: block;">Select Brand</label>
+                            <label class="fw-bold text-uppercase text-secondary" style="font-size: 11px; letter-spacing: 0.5px; margin-bottom: 8px; display: block;">Select Brand / Model</label>
                             <div class="variant-chips-wrapper">
                                 <?php foreach ($variants as $index => $variant): ?>
                                     <?php 
                                     $v_id = $variant['variant_junction_id'] ?? $variant['id'];
                                     $v_img = !empty($variant['imagePath']) ? $variant['imagePath'] : $product['imagePath'];
+                                    $variantLabel = !empty(trim((string)($variant['variantName'] ?? ''))) ? $variant['variantName'] : $variant['brandName'];
                                     ?>
                                         <div class="variant-option-chip">
                                             <input type="radio" 
@@ -765,9 +783,10 @@ $conn->close();
                                                    data-image="<?= htmlspecialchars($v_img) ?>"
                                                    data-brand="<?= htmlspecialchars($variant['brandName']) ?>"
                                                    data-brand-id="<?= $variant['brand_id'] ?>"
+                                                   data-label="<?= htmlspecialchars($variantLabel) ?>"
                                                    <?= $index === 0 ? 'checked' : '' ?>>
                                             <label for="variant_brand_<?= $v_id ?>">
-                                                <?= htmlspecialchars($variant['brandName']) ?>
+                                                <?= htmlspecialchars($variantLabel) ?>
                                             </label>
                                         </div>
                                 <?php endforeach; ?>
@@ -1104,7 +1123,7 @@ $conn->close();
 
                                 <div class="product-actions" onclick="event.stopPropagation()">
                                     <button class="button-add-cart"
-                                        data-product='<?= json_encode($p, JSON_HEX_APOS | JSON_HEX_QUOT) ?>'
+                                        data-product='<?= json_encode($related, JSON_HEX_APOS | JSON_HEX_QUOT) ?>'
                                         onclick="addToCartFromButton(this)"
                                         title="Add to Cart">
                                         <i class="fas fa-shopping-cart"></i>
@@ -1112,7 +1131,7 @@ $conn->close();
 
                                     <button type="button"
                                         class="button-buy-now"
-                                        data-product='<?= json_encode($p, JSON_HEX_APOS | JSON_HEX_QUOT) ?>'
+                                        data-product='<?= json_encode($related, JSON_HEX_APOS | JSON_HEX_QUOT) ?>'
                                         onclick="buyNowFromButton(this)">
                                         Buy Now
                                     </button>
@@ -1160,6 +1179,8 @@ $conn->close();
         <?php if ($is_eligible && count($variants) > 0): ?>
             productData.brand_id = <?= json_encode($variants[0]['brand_id']) ?>;
             productData.brandName = <?= json_encode($variants[0]['brandName']) ?>;
+            productData.variant_id = <?= json_encode($variants[0]['variant_junction_id'] ?? $variants[0]['id'] ?? '') ?>;
+            productData.displayName = <?= json_encode(!empty(trim((string)($variants[0]['variantName'] ?? ''))) ? $variants[0]['variantName'] : $product['displayName']) ?>;
             productData.price = <?= json_encode($variants[0]['price']) ?>;
         <?php endif; ?>
         const originalProductId = <?= intval($product['id']) ?>;
@@ -1175,13 +1196,16 @@ $conn->close();
                         const mainImage = this.getAttribute('data-image') || 'assets/img/placeholder.png';
                         const brandName = this.getAttribute('data-brand') || '';
                         const brandId = this.getAttribute('data-brand-id') || null;
+                        const variantLabel = this.getAttribute('data-label') || productData.displayName || '';
 
                         // 1. Update productData properties for cart session
                         productData.id = originalProductId; // Keep original product id for order placement
+                        productData.variant_id = selectedId;
                         productData.price = price;
                         productData.image_path = mainImage;
                         productData.brandName = brandName;
                         productData.brand_id = brandId;
+                        productData.displayName = variantLabel || productData.displayName;
 
                         // 2. Update screen inputs & text values
                         const hiddenInput = document.getElementById('hidden_product_id');
@@ -1195,199 +1219,8 @@ $conn->close();
                         const brandDisplay = document.querySelector('.product-brand');
                         if (brandDisplay) brandDisplay.textContent = brandName;
 
-                        // 3. Update main image view & modal primary image
-                        const mainImgEl = document.getElementById('mainImage');
-                        if (mainImgEl) mainImgEl.src = mainImage;
-                        
-                        const modalImgEl = document.getElementById('modalImage');
-                        if (modalImgEl) modalImgEl.src = mainImage;
-
-                        // 4. Trigger fetch to update thumbnail gallery
-                        fetch(`get-gallery.php?product_id=${originalProductId}`)
-                            .then(response => response.json())
-                            .then(data => {
-                                if (data.success && data.images) {
-                                    const thumbWrapper = document.getElementById('thumbnailGalleryWrapper');
-                                    const modalWrapper = document.getElementById('modalGalleryWrapper');
-
-                                    // Render main thumbnail gallery list
-                                    if (data.images.length > 1) {
-                                        let thumbHtml = '<div class="thumbnail-gallery">';
-                                        data.images.forEach((img, index) => {
-                                            thumbHtml += `
-                                                <div class="thumbnail-item ${index === 0 ? 'active' : ''}" onclick="changeMainImage(this, '${img}')">
-                                                    <img src="${img}" alt="Thumbnail ${index + 1}">
-                                                </div>
-                                            `;
-                                        });
-                                        thumbHtml += '</div>';
-                                        if (thumbWrapper) thumbWrapper.innerHTML = thumbHtml;
-                                    } else {
-                                        if (thumbWrapper) thumbWrapper.innerHTML = '';
-                                    }
-
-                                    // Render modal thumbnail sidebar list
-                                    if (data.images.length > 1) {
-                                        let modalHtml = '<p style="font-size:12px;color:#999;margin:0 0 6px;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;">All Photos</p>';
-                                        data.images.forEach((img, index) => {
-                                            modalHtml += `
-                                                <div class="modal-thumb ${index === 0 ? 'modal-thumb-active' : ''}"
-                                                     onclick="changeModalImage(this, '${img}')"
-                                                     style="border:2px solid ${index === 0 ? 'var(--clr-primary)' : '#e0e0e0'};border-radius:6px;overflow:hidden;cursor:pointer;aspect-ratio:1;transition:all 0.2s;">
-                                                    <img src="${img}" alt="Thumb ${index + 1}" style="width:100%;height:100%;object-fit:cover;display:block;">
-                                                </div>
-                                            `;
-                                        });
-                                        if (modalWrapper) {
-                                            modalWrapper.innerHTML = modalHtml;
-                                            modalWrapper.style.display = 'flex';
-                                        }
-                                    } else {
-                                        if (modalWrapper) {
-                                            modalWrapper.innerHTML = '';
-                                            modalWrapper.style.display = 'none';
-                                        }
-                                    }
-                                }
-                            })
-                            .catch(err => console.error('Error fetching image gallery:', err));
-                    }
-                });
-            });
-        });
-
-        // ── Cart ──
-        let cart = JSON.parse(localStorage.getItem('solarCart') || '[]');
-        let deliveryFee = 0;
-        let installationFee = 0;
-
-        // ── Image gallery ──
-        function closeImgModal() {
-            document.getElementById('imgModal').style.display = 'none';
-            document.body.style.overflow = '';
-        }
-        document.addEventListener('keydown', e => { if (e.key === 'Escape') closeImgModal(); });
-        function openImgModal() {
-            document.getElementById('imgModal').style.display = 'flex';
-            document.body.style.overflow = 'hidden';
-        }
-        function handleModalBackdropClick(e) {
-            if (e.target === document.getElementById('imgModal')) closeImgModal();
-        }
-        function changeMainImage(el, src) {
-            document.getElementById('mainImage').src = src;
-            document.getElementById('modalImage').src = src;
-            document.querySelectorAll('.thumbnail-item').forEach(t => t.classList.remove('active'));
-            el.classList.add('active');
-            document.querySelectorAll('.modal-thumb').forEach(t => {
-                const isMatch = t.querySelector('img').src === el.querySelector('img').src;
-                t.style.borderColor = isMatch ? 'var(--clr-primary)' : '#e0e0e0';
-                t.classList.toggle('modal-thumb-active', isMatch);
-            });
-        }
-        function changeModalImage(el, src) {
-            document.getElementById('modalImage').src = src;
-            document.querySelectorAll('.modal-thumb').forEach(t => { t.style.borderColor = '#e0e0e0'; t.classList.remove('modal-thumb-active'); });
-            el.style.borderColor = 'var(--clr-primary)';
-            el.classList.add('modal-thumb-active');
-            document.querySelectorAll('.thumbnail-item').forEach(t => {
-                const isMatch = t.querySelector('img') && t.querySelector('img').src === el.querySelector('img').src;
-                t.classList.toggle('active', isMatch);
-            });
-            document.getElementById('mainImage').src = src;
-        }
-
-        // Qty Increment/Decrement & Validation
-        const productMOQ = <?= $moq_value ?>;
-        const isMOQCategory = <?= $is_moq_cat ? 'true' : 'false' ?>;
-
-        function decrementQty() {
-            const input = document.getElementById('product-qty');
-            let val = parseInt(input.value) || 1;
-            const min = parseInt(input.getAttribute('min')) || 1;
-            if (val > min) {
-                input.value = val - 1;
-            } else if (isMOQCategory && val <= productMOQ) {
-                alert(`Error: Minimum purchased order quantity for this product category is ${productMOQ} pcs.`);
-            }
-        }
-
-        function incrementQty() {
-            const input = document.getElementById('product-qty');
-            let val = parseInt(input.value) || 1;
-            input.value = val + 1;
-        }
-
-        function validateQtyInput(input) {
-            let val = parseInt(input.value) || 1;
-            const min = parseInt(input.getAttribute('min')) || 1;
-            if (val < min) {
-                input.value = min;
-                if (isMOQCategory) {
-                    alert(`Error: Minimum purchased order quantity for this product category is ${productMOQ} pcs.`);
-                }
-            }
-            <!-- Main image area -->
-            <div style="flex:1;display:flex;align-items:center;justify-content:center;background:#fff;padding:32px 24px;min-height:480px;">
-                <img id="modalImage" src="<?= htmlspecialchars($productImages[0]) ?>" style="max-width:100%;max-height:68vh;object-fit:contain;display:block;">
-            </div>
-
-            <!-- Thumbnail sidebar -->
-            <div id="modalGalleryWrapper" style="width:140px;flex-shrink:0;border-left:1px solid #f0f0f0;background:#fafafa;overflow-y:auto;padding:16px 12px;display:flex;flex-direction:column;gap:10px; <?= count($productImages) > 1 ? '' : 'display:none;' ?>">
-                <p style="font-size:12px;color:#999;margin:0 0 6px;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;">All Photos</p>
-                <?php foreach ($productImages as $index => $image): ?>
-                <div class="modal-thumb <?= $index === 0 ? 'modal-thumb-active' : '' ?>"
-                    onclick="changeModalImage(this, '<?= htmlspecialchars($image) ?>')"
-                    style="border:2px solid <?= $index === 0 ? 'var(--clr-primary)' : '#e0e0e0' ?>;border-radius:6px;overflow:hidden;cursor:pointer;aspect-ratio:1;transition:all 0.2s;">
-                    <img src="<?= htmlspecialchars($image) ?>" alt="Thumb <?= $index + 1 ?>" style="width:100%;height:100%;object-fit:cover;display:block;">
-                </div>
-                <?php endforeach; ?>
-            </div>
-        </div>
-    </div>
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
-    <script>
-        // ── Product data passed from PHP ──
-        const productData = <?= json_encode($product) ?>;
-        productData.image_path = '<?= htmlspecialchars($productImages[0] ?? $product['imagePath']) ?>';
-        <?php if ($is_eligible && count($variants) > 0): ?>
-            productData.brand_id = <?= json_encode($variants[0]['brand_id']) ?>;
-            productData.brandName = <?= json_encode($variants[0]['brandName']) ?>;
-            productData.price = <?= json_encode($variants[0]['price']) ?>;
-        <?php endif; ?>
-        const originalProductId = <?= intval($product['id']) ?>;
-
-        // ── Brand Variant Change Event Listener ──
-        document.addEventListener('DOMContentLoaded', function() {
-            const variantRadios = document.querySelectorAll('.variant-radio');
-            variantRadios.forEach(radio => {
-                radio.addEventListener('change', function() {
-                    if (this.checked) {
-                        const selectedId = this.value;
-                        const price = parseFloat(this.getAttribute('data-price')) || 0;
-                        const mainImage = this.getAttribute('data-image') || 'assets/img/placeholder.png';
-                        const brandName = this.getAttribute('data-brand') || '';
-                        const brandId = this.getAttribute('data-brand-id') || null;
-
-                        // 1. Update productData properties for cart session
-                        productData.id = originalProductId; // Keep original product id for order placement
-                        productData.price = price;
-                        productData.image_path = mainImage;
-                        productData.brandName = brandName;
-                        productData.brand_id = brandId;
-
-                        // 2. Update screen inputs & text values
-                        const hiddenInput = document.getElementById('hidden_product_id');
-                        if (hiddenInput) hiddenInput.value = originalProductId;
-
-                        const priceDisplay = document.querySelector('.product-price');
-                        if (priceDisplay) {
-                            priceDisplay.textContent = '₱' + price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                        }
-
-                        const brandDisplay = document.querySelector('.product-brand');
-                        if (brandDisplay) brandDisplay.textContent = brandName;
+                        const titleDisplay = document.getElementById('productTitle');
+                        if (titleDisplay && variantLabel) titleDisplay.textContent = variantLabel;
 
                         // 3. Update main image view & modal primary image
                         const mainImgEl = document.getElementById('mainImage');
@@ -1549,9 +1382,13 @@ $conn->close();
                 return;
             }
 
-            const existing = cart.find(i => i.id === productData.id && (i.brand_id === productData.brand_id || (!i.brand_id && !productData.brand_id)));
+            const activeVariantId = productData.variant_id || '';
+            const existing = cart.find(i => {
+                if (activeVariantId) return String(i.variant_id || '') === String(activeVariantId);
+                return i.id === productData.id && (i.brand_id === productData.brand_id || (!i.brand_id && !productData.brand_id));
+            });
             if (existing) { existing.quantity = (existing.quantity || 1) + qty; }
-            else { cart.push({ id: productData.id, product_id: productData.id, brand_id: productData.brand_id || null, displayName: productData.displayName, brandName: productData.brandName || '', category: productData.category || '', price: parseFloat(productData.price), image_path: productData.image_path, quantity: qty, moq: productMOQ }); }
+            else { cart.push({ id: productData.id, product_id: productData.id, variant_id: productData.variant_id || '', brand_id: productData.brand_id || null, displayName: productData.displayName, brandName: productData.brandName || '', category: productData.category || '', price: parseFloat(productData.price), image_path: productData.image_path, quantity: qty, moq: productMOQ }); }
             localStorage.setItem('solarCart', JSON.stringify(cart));
             syncSession(cart, function() {
                 alert('Added to cart!');
@@ -1568,10 +1405,43 @@ $conn->close();
                 return;
             }
 
-            cart = [{ id: productData.id, product_id: productData.id, brand_id: productData.brand_id || null, displayName: productData.displayName, brandName: productData.brandName || '', category: productData.category || '', price: parseFloat(productData.price), image_path: productData.image_path, quantity: qty, moq: productMOQ }];
+            cart = [{ id: productData.id, product_id: productData.id, variant_id: productData.variant_id || '', brand_id: productData.brand_id || null, displayName: productData.displayName, brandName: productData.brandName || '', category: productData.category || '', price: parseFloat(productData.price), image_path: productData.image_path, quantity: qty, moq: productMOQ }];
             localStorage.setItem('solarCart', JSON.stringify(cart));
             syncSession(cart, function() {
                 window.location.href = '<?= htmlspecialchars($base_url) ?>checkout.php';
+            });
+        }
+
+        function addToCartFromButton(btn) {
+            const product = JSON.parse(btn.getAttribute('data-product'));
+            const moq = parseInt(product.moq) || 1;
+            const variantId = product.variant_id || '';
+            const existing = cart.find(item => {
+                if (variantId) return String(item.variant_id || '') === String(variantId);
+                return item.id === product.id && (item.brand_id || null) === (product.brand_id || null);
+            });
+
+            if (existing) {
+                existing.quantity = (existing.quantity || 1) + moq;
+            } else {
+                cart.push({
+                    id: product.id,
+                    product_id: product.product_id || product.id,
+                    variant_id: variantId,
+                    brand_id: product.brand_id || null,
+                    displayName: product.displayName || product.name || 'Solar Product',
+                    brandName: product.brandName || '',
+                    category: product.category || '',
+                    price: parseFloat(product.price) || 0,
+                    image_path: product.image_path || product.imagePath || 'assets/img/product-placeholder.png',
+                    quantity: moq,
+                    moq: moq
+                });
+            }
+
+            localStorage.setItem('solarCart', JSON.stringify(cart));
+            syncSession(cart, function() {
+                alert('Added to cart!');
             });
         }
 
@@ -1581,6 +1451,7 @@ $conn->close();
             const singleCart = [{
                 id: product.id,
                 product_id: product.product_id || product.id,
+                variant_id: product.variant_id || '',
                 brand_id: product.brand_id || null,
                 displayName: product.displayName || product.name || 'Solar Product',
                 brandName: product.brandName || '',
