@@ -1093,6 +1093,24 @@ body {
     }
 }
 
+/* Tablet: stack hero vertically & constrain calculator */
+@media (max-width: 1024px) and (min-width: 769px) {
+    .hero-content {
+        grid-template-columns: 1fr !important;
+        gap: 30px;
+    }
+
+    .hero-calculator {
+        max-width: 480px !important;
+        margin: 0 auto !important;
+    }
+
+    .hero {
+        padding: 60px 20px;
+        min-height: auto;
+    }
+}
+
 /****Brand Section****/
 .featured-brands {
     background: #fbbc28;

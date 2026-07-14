@@ -90,7 +90,7 @@ FROM product p
 LEFT JOIN (
     SELECT
         pbv.product_id,
-        GROUP_CONCAT(DISTINCT COALESCE(NULLIF(TRIM(sb.brandName), ''), NULLIF(TRIM(b.brand_name), '')) ORDER BY pbv.price ASC, pbv.id ASC SEPARATOR ', ') AS brand_names,
+        GROUP_CONCAT(DISTINCT COALESCE(NULLIF(TRIM(b.brand_name), ''), NULLIF(TRIM(sb.brandName), '')) ORDER BY pbv.price ASC, pbv.id ASC SEPARATOR ', ') AS brand_names,
         MIN(pbv.price) AS min_price,
         CAST(SUBSTRING_INDEX(GROUP_CONCAT(pbv.id ORDER BY pbv.price ASC, pbv.id ASC), ',', 1) AS UNSIGNED) AS variant_id,
         CAST(SUBSTRING_INDEX(GROUP_CONCAT(pbv.brand_id ORDER BY pbv.price ASC, pbv.id ASC), ',', 1) AS UNSIGNED) AS brand_id

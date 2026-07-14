@@ -57,7 +57,7 @@ if (isset($conn) && $conn instanceof mysqli) {
             SELECT
                 pbv.product_id,
                 GROUP_CONCAT(
-                    DISTINCT COALESCE(NULLIF(TRIM(sb.brandName), ''), NULLIF(TRIM(b.brand_name), ''))
+                    DISTINCT COALESCE(NULLIF(TRIM(b.brand_name), ''), NULLIF(TRIM(sb.brandName), ''))
                     ORDER BY pbv.price ASC, pbv.id ASC
                     SEPARATOR ', '
                 ) AS brand_names,

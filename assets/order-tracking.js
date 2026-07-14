@@ -147,7 +147,7 @@
     function trackReference($, reference) {
         const ref = String(reference || $('#orderTrackingReference').val() || '').trim();
         if (!ref) {
-            showMessage($, 'Please enter your order reference number.', 'error');
+            showMessage($, 'Please enter your order reference or tracking number.', 'error');
             $('#orderTrackingTimeline, #orderTrackingSummary').hide();
             $('#orderTrackingPlaceholder').fadeIn(160);
             return;
@@ -167,7 +167,7 @@
         })
             .done(function (response) {
                 if (!response || !response.success) {
-                    showMessage($, response && response.message ? response.message : 'Order reference could not be found.', 'error');
+                    showMessage($, response && response.message ? response.message : 'Order reference or tracking number could not be found.', 'error');
                     $('#orderTrackingTimeline, #orderTrackingSummary').hide();
                     $('#orderTrackingPlaceholder').fadeIn(160);
                     return;
@@ -243,6 +243,14 @@
                     showMessage($, '', 'ok');
                 }
             });
+
+            const params = new URLSearchParams(window.location.search || '');
+            const linkedReference = params.get('track_order') || params.get('order_reference') || params.get('tracking_number');
+            if (linkedReference) {
+                $('#orderTrackingReference').val(String(linkedReference).trim());
+                showModal($);
+                trackReference($, linkedReference);
+            }
         });
     });
 })();

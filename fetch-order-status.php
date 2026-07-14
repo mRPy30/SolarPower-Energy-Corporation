@@ -99,7 +99,7 @@ $reference = tracking_clean($input['order_reference'] ?? $input['reference'] ?? 
 if ($reference === '') {
     tracking_json([
         'success' => false,
-        'message' => 'Please enter your order reference number.'
+        'message' => 'Please enter your order reference or tracking number.'
     ], 422);
 }
 
@@ -118,6 +118,7 @@ $stmt = $conn->prepare(
             tracking_number, current_location, estimated_delivery, delivered_at, created_at
      FROM orders
      WHERE UPPER(order_reference) = ?
+        OR UPPER(tracking_number) = ?
      LIMIT 1'
 );
 
@@ -129,7 +130,7 @@ if (!$stmt) {
     ], 500);
 }
 
-$stmt->bind_param('s', $reference);
+$stmt->bind_param('ss', $reference, $reference);
 $stmt->execute();
 $order = $stmt->get_result()->fetch_assoc();
 $stmt->close();
@@ -138,7 +139,7 @@ if (!$order) {
     $conn->close();
     tracking_json([
         'success' => false,
-        'message' => 'No order found for that reference number.'
+        'message' => 'No order found for that reference or tracking number.'
     ], 404);
 }
 

@@ -232,7 +232,7 @@ function isActive($page)
         visibility: hidden;
         pointer-events: none;
         transition: opacity 160ms ease, transform 160ms ease, visibility 160ms ease;
-        z-index: 30;
+        z-index: 1100;
     }
 
     .nav-icon-tooltip::before {
@@ -334,7 +334,6 @@ function isActive($page)
         box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
     }
 
-    /* Mobile Menu Button */
     .mobile-menu-btn {
         display: none;
         background: none;
@@ -366,94 +365,19 @@ function isActive($page)
         transform: rotate(-45deg) translate(7px, -7px);
     }
 
-    /* ========== RESPONSIVE STYLES ========== */
-
-    /* Tablet Styles */
     @media (max-width: 1024px) {
-        .accreditation-info h5 {
-            font-size: 14px;
-        }
-
-        .header-hotline {
-            font-size: 16px;
-        }
-
-        nav ul {
-            gap: 20px;
-        }
-
-        nav a {
-            font-size: 14px;
-        }
-    }
-
-    /* Mobile Styles */
-    @media (max-width: 768px) {
-
-        /* Header Top Mobile */
-        .header-top {
-            padding: 8px 0;
-        }
-
-        .accreditation-info {
-            gap: 8px;
-        }
-
-        .accreditation-info img {
-            width: 30px;
-            height: 30px;
-        }
-
-        .accreditation-info h5 {
-            font-size: 11px;
-            line-height: 1.3;
-        }
-
-        .header-hotline {
-            font-size: 14px;
-            gap: 5px;
-        }
-
-        .phone-icon {
-            width: 18px;
-            height: 18px;
-        }
-
-        /* Main Header Mobile */
-        header {
-            top: 54px;
-            padding: 10px 0;
-        }
-
-        header.scrolled {
-            top: 54px;
-            padding: 8px 0;
-        }
-
-        .logo img {
-            width: 107px;
-            height: 50px;
-        }
-
-        header.scrolled .logo img {
-            width: 90px;
-            height: 55px;
-        }
-
-        /* Show Mobile Menu Button */
         .mobile-menu-btn {
             display: block;
         }
 
-        /* Mobile Navigation */
         nav {
             position: fixed;
             top: 54px;
             right: -100%;
-            width: 280px;
+            width: 300px;
             height: calc(100vh - 54px);
             background: var(--clr-light);
-            box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
+            box-shadow: -2px 0 10px rgba(0,0,0,0.1);
             transition: right 0.3s ease;
             overflow-y: auto;
             padding: 20px 0;
@@ -464,13 +388,11 @@ function isActive($page)
         nav.active {
             right: 0;
             visibility: visible;
-            /* Ipakita lang kapag active */
         }
 
         nav ul {
             flex-direction: column;
             gap: 0;
-            padding: 0;
         }
 
         nav ul li {
@@ -480,83 +402,383 @@ function isActive($page)
         nav a {
             display: block;
             padding: 15px 25px;
-            font-size: 16px;
-        }
-
-        nav a::after {
-            display: none;
-        }
-
-        nav a.active {
-            background: #f8f9fa;
-            border-left: 4px solid var(--clr-primary);
         }
 
         .nav-actions-item {
             padding: 12px 25px;
-            border-bottom: 1px solid #eee;
-        }
-
-        .order-tracking-nav-link,
-        .nav-cart-link {
-            width: 44px;
-            height: 44px;
-            padding: 0;
-        }
-
-        .nav-cart-link.active {
-            border-left: 0;
-            background: rgba(45, 80, 22, 0.08);
-        }
-
-        /* Mobile Menu Overlay */
-        .mobile-overlay {
-            display: none;
-            position: fixed;
-            top: 54px;
-            left: 0;
-            width: 100%;
-            height: calc(100vh - 54px);
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 999;
-        }
-
-        .mobile-overlay.active {
-            display: block;
         }
     }
 
-    /* Small Mobile Styles */
-    @media (max-width: 480px) {
+    /* Mobile-specific overrides (<=768px) */
+    @media (max-width: 768px) {
+        .header-top {
+            padding: 8px 0;
+        }
+        .accreditation-info {
+            gap: 8px;
+        }
+        .accreditation-info img {
+            width: 30px;
+            height: 30px;
+        }
         .accreditation-info h5 {
-            font-size: 9px;
+            font-size: 11px;
+            line-height: 1.3;
         }
-
         .header-hotline {
-            font-size: 12px;
+            font-size: 14px;
+            gap: 5px;
         }
-
-        .header-hotline span {
-            display: none;
+        .phone-icon {
+            width: 18px;
+            height: 18px;
         }
-
-        .header-hotline::after {
-            content: '+63 995 394 7379';
+        header {
+            top: 54px;
+            padding: 10px 0;
         }
-
+        header.scrolled {
+            top: 54px;
+            padding: 8px 0;
+        }
         .logo img {
             width: 107px;
             height: 50px;
         }
+        header.scrolled .logo img {
+            width: 90px;
+            height: 55px;
+        }
+        .nav-cart-link.active {
+            border-left: 0;
+            background: rgba(45, 80, 22, 0.08);
+        }
+    }
 
+    /* Small Mobile (<=480px) */
+    @media (max-width: 480px) {
+        .accreditation-info h5 {
+            font-size: 9px;
+        }
+        .header-hotline {
+            font-size: 12px;
+        }
+        .header-hotline > span {
+            display: none;
+        }
+        .header-hotline::after {
+            content: '+63 995 394 7379';
+            color: white;
+            font-weight: 700;
+        }
+        .logo img {
+            width: 107px;
+            height: 50px;
+        }
         header.scrolled .logo img {
             width: 70px;
             height: 45px;
         }
     }
+
+    /* Scoped public header sizing. Keep this stronger than page/footer CSS. */
+    .header-top.sp-header-top {
+        background: #2d5016;
+        min-height: 72px;
+        padding: 12px 0;
+        color: #fff;
+        box-sizing: border-box;
+    }
+
+    .header-top.sp-header-top .container,
+    #mainHeader.sp-main-header > .container {
+        width: min(100% - 32px, 1200px);
+        max-width: 1200px;
+        margin-inline: auto;
+        padding-inline: 0;
+    }
+
+    .header-top.sp-header-top .accreditation-info img {
+        width: 40px;
+        height: 45px;
+        flex: 0 0 40px;
+        object-fit: contain;
+    }
+
+    .header-top.sp-header-top .accreditation-info h5 {
+        margin: 0;
+        color: #fff;
+        font-family: Arial, sans-serif;
+        font-size: 17px;
+        font-weight: 600;
+        line-height: 1.4;
+    }
+
+    .header-top.sp-header-top .header-hotline {
+        color: #fff;
+        font-family: Arial, sans-serif;
+        font-size: 20px;
+        font-weight: 700;
+        line-height: 1.2;
+    }
+
+    .header-top.sp-header-top .phone-icon {
+        width: 30px;
+        height: 30px;
+        flex: 0 0 30px;
+    }
+
+    #mainHeader.sp-main-header {
+        background: #fff;
+        min-height: 100px;
+        padding: 15px 0;
+        position: sticky;
+        top: 72px;
+        z-index: 1000;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+        box-sizing: border-box;
+    }
+
+    #mainHeader.sp-main-header.scrolled {
+        min-height: 82px;
+        padding: 10px 0;
+        top: 72px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+    }
+
+    #mainHeader.sp-main-header .header-container {
+        min-height: 70px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 24px;
+    }
+
+    #mainHeader.sp-main-header .logo,
+    #mainHeader.sp-main-header .logo-img,
+    #mainHeader.sp-main-header .logo a {
+        display: inline-flex;
+        align-items: center;
+        flex: 0 0 auto;
+    }
+
+    #mainHeader.sp-main-header .logo img.sp-header-logo {
+        display: block;
+        width: 238px;
+        height: 70px;
+        max-width: 238px;
+        max-height: 70px;
+        object-fit: contain;
+        object-position: left center;
+        border-radius: 8px;
+        transition: width 0.3s ease, height 0.3s ease;
+    }
+
+    #mainHeader.sp-main-header.scrolled .logo img.sp-header-logo {
+        width: 190px;
+        height: 58px;
+        max-width: 190px;
+        max-height: 58px;
+    }
+
+    #mainHeader.sp-main-header #mobileNav {
+        display: flex;
+        align-items: center;
+        margin: 0;
+    }
+
+    #mainHeader.sp-main-header #mobileNav ul {
+        display: flex;
+        align-items: center;
+        gap: 30px;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    #mainHeader.sp-main-header #mobileNav a,
+    #mainHeader.sp-main-header #mobileNav button.order-tracking-nav-link {
+        font-family: Arial, sans-serif;
+        font-size: 16px;
+        font-weight: 700;
+        line-height: 1.2;
+        letter-spacing: 0;
+        text-decoration: none;
+        white-space: nowrap;
+    }
+
+    #mainHeader.sp-main-header .nav-actions-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        border-bottom: 0;
+    }
+
+    #mainHeader.sp-main-header .order-tracking-nav-link,
+    #mainHeader.sp-main-header .nav-cart-link {
+        width: 42px;
+        height: 42px;
+        min-width: 42px;
+        min-height: 42px;
+        padding: 0;
+        border-radius: 50%;
+        box-sizing: border-box;
+    }
+
+    #mainHeader.sp-main-header .order-tracking-nav-link i {
+        font-size: 21px;
+        line-height: 1;
+    }
+
+    #mainHeader.sp-main-header .nav-cart-link svg {
+        width: 22px;
+        height: 22px;
+    }
+
+    @media (max-width: 1024px) {
+        #mainHeader.sp-main-header #mobileNav {
+            position: fixed;
+            top: 54px;
+            right: -100%;
+            width: 300px;
+            max-width: min(300px, 86vw);
+            height: calc(100vh - 54px);
+            display: block;
+            background: #fff;
+            box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
+            overflow-y: auto;
+            padding: 20px 0;
+            z-index: 1001;
+            visibility: hidden;
+            transition: right 0.3s ease, visibility 0.3s ease;
+        }
+
+        #mainHeader.sp-main-header #mobileNav.active {
+            right: 0;
+            visibility: visible;
+        }
+
+        #mainHeader.sp-main-header #mobileNav ul {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 0;
+        }
+
+        #mainHeader.sp-main-header #mobileNav ul li {
+            border-bottom: 1px solid #eee;
+        }
+
+        #mainHeader.sp-main-header #mobileNav a,
+        #mainHeader.sp-main-header #mobileNav button.order-tracking-nav-link {
+            display: flex;
+            width: 100%;
+            height: auto;
+            min-height: 48px;
+            justify-content: flex-start;
+            border: 0;
+            border-radius: 0;
+            padding: 15px 25px;
+            background: transparent;
+        }
+
+        #mainHeader.sp-main-header .nav-actions-item {
+            padding: 12px 25px;
+        }
+
+        #mainHeader.sp-main-header .nav-actions-item .nav-icon-tooltip {
+            width: 42px;
+        }
+
+        #mainHeader.sp-main-header .nav-actions-item .order-tracking-nav-link,
+        #mainHeader.sp-main-header .nav-actions-item .nav-cart-link {
+            width: 42px;
+            height: 42px;
+            min-height: 42px;
+            justify-content: center;
+            border: 1px solid rgba(45, 80, 22, 0.16);
+            border-radius: 50%;
+            background: #fff;
+            padding: 0;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .header-top.sp-header-top {
+            min-height: 54px;
+            padding: 8px 0;
+        }
+
+        .header-top.sp-header-top .container,
+        #mainHeader.sp-main-header > .container {
+            width: min(100% - 24px, 1200px);
+        }
+
+        .header-top.sp-header-top .accreditation-info img {
+            width: 30px;
+            height: 30px;
+            flex-basis: 30px;
+        }
+
+        .header-top.sp-header-top .accreditation-info h5 {
+            font-size: 11px;
+            line-height: 1.3;
+        }
+
+        .header-top.sp-header-top .header-hotline {
+            font-size: 14px;
+        }
+
+        .header-top.sp-header-top .phone-icon {
+            width: 18px;
+            height: 18px;
+            flex-basis: 18px;
+        }
+
+        #mainHeader.sp-main-header {
+            min-height: 74px;
+            top: 54px;
+            padding: 10px 0;
+        }
+
+        #mainHeader.sp-main-header.scrolled {
+            min-height: 70px;
+            top: 54px;
+            padding: 8px 0;
+        }
+
+        #mainHeader.sp-main-header .header-container {
+            min-height: 54px;
+        }
+
+        #mainHeader.sp-main-header .logo img.sp-header-logo,
+        #mainHeader.sp-main-header.scrolled .logo img.sp-header-logo {
+            width: 150px;
+            height: 50px;
+            max-width: 150px;
+            max-height: 50px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .header-top.sp-header-top .accreditation-info h5 {
+            font-size: 9px;
+        }
+
+        .header-top.sp-header-top .header-hotline {
+            font-size: 12px;
+        }
+
+        #mainHeader.sp-main-header .logo img.sp-header-logo,
+        #mainHeader.sp-main-header.scrolled .logo img.sp-header-logo {
+            width: 136px;
+            height: 46px;
+            max-width: 136px;
+            max-height: 46px;
+        }
+    }
 </style>
 
-<div class="header-top">
+<div class="header-top sp-header-top">
     <div class="container">
         <div class="accreditation-info">
             <img src="assets/img/DOE.png" alt="DOE Logo">
@@ -564,11 +786,10 @@ function isActive($page)
         </div>
         <div class="header-hotline">
             <svg class="phone-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white">
-                <path
-                    d="M20.01 15.38c-1.23 0-2.42-.2-3.53-.56-.35-.12-.74-.03-1.01.24l-1.57 1.97c-2.83-1.35-5.48-3.9-6.89-6.83l1.95-1.66c.27-.28.35-.67.24-1.02-.37-1.11-.56-2.3-.56-3.53 0-.54-.45-.99-.99-.99H4.19C3.65 3 3 3.24 3 3.99 3 13.28 10.73 21 20.01 21c.71 0 .99-.63.99-1.18v-3.45c0-.54-.45-.99-.99-.99z" />
+                <path d="M20.01 15.38c-1.23 0-2.42-.2-3.53-.56-.35-.12-.74-.03-1.01.24l-1.57 1.97c-2.83-1.35-5.48-3.9-6.89-6.83l1.95-1.66c.27-.28.35-.67.24-1.02-.37-1.11-.56-2.3-.56-3.53 0-.54-.45-.99-.99-.99H4.19C3.65 3 3 3.24 3 3.99 3 13.28 10.73 21 20.01 21c.71 0 .99-.63.99-1.18v-3.45c0-.54-.45-.99-.99-.99z" />
             </svg>
             <span>Order Hotline: <span id="phoneNumber" onclick="copyPhone()" title="Click to copy"
-                    style="cursor:pointer;  text-underline-offset:3px;">+63 995 394 7379</span></span>
+                    style="cursor:pointer; text-underline-offset:3px;">+63 995 394 7379</span></span>
         </div>
     </div>
 </div>
@@ -576,13 +797,13 @@ function isActive($page)
 <!-- Mobile Menu Overlay -->
 <div class="mobile-overlay" id="mobileOverlay"></div>
 
-<header id="mainHeader">
+<header id="mainHeader" class="sp-main-header">
     <div class="container">
         <div class="header-container">
             <div class="logo">
                 <div class="logo-img">
                     <a href="index.php">
-                        <img src="assets/img/solarpower_energy_corp.png" alt="Solar Power Logo" style="max-height: 70px; width: auto; object-fit: contain;">
+                        <img src="assets/img/solarpower_energy_corp.png" alt="Solar Power Logo" class="sp-header-logo">
                     </a>
                 </div>
             </div>
@@ -638,14 +859,14 @@ function isActive($page)
             </div>
             <div class="modal-body">
                 <form id="orderTrackingForm" novalidate>
-                    <label class="visually-hidden" for="orderTrackingReference">Enter your Order Reference Number</label>
+                    <label class="visually-hidden" for="orderTrackingReference">Enter your Order Reference or Tracking Number</label>
                     <div class="tracking-search-wrap">
                         <input
                             type="text"
                             class="tracking-reference-input"
                             id="orderTrackingReference"
                             name="order_reference"
-                            placeholder="Enter your Order Reference Number"
+                            placeholder="Enter Order Reference or Tracking Number"
                             autocomplete="off"
                             inputmode="text">
                         <button type="submit" class="tracking-submit-btn" id="orderTrackingSubmit">Track</button>
@@ -655,7 +876,7 @@ function isActive($page)
                 <div class="tracking-message" id="orderTrackingMessage" role="status" aria-live="polite"></div>
 
                 <div class="tracking-placeholder" id="orderTrackingPlaceholder">
-                    Enter your reference number above to see your order progress.
+                    Enter your order reference or tracking number above to see your order progress.
                 </div>
 
                 <div class="tracking-order-summary" id="orderTrackingSummary"></div>
@@ -704,10 +925,10 @@ function isActive($page)
     }
 
     // Close menu when a link is clicked
-    const navLinks = document.querySelectorAll('nav a, nav button');
+    const navLinks = document.querySelectorAll('#mobileNav a, #mobileNav button');
     navLinks.forEach(link => {
         link.addEventListener('click', function() {
-            if (window.innerWidth <= 768) {
+            if (window.innerWidth <= 1024) {
                 mobileMenuBtn.classList.remove('active');
                 mobileNav.classList.remove('active');
                 mobileOverlay.classList.remove('active');

@@ -525,12 +525,12 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
                                           placeholder="Describe this update for the customer...&#10;&#10;Example: Your order has been dispatched from our warehouse and is on its way to you."></textarea>
                             </div>
 
-                            <div class="form-group">
-                                <label class="checkbox-label">
-                                    <input type="checkbox" id="trackingSendNotification" checked>
-                                    <i class="fas fa-envelope"></i> Send email notification to customer
+                                <div class="form-group">
+                                    <label class="checkbox-label">
+                                    <input type="checkbox" id="trackingSendNotification" checked disabled style="display:none;">
+                                    <i class="fas fa-envelope"></i> Customer email notification is sent automatically
                                 </label>
-                            </div>
+                                </div>
                         </div>
                     </div>
 

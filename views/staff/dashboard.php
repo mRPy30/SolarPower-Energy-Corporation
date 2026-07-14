@@ -447,7 +447,7 @@ function get_all_products($conn)
     LEFT JOIN (
         SELECT
             pbv.product_id,
-            GROUP_CONCAT(DISTINCT COALESCE(NULLIF(TRIM(sb.brandName), ''), NULLIF(TRIM(b.brand_name), '')) ORDER BY pbv.price ASC, pbv.id ASC SEPARATOR ', ') AS brand_names
+            GROUP_CONCAT(DISTINCT COALESCE(NULLIF(TRIM(b.brand_name), ''), NULLIF(TRIM(sb.brandName), '')) ORDER BY pbv.price ASC, pbv.id ASC SEPARATOR ', ') AS brand_names
         FROM product_brand_variants pbv
         LEFT JOIN supplier_brands sb
             ON pbv.brand_id = sb.id
@@ -3437,7 +3437,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                             </div>
                             
                             <div class="review-meta-grid">
-                                <div class="meta-item">
+                                <div class="meta-item" style="display: none;">
                                     <div class="meta-icon"><i class="fas fa-boxes"></i></div>
                                     <div class="meta-info">
                                         <div class="meta-label">Stock Quantity</div>
@@ -5044,7 +5044,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                                     <div class="form-group">
                                         <label><i class="fas fa-box"></i> Order Status *</label>
                                         <select id="trackingOrderStatus" required>
-                                            <option value="pending">Pending</option>
                                             <option value="confirmed">Confirmed</option>
                                             <option value="preparing">Preparing</option>
                                             <option value="ready_to_ship">Ready to Ship</option>
@@ -5056,12 +5055,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                                     </div>
 
                                     <div class="form-group">
-                                        <label><i class="fas fa-credit-card"></i> Payment Status *</label>
-                                        <select id="trackingPaymentStatus" required>
-                                            <option value="pending">Pending</option>
-                                            <option value="paid">Paid</option>
-                                            <option value="partial">Partial</option>
-                                        </select>
+                                        <label><i class="fas fa-credit-card"></i> Payment Status</label>
+                                        <div style="font-weight: 600; color: #15803d; padding: 8px 12px; background: #f0fdf4; border-radius: 6px; border: 1px solid #bbf7d0; display: inline-flex; align-items: center; gap: 6px; width: 100%;">
+                                            <i class="fas fa-check-circle" style="color: #16a34a;"></i> Paid
+                                        </div>
+                                        <input type="hidden" id="trackingPaymentStatus" value="paid">
                                     </div>
                                 </div>
 
@@ -5084,8 +5082,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                                 </div>
 
                                 <div class="form-group">
-                                    <label><i class="fas fa-truck"></i> Tracking Number</label>
-                                    <input type="text" id="trackingNumber" placeholder="e.g., TRK-2025-001234">
+                                    <label style="display: flex; justify-content: space-between; align-items: center;">
+                                        <span><i class="fas fa-truck"></i> Tracking Number</span>
+                                        <span style="font-size: 0.75rem; background: #e0f2fe; color: #0369a1; padding: 2px 8px; border-radius: 999px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
+                                            <i class="fas fa-magic" style="font-size: 0.7rem;"></i> Auto-gen
+                                        </span>
+                                    </label>
+                                    <div style="position: relative; display: flex; align-items: center;">
+                                        <input type="text" id="trackingNumber" readonly class="readonly-input" style="padding-right: 36px; background: #f8fafc; cursor: not-allowed; border-color: #cbd5e1; width: 100%;">
+                                        <i class="fas fa-lock" style="position: absolute; right: 12px; color: #94a3b8;" title="Auto-generated and locked"></i>
+                                    </div>
                                 </div>
 
                                 <div class="form-group">
@@ -5104,8 +5110,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
 
                                 <div class="form-group">
                                     <label class="checkbox-label">
-                                        <input type="checkbox" id="trackingSendNotification" checked>
-                                        <i class="fas fa-envelope"></i> Send email notification to customer
+                                        <input type="checkbox" id="trackingSendNotification" checked disabled style="display:none;">
+                                        <i class="fas fa-envelope"></i> Customer email notification is sent automatically
                                     </label>
                                 </div>
                             </div>
@@ -9398,10 +9404,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
         const TrackingModule = {
             trackingData: [],
             filteredData: [],
+            listenersBound: false,
+            isUpdatingTracking: false,
 
             init() {
                 this.loadTracking();
-                this.setupEventListeners();
+                if (!this.listenersBound) {
+                    this.setupEventListeners();
+                    this.listenersBound = true;
+                }
             },
 
             setupEventListeners() {
@@ -9632,6 +9643,35 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 this.renderTracking();
             },
 
+            generateTrackingNumber(order) {
+                // Map product category text → shortcode
+                // Matches the 'category' text column in the product table
+                const cat = (order.product_category || '').toLowerCase().trim();
+                let code = 'gen';
+                if (cat.includes('panel') || cat.includes('solar panel')) code = 'pnl';
+                else if (cat.includes('batter')) code = 'btt';
+                else if (cat.includes('invert')) code = 'inv';
+                else if (cat.includes('mount') || cat.includes('racking')) code = 'mnt';
+                else if (cat.includes('package') || cat.includes('kit')) code = 'pck';
+                else if (cat.includes('accessori') || cat.includes('product')) code = 'prd';
+
+                let orderDate = new Date('2026-07-01');
+                if (order.created_at) {
+                    const parsedDate = new Date(order.created_at);
+                    if (!isNaN(parsedDate.getTime())) {
+                        orderDate = parsedDate;
+                    }
+                }
+
+                const mm = String(orderDate.getMonth() + 1).padStart(2, '0');
+                const yy = String(orderDate.getFullYear()).slice(-2);
+
+                const incVal = order.id ? parseInt(order.id) : 1;
+                const increment = String(incVal).padStart(4, '0');
+
+                return `spec-${code}-${mm}${yy}-${increment}`;
+            },
+
             openUpdateModal(orderId) {
                 // 1. Ensure we find the order even if ID is a string or number
                 const order = this.trackingData.find(o => o.id == orderId);
@@ -9644,10 +9684,18 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 document.getElementById('trackingOrderId').value = order.id;
                 document.getElementById('trackingOrderRef').value = order.order_reference;
                 document.getElementById('trackingCustomerName').value = order.customer_name;
-                document.getElementById('trackingOrderStatus').value = order.order_status;
-                document.getElementById('trackingPaymentStatus').value = order.payment_status;
+                let orderStatus = order.order_status;
+                if (!orderStatus || orderStatus === 'pending' || orderStatus === 'processing') {
+                    orderStatus = 'confirmed';
+                }
+                document.getElementById('trackingOrderStatus').value = orderStatus;
+                document.getElementById('trackingPaymentStatus').value = order.payment_status || 'paid';
                 document.getElementById('trackingCurrentLocation').value = order.current_location || '';
-                document.getElementById('trackingNumber').value = order.tracking_number || '';
+
+                // Automate tracking number field
+                const trackingNum = order.tracking_number || this.generateTrackingNumber(order);
+                document.getElementById('trackingNumber').value = trackingNum;
+
                 document.getElementById('trackingEstimatedDelivery').value = order.estimated_delivery || '';
 
                 // 3. SHOW MODAL - Use the ID defined in your HTML
@@ -9691,6 +9739,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
 
             async handleUpdateTracking(e) {
                 e.preventDefault();
+                if (this.isUpdatingTracking) {
+                    return;
+                }
+                this.isUpdatingTracking = true;
 
                 const formData = {
                     order_id: document.getElementById('trackingOrderId').value,
@@ -9716,10 +9768,27 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                         body: JSON.stringify(formData)
                     });
 
-                    const result = await response.json();
+                    const rawResponse = await response.text();
+                    let result;
+                    try {
+                        result = JSON.parse(rawResponse);
+                    } catch (parseError) {
+                        throw new Error(rawResponse ? rawResponse.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : 'Server returned an invalid response.');
+                    }
+
+                    if (!response.ok) {
+                        throw new Error(result.message || `Server returned HTTP ${response.status}.`);
+                    }
 
                     if (result.success) {
-                        alert('Tracking updated successfully!');
+                        let successMessage = result.message || 'Tracking updated successfully!';
+                        if (result.email_sent) {
+                            successMessage += `\nCustomer email sent via ${result.email_provider || 'email'}.`;
+                        } else if (result.email_message) {
+                            successMessage += `\nTracking was saved, but email was not sent: ${result.email_message}`;
+                        }
+
+                        alert(successMessage);
                         this.closeUpdateModal();
                         this.loadTracking();
                     } else {
@@ -9727,10 +9796,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                     }
                 } catch (error) {
                     console.error('Error:', error);
-                    alert('An error occurred while updating tracking');
+                    alert(error.message || 'An error occurred while updating tracking');
                 } finally {
                     submitBtn.innerHTML = originalText;
                     submitBtn.disabled = false;
+                    this.isUpdatingTracking = false;
                 }
             },
 
@@ -10778,7 +10848,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                         : product.category;
                     document.getElementById('reviewCategory').textContent = categoryText;
                     
-                    document.getElementById('reviewDescription').textContent = product.description || 'No description provided.';
+                    document.getElementById('reviewDescription').innerHTML = product.description || 'No description provided.';
 
                     // Status Badge styling
                     const statusBadge = document.getElementById('reviewStatusBadge');
@@ -10838,14 +10908,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
             }
 
             // Set main image
-            imgElement.src = reviewImages[currentReviewImageIndex].image_path;
+            imgElement.src = '../../' + reviewImages[currentReviewImageIndex].image_path;
             indexBadge.textContent = `${currentReviewImageIndex + 1}/${reviewImages.length}`;
 
             // Populate thumbnails
             reviewImages.forEach((img, idx) => {
                 const thumb = document.createElement('img');
                 thumb.className = `review-thumb ${idx === currentReviewImageIndex ? 'active' : ''}`;
-                thumb.src = img.image_path;
+                thumb.src = '../../' + img.image_path;
                 thumb.alt = `Thumbnail ${idx + 1}`;
                 thumb.onerror = function() { this.src = '../../assets/img/product-placeholder.png'; };
                 thumb.onclick = function() {

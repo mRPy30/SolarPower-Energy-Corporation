@@ -9,6 +9,7 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 $orderRef = $_GET['ref'] ?? 'Unknown';
+$successToken = $_GET['token'] ?? '';
 $order = null;
 $confirmationError = '';
 
@@ -16,7 +17,7 @@ require_once 'config/dbconn.php';
 require_once 'includes/checkout-service.php';
 
 try {
-    $order = checkout_finalize_paid_maya_order($conn, $orderRef);
+    $order = checkout_finalize_paid_maya_order($conn, $orderRef, $successToken);
     unset($_SESSION['cart']);
 } catch (Throwable $e) {
     $confirmationError = $e->getMessage();

@@ -295,7 +295,7 @@ FROM product p
 LEFT JOIN (
     SELECT
         pbv.product_id,
-        GROUP_CONCAT(DISTINCT COALESCE(NULLIF(TRIM(sb.brandName), ''), NULLIF(TRIM(b.brand_name), '')) ORDER BY pbv.price ASC, pbv.id ASC SEPARATOR ', ') AS brand_names,
+        GROUP_CONCAT(DISTINCT COALESCE(NULLIF(TRIM(b.brand_name), ''), NULLIF(TRIM(sb.brandName), '')) ORDER BY pbv.price ASC, pbv.id ASC SEPARATOR ', ') AS brand_names,
         MIN(pbv.price) AS min_price,
         CAST(SUBSTRING_INDEX(GROUP_CONCAT(pbv.brand_id ORDER BY pbv.price ASC, pbv.id ASC), ',', 1) AS UNSIGNED) AS brand_id
     FROM product_brand_variants pbv
@@ -913,7 +913,7 @@ $conn->close();
                             <!-- Simple inline form inside calculator body -->
                             <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px;">
                                 <input type="text" id="inlineLeadName" placeholder="Full Name (Required)" style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 0.8rem; outline: none; box-shadow: inset 0 1px 2px rgba(0,0,0,0.02);" onchange="autoSaveLead()" onblur="autoSaveLead()" oninput="handleFormInput()" required>
-                                <input type="text" id="inlineLeadContact" placeholder="Phone Number or Email (Required)" style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 0.8rem; outline: none; box-shadow: inset 0 1px 2px rgba(0,0,0,0.02);" onchange="autoSaveLead()" onblur="autoSaveLead()" oninput="handleFormInput()" required>
+                                <input type="text" id="inlineLeadContact" placeholder="Phone (09/+63) or Gmail/Yahoo Email" title="Enter an 11-digit PH mobile number, +63 mobile format, or a Gmail/Yahoo email address." style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 0.8rem; outline: none; box-shadow: inset 0 1px 2px rgba(0,0,0,0.02);" onchange="autoSaveLead()" onblur="autoSaveLead()" oninput="handleFormInput()" required>
                                 
                                 <!-- Submit Estimate Button -->
                                 <button type="button" id="inlineSubmitBtn" onclick="handleInlineSubmit()" style="display: none; width: 100%; align-items: center; justify-content: center; padding: 10px 12px; border-radius: 10px; background-color: #0D5C3A; color: #ffffff; font-size: 0.8rem; font-weight: 700; border: none; cursor: pointer; transition: background-color 0.2s, transform 0.2s; box-shadow: 0 4px 12px rgba(13, 92, 58, 0.15); margin-top: 4px;"
@@ -1914,13 +1914,112 @@ $conn->close();
         }
 
         let submitBtnTimeout = null;
+        const leadContactErrorMessage = 'Please enter a valid contact: 11-digit PH mobile number (09XXXXXXXXX), +63 format (+639XXXXXXXXX), or a Gmail/Yahoo email address.';
+
+        function parseLeadContact(contact) {
+            const rawContact = contact.trim();
+            const normalizedPhone = rawContact.replace(/[\s-]/g, '');
+            const normalizedEmail = rawContact.toLowerCase();
+            const validPhonePattern = /^(09\d{9}|\+639\d{9})$/;
+            const validEmailPattern = /^[^\s@]+@(gmail\.com|yahoo\.com|yahoo\.com\.ph)$/i;
+
+            if (validPhonePattern.test(normalizedPhone)) {
+                return {
+                    isValid: true,
+                    lead_phone: normalizedPhone,
+                    lead_email: null
+                };
+            }
+
+            if (validEmailPattern.test(normalizedEmail)) {
+                return {
+                    isValid: true,
+                    lead_phone: null,
+                    lead_email: normalizedEmail
+                };
+            }
+
+            return {
+                isValid: false,
+                lead_phone: null,
+                lead_email: null
+            };
+        }
+
+        function updateLeadContactValidity(contactInput) {
+            if (!contactInput) return false;
+
+            const contact = contactInput.value.trim();
+            if (!contact) {
+                contactInput.setCustomValidity('');
+                return false;
+            }
+
+            const parsedContact = parseLeadContact(contact);
+            contactInput.setCustomValidity(parsedContact.isValid ? '' : leadContactErrorMessage);
+            return parsedContact.isValid;
+        }
+
+        function getValidatedLeadDetails(nameInput, contactInput) {
+            const name = nameInput.value.trim();
+            const contact = contactInput.value.trim();
+
+            if (!name || !contact) {
+                alert('Please provide your Name and Contact details first.');
+                (!name ? nameInput : contactInput).focus();
+                return null;
+            }
+
+            const parsedContact = parseLeadContact(contact);
+            if (!parsedContact.isValid) {
+                contactInput.setCustomValidity(leadContactErrorMessage);
+                contactInput.reportValidity();
+                contactInput.focus();
+                return null;
+            }
+
+            contactInput.setCustomValidity('');
+            return {
+                name,
+                lead_phone: parsedContact.lead_phone,
+                lead_email: parsedContact.lead_email
+            };
+        }
+
+        function postCalculatorLead(payload) {
+            return fetch('api/log_calculator_lead.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+            .then(response => response.json()
+                .catch(() => ({ success: false, message: 'Invalid server response' }))
+                .then(data => {
+                    if (!response.ok || data.success === false) {
+                        throw new Error(data.message || 'Lead submission failed');
+                    }
+
+                    return data;
+                })
+            );
+        }
 
         function handleFormInput() {
             const name = document.getElementById('inlineLeadName').value.trim();
-            const contact = document.getElementById('inlineLeadContact').value.trim();
+            const contactInput = document.getElementById('inlineLeadContact');
+            const contact = contactInput.value.trim();
+            const hasValidContact = updateLeadContactValidity(contactInput);
+            const submitButton = document.getElementById('inlineSubmitBtn');
 
             if (!name && !contact) {
-                document.getElementById('inlineSubmitBtn').style.display = 'none';
+                submitButton.style.display = 'none';
+                clearTimeout(submitBtnTimeout);
+                submitBtnTimeout = null;
+                return;
+            }
+
+            if (!name || !hasValidContact) {
+                submitButton.style.display = 'none';
                 clearTimeout(submitBtnTimeout);
                 submitBtnTimeout = null;
                 return;
@@ -1928,10 +2027,11 @@ $conn->close();
 
             if (!submitBtnTimeout) {
                 submitBtnTimeout = setTimeout(() => {
+                    submitBtnTimeout = null;
                     const currentName = document.getElementById('inlineLeadName').value.trim();
                     const currentContact = document.getElementById('inlineLeadContact').value.trim();
-                    if (currentName || currentContact) {
-                        document.getElementById('inlineSubmitBtn').style.display = 'flex';
+                    if (currentName && parseLeadContact(currentContact).isValid) {
+                        submitButton.style.display = 'flex';
                     }
                 }, 5000);
             }
@@ -1940,38 +2040,22 @@ $conn->close();
         function handleInlineSubmit() {
             const nameInput = document.getElementById('inlineLeadName');
             const contactInput = document.getElementById('inlineLeadContact');
-            
-            const name = nameInput.value.trim();
-            const contact = contactInput.value.trim();
-            
-            if (!name || !contact) {
-                alert('Please provide your Name and Contact details (Phone or Email) first.');
-                nameInput.focus();
+
+            const leadDetails = getValidatedLeadDetails(nameInput, contactInput);
+            if (!leadDetails) {
                 return;
             }
 
             const bill = parseFloat(document.getElementById('twBillSliderHero').value);
             const systemSize = document.getElementById('twKwValueHero').textContent + ' kWp';
 
-            let lead_phone = null;
-            let lead_email = null;
-            if (contact.includes('@')) {
-                lead_email = contact;
-            } else {
-                lead_phone = contact;
-            }
-
-            fetch('api/log_calculator_lead.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    action: 'submitted',
-                    bill: bill,
-                    system_size: systemSize,
-                    lead_name: name,
-                    lead_phone: lead_phone,
-                    lead_email: lead_email
-                })
+            postCalculatorLead({
+                action: 'submitted',
+                bill: bill,
+                system_size: systemSize,
+                lead_name: leadDetails.name,
+                lead_phone: leadDetails.lead_phone,
+                lead_email: leadDetails.lead_email
             })
             .then(() => {
                 nameInput.value = '';
@@ -1989,6 +2073,7 @@ $conn->close();
             })
             .catch(err => {
                 console.error('Lead submission failed:', err);
+                alert(err.message || 'There was an error submitting your details. Please try again.');
             });
         }
 
@@ -1996,39 +2081,22 @@ $conn->close();
         function handleInlineLead(action, redirectUrl) {
             const nameInput = document.getElementById('inlineLeadName');
             const contactInput = document.getElementById('inlineLeadContact');
-            
-            const name = nameInput.value.trim();
-            const contact = contactInput.value.trim();
-            
-            if (!name || !contact) {
-                alert('Please provide your Name and Contact details (Phone or Email) first.');
-                nameInput.focus();
+
+            const leadDetails = getValidatedLeadDetails(nameInput, contactInput);
+            if (!leadDetails) {
                 return;
             }
 
             const bill = parseFloat(document.getElementById('twBillSliderHero').value);
             const systemSize = document.getElementById('twKwValueHero').textContent + ' kWp';
 
-            // Detect if contact input is email or phone number
-            let lead_phone = null;
-            let lead_email = null;
-            if (contact.includes('@')) {
-                lead_email = contact;
-            } else {
-                lead_phone = contact;
-            }
-
-            fetch('api/log_calculator_lead.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    action: action,
-                    bill: bill,
-                    system_size: systemSize,
-                    lead_name: name,
-                    lead_phone: lead_phone,
-                    lead_email: lead_email
-                })
+            postCalculatorLead({
+                action: action,
+                bill: bill,
+                system_size: systemSize,
+                lead_name: leadDetails.name,
+                lead_phone: leadDetails.lead_phone,
+                lead_email: leadDetails.lead_email
             })
             .then(() => {
                 // Clear fields on success
@@ -2050,7 +2118,7 @@ $conn->close();
             })
             .catch(err => {
                 console.error('Lead submission failed:', err);
-                window.open(redirectUrl, '_blank');
+                alert(err.message || 'There was an error submitting your details. Please try again.');
             });
         }
 
@@ -2060,11 +2128,14 @@ $conn->close();
         let lastSavedContact = '';
 
         function autoSaveLead() {
+            const contactInput = document.getElementById('inlineLeadContact');
             const name = document.getElementById('inlineLeadName').value.trim();
-            const contact = document.getElementById('inlineLeadContact').value.trim();
+            const contact = contactInput.value.trim();
+            const parsedContact = parseLeadContact(contact);
+            updateLeadContactValidity(contactInput);
 
             // Only save if name and contact are filled out and have changed
-            if (!name || !contact || (name === lastSavedName && contact === lastSavedContact)) {
+            if (!name || !contact || !parsedContact.isValid || (name === lastSavedName && contact === lastSavedContact)) {
                 return;
             }
 
@@ -2073,25 +2144,13 @@ $conn->close();
                 const bill = parseFloat(document.getElementById('twBillSliderHero').value);
                 const systemSize = document.getElementById('twKwValueHero').textContent + ' kWp';
 
-                let lead_phone = null;
-                let lead_email = null;
-                if (contact.includes('@')) {
-                    lead_email = contact;
-                } else {
-                    lead_phone = contact;
-                }
-
-                fetch('api/log_calculator_lead.php', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        action: 'calculated', // logged as interaction
-                        bill: bill,
-                        system_size: systemSize,
-                        lead_name: name,
-                        lead_phone: lead_phone,
-                        lead_email: lead_email
-                    })
+                postCalculatorLead({
+                    action: 'calculated', // logged as interaction
+                    bill: bill,
+                    system_size: systemSize,
+                    lead_name: name,
+                    lead_phone: parsedContact.lead_phone,
+                    lead_email: parsedContact.lead_email
                 })
                 .then(() => {
                     lastSavedName = name;

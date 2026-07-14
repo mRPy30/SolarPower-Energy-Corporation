@@ -33,6 +33,17 @@ if (!$prod) {
 }
 $stmt->close();
 
+// ── Fetch first product image for live preview ───────────────────────────
+$firstImage = '';
+$imgQuery = $conn->prepare("SELECT image_path FROM product_images WHERE product_id = ? ORDER BY id ASC LIMIT 1");
+$imgQuery->bind_param("i", $product_id);
+$imgQuery->execute();
+$imgRow = $imgQuery->get_result()->fetch_assoc();
+if ($imgRow) {
+    $firstImage = $imgRow['image_path'];
+}
+$imgQuery->close();
+
 // ── Fetch existing brand variants (keyed by brand_id) ───────────────────
 $existingVariants = [];
 $sv = $conn->prepare("SELECT brand_id, price, variant_image FROM product_brand_variants WHERE product_id = ?");
@@ -43,6 +54,15 @@ while ($row = $resV->fetch_assoc()) {
     $existingVariants[(int)$row['brand_id']] = ['price' => $row['price'], 'image' => $row['variant_image']];
 }
 $sv->close();
+
+if (empty($firstImage)) {
+    foreach ($existingVariants as $v) {
+        if (!empty($v['image'])) {
+            $firstImage = $v['image'];
+            break;
+        }
+    }
+}
 
 // ── Fetch all categories ─────────────────────────────────────────────────
 $categories = [];
@@ -75,11 +95,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     if ($isVariant && !empty($brand_ids)) {
         $firstBrandId = (int)$brand_ids[0];
         $fallbackPrice = (float)($brand_prices[$firstBrandId] ?? 0);
-        $br = $conn->prepare("SELECT brandName FROM brands WHERE id = ?");
+        $br = $conn->prepare("SELECT brand_name FROM brands WHERE brand_id = ?");
         $br->bind_param("i", $firstBrandId);
         $br->execute();
         $brow = $br->get_result()->fetch_assoc();
-        $fallbackBrand = $brow['brandName'] ?? 'Various';
+        $fallbackBrand = $brow['brand_name'] ?? 'Various';
         $br->close();
     } else {
         $fallbackBrand = trim($_POST['brand'] ?? '');
@@ -671,17 +691,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 <h3><i class="fas fa-eye"></i> Live Preview</h3>
                 <p>See how your product will appear</p>
             </div>
-            <div class="preview-img-wrap">
-                <img id="preview-img" src="" alt="preview">
-                <div class="ph" id="preview-ph">
-                    <i class="fas fa-solar-panel"></i>
-                    No image selected
+
+            <div class="preview-carousel" style="position: relative;">
+                <div id="carousel-placeholder-icon" style="position: absolute; inset: 0; background: #f8fafc; display: <?= !empty($firstImage) ? 'none' : 'flex' ?>; flex-direction: column; align-items: center; justify-content: center; border-radius: 12px; border: 1px dashed #cbd5e1; transition: opacity 0.3s ease; gap: 10px;">
+                    <div style="background: #e2e8f0; width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #94a3b8; font-size: 24px;">
+                        <i class="fas fa-solar-panel"></i>
+                    </div>
+                    <span style="font-size: 12px; color: #94a3b8; font-weight: 500;">No Image Uploaded</span>
                 </div>
+                <img id="carousel-image" src="<?= !empty($firstImage) ? '../../' . htmlspecialchars($firstImage) : '' ?>" alt="Preview" style="display: <?= !empty($firstImage) ? 'block' : 'none' ?>; width: 100%; height: 100%; object-fit: cover; border-radius: 12px;">
             </div>
-            <div class="preview-body">
-                <div class="preview-name" id="preview-name"><?= htmlspecialchars($prod['displayName']) ?></div>
-                <span class="preview-cat" id="preview-cat"><?= htmlspecialchars($prod['category']) ?></span>
+
+            <div class="preview-info">
+                <div class="preview-product-name" id="preview-name"><?= htmlspecialchars($prod['displayName']) ?></div>
+                <div class="preview-category-tag">
+                    <i class="fas fa-tag"></i> <span id="preview-cat"><?= htmlspecialchars($prod['category']) ?></span>
+                </div>
                 <div class="preview-price" id="preview-price">₱<?= number_format((float)$prod['price'], 2) ?></div>
+                <div class="preview-actions">
+                    <button type="button" class="preview-cart-btn">
+                        <i class="fas fa-shopping-cart"></i>
+                    </button>
+                    <button type="button" class="preview-buy-btn">
+                        Buy Now
+                    </button>
+                </div>
             </div>
         </div>
     </div>

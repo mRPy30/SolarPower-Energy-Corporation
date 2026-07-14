@@ -1150,11 +1150,25 @@ $conn->close();
     <div id="imgModal" onclick="handleModalBackdropClick(event)" style="display:none;position:fixed;inset:0;z-index:99999;align-items:center;justify-content:center;background:rgba(0,0,0,0.55);">
         <div onclick="event.stopPropagation()" style="display:flex;gap:0;background:#fff;border-radius:4px;max-width:980px;width:95vw;max-height:92vh;overflow:hidden;position:relative;box-shadow:0 8px 48px rgba(0,0,0,0.28);">
             <!-- Close button -->
-            <button onclick="closeImgModal()" style="position:absolute;top:14px;right:14px;background:none;border:none;font-size:26px;line-height:1;cursor:pointer;color:#333;z-index:10;width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:50%;transition:background 0.2s;" onmouseover="this.style.background='#f0f0f0'" onmouseout="this.style.background='none'">&times;</button>
+            <button onclick="closeImgModal()" style="position:absolute;top:14px;right:14px;background:none;border:none;font-size:26px;line-height:1;cursor:pointer;color:#333;z-index:30;width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:50%;transition:background 0.2s;" onmouseover="this.style.background='#f0f0f0'" onmouseout="this.style.background='none'">&times;</button>
 
-            <!-- Main image area -->
-            <div style="flex:1;display:flex;align-items:center;justify-content:center;background:#fff;padding:32px 24px;min-height:480px;">
-                <img id="modalImage" src="<?= htmlspecialchars($productImages[0]) ?>" style="max-width:100%;max-height:68vh;object-fit:contain;display:block;">
+            <!-- Main image area with zoom container -->
+            <div style="flex:1;display:flex;align-items:center;justify-content:center;background:#fff;padding:32px 24px;min-height:480px;position:relative;overflow:auto;">
+                <img id="modalImage" src="<?= htmlspecialchars($productImages[0]) ?>" style="max-width:100%;max-height:68vh;object-fit:contain;display:block;transform-origin:center;transition:transform 0.2s ease;">
+                
+                <!-- Zoom Control Panel -->
+                <div class="zoom-controls" style="position:absolute;bottom:20px;left:50%;transform:translateX(-50%);background:rgba(255,255,255,0.92);backdrop-filter:blur(4px);border:1px solid #e0e0e0;border-radius:30px;padding:6px 16px;display:flex;gap:12px;align-items:center;box-shadow:0 4px 20px rgba(0,0,0,0.15);z-index:20;">
+                    <button type="button" onclick="zoomOut()" style="background:none;border:none;cursor:pointer;color:#333;width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:50%;transition:background 0.2s;" onmouseover="this.style.background='#e0e0e0'" onmouseout="this.style.background='none'" title="Zoom Out">
+                        <i class="fas fa-search-minus"></i>
+                    </button>
+                    <span id="zoomPercent" style="font-size:12px;font-weight:700;color:#333;min-width:40px;text-align:center;user-select:none;">100%</span>
+                    <button type="button" onclick="zoomIn()" style="background:none;border:none;cursor:pointer;color:#333;width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:50%;transition:background 0.2s;" onmouseover="this.style.background='#e0e0e0'" onmouseout="this.style.background='none'" title="Zoom In">
+                        <i class="fas fa-search-plus"></i>
+                    </button>
+                    <button type="button" onclick="resetZoom()" style="background:none;border:none;cursor:pointer;color:#dc3545;font-size:11px;font-weight:700;padding:2px 8px;border-radius:4px;transition:background 0.2s;" onmouseover="this.style.background='#f8d7da'" onmouseout="this.style.background='none'" title="Reset Zoom">
+                        Reset
+                    </button>
+                </div>
             </div>
 
             <!-- Thumbnail sidebar -->
@@ -1288,13 +1302,47 @@ $conn->close();
         let deliveryFee = 0;
         let installationFee = 0;
 
-        // ── Image gallery ──
+        // ── Image gallery & Zoom ──
+        let currentZoomScale = 1;
+
+        function zoomIn() {
+            if (currentZoomScale < 3) {
+                currentZoomScale += 0.25;
+                applyZoom();
+            }
+        }
+
+        function zoomOut() {
+            if (currentZoomScale > 1) {
+                currentZoomScale -= 0.25;
+                applyZoom();
+            }
+        }
+
+        function resetZoom() {
+            currentZoomScale = 1;
+            applyZoom();
+        }
+
+        function applyZoom() {
+            const img = document.getElementById('modalImage');
+            if (img) {
+                img.style.transform = `scale(${currentZoomScale})`;
+            }
+            const percent = document.getElementById('zoomPercent');
+            if (percent) {
+                percent.textContent = `${Math.round(currentZoomScale * 100)}%`;
+            }
+        }
+
         function closeImgModal() {
             document.getElementById('imgModal').style.display = 'none';
             document.body.style.overflow = '';
+            resetZoom();
         }
         document.addEventListener('keydown', e => { if (e.key === 'Escape') closeImgModal(); });
         function openImgModal() {
+            resetZoom();
             document.getElementById('imgModal').style.display = 'flex';
             document.body.style.overflow = 'hidden';
         }
@@ -1302,6 +1350,7 @@ $conn->close();
             if (e.target === document.getElementById('imgModal')) closeImgModal();
         }
         function changeMainImage(el, src) {
+            resetZoom();
             document.getElementById('mainImage').src = src;
             document.getElementById('modalImage').src = src;
             document.querySelectorAll('.thumbnail-item').forEach(t => t.classList.remove('active'));
@@ -1313,6 +1362,7 @@ $conn->close();
             });
         }
         function changeModalImage(el, src) {
+            resetZoom();
             document.getElementById('modalImage').src = src;
             document.querySelectorAll('.modal-thumb').forEach(t => { t.style.borderColor = '#e0e0e0'; t.classList.remove('modal-thumb-active'); });
             el.style.borderColor = 'var(--clr-primary)';

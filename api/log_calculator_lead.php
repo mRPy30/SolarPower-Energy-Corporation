@@ -22,10 +22,53 @@ $bill = isset($data['bill']) ? floatval($data['bill']) : 0;
 $system_size = isset($data['system_size']) ? trim($data['system_size']) : '0 kWp';
 $ip_address = $_SERVER['REMOTE_ADDR'];
 
+function respond_with_error($message, $status_code = 422) {
+    http_response_code($status_code);
+    echo json_encode(['success' => false, 'message' => $message]);
+    exit;
+}
+
+function normalize_lead_phone($phone) {
+    return preg_replace('/[\s-]+/', '', trim($phone));
+}
+
+function is_valid_lead_phone($phone) {
+    return preg_match('/^(09\d{9}|\+639\d{9})$/', $phone) === 1;
+}
+
+function is_valid_lead_email($email) {
+    return filter_var($email, FILTER_VALIDATE_EMAIL)
+        && preg_match('/@(gmail\.com|yahoo\.com|yahoo\.com\.ph)$/i', $email) === 1;
+}
+
 // Lead info
 $lead_name = isset($data['lead_name']) ? trim($data['lead_name']) : null;
-$lead_phone = isset($data['lead_phone']) ? trim($data['lead_phone']) : null;
-$lead_email = isset($data['lead_email']) ? trim($data['lead_email']) : null;
+$lead_phone = isset($data['lead_phone']) ? normalize_lead_phone($data['lead_phone']) : null;
+$lead_email = isset($data['lead_email']) ? strtolower(trim($data['lead_email'])) : null;
+
+$lead_name = $lead_name === '' ? null : $lead_name;
+$lead_phone = $lead_phone === '' ? null : $lead_phone;
+$lead_email = $lead_email === '' ? null : $lead_email;
+
+$lead_actions = ['submitted', 'messenger', 'viber'];
+
+if (in_array($action, $lead_actions, true) && empty($lead_name)) {
+    respond_with_error('Please provide your full name before submitting.');
+}
+
+if (!empty($lead_name)) {
+    if (empty($lead_phone) && empty($lead_email)) {
+        respond_with_error('Please provide a valid contact number or Gmail/Yahoo email address.');
+    }
+
+    if (!empty($lead_phone) && !is_valid_lead_phone($lead_phone)) {
+        respond_with_error('Please enter an 11-digit PH mobile number or +63 format, for example 09123456789 or +639123456789.');
+    }
+
+    if (!empty($lead_email) && !is_valid_lead_email($lead_email)) {
+        respond_with_error('Please enter a valid Gmail or Yahoo email address.');
+    }
+}
 
 // Prevent saving guest calculations with no lead details
 if ($action === 'calculated' && empty($lead_name)) {

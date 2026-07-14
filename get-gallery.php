@@ -39,6 +39,37 @@ if ($productId > 0) {
             $images[] = 'assets/img/placeholder.png';
         }
     }
+    // 3. Fetch variant images
+    $vSql = "SELECT variant_image as imagePath FROM product_brand_variants WHERE product_id = ?";
+    $vStmt = $conn->prepare($vSql);
+    if ($vStmt) {
+        $vStmt->bind_param("i", $productId);
+        $vStmt->execute();
+        $vResult = $vStmt->get_result();
+        while ($vRow = $vResult->fetch_assoc()) {
+            if (!empty($vRow['imagePath'])) {
+                $images[] = $vRow['imagePath'];
+            }
+        }
+        $vStmt->close();
+    }
+    
+    // Also fetch images from other products sharing same displayName
+    $sqlName = "SELECT imagePath FROM product WHERE displayName = (SELECT displayName FROM product WHERE id = ?) AND status = 'Active'";
+    $nStmt = $conn->prepare($sqlName);
+    if ($nStmt) {
+        $nStmt->bind_param("i", $productId);
+        $nStmt->execute();
+        $nResult = $nStmt->get_result();
+        while ($nRow = $nResult->fetch_assoc()) {
+            if (!empty($nRow['imagePath'])) {
+                $images[] = $nRow['imagePath'];
+            }
+        }
+        $nStmt->close();
+    }
+
+    $images = array_values(array_unique(array_filter($images)));
 } else {
     $images[] = 'assets/img/placeholder.png';
 }

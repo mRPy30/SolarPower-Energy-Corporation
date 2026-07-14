@@ -1666,12 +1666,12 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
                                           placeholder="Describe this update for the customer...&#10;&#10;Example: Your order has been dispatched from our warehouse and is on its way to you."></textarea>
                             </div>
 
-                            <div class="form-group">
-                                <label class="checkbox-label">
-                                    <input type="checkbox" id="trackingSendNotification" checked>
-                                    <i class="fas fa-envelope"></i> Send email notification to customer
+                                <div class="form-group">
+                                    <label class="checkbox-label">
+                                    <input type="checkbox" id="trackingSendNotification" checked disabled style="display:none;">
+                                    <i class="fas fa-envelope"></i> Customer email notification is sent automatically
                                 </label>
-                            </div>
+                                </div>
                         </div>
                     </div>
 
@@ -3988,6 +3988,8 @@ const TrackingModule = {
     filteredData: [],
     currentSearchTerm: '',
     currentStatusFilter: '',
+    listenersBound: false,
+    isUpdatingTracking: false,
     
     /**
      * Initialize the tracking module
@@ -3995,7 +3997,10 @@ const TrackingModule = {
     init() {
         console.log('Initializing Tracking Module...');
         this.loadTracking();
-        this.setupEventListeners();
+        if (!this.listenersBound) {
+            this.setupEventListeners();
+            this.listenersBound = true;
+        }
     },
     
     /**
@@ -4394,6 +4399,10 @@ const TrackingModule = {
      */
     async handleUpdateTracking(e) {
         e.preventDefault();
+        if (this.isUpdatingTracking) {
+            return;
+        }
+        this.isUpdatingTracking = true;
         
         const formData = {
             order_id: this.getInputValue('trackingOrderId'),
@@ -4432,14 +4441,27 @@ const TrackingModule = {
                 body: JSON.stringify(formData)
             });
             
+            const rawResponse = await response.text();
+            let result;
+            try {
+                result = JSON.parse(rawResponse);
+            } catch (parseError) {
+                throw new Error(rawResponse ? rawResponse.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : 'Server returned an invalid response.');
+            }
+
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                throw new Error(result.message || `Server returned HTTP ${response.status}.`);
             }
             
-            const result = await response.json();
-            
             if (result.success) {
-                alert('Tracking updated successfully!');
+                let successMessage = result.message || 'Tracking updated successfully!';
+                if (result.email_sent) {
+                    successMessage += `\nCustomer email sent via ${result.email_provider || 'email'}.`;
+                } else if (result.email_message) {
+                    successMessage += `\nTracking was saved, but email was not sent: ${result.email_message}`;
+                }
+
+                alert(successMessage);
                 this.closeUpdateModal();
                 await this.loadTracking();
             } else {
@@ -4447,10 +4469,11 @@ const TrackingModule = {
             }
         } catch (error) {
             console.error('Error updating tracking:', error);
-            alert('An error occurred while updating tracking. Please try again.');
+            alert(error.message || 'An error occurred while updating tracking. Please try again.');
         } finally {
             submitBtn.innerHTML = originalText;
             submitBtn.disabled = false;
+            this.isUpdatingTracking = false;
         }
     },
     

@@ -30,7 +30,7 @@ FROM product p
 LEFT JOIN (
     SELECT
         pbv.product_id,
-        GROUP_CONCAT(DISTINCT COALESCE(NULLIF(TRIM(sb.brandName), ''), NULLIF(TRIM(b.brand_name), '')) ORDER BY pbv.price ASC, pbv.id ASC SEPARATOR ', ') AS brand_names
+        GROUP_CONCAT(DISTINCT COALESCE(NULLIF(TRIM(b.brand_name), ''), NULLIF(TRIM(sb.brandName), '')) ORDER BY pbv.price ASC, pbv.id ASC SEPARATOR ', ') AS brand_names
     FROM product_brand_variants pbv
     LEFT JOIN supplier_brands sb
         ON pbv.brand_id = sb.id

@@ -41,18 +41,18 @@ if (!empty($phone)) {
 if (!empty($orderRef) && !empty($email)) {
     $stmt = $conn->prepare("
         SELECT * FROM orders 
-        WHERE order_reference = ? 
+        WHERE (order_reference = ? OR tracking_number = ?)
         AND customer_email = ?
     ");
 
-    $stmt->bind_param("ss", $orderRef, $email);
+    $stmt->bind_param("sss", $orderRef, $orderRef, $email);
     $stmt->execute();
     $result = $stmt->get_result();
 
     if ($result->num_rows === 0) {
         echo json_encode([
             'success' => false,
-            'message' => 'Order not found. Please check your order reference and email address.'
+            'message' => 'Order not found. Please check your order reference or tracking number and email address.'
         ]);
         $stmt->close();
         $conn->close();

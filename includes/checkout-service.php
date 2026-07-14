@@ -25,10 +25,10 @@ function checkout_json_input(): array
     return $_POST ?: [];
 }
 
-function checkout_table_columns(mysqli $conn, string $table): array
+function checkout_table_columns(mysqli $conn, string $table, bool $refresh = false): array
 {
     static $cache = [];
-    if (isset($cache[$table])) {
+    if (!$refresh && isset($cache[$table])) {
         return $cache[$table];
     }
 
@@ -40,6 +40,20 @@ function checkout_table_columns(mysqli $conn, string $table): array
 
     $cache[$table] = $columns;
     return $columns;
+}
+
+function checkout_add_column_if_missing(mysqli $conn, string $table, string $column, string $definition): void
+{
+    $columns = checkout_table_columns($conn, $table);
+    if (isset($columns[$column])) {
+        return;
+    }
+
+    if (!$conn->query("ALTER TABLE `{$table}` ADD COLUMN `{$column}` {$definition}")) {
+        throw new RuntimeException("Unable to add {$table}.{$column}: " . $conn->error);
+    }
+
+    checkout_table_columns($conn, $table, true);
 }
 
 function checkout_insert_row(mysqli $conn, string $table, array $values, array $types): int
@@ -95,6 +109,12 @@ function checkout_ensure_delivery_rates_table(mysqli $conn): void
 
 function checkout_assert_order_schema(mysqli $conn): void
 {
+    checkout_add_column_if_missing($conn, 'orders', 'client_id', 'INT(11) NULL');
+    checkout_add_column_if_missing($conn, 'orders', 'items_subtotal', 'DECIMAL(12,2) NOT NULL DEFAULT 0.00');
+    checkout_add_column_if_missing($conn, 'orders', 'delivery_fee', 'DECIMAL(12,2) NOT NULL DEFAULT 0.00');
+    checkout_add_column_if_missing($conn, 'orders', 'delivery_location', 'VARCHAR(150) DEFAULT NULL');
+    checkout_add_column_if_missing($conn, 'orders', 'sales_channel', "VARCHAR(50) NOT NULL DEFAULT 'Website'");
+
     $required = [
         'client_id',
         'order_reference',
@@ -109,6 +129,7 @@ function checkout_assert_order_schema(mysqli $conn): void
         'payment_method',
         'payment_status',
         'order_status',
+        'sales_channel',
     ];
 
     $columns = checkout_table_columns($conn, 'orders');
@@ -435,7 +456,18 @@ function checkout_delivery_fee(string $location, ?float $clientFee = null): floa
 
 function checkout_app_base_url(): string
 {
-    $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+    $configuredUrl = trim((string) (getenv('APP_BASE_URL') ?: getenv('SITE_URL') ?: ''));
+    if ($configuredUrl !== '') {
+        return rtrim($configuredUrl, '/');
+    }
+
+    $forwardedProto = strtolower(trim((string) ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '')));
+    $forwardedSsl = strtolower(trim((string) ($_SERVER['HTTP_X_FORWARDED_SSL'] ?? '')));
+    $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+        || $forwardedProto === 'https'
+        || $forwardedSsl === 'on';
+
+    $scheme = $isHttps ? 'https' : 'http';
     $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
     $scriptDir = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? ''));
     $scriptDir = preg_replace('#/(controllers|api)(/.*)?$#', '', $scriptDir);
@@ -499,7 +531,7 @@ function checkout_name_parts(string $customerName): array
     return [$firstName ?: 'Customer', $lastName ?: '-'];
 }
 
-function checkout_build_maya_payload(int $orderId, string $orderRef, array $customer, array $validated, array $deliveryRate): array
+function checkout_build_maya_payload(int $orderId, string $orderRef, array $customer, array $validated, array $deliveryRate, string $successToken): array
 {
     [$firstName, $lastName] = checkout_name_parts($customer['name']);
     $lineItems = [];
@@ -548,7 +580,7 @@ function checkout_build_maya_payload(int $orderId, string $orderRef, array $cust
         ],
         'items' => $lineItems,
         'redirectUrl' => [
-            'success' => $baseUrl . '/payment-success.php?ref=' . rawurlencode($orderRef),
+            'success' => $baseUrl . '/payment-success.php?ref=' . rawurlencode($orderRef) . '&token=' . rawurlencode($successToken),
             'failure' => $baseUrl . '/payment-failed.php?ref=' . rawurlencode($orderRef),
             'cancel' => $baseUrl . '/payment-cancelled.php?ref=' . rawurlencode($orderRef),
         ],
@@ -556,6 +588,7 @@ function checkout_build_maya_payload(int $orderId, string $orderRef, array $cust
         'metadata' => [
             'orderId' => $orderId,
             'orderRef' => $orderRef,
+            'successToken' => $successToken,
             'deliveryRateId' => (string) $deliveryRate['id'],
             'deliveryOrigin' => $deliveryRate['origin_address'],
             'itemsSubtotal' => number_format($validated['subtotal'], 2, '.', ''),
@@ -571,7 +604,7 @@ function checkout_generate_order_reference(): string
     return 'SP-' . date('YmdHis') . '-' . strtoupper(substr(bin2hex(random_bytes(4)), 0, 6));
 }
 
-function checkout_create_order(mysqli $conn, array $customer, array $validated, array $deliveryRate, ?string $orderRef = null, string $paymentStatus = 'paid', string $orderStatus = 'processing'): array
+function checkout_create_order(mysqli $conn, array $customer, array $validated, array $deliveryRate, ?string $orderRef = null, string $paymentStatus = 'paid', string $orderStatus = 'confirmed'): array
 {
     checkout_assert_order_schema($conn);
 
@@ -585,42 +618,42 @@ function checkout_create_order(mysqli $conn, array $customer, array $validated, 
     $conn->begin_transaction();
 
     try {
-        $stmt = $conn->prepare(
-            "INSERT INTO orders (
-                client_id,
-                order_reference,
-                customer_name,
-                customer_email,
-                customer_phone,
-                customer_address,
-                delivery_location,
-                items_subtotal,
-                delivery_fee,
-                total_amount,
-                payment_method,
-                payment_status,
-                order_status
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+        $orderId = checkout_insert_row(
+            $conn,
+            'orders',
+            [
+                'client_id' => $clientId,
+                'order_reference' => $orderRef,
+                'customer_name' => $customer['name'],
+                'customer_email' => $customer['email'],
+                'customer_phone' => $customer['phone'],
+                'customer_address' => $customer['address'],
+                'delivery_location' => $deliveryLocation,
+                'items_subtotal' => $validated['subtotal'],
+                'delivery_fee' => $deliveryFee,
+                'total_amount' => $grandTotal,
+                'payment_method' => $paymentMethod,
+                'payment_status' => $paymentStatus,
+                'order_status' => $orderStatus,
+                'sales_channel' => 'Website',
+            ],
+            [
+                'client_id' => 'i',
+                'order_reference' => 's',
+                'customer_name' => 's',
+                'customer_email' => 's',
+                'customer_phone' => 's',
+                'customer_address' => 's',
+                'delivery_location' => 's',
+                'items_subtotal' => 'd',
+                'delivery_fee' => 'd',
+                'total_amount' => 'd',
+                'payment_method' => 's',
+                'payment_status' => 's',
+                'order_status' => 's',
+                'sales_channel' => 's',
+            ]
         );
-        $stmt->bind_param(
-            'issssssdddsss',
-            $clientId,
-            $orderRef,
-            $customer['name'],
-            $customer['email'],
-            $customer['phone'],
-            $customer['address'],
-            $deliveryLocation,
-            $validated['subtotal'],
-            $deliveryFee,
-            $grandTotal,
-            $paymentMethod,
-            $paymentStatus,
-            $orderStatus
-        );
-        $stmt->execute();
-        $orderId = (int) $conn->insert_id;
-        $stmt->close();
 
         $itemStmt = $conn->prepare(
             'INSERT INTO order_items (order_id, product_id, product_name, quantity, price, subtotal) VALUES (?, ?, ?, ?, ?, ?)'
@@ -661,6 +694,7 @@ function checkout_ensure_pending_maya_table(mysqli $conn): void
             order_reference VARCHAR(100) NOT NULL UNIQUE,
             checkout_id VARCHAR(150) DEFAULT NULL,
             checkout_url TEXT DEFAULT NULL,
+            success_token VARCHAR(80) DEFAULT NULL,
             payload_json LONGTEXT NOT NULL,
             total_amount DECIMAL(12,2) NOT NULL DEFAULT 0.00,
             status VARCHAR(30) NOT NULL DEFAULT 'pending',
@@ -672,9 +706,11 @@ function checkout_ensure_pending_maya_table(mysqli $conn): void
             INDEX idx_maya_pending_order_id (order_id)
         )
     ");
+
+    checkout_add_column_if_missing($conn, 'maya_pending_checkouts', 'success_token', 'VARCHAR(80) DEFAULT NULL');
 }
 
-function checkout_store_pending_maya_checkout(mysqli $conn, string $orderRef, ?string $checkoutId, string $checkoutUrl, array $customer, array $validated, array $deliveryRate): void
+function checkout_store_pending_maya_checkout(mysqli $conn, string $orderRef, ?string $checkoutId, string $checkoutUrl, string $successToken, array $customer, array $validated, array $deliveryRate): void
 {
     checkout_ensure_pending_maya_table($conn);
 
@@ -696,25 +732,28 @@ function checkout_store_pending_maya_checkout(mysqli $conn, string $orderRef, ?s
             order_reference,
             checkout_id,
             checkout_url,
+            success_token,
             payload_json,
             total_amount,
             status
-        ) VALUES (?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?)
         ON DUPLICATE KEY UPDATE
             checkout_id = VALUES(checkout_id),
             checkout_url = VALUES(checkout_url),
+            success_token = VALUES(success_token),
             payload_json = VALUES(payload_json),
             total_amount = VALUES(total_amount),
             status = VALUES(status),
             order_id = NULL,
             paid_at = NULL
     ");
-    $stmt->bind_param('ssssds', $orderRef, $checkoutId, $checkoutUrl, $payloadJson, $totalAmount, $status);
+    $stmt->bind_param('sssssds', $orderRef, $checkoutId, $checkoutUrl, $successToken, $payloadJson, $totalAmount, $status);
     $stmt->execute();
     $stmt->close();
 
     $_SESSION['pending_maya_orders'][$orderRef] = [
         'checkout_id' => $checkoutId,
+        'success_token' => $successToken,
         'created_at' => time(),
     ];
 }
@@ -769,9 +808,10 @@ function checkout_mark_pending_maya_status(mysqli $conn, string $orderRef, strin
     $stmt->close();
 }
 
-function checkout_finalize_paid_maya_order(mysqli $conn, string $orderRef): array
+function checkout_finalize_paid_maya_order(mysqli $conn, string $orderRef, string $successToken = ''): array
 {
     $orderRef = checkout_clean_text($orderRef);
+    $successToken = checkout_clean_text($successToken);
     if ($orderRef === '' || $orderRef === 'Unknown') {
         throw new RuntimeException('Missing order reference.');
     }
@@ -795,6 +835,11 @@ function checkout_finalize_paid_maya_order(mysqli $conn, string $orderRef): arra
         throw new RuntimeException('This checkout session is not available for order finalization.');
     }
 
+    $storedToken = checkout_clean_text($pending['success_token'] ?? '');
+    if ($storedToken === '' || !hash_equals($storedToken, $successToken)) {
+        throw new RuntimeException('This checkout cannot be finalized from this link. Please complete payment through the Maya checkout page or verify the payment in the Maya dashboard.');
+    }
+
     $order = checkout_create_order(
         $conn,
         $pending['payload']['customer'],
@@ -802,7 +847,7 @@ function checkout_finalize_paid_maya_order(mysqli $conn, string $orderRef): arra
         $pending['payload']['deliveryRate'],
         $orderRef,
         'paid',
-        'processing'
+        'confirmed'
     );
 
     checkout_mark_pending_maya_status($conn, $orderRef, 'paid', (int) $order['id']);
@@ -904,8 +949,9 @@ function checkout_create_maya_checkout(mysqli $conn, array $input): array
     $validated = checkout_validate_items($conn, $input);
     $deliveryRate = checkout_delivery_rate_from_input($conn, $input);
     $orderRef = checkout_generate_order_reference();
+    $successToken = bin2hex(random_bytes(24));
     $grandTotal = round($validated['subtotal'] + $deliveryRate['price'], 2);
-    $payload = checkout_build_maya_payload(0, $orderRef, $customer, $validated, $deliveryRate);
+    $payload = checkout_build_maya_payload(0, $orderRef, $customer, $validated, $deliveryRate, $successToken);
     $maya = checkout_call_maya($payload);
 
     if (!$maya['ok']) {
@@ -922,7 +968,7 @@ function checkout_create_maya_checkout(mysqli $conn, array $input): array
 
     $checkoutUrl = $maya['body']['redirectUrl'];
     $checkoutId = $maya['body']['checkoutId'] ?? null;
-    checkout_store_pending_maya_checkout($conn, $orderRef, $checkoutId, $checkoutUrl, $customer, $validated, $deliveryRate);
+    checkout_store_pending_maya_checkout($conn, $orderRef, $checkoutId, $checkoutUrl, $successToken, $customer, $validated, $deliveryRate);
 
     return [
         'success' => true,
