@@ -83,7 +83,7 @@ if (!function_exists('solar_send_resend_email')) {
         }
 
         if ($apiKey === '') {
-            return ['success' => false, 'provider' => 'resend', 'message' => 'Missing RESEND_API_KEY. Upload config/resend.php or set RESEND_API_KEY in hosting.'];
+            return ['success' => false, 'provider' => 'resend', 'message' => 'Missing RESEND_API_KEY. Upload config/resend.local.php or set RESEND_API_KEY in hosting.'];
         }
 
         $payload = [

@@ -10,6 +10,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 include __DIR__ . "/../config/dbconn.php";
 
+$resendMailerPath = __DIR__ . '/../includes/resend-mailer.php';
+if (is_file($resendMailerPath)) {
+    require_once $resendMailerPath;
+}
+
+if (!function_exists('solar_send_resend_email')) {
+    function solar_send_resend_email(string $to, string $subject, string $html, array $options = []): array
+    {
+        return [
+            'success' => false,
+            'provider' => 'resend',
+            'message' => 'Email helper file is missing. Upload includes/resend-mailer.php.',
+        ];
+    }
+}
+
+if (!function_exists('solar_send_internal_lead_email')) {
+    function solar_send_internal_lead_email(string $subject, string $html, array $options = []): array
+    {
+        return [
+            'success' => false,
+            'provider' => 'resend',
+            'message' => 'Email helper file is missing. Upload includes/resend-mailer.php.',
+        ];
+    }
+}
+
 $data = json_decode(file_get_contents('php://input'), true);
 
 if (!$data) {
@@ -49,6 +76,7 @@ $lead_email = isset($data['lead_email']) ? strtolower(trim($data['lead_email']))
 $lead_name = $lead_name === '' ? null : $lead_name;
 $lead_phone = $lead_phone === '' ? null : $lead_phone;
 $lead_email = $lead_email === '' ? null : $lead_email;
+$privacyConsent = !empty($data['privacy_consent']) && ($data['privacy_consent'] === true || $data['privacy_consent'] === '1' || $data['privacy_consent'] === 1);
 
 $lead_actions = ['submitted', 'messenger', 'viber'];
 
@@ -67,6 +95,10 @@ if (!empty($lead_name)) {
 
     if (!empty($lead_email) && !is_valid_lead_email($lead_email)) {
         respond_with_error('Please enter a valid Gmail or Yahoo email address.');
+    }
+
+    if (!$privacyConsent) {
+        respond_with_error('Please confirm the Data Privacy Notice before submitting.');
     }
 }
 
@@ -143,10 +175,11 @@ if ($exists) {
 }
 
 if ($stmt->execute()) {
+    $emailResult = ['sent' => false, 'provider' => null, 'message' => 'No lead email notification needed.'];
+
     // Send email notification via Resend if it's a real lead submission (i.e. lead_name is set)
     if (!empty($lead_name)) {
         try {
-            $resendApiKey = 're_Fh6X1rKo_JzjtWaAfUfRiEQs5HHxE4VsV'; 
             $subject = "[Calculator Lead] " . $action_label . " - " . $lead_name;
             
             $emailBody = "
@@ -201,47 +234,29 @@ if ($stmt->execute()) {
             </body>
             </html>";
             
-            $payload = [
-                'from' => 'SolarPower Energy Corporation <solar@solarpower.com.ph>',
-                'to' => ['solar@solarpower.com.ph'],
-                'subject' => $subject,
-                'html' => $emailBody
+            $resendResult = solar_send_internal_lead_email($subject, $emailBody);
+            $emailResult = [
+                'sent' => (bool) ($resendResult['success'] ?? false),
+                'provider' => $resendResult['provider'] ?? 'resend',
+                'message' => $resendResult['message'] ?? ''
             ];
-            
-            $ch = curl_init('https://api.resend.com/emails');
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_POST, true);
-            curl_setopt($ch, CURLOPT_HTTPHEADER, [
-                'Authorization: Bearer ' . $resendApiKey,
-                'Content-Type: application/json'
-            ]);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
-            $res = curl_exec($ch);
-            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            curl_close($ch);
 
-            if ($httpCode !== 200 && $httpCode !== 201) {
-                // Fallback to standard PHP mail()
-                $headers = "MIME-Version: 1.0" . "\r\n";
-                $headers .= "Content-Type: text/html; charset=UTF-8" . "\r\n";
-                $headers .= "From: SolarPower Energy Corporation <solar@solarpower.com.ph>" . "\r\n";
-                
-                mail('solar@solarpower.com.ph', $subject, $emailBody, $headers);
+            if (!$emailResult['sent']) {
+                error_log('Calculator lead email failed: ' . $emailResult['message']);
             }
         } catch (Exception $e) {
-            // Fallback if cURL or Resend fails
-            try {
-                $headers = "MIME-Version: 1.0" . "\r\n";
-                $headers .= "Content-Type: text/html; charset=UTF-8" . "\r\n";
-                $headers .= "From: SolarPower Energy Corporation <solar@solarpower.com.ph>" . "\r\n";
-                mail('solar@solarpower.com.ph', $subject ?? 'New Solar Estimate Request', $emailBody ?? 'Inquiry details saved.', $headers);
-            } catch (Exception $mailEx) {
-                // Silence mail exceptions
-            }
+            $emailResult = ['sent' => false, 'provider' => 'resend', 'message' => $e->getMessage()];
+            error_log('Calculator lead email exception: ' . $e->getMessage());
         }
     }
 
-    echo json_encode(['success' => true, 'message' => 'Calculator log saved successfully']);
+    echo json_encode([
+        'success' => true,
+        'message' => 'Calculator log saved successfully',
+        'email_sent' => (bool) $emailResult['sent'],
+        'email_provider' => $emailResult['provider'],
+        'email_message' => $emailResult['message']
+    ]);
 } else {
     echo json_encode(['success' => false, 'message' => 'Database error: ' . $stmt->error]);
 }

@@ -1214,7 +1214,7 @@
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+<script>
 // ─── DATA (loaded dynamically from database) ─────────────────────────────────
 
 // Category metadata (static config)

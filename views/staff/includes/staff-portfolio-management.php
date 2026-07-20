@@ -110,6 +110,18 @@
   .pm-drop-zone { border: 2px dashed var(--border); border-radius: 10px; padding: 24px 16px; text-align: center; cursor: pointer; transition: 0.2s; position: relative; background: var(--surface); }
   .pm-drop-zone:hover, .pm-drop-zone.dragover { border-color: var(--solar-mid); background: #EBF4FF; }
   .pm-drop-zone input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+  .pm-existing-image-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 14px; align-items: start; }
+  .pm-existing-image-tile { position: relative; aspect-ratio: 1 / 1; border-radius: 10px; overflow: hidden; border: 2px solid var(--solar-mid); background: #eef4fb; box-shadow: 0 6px 16px rgba(26, 60, 94, 0.12); }
+  .pm-existing-image-tile img { width: 100%; height: 100%; object-fit: cover; display: block; cursor: pointer; }
+  .pm-existing-image-badge { position: absolute; top: 6px; left: 6px; background: var(--success); color: #fff; padding: 3px 7px; border-radius: 999px; font-size: 0.62rem; line-height: 1; font-weight: 800; letter-spacing: .04em; }
+  .pm-existing-image-count { position: absolute; bottom: 6px; left: 6px; background: rgba(15, 23, 42, 0.72); color: #fff; padding: 3px 7px; border-radius: 999px; font-size: 0.62rem; line-height: 1; font-weight: 700; }
+  .pm-existing-image-delete { position: absolute; top: 6px; right: 6px; background: var(--danger); color: #fff; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; font-size: 1rem; line-height: 1; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(229, 62, 62, 0.35); }
+  .pm-existing-image-delete:hover { filter: brightness(1.05); transform: scale(1.04); }
+  .pm-existing-image-grid > div { aspect-ratio: 1 / 1; min-width: 0; border-radius: 10px; overflow: hidden; box-shadow: 0 6px 16px rgba(26, 60, 94, 0.12); }
+  .pm-existing-image-grid > div > img { width: 100% !important; height: 100% !important; border-radius: 10px !important; object-fit: cover !important; }
+  .pm-existing-image-grid > div[style*="display: flex"] { display: grid !important; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)) !important; gap: 14px !important; overflow: visible !important; padding-bottom: 0 !important; width: 100%; }
+  .pm-existing-image-grid > div[style*="display: flex"] > div { aspect-ratio: 1 / 1; min-width: 0; border-radius: 10px; overflow: hidden; box-shadow: 0 6px 16px rgba(26, 60, 94, 0.12); }
+  .pm-existing-image-grid > div[style*="display: flex"] img { width: 100% !important; height: 100% !important; border-radius: 10px !important; object-fit: cover !important; }
   
   /* ── Live Preview Styles ── */
   .preview-panel { position: sticky; top: 0; align-self: start; }
@@ -287,7 +299,7 @@
 
           <div class="pm-form-card" id="pf-existing-images-card" style="display: none;">
             <h4 style="margin: 0 0 16px 0; font-size: 1rem;">Current Images</h4>
-            <div id="pf-existing-images" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 10px;"></div>
+            <div id="pf-existing-images" class="pm-existing-image-grid"></div>
           </div>
 
           <button type="submit" class="pm-btn-primary" id="pf-save-btn" style="width: 100%; justify-content: center; font-size: 1rem; padding: 14px;">
@@ -652,7 +664,7 @@ function editProject(id) {
   // Show existing images
   if (images.length > 0) {
     document.getElementById('pf-existing-images-card').style.display = 'block';
-    let existingHTML = '<div style="display: flex; gap: 10px; overflow-x: auto; padding-bottom: 8px;">';
+    let existingHTML = '';
     images.forEach((img, i) => {
       const imagePath = (img.startsWith('uploads') || img.startsWith('assets')) ? '../../' + img : img;
       const isMain = i === 0 ? 'MAIN' : '';
@@ -662,7 +674,6 @@ function editProject(id) {
         <button type="button" onclick="deleteExistingImage(${p.id}, ${i})" style="position: absolute; top: 2px; right: 2px; background: var(--danger); color: white; border: none; border-radius: 50%; width: 20px; height: 20px; cursor: pointer; font-size: 0.8rem; display: flex; align-items: center; justify-content: center;">×</button>
       </div>`;
     });
-    existingHTML += '</div>';
     document.getElementById('pf-existing-images').innerHTML = existingHTML;
   }
   
@@ -698,26 +709,28 @@ function previewExistingImage(imagePath) {
   document.body.appendChild(modal);
 }
 
-function deleteExistingImage(projectId, imageIndex) {
+async function deleteExistingImage(projectId, imageIndex) {
   if (!confirm('Delete this image?')) return;
   
   const fd = new FormData();
   fd.append('action', 'delete_image');
   fd.append('project_id', projectId);
   fd.append('image_index', imageIndex);
-  
-  fetch('../../controllers/portfolio_api.php', { method: 'POST', body: fd })
-    .then(r => r.json())
-    .then(json => {
-      if (json.status === 'success') {
-        alert('Image deleted successfully');
-        fetchPortfolioProjects();
-        editProject(projectId);
-      } else {
-        alert('Error: ' + json.message);
-      }
-    })
-    .catch(e => alert('Error deleting image'));
+
+  try {
+    const res = await fetch('../../controllers/portfolio_api.php', { method: 'POST', body: fd });
+    const json = await res.json();
+
+    if (json.status === 'success') {
+      alert('Image deleted successfully');
+      await fetchPortfolioProjects();
+      editProject(projectId);
+    } else {
+      alert('Error: ' + json.message);
+    }
+  } catch (e) {
+    alert('Error deleting image');
+  }
 }
 
 async function deleteProject(id) {

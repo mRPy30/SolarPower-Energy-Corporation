@@ -5,13 +5,46 @@ ini_set('display_errors', 0);
 header('Content-Type: application/json');
 include "../config/dbconn.php";
 
+$resendMailerPath = __DIR__ . '/../includes/resend-mailer.php';
+if (is_file($resendMailerPath)) {
+    require_once $resendMailerPath;
+}
+
+if (!function_exists('solar_send_resend_email')) {
+    function solar_send_resend_email(string $to, string $subject, string $html, array $options = []): array
+    {
+        return [
+            'success' => false,
+            'provider' => 'resend',
+            'message' => 'Email helper file is missing. Upload includes/resend-mailer.php.',
+        ];
+    }
+}
+
+if (!function_exists('solar_send_internal_lead_email')) {
+    function solar_send_internal_lead_email(string $subject, string $html, array $options = []): array
+    {
+        return [
+            'success' => false,
+            'provider' => 'resend',
+            'message' => 'Email helper file is missing. Upload includes/resend-mailer.php.',
+        ];
+    }
+}
+
 $name    = trim($_POST['name'] ?? '');
 $email   = trim($_POST['email'] ?? '');
 $phone   = trim($_POST['phone'] ?? '');
 $message = trim($_POST['message'] ?? '');
+$privacyConsent = isset($_POST['privacy_consent']) && $_POST['privacy_consent'] === '1';
 
 if (!$name || !$email || !$message) {
     echo json_encode(["success" => false, "message" => "Required fields missing"]);
+    exit;
+}
+
+if (!$privacyConsent) {
+    echo json_encode(["success" => false, "message" => "Please confirm the Data Privacy Notice before submitting."]);
     exit;
 }
 
@@ -37,8 +70,9 @@ if (!$stmt->execute()) {
 }
 
 /* 2️⃣ SEND EMAIL NOTIFICATION VIA RESEND */
+$emailResult = ['sent' => false, 'provider' => 'resend', 'message' => 'Email notification was not attempted.'];
+
 try {
-    $resendApiKey = 're_Fh6X1rKo_JzjtWaAfUfRiEQs5HHxE4VsV'; 
     $subject = "New Contact Inquiry - " . $name;
     
     $emailBody = "
@@ -84,46 +118,27 @@ try {
     </body>
     </html>";
     
-    $payload = [
-        'from' => 'SolarPower Energy Corporation <solar@solarpower.com.ph>',
-        'to' => ['solar@solarpower.com.ph'],
-        'reply_to' => $email,
-        'subject' => $subject,
-        'html' => $emailBody
-    ];
-    
-    $ch = curl_init('https://api.resend.com/emails');
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_POST, true);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, [
-        'Authorization: Bearer ' . $resendApiKey,
-        'Content-Type: application/json'
+    $resendResult = solar_send_internal_lead_email($subject, $emailBody, [
+        'reply_to' => $email
     ]);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
-    $res = curl_exec($ch);
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
+    $emailResult = [
+        'sent' => (bool) ($resendResult['success'] ?? false),
+        'provider' => $resendResult['provider'] ?? 'resend',
+        'message' => $resendResult['message'] ?? ''
+    ];
 
-    if ($httpCode !== 200 && $httpCode !== 201) {
-        // Fallback to standard PHP mail()
-        $headers = "MIME-Version: 1.0" . "\r\n";
-        $headers .= "Content-Type: text/html; charset=UTF-8" . "\r\n";
-        $headers .= "From: SolarPower Energy Corporation <solar@solarpower.com.ph>" . "\r\n";
-        $headers .= "Reply-To: " . $email . "\r\n";
-        
-        mail('solar@solarpower.com.ph', $subject, $emailBody, $headers);
+    if (!$emailResult['sent']) {
+        error_log('Contact inquiry email failed: ' . $emailResult['message']);
     }
 } catch (Exception $e) {
-    // Fallback if cURL or anything else fails
-    try {
-        $headers = "MIME-Version: 1.0" . "\r\n";
-        $headers .= "Content-Type: text/html; charset=UTF-8" . "\r\n";
-        $headers .= "From: SolarPower Energy Corporation <solar@solarpower.com.ph>" . "\r\n";
-        $headers .= "Reply-To: " . $email . "\r\n";
-        mail('solar@solarpower.com.ph', $subject, $emailBody, $headers);
-    } catch (Exception $mailEx) {
-        // Silence secondary exceptions
-    }
+    $emailResult = ['sent' => false, 'provider' => 'resend', 'message' => $e->getMessage()];
+    error_log('Contact inquiry email exception: ' . $e->getMessage());
 }
 
-echo json_encode(["success" => true, "message" => "Message sent successfully"]);
+echo json_encode([
+    "success" => true,
+    "message" => "Message saved successfully",
+    "email_sent" => (bool) $emailResult['sent'],
+    "email_provider" => $emailResult['provider'],
+    "email_message" => $emailResult['message']
+]);

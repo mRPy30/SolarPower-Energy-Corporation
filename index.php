@@ -34,6 +34,36 @@ if (!function_exists('renderProductBrandChips')) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'submit_estimate') {
     header('Content-Type: application/json');
     require_once __DIR__ . '/config/db_pdo.php';
+
+    $resendMailerPath = __DIR__ . '/includes/resend-mailer.php';
+    if (is_file($resendMailerPath)) {
+        require_once $resendMailerPath;
+    }
+
+    if (!function_exists('solar_send_resend_email')) {
+        function solar_send_resend_email(string $to, string $subject, string $html, array $options = []): array
+        {
+            return [
+                'success' => false,
+                'provider' => 'resend',
+                'message' => 'Email helper file is missing. Upload includes/resend-mailer.php.',
+            ];
+        }
+    }
+
+    if (!function_exists('solar_send_internal_lead_email')) {
+        function solar_send_internal_lead_email(string $subject, string $html, array $options = []): array
+        {
+            return [
+                'success' => false,
+                'provider' => 'resend',
+                'message' => 'Email helper file is missing. Upload includes/resend-mailer.php.',
+            ];
+        }
+    }
+
+    $emailResult = ['sent' => false, 'provider' => 'resend', 'message' => 'Email notification was not attempted.'];
+    $estimateSaved = false;
     try {
         $db = getPDO();
         
@@ -96,9 +126,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             ':roof_type' => $roof_type,
             ':notes' => $notes
         ]);
+        $estimateSaved = true;
         
-        // Trigger Resend API call (using fallback onboarding sender for testing/unverified domains)
-        $resendApiKey = 're_Fh6X1rKo_JzjtWaAfUfRiEQs5HHxE4VsV'; 
         $subject = "New Solar Estimate Request - " . $fullname;
         
         $emailBody = "
@@ -170,55 +199,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         </body>
         </html>";
         
-        $payload = [
-            'from' => 'SolarPower Energy Corporation <solar@solarpower.com.ph>',
-            'to' => ['solar@solarpower.com.ph'],
-            'subject' => $subject,
-            'html' => $emailBody
+        $resendResult = solar_send_internal_lead_email($subject, $emailBody);
+        $emailResult = [
+            'sent' => (bool) ($resendResult['success'] ?? false),
+            'provider' => $resendResult['provider'] ?? 'resend',
+            'message' => $resendResult['message'] ?? ''
         ];
-        
-        $ch = curl_init('https://api.resend.com/emails');
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, [
-            'Authorization: Bearer ' . $resendApiKey,
-            'Content-Type: application/json'
-        ]);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
-        
-        $response = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
-        
-        if ($httpCode !== 200 && $httpCode !== 201) {
-            // Fallback to standard PHP mail()
-            $headers = "MIME-Version: 1.0" . "\r\n";
-            $headers .= "Content-Type: text/html; charset=UTF-8" . "\r\n";
-            $headers .= "From: SolarPower Energy Corporation <solar@solarpower.com.ph>" . "\r\n";
-            
-            mail('solar@solarpower.com.ph', $subject, $emailBody, $headers);
+
+        if (!$emailResult['sent']) {
+            error_log('Estimate request email failed: ' . $emailResult['message']);
         }
         
         echo json_encode([
             'success' => true,
-            'message' => 'Estimate request saved and notification sent!'
+            'message' => $emailResult['sent']
+                ? 'Estimate request saved and notification sent!'
+                : 'Estimate request saved, but email notification failed.',
+            'email_sent' => (bool) $emailResult['sent'],
+            'email_provider' => $emailResult['provider'],
+            'email_message' => $emailResult['message']
         ]);
         exit;
     } catch (Exception $e) {
-        // Fallback to standard PHP mail() in case of general exception
-        try {
-            $headers = "MIME-Version: 1.0" . "\r\n";
-            $headers .= "Content-Type: text/html; charset=UTF-8" . "\r\n";
-            $headers .= "From: SolarPower Energy Corporation <solar@solarpower.com.ph>" . "\r\n";
-            mail('solar@solarpower.com.ph', $subject ?? 'New Solar Estimate Request', $emailBody ?? 'Inquiry details saved.', $headers);
-        } catch (Exception $mailEx) {
-            // ignore fallback exceptions
+        if (!$estimateSaved) {
+            echo json_encode([
+                'success' => false,
+                'message' => $e->getMessage()
+            ]);
+            exit;
         }
-        
-        // Return success since the database save succeeded
+
+        $emailResult = ['sent' => false, 'provider' => 'resend', 'message' => $e->getMessage()];
+        error_log('Estimate request email exception: ' . $e->getMessage());
+
         echo json_encode([
             'success' => true,
-            'message' => 'Estimate request saved successfully!'
+            'message' => 'Estimate request saved, but email notification failed.',
+            'email_sent' => false,
+            'email_provider' => $emailResult['provider'],
+            'email_message' => $emailResult['message']
         ]);
         exit;
     }
@@ -739,6 +758,53 @@ $conn->close();
             background: #085231;
         }
 
+        .privacy-notice {
+            border: 1px solid #dbe8e1;
+            background: #f7fbf8;
+            border-radius: 10px;
+            padding: 12px;
+            color: #1f3d2b;
+        }
+
+        .privacy-notice.compact {
+            padding: 10px;
+            border-radius: 9px;
+        }
+
+        .privacy-checkbox {
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+            margin: 0;
+            cursor: pointer;
+        }
+
+        .privacy-checkbox input {
+            width: 16px;
+            height: 16px;
+            margin-top: 2px;
+            flex: 0 0 auto;
+            accent-color: #0d5c3a;
+        }
+
+        .privacy-copy {
+            font-size: 0.78rem;
+            line-height: 1.5;
+        }
+
+        .privacy-copy strong {
+            display: block;
+            color: #0d5c3a;
+            font-size: 0.82rem;
+            margin-bottom: 2px;
+        }
+
+        .privacy-copy a {
+            color: #0d5c3a;
+            font-weight: 700;
+            text-decoration: underline;
+        }
+
         /* Social Links */
         .contact-social-links {
             margin-top: 28px;
@@ -914,6 +980,18 @@ $conn->close();
                             <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px;">
                                 <input type="text" id="inlineLeadName" placeholder="Full Name (Required)" style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 0.8rem; outline: none; box-shadow: inset 0 1px 2px rgba(0,0,0,0.02);" onchange="autoSaveLead()" onblur="autoSaveLead()" oninput="handleFormInput()" required>
                                 <input type="text" id="inlineLeadContact" placeholder="Phone (09/+63) or Gmail/Yahoo Email" title="Enter an 11-digit PH mobile number, +63 mobile format, or a Gmail/Yahoo email address." style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 0.8rem; outline: none; box-shadow: inset 0 1px 2px rgba(0,0,0,0.02);" onchange="autoSaveLead()" onblur="autoSaveLead()" oninput="handleFormInput()" required>
+
+                                <div class="privacy-notice compact">
+                                    <label class="privacy-checkbox" for="calculatorPrivacyConsent">
+                                        <input type="checkbox" id="calculatorPrivacyConsent" value="1" required>
+                                        <span class="privacy-copy">
+                                            <strong>Data Privacy Notice</strong>
+                                            We value your privacy. By submitting this form, you agree to our
+                                            <a href="privacy-policy.php" target="_blank" rel="noopener">Privacy Policy</a>.
+                                            Your data is securely processed and used only to respond to your inquiry.
+                                        </span>
+                                    </label>
+                                </div>
                                 
                                 <!-- Submit Estimate Button -->
                                 <button type="button" id="inlineSubmitBtn" onclick="handleInlineSubmit()" style="display: none; width: 100%; align-items: center; justify-content: center; padding: 10px 12px; border-radius: 10px; background-color: #0D5C3A; color: #ffffff; font-size: 0.8rem; font-weight: 700; border: none; cursor: pointer; transition: background-color 0.2s, transform 0.2s; box-shadow: 0 4px 12px rgba(13, 92, 58, 0.15); margin-top: 4px;"
@@ -1229,155 +1307,6 @@ $conn->close();
         </div>
     </section>
 
-    <!-- Rent to Own Section (Industrial & Commercial Only) --
-    <section class="rent-to-own-section" id="rentToOwnSection" data-checkout-hide>
-        <div class="container">
-            <div class="rto-wrapper">
-               Left: Form --
-                <div class="rto-form-container">
-                    <div class="rto-header">
-                        <h2>Rent to Own Solar System</h2>
-                        <p class="rto-subtitle">For Industrial & Commercial Properties Only</p>
-                        <div class="rto-badge">
-                            <i class="fas fa-building"></i>
-                            <span>Industrial & Commercial</span>
-                        </div>
-                    </div>
-
-                    <form class="rto-form" id="rentToOwnForm">
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="rto_firstName">First Name <span class="required">*</span></label>
-                                <input type="text" id="rto_firstName" name="firstName" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="rto_lastName">Last Name <span class="required">*</span></label>
-                                <input type="text" id="rto_lastName" name="lastName" required>
-                            </div>
-                        </div>
-
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="rto_email">Email <span class="required">*</span></label>
-                                <input type="email" id="rto_email" name="email" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="rto_contact">Contact Number <span class="required">*</span></label>
-                                <input type="tel" id="rto_contact" name="contactNumber" required placeholder="+63">
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="rto_company">Company Name <span class="required">*</span></label>
-                            <input type="text" id="rto_company" name="companyName" required>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="rto_province">Province/City <span class="required">*</span></label>
-                            <select id="rto_province" name="province" required>
-                                <option value="">Select Province/City</option>
-                                <option value="Metro Manila">Metro Manila</option>
-                                <option value="Cavite">Cavite</option>
-                                <option value="Laguna">Laguna</option>
-                                <option value="Batangas">Batangas</option>
-                                <option value="Rizal">Rizal</option>
-                                <option value="Bulacan">Bulacan</option>
-                                <option value="Pampanga">Pampanga</option>
-                                <option value="Cebu">Cebu</option>
-                                <option value="Davao">Davao</option>
-                            </select>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="rto_electricityBill">Monthly Electricity Bill (₱) <span class="required">*</span></label>
-                            <input type="number" id="rto_electricityBill" name="electricityBill" required min="8000" placeholder="₱ 50,000">
-                            <small>For our smallest system size (5kWp), we recommend your bill to at least be ₱8,000 to maximize savings.</small>
-                        </div>
-
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="rto_propertyType">Type of Property <span class="required">*</span></label>
-                                <select id="rto_propertyType" name="propertyType" required>
-                                    <option value="">Please select</option>
-                                    <option value="Factory">Factory</option>
-                                    <option value="Warehouse">Warehouse</option>
-                                    <option value="Office Building">Office Building</option>
-                                    <option value="Manufacturing Plant">Manufacturing Plant</option>
-                                    <option value="Commercial Building">Commercial Building</option>
-                                    <option value="Industrial Complex">Industrial Complex</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label for="rto_ownership">Do you own the property? <span class="required">*</span></label>
-                                <select id="rto_ownership" name="ownership" required>
-                                    <option value="">Please select</option>
-                                    <option value="Yes">Yes, I own it</option>
-                                    <option value="No">No, I lease/rent it</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="rto_proceed">How would you like to proceed? <span class="required">*</span></label>
-                                <select id="rto_proceed" name="proceed" required>
-                                    <option value="">Please select</option>
-                                    <option value="Site Inspection">Site Inspection</option>
-                                    <option value="Get a Quote">Get a Quote</option>
-                                    <option value="Consultation">Consultation Call</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label for="rto_installation">Target Installation <span class="required">*</span></label>
-                                <select id="rto_installation" name="installation" required>
-                                    <option value="">Please select</option>
-                                    <option value="Immediate">Immediate (1-2 months)</option>
-                                    <option value="Within 6 months">Within 6 months</option>
-                                    <option value="Within 1 year">Within 1 year</option>
-                                    <option value="Just exploring">Just exploring</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <button type="submit" class="btn-submit-rto">
-                            <span class="btn-text">Submit Application</span>
-                            <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
-                        </button>
-                    </form>
-                </div>
-
-                <!-- Right: Image/Visual --
-                <div class="rto-visual">
-                    <div class="visual-content">
-                        <div class="solar-illustration">
-                            <i class="fas fa-solar-panel"></i>
-                        </div>
-                        <h3>Power Your Business</h3>
-                        <p>Reduce operational costs with our flexible rent-to-own solar solutions designed for industrial and commercial properties.</p>
-                        
-                        <div class="benefits-list">
-                            <div class="benefit-item">
-                                <i class="fas fa-check-circle"></i>
-                                <span>Zero upfront costs</span>
-                            </div>
-                            <div class="benefit-item">
-                                <i class="fas fa-check-circle"></i>
-                                <span>Flexible payment terms</span>
-                            </div>
-                            <div class="benefit-item">
-                                <i class="fas fa-check-circle"></i>
-                                <span>Full ownership after lease</span>
-                            </div>
-                            <div class="benefit-item">
-                                <i class="fas fa-check-circle"></i>
-                                <span>Immediate energy savings</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>-->
 
 
 
@@ -1986,6 +1915,21 @@ $conn->close();
             };
         }
 
+        function getCalculatorSecurityPayload(showAlert = true) {
+            const privacyCheckbox = document.getElementById('calculatorPrivacyConsent');
+            if (!privacyCheckbox || !privacyCheckbox.checked) {
+                if (showAlert) {
+                    alert('Please confirm the Data Privacy Notice before submitting.');
+                    privacyCheckbox?.focus();
+                }
+                return null;
+            }
+
+            return {
+                privacy_consent: true
+            };
+        }
+
         function postCalculatorLead(payload) {
             return fetch('api/log_calculator_lead.php', {
                 method: 'POST',
@@ -1997,6 +1941,10 @@ $conn->close();
                 .then(data => {
                     if (!response.ok || data.success === false) {
                         throw new Error(data.message || 'Lead submission failed');
+                    }
+
+                    if (data.email_sent === false && data.email_message) {
+                        console.warn('Calculator lead email notification failed:', data.email_message);
                     }
 
                     return data;
@@ -2046,6 +1994,11 @@ $conn->close();
                 return;
             }
 
+            const securityPayload = getCalculatorSecurityPayload(true);
+            if (!securityPayload) {
+                return;
+            }
+
             const bill = parseFloat(document.getElementById('twBillSliderHero').value);
             const systemSize = document.getElementById('twKwValueHero').textContent + ' kWp';
 
@@ -2055,11 +2008,13 @@ $conn->close();
                 system_size: systemSize,
                 lead_name: leadDetails.name,
                 lead_phone: leadDetails.lead_phone,
-                lead_email: leadDetails.lead_email
+                lead_email: leadDetails.lead_email,
+                ...securityPayload
             })
             .then(() => {
                 nameInput.value = '';
                 contactInput.value = '';
+                document.getElementById('calculatorPrivacyConsent').checked = false;
                 document.getElementById('inlineSubmitBtn').style.display = 'none';
                 clearTimeout(submitBtnTimeout);
                 submitBtnTimeout = null;
@@ -2087,6 +2042,11 @@ $conn->close();
                 return;
             }
 
+            const securityPayload = getCalculatorSecurityPayload(true);
+            if (!securityPayload) {
+                return;
+            }
+
             const bill = parseFloat(document.getElementById('twBillSliderHero').value);
             const systemSize = document.getElementById('twKwValueHero').textContent + ' kWp';
 
@@ -2096,12 +2056,14 @@ $conn->close();
                 system_size: systemSize,
                 lead_name: leadDetails.name,
                 lead_phone: leadDetails.lead_phone,
-                lead_email: leadDetails.lead_email
+                lead_email: leadDetails.lead_email,
+                ...securityPayload
             })
             .then(() => {
                 // Clear fields on success
                 nameInput.value = '';
                 contactInput.value = '';
+                document.getElementById('calculatorPrivacyConsent').checked = false;
                 document.getElementById('inlineSubmitBtn').style.display = 'none';
                 clearTimeout(submitBtnTimeout);
                 submitBtnTimeout = null;
@@ -2129,39 +2091,8 @@ $conn->close();
 
         function autoSaveLead() {
             const contactInput = document.getElementById('inlineLeadContact');
-            const name = document.getElementById('inlineLeadName').value.trim();
-            const contact = contactInput.value.trim();
-            const parsedContact = parseLeadContact(contact);
             updateLeadContactValidity(contactInput);
-
-            // Only save if name and contact are filled out and have changed
-            if (!name || !contact || !parsedContact.isValid || (name === lastSavedName && contact === lastSavedContact)) {
-                return;
-            }
-
-            clearTimeout(autoSaveTimeout);
-            autoSaveTimeout = setTimeout(() => {
-                const bill = parseFloat(document.getElementById('twBillSliderHero').value);
-                const systemSize = document.getElementById('twKwValueHero').textContent + ' kWp';
-
-                postCalculatorLead({
-                    action: 'calculated', // logged as interaction
-                    bill: bill,
-                    system_size: systemSize,
-                    lead_name: name,
-                    lead_phone: parsedContact.lead_phone,
-                    lead_email: parsedContact.lead_email
-                })
-                .then(() => {
-                    lastSavedName = name;
-                    lastSavedContact = contact;
-                    console.log('Lead auto-saved successfully');
-                    
-                    // Show thank you popup modal when auto-saved successfully
-                    document.getElementById('calcThankYouModal').style.display = 'flex';
-                })
-                .catch(err => console.error('Lead auto-save failed:', err));
-            }, 1000);
+            handleFormInput();
         }
 
         function closeThankYouModal() {
@@ -2885,6 +2816,20 @@ $conn->close();
                                 <div class="col-12 mb-4">
                                     <textarea class="form-control" id="contact_message" name="message" rows="6"
                                         placeholder="Your Message *" required></textarea>
+                                </div>
+
+                                <div class="col-12 mb-3">
+                                    <div class="privacy-notice">
+                                        <label class="privacy-checkbox" for="contactPrivacyConsent">
+                                            <input type="checkbox" id="contactPrivacyConsent" name="privacy_consent" value="1" required>
+                                            <span class="privacy-copy">
+                                                <strong>Data Privacy Notice</strong>
+                                                We value your privacy. By submitting this form, you agree to our
+                                                <a href="privacy-policy.php" target="_blank" rel="noopener">Privacy Policy</a>.
+                                                Your data is securely processed and used only to respond to your inquiry.
+                                            </span>
+                                        </label>
+                                    </div>
                                 </div>
 
                                 <div class="col-12">
@@ -5604,6 +5549,13 @@ $conn->close();
         const submitBtn = document.getElementById('contactSubmitBtn');
         const btnText = submitBtn.querySelector('.btn-text');
         const btnSpinner = submitBtn.querySelector('.btn-spinner');
+        const privacyCheckbox = document.getElementById('contactPrivacyConsent');
+
+        if (!privacyCheckbox || !privacyCheckbox.checked) {
+            showNotificationModal('error', 'Please confirm the Data Privacy Notice before sending your message.');
+            privacyCheckbox?.focus();
+            return;
+        }
 
         // Combine +639 prefix with phone digits
         const phoneInput = document.getElementById('contact_phone');
@@ -5620,6 +5572,7 @@ $conn->close();
 
         try {
             const formData = new FormData(form);
+            formData.set('privacy_consent', '1');
 
             const response = await fetch('controllers/contact_submit.php', {
                 method: 'POST',
@@ -5766,66 +5719,6 @@ $conn->close();
         }
     }
 
-    // ============================================
-    // 13. RENT TO OWN FORM
-    // ============================================
-    function initializeRentToOwnForm() {
-        const rtoForm = document.getElementById('rentToOwnForm');
-
-        if (!rtoForm) return;
-
-        rtoForm.addEventListener('submit', async function(e) {
-            e.preventDefault();
-
-            const submitBtn = rtoForm.querySelector('.btn-submit-rto');
-            const btnText = submitBtn.querySelector('.btn-text');
-            const spinner = submitBtn.querySelector('.spinner-border');
-
-            // Show loading state
-            btnText.classList.add('d-none');
-            spinner.classList.remove('d-none');
-            submitBtn.disabled = true;
-
-            try {
-                const formData = new FormData(rtoForm);
-
-                // Add FormSubmit config
-                formData.append('_subject', '🏭 New Rent-to-Own Application (Industrial/Commercial)');
-                formData.append('_captcha', 'false');
-                formData.append('_template', 'box');
-
-                const response = await fetch('https://formsubmit.co/solar@solarpower.com.ph', {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        'Accept': 'application/json'
-                    }
-                });
-
-                if (response.ok) {
-                    // Success
-                    showNotificationModal('success', 'Application submitted successfully! We will contact you soon.');
-                    rtoForm.reset();
-                } else {
-                    throw new Error('Submission failed');
-                }
-
-            } catch (error) {
-                console.error('Error submitting form:', error);
-                showNotificationModal('error', 'There was an error submitting your application. Please try again or contact us directly.');
-            } finally {
-                // Reset button state
-                btnText.classList.remove('d-none');
-                spinner.classList.add('d-none');
-                submitBtn.disabled = false;
-            }
-        });
-    }
-
-    // Initialize Rent to Own form when page loads
-    document.addEventListener('DOMContentLoaded', function() {
-        initializeRentToOwnForm();
-    });
 
     // ========== MOBILE-OPTIMIZED VIEW MORE FUNCTIONALITY ==========
 

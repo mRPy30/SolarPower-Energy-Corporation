@@ -76,3 +76,51 @@ if (!function_exists('solar_send_resend_email')) {
     }
 }
 
+if (!function_exists('solar_internal_lead_recipients')) {
+    function solar_internal_lead_recipients(): array
+    {
+        return [
+            'solar@solarpower.com.ph',
+            'ddc@solarpower.com.ph',
+        ];
+    }
+}
+
+if (!function_exists('solar_send_internal_lead_email')) {
+    function solar_send_internal_lead_email(string $subject, string $html, array $options = []): array
+    {
+        $recipients = $options['recipients'] ?? solar_internal_lead_recipients();
+        $recipients = array_values(array_unique(array_filter(array_map('trim', $recipients))));
+
+        if (empty($recipients)) {
+            return ['success' => false, 'provider' => 'resend', 'message' => 'No internal lead recipients configured.'];
+        }
+
+        $sentCount = 0;
+        $failures = [];
+
+        foreach ($recipients as $recipient) {
+            $result = solar_send_resend_email($recipient, $subject, $html, $options);
+            if (!empty($result['success'])) {
+                $sentCount++;
+                continue;
+            }
+
+            $failures[] = $recipient . ': ' . ($result['message'] ?? 'Unknown Resend error');
+        }
+
+        if (empty($failures)) {
+            return [
+                'success' => true,
+                'provider' => 'resend',
+                'message' => 'Email sent through Resend to ' . $sentCount . ' internal recipient(s).',
+            ];
+        }
+
+        return [
+            'success' => false,
+            'provider' => 'resend',
+            'message' => 'Sent to ' . $sentCount . ' recipient(s); failed for ' . implode('; ', $failures),
+        ];
+    }
+}
