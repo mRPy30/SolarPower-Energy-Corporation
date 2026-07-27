@@ -58,10 +58,10 @@ if ($orderRef !== 'Unknown') {
         </div>
         <p class="text-muted">No order was recorded because the payment was not completed.</p>
         <div class="mt-4">
-            <a href="checkout.php" class="btn btn-primary btn-lg me-2">
+            <a href="/checkout" class="btn btn-primary btn-lg me-2">
                 <i class="fas fa-shopping-cart me-2"></i> Complete Order
             </a>
-            <a href="index.php" class="btn btn-secondary btn-lg">
+            <a href="/" class="btn btn-secondary btn-lg">
                 <i class="fas fa-home me-2"></i> Back to Home
             </a>
         </div>

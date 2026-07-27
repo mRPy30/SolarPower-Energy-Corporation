@@ -4,7 +4,7 @@ require_once "../config/db.php"; // adjust path
 
 // Staff protection
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'staff') {
-    header("Location: ../login.php");
+    header("Location: /login");
     exit;
 }
 
@@ -48,7 +48,7 @@ if (isset($_POST['publish'])) {
     );
 
     if ($stmt->execute()) {
-        header("Location: ../views/staff/dashboard.php?success=product_added");
+        header("Location: /dashboard?success=product_added");
         exit;
     } else {
         echo "Error adding product";

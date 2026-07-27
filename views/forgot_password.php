@@ -67,7 +67,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         // Send email with reset code
         if (sendResetEmail($email, $firstName, $reset_code)) {
             $_SESSION['reset_email'] = $email;
-            header("Location: verify_reset_code.php");
+            header("Location: /verify-reset-code");
             exit;
         } else {
             $msg = "<div class='alert alert-danger'>Failed to send email. Please try again.</div>";
@@ -88,15 +88,15 @@ $conn->close();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Forgot Password - Solar Power Energy</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="../assets/auth.css">
+    <link rel="stylesheet" href="/assets/auth.css">
 </head>
 
 <body>
 
 <nav class="navbar navbar-expand-lg navbar-light fixed-top">
     <div class="container">
-        <a class="navbar-brand" href="../index.php">
-            <img src="../assets/img/solarpower_energy_corp.png" alt="Site Logo" style="max-height: 100px; width: auto; object-fit: contain;">
+        <a class="navbar-brand" href="/">
+            <img src="/assets/img/solarpower_energy_corp.png" alt="Site Logo" style="max-height: 100px; width: auto; object-fit: contain;">
         </a>
 
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
@@ -105,12 +105,12 @@ $conn->close();
 
         <div class="collapse navbar-collapse" id="navMenu">
             <ul class="navbar-nav ms-auto">
-                <li class="nav-item"><a href="../index.php" class="nav-link fw-semibold">HOME</a></li>
-                <li class="nav-item"><a href="../about.php" class="nav-link fw-semibold">ABOUT US</a></li>
-                <li class="nav-item"><a href="../services.php" class="nav-link fw-semibold">SERVICES</a></li>
-                <li class="nav-item"><a href="../product.php" class="nav-link fw-semibold">PRODUCTS</a></li>
+                <li class="nav-item"><a href="/" class="nav-link fw-semibold">HOME</a></li>
+                <li class="nav-item"><a href="/about" class="nav-link fw-semibold">ABOUT US</a></li>
+                <li class="nav-item"><a href="/services" class="nav-link fw-semibold">SERVICES</a></li>
+                <li class="nav-item"><a href="/product" class="nav-link fw-semibold">PRODUCTS</a></li>
                 <li class="nav-item"><a href="#projects" class="nav-link fw-semibold">PROJECTS</a></li>
-                <li class="nav-item"><a href="../contact.php" class="nav-link fw-semibold">CONTACT</a></li>
+                <li class="nav-item"><a href="/contact" class="nav-link fw-semibold">CONTACT</a></li>
             </ul>
         </div>
     </div>
@@ -123,12 +123,12 @@ $conn->close();
 
         <?php echo $msg; ?>
 
-        <form method="POST" action="">
+        <form method="POST" action="/forgot-password">
             <input type="email" name="email" class="form-control mb-3" placeholder="Enter your email" required>
             
             <button class="btn btn-login w-100 mb-3" type="submit">Send Reset Code</button>
             
-            <a href="login.php" class="small text-decoration-none">Back to Login</a>
+            <a href="/login" class="small text-decoration-none">Back to Login</a>
         </form>
     </div>
 </div>

@@ -6,7 +6,7 @@ session_start();
 
 // Redirect if not authorized
 if (!isset($_SESSION['user_id']) || empty($_SESSION['user_id'])) {
-    header("Location: ../login.php");
+    header("Location: /login");
     exit();
 }
 ?>

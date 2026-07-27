@@ -3,7 +3,7 @@ session_start();
 
 // Check if user is logged in and is staff
 if (!isset($_SESSION['user_id']) || empty($_SESSION['user_id'])) {
-    header("Location: views/login.php");
+    header("Location: /login");
     exit;
 }
 
@@ -284,45 +284,45 @@ $conn->close();
             <i class="fas fa-chevron-left"></i>
         </button>
         <div class="logo">
-            <a href="views/staff/dashboard.php">
+            <a href="/dashboard">
                 <img src="assets/img/new_logo.png" alt="Solar Power Logo">
             </a>
         </div>
 
-        <div class="menu-item" onclick="location.href='views/staff/dashboard.php'" data-tooltip="Dashboard">
+        <div class="menu-item" onclick="location.href='/dashboard'" data-tooltip="Dashboard">
             <i class="fas fa-chart-line"></i><span>Dashboard</span>
         </div>
 
         <div class="menu-label">CUSTOMER OPERATIONS</div>
-        <div class="menu-item" onclick="location.href='views/staff/dashboard.php'" data-tooltip="Inquiries">
+        <div class="menu-item" onclick="location.href='/dashboard'" data-tooltip="Inquiries">
             <i class="fas fa-envelope-open-text"></i><span>Inquiries</span>
         </div>
-        <div class="menu-item" onclick="location.href='views/staff/dashboard.php'" data-tooltip="Clients">
+        <div class="menu-item" onclick="location.href='/dashboard'" data-tooltip="Clients">
             <i class="fas fa-users"></i><span>Clients</span>
         </div>
 
         <div class="menu-label">PRODUCT MANAGEMENT</div>
-        <div class="menu-item" onclick="location.href='views/staff/dashboard.php'" data-tooltip="Brands">
+        <div class="menu-item" onclick="location.href='/dashboard'" data-tooltip="Brands">
             <i class="fas fa-trademark"></i><span>Brands</span>
         </div>
-        <div class="menu-item" onclick="location.href='views/staff/dashboard.php'" data-tooltip="Categories">
+        <div class="menu-item" onclick="location.href='/dashboard'" data-tooltip="Categories">
             <i class="fas fa-tags"></i><span>Categories</span>
         </div>
-        <div class="menu-item" onclick="location.href='views/staff/dashboard.php'" data-tooltip="Product">
+        <div class="menu-item" onclick="location.href='/dashboard'" data-tooltip="Product">
             <i class="fas fa-box"></i><span>Product</span>
         </div>
-        <div class="menu-item" onclick="location.href='views/staff/dashboard.php'" data-tooltip="Promo Banners">
+        <div class="menu-item" onclick="location.href='/dashboard'" data-tooltip="Promo Banners">
             <i class="fas fa-images"></i><span>Promo Banners</span>
         </div>
 
         <div class="menu-label">SALES & TRANSACTIONS</div>
-        <div class="menu-item" onclick="location.href='views/staff/dashboard.php'" data-tooltip="Tracking">
+        <div class="menu-item" onclick="location.href='/dashboard'" data-tooltip="Tracking">
             <i class="fas fa-map-marker-alt"></i><span>Tracking</span>
         </div>
-        <div class="menu-item" onclick="location.href='views/staff/dashboard.php'" data-tooltip="Orders">
+        <div class="menu-item" onclick="location.href='/dashboard'" data-tooltip="Orders">
             <i class="fas fa-shopping-bag"></i><span>Orders</span>
         </div>
-        <div class="menu-item" onclick="location.href='views/staff/dashboard.php'" data-tooltip="Quotation">
+        <div class="menu-item" onclick="location.href='/dashboard'" data-tooltip="Quotation">
             <i class="fas fa-file-invoice"></i><span>Quotation</span>
         </div>
 
@@ -332,12 +332,12 @@ $conn->close();
         </div>
 
         <div class="menu-label">SUPPLY MANAGEMENT</div>
-        <div class="menu-item" onclick="location.href='views/staff/dashboard.php'" data-tooltip="Suppliers">
+        <div class="menu-item" onclick="location.href='/dashboard'" data-tooltip="Suppliers">
             <i class="fas fa-truck"></i><span>Suppliers</span>
         </div>
 
         <div class="menu-label">ACCOUNT</div>
-        <div class="menu-item" onclick="location.href='views/staff/dashboard.php'" data-tooltip="My Profile">
+        <div class="menu-item" onclick="location.href='/dashboard'" data-tooltip="My Profile">
             <i class="fas fa-user-circle"></i><span>My Profile</span>
         </div>
     </aside>
@@ -359,7 +359,7 @@ $conn->close();
                 <div class="dropdown-menu" id="userDropdown">
                     <div class="dropdown-header"><?= htmlspecialchars($fullName) ?></div>
                     <ul>
-                        <li><a href="controllers/logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+                        <li><a href="/logout"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
                     </ul>
                 </div>
             </div>

@@ -83,7 +83,7 @@ $conn->close();
             <p class="text-muted">Please contact support and provide your Maya payment reference so we can verify it manually.</p>
         <?php endif; ?>
         <div class="mt-4">
-            <a href="index.php" class="btn btn-primary btn-lg">
+            <a href="/" class="btn btn-primary btn-lg">
                 <i class="fas fa-home me-2"></i> Back to Home
             </a>
         </div>

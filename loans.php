@@ -26,14 +26,14 @@ if ($res_calc && $row_calc = $res_calc->fetch_assoc()) {
     <meta name="keywords" content="GSIS solar loan, Pag-IBIG solar financing, SSS solar panel loan, government solar financing Philippines, home improvement solar loan" />
     <meta name="author" content="SolarPower Energy Corporation" />
     <meta name="robots" content="index, follow" />
-    <link rel="canonical" href="https://solarpower.com.ph/loans.php" />
+    <link rel="canonical" href="https://solarpower.com.ph/loans" />
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
     <meta property="og:title" content="GSIS, SSS, and Pag-IBIG Solar Financing Hub | SolarPower Energy Corporation" />
     <meta property="og:description" content="Calculate and apply for government solar panel financing programs including GSIS Ginhawa Solar Energy Loan, SSS, and Pag-IBIG housing loans." />
     <meta property="og:image" content="https://solarpower.com.ph/assets/img/logo.png" />
-    <meta property="og:url" content="https://solarpower.com.ph/loans.php" />
+    <meta property="og:url" content="https://solarpower.com.ph/loans" />
 
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -372,7 +372,7 @@ if ($res_calc && $row_calc = $res_calc->fetch_assoc()) {
         }
 
         .slider-after-layer {
-            background-image: linear-gradient(rgba(0,0,0,0.1), rgba(0,0,0,0.1)), url('assets/img/mock_solar_roof_3d.png');
+            background-image: linear-gradient(rgba(0,0,0,0.1), rgba(0,0,0,0.1)), url('assets/img/Application.png.png');
             width: 50%;
         }
 
@@ -1159,7 +1159,7 @@ if ($res_calc && $row_calc = $res_calc->fetch_assoc()) {
             <div class="row align-items-center g-5">
                 <!-- Left: Aerial Rooftop Image -->
                 <div class="col-lg-5" data-aos="fade-right">
-                    <img src="assets/img/mock_solar_roof_map.png" alt="Solar project blueprints on a working desk" class="desk-vector-img">
+                    <img src="assets/img/Application.png" alt="Solar project blueprints on a working desk" class="desk-vector-img">
                 </div>
 
                 <!-- Right: Checklist Panel -->

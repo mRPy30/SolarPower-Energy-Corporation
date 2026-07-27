@@ -2,7 +2,7 @@
 session_start();
 
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'staff') {
-    header("Location: ../views/login.php");
+    header("Location: /login");
     exit;
 }
 
@@ -37,5 +37,5 @@ $stmt->close();
 $conn->close();
 
 /* Reload dashboard product page */
-header("Location: ../views/staff/dashboard.php#product");
+header("Location: /dashboard#product");
 exit;

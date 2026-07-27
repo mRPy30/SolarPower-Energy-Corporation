@@ -58,10 +58,10 @@ if ($orderRef !== 'Unknown') {
         </div>
         <p class="text-muted">Please try again or contact our support team.</p>
         <div class="mt-4">
-            <a href="checkout.php" class="btn btn-primary btn-lg me-2">
+            <a href="/checkout" class="btn btn-primary btn-lg me-2">
                 <i class="fas fa-redo me-2"></i> Try Again
             </a>
-            <a href="index.php" class="btn btn-secondary btn-lg">
+            <a href="/" class="btn btn-secondary btn-lg">
                 <i class="fas fa-home me-2"></i> Back to Home
             </a>
         </div>

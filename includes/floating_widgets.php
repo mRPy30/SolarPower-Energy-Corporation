@@ -157,9 +157,9 @@
        ------------------------------------------------------------- */
     @media (max-width: 576px) {
         .floating-chat-dock-container {
-            bottom: 15px;
-            right: 15px;
-            transform: scale(0.85);
+            bottom: 12px;
+            right: 10px;
+            transform: scale(0.78);
             transform-origin: bottom right;
         }
         /* Dynamically hide tooltip to prevent screen clutter */

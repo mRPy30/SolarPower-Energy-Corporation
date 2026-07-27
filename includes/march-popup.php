@@ -9,7 +9,7 @@
           <button type="button" class="newsletter-close-btn-mobile" data-bs-dismiss="modal" aria-label="Close">✕</button>
           <h2 class="newsletter-heading">Subscribe<br>Now!</h2>
           <p class="newsletter-subtext">Get weekly solar tips, updates, and exclusive offers delivered to your inbox</p>
-          <form id="newsletterPopupForm" action="controllers/subscribe.php" method="POST" novalidate class="w-100" style="max-width: 450px;">
+      <form id="newsletterPopupForm" action="/controllers/subscribe" method="POST" novalidate class="w-100" style="max-width: 450px;">
             <div class="mb-3">
               <input
                 type="email"

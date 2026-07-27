@@ -1,3 +1,4 @@
+<?php require_once __DIR__ . '/routes.php'; ?>
 <style>
   /* Footer */
   .footer {
@@ -535,7 +536,7 @@
     <div class="row">
       <div class="col-lg-3 col-md-6 mb-4">
         <div class="footer-logo-social">
-          <img src="assets/img/solarpower_energy_corp.png" alt="Logo" style="max-height: 85px; width: auto; object-fit: contain; margin-bottom: 15px;">
+          <img src="<?php echo htmlspecialchars(asset_url('assets/img/solarpower_energy_corp.png')); ?>" alt="Logo" style="max-height: 85px; width: auto; object-fit: contain; margin-bottom: 15px;">
           <div class="footer-social-links">
             <a href="https://www.facebook.com/p/SolarPower-Energy-Corporation-61578373983187/"><i class="fab fa-facebook-f"></i></a>
             <a href="https://www.instagram.com/solarpowerenergycorporation?igsh=MWh4YTEyYWpzbDNlNQ=="><i class="fab fa-instagram"></i></a>
@@ -550,17 +551,17 @@
         <div class="footer-links">
           <h4>Quick Links</h4>
           <ul>
-            <li><a href="index.php">HOME</a></li>
-            <li><a href="about.php">ABOUT US</a></li>
-            <li><a href="services.php">SERVICES</a></li>
-            <li><a href="product.php">PRODUCT</a></li>
-            <li><a href="projects.php">PROJECTS</a></li>
-            <li><a href="loans.php">SOLAR LOANS</a></li>
-            <li><a href="contact.php">CONTACT</a></li>
-            <li><a href="privacy-policy.php">PRIVACY POLICY</a></li>
-            <li><a href="terms-of-service.php">TERMS OF SERVICE</a></li>
-            <li><a href="refund-policy.php">REFUND POLICY</a></li>
-            <li><a href="terms-of-payment.php">TERMS OF PAYMENT</a></li>
+            <li><a href="<?php echo htmlspecialchars(clean_url('index.php')); ?>">HOME</a></li>
+            <li><a href="<?php echo htmlspecialchars(clean_url('about.php')); ?>">ABOUT US</a></li>
+            <li><a href="<?php echo htmlspecialchars(clean_url('services.php')); ?>">SERVICES</a></li>
+            <li><a href="<?php echo htmlspecialchars(clean_url('product.php')); ?>">PRODUCT</a></li>
+            <li><a href="<?php echo htmlspecialchars(clean_url('projects.php')); ?>">PROJECTS</a></li>
+            <li><a href="<?php echo htmlspecialchars(clean_url('loans.php')); ?>">SOLAR LOANS</a></li>
+            <li><a href="<?php echo htmlspecialchars(clean_url('contact.php')); ?>">CONTACT</a></li>
+            <li><a href="<?php echo htmlspecialchars(clean_url('privacy-policy.php')); ?>">PRIVACY POLICY</a></li>
+            <li><a href="<?php echo htmlspecialchars(clean_url('terms-of-service.php')); ?>">TERMS OF SERVICE</a></li>
+            <li><a href="<?php echo htmlspecialchars(clean_url('refund-policy.php')); ?>">REFUND POLICY</a></li>
+            <li><a href="<?php echo htmlspecialchars(clean_url('terms-of-payment.php')); ?>">TERMS OF PAYMENT</a></li>
           </ul>
         </div>
       </div>
@@ -586,7 +587,7 @@
       <div class="col-lg-3 col-md-6 mb-4 text-lg-end">
         <div class="footer-shoppee-side">
           <h4>Explore our Shopee</h4>
-          <img src="assets/img/SHOPEE.png" alt="QR Code">
+          <img src="<?php echo htmlspecialchars(asset_url('assets/img/SHOPEE.png')); ?>" alt="QR Code">
           <p style="color: #ee4d2d;">Scan to shop online</p>
         </div>
       </div>
@@ -596,18 +597,18 @@
       <div class="col-12 text-center">
         <h4 class="mb-3">Payment Methods</h4>
         <div class="payment-icons">
-          <img src="assets/img/payments/metrobank.webp" alt="Metrobank">
-          <img src="assets/img/payments/BPI.webp" alt="BPI">
-          <img src="assets/img/payments/GCash-Logo.png" alt="GCash">
-          <img src="assets/img/payments/mastercard-logo.png" alt="MasterCard">
-          <img src="assets/img/payments/Unionbank_logo.png" alt="UnionBank">
-          <img src="assets/img/payments/BOC.jpg" alt="BOC">
+          <img src="<?php echo htmlspecialchars(asset_url('assets/img/payments/metrobank.webp')); ?>" alt="Metrobank">
+          <img src="<?php echo htmlspecialchars(asset_url('assets/img/payments/BPI.webp')); ?>" alt="BPI">
+          <img src="<?php echo htmlspecialchars(asset_url('assets/img/payments/GCash-Logo.png')); ?>" alt="GCash">
+          <img src="<?php echo htmlspecialchars(asset_url('assets/img/payments/mastercard-logo.png')); ?>" alt="MasterCard">
+          <img src="<?php echo htmlspecialchars(asset_url('assets/img/payments/Unionbank_logo.png')); ?>" alt="UnionBank">
+          <img src="<?php echo htmlspecialchars(asset_url('assets/img/payments/BOC.jpg')); ?>" alt="BOC">
         </div>
       </div>
     </div>
 
     <div class="copyright">
-      <p>&copy; 2026 Solar Power Energy Corporation. All rights reserved.</p>
+      <p>&copy; 2026 SolarPower Energy Corporation. All rights reserved.</p>
     </div>
   </div>
 </footer>

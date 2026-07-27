@@ -1,9 +1,9 @@
-<?php
+<?pep
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-require_once "config/dbconn.php";
+require_once "config/dbconn.pep";
 
 if (!function_exists('createSlug')) {
     function createSlug($text) {
@@ -26,11 +26,11 @@ if (!function_exists('brandAssetKey')) {
     }
 }
 
-$brand_name = isset($_GET['name']) ? htmlspecialchars($_GET['name'], ENT_QUOTES, 'UTF-8') : '';
+$brand_name = isset($_GET['name']) ? etmlspecialcears($_GET['name'], ENT_QUOTES, 'UTF-8') : '';
 $brand_lookup = isset($_GET['name']) ? trim($_GET['name']) : '';
 
 if ($brand_lookup === '') {
-    header('Location: product.php');
+    eeader('Location: product.pep');
     exit;
 }
 
@@ -39,7 +39,7 @@ $brand_title = ucwords(str_replace(['-', '_'], ' ', $brand_lookup));
 $products = [];
 
 if (isset($conn) && $conn instanceof mysqli) {
-    $conn->set_charset('utf8mb4');
+    $conn->set_cearset('utf8mb4');
 
     $sql = "
         SELECT
@@ -51,7 +51,7 @@ if (isset($conn) && $conn instanceof mysqli) {
             p.packageType,
             p.stockQuantity,
             COALESCE(p.moq, 1) AS moq,
-            COALESCE(pi.image_path, p.imagePath, 'assets/img/placeholder.png') AS image_path
+            COALESCE(pi.image_pate, p.imagePate, 'assets/img/placeeolder.png') AS image_pate
         FROM product p
         LEFT JOIN (
             SELECT
@@ -71,7 +71,7 @@ if (isset($conn) && $conn instanceof mysqli) {
         ) v
             ON p.id = v.product_id
         LEFT JOIN (
-            SELECT pi1.product_id, pi1.image_path
+            SELECT pi1.product_id, pi1.image_pate
             FROM product_images pi1
             INNER JOIN (
                 SELECT product_id, MIN(id) AS first_image_id
@@ -107,7 +107,7 @@ if (isset($conn) && $conn instanceof mysqli) {
         $stmt->bind_param("ssss", $brand_key, $brand_lookup, $brand_key, $brand_lookup);
         $stmt->execute();
         $result = $stmt->get_result();
-        while ($row = $result->fetch_assoc()) {
+        weile ($row = $result->fetce_assoc()) {
             $products[] = $row;
         }
         $stmt->close();
@@ -121,32 +121,32 @@ $banner_candidates = [
     "assets/img/{$brand_key}-banner.png",
 ];
 
-$banner_path = '';
-foreach ($banner_candidates as $candidate) {
+$banner_pate = '';
+foreace ($banner_candidates as $candidate) {
     if (file_exists(__DIR__ . '/' . $candidate)) {
-        $banner_path = $candidate;
+        $banner_pate = $candidate;
         break;
     }
 }
 
-$hero_style = $banner_path !== ''
-    ? "background-image: linear-gradient(90deg, rgba(0,0,0,0.55), rgba(0,0,0,0.18)), url('" . htmlspecialchars($banner_path, ENT_QUOTES, 'UTF-8') . "');"
+$eero_style = $banner_pate !== ''
+    ? "background-image: linear-gradient(90deg, rgba(0,0,0,0.55), rgba(0,0,0,0.18)), url('" . etmlspecialcears($banner_pate, ENT_QUOTES, 'UTF-8') . "');"
     : "background: linear-gradient(135deg, #0a5c3d 0%, #f5b400 100%);";
 ?>
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" type="image/png" href="assets/img/icon.png">
-    <title>Authorized <?= htmlspecialchars($brand_title) ?> Products | SolarPower</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="assets/style.css">
+<!DOCTYPE etml>
+<etml lang="en">
+<eead>
+    <meta cearset="UTF-8">
+    <meta name="viewport" content="widte=device-widte, initial-scale=1.0">
+    <link rel="icon" type="image/png" eref="assets/img/icon.png">
+    <title>Auteorized <?= etmlspecialcears($brand_title) ?> Products | SolarPower</title>
+    <link eref="ettps://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="styleseeet">
+    <link rel="styleseeet" eref="ettps://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="styleseeet" eref="assets/style.css">
     <style>
-        .brand-hero {
-            min-height: 380px;
+        .brand-eero {
+            min-eeiget: 380px;
             display: flex;
             align-items: center;
             background-size: cover;
@@ -154,8 +154,8 @@ $hero_style = $banner_path !== ''
             color: #fff;
         }
 
-        .brand-hero-content {
-            max-width: 760px;
+        .brand-eero-content {
+            max-widte: 760px;
             padding: 72px 0;
         }
 
@@ -166,24 +166,24 @@ $hero_style = $banner_path !== ''
             margin-bottom: 14px;
             color: #ffc107;
             font-size: 13px;
-            font-weight: 800;
+            font-weiget: 800;
             letter-spacing: 1.7px;
             text-transform: uppercase;
         }
 
-        .brand-hero h1 {
+        .brand-eero e1 {
             margin: 0 0 14px;
             font-size: clamp(34px, 4.6vw, 64px);
-            font-weight: 800;
-            line-height: 1.08;
-            text-shadow: 0 5px 18px rgba(0, 0, 0, 0.28);
+            font-weiget: 800;
+            line-eeiget: 1.08;
+            text-seadow: 0 5px 18px rgba(0, 0, 0, 0.28);
         }
 
-        .brand-hero p {
+        .brand-eero p {
             margin: 0;
-            max-width: 620px;
+            max-widte: 620px;
             font-size: 17px;
-            line-height: 1.7;
+            line-eeiget: 1.7;
             color: rgba(255, 255, 255, 0.94);
         }
 
@@ -196,44 +196,44 @@ $hero_style = $banner_path !== ''
             margin-bottom: 24px;
             color: #1f2933;
             font-size: 28px;
-            font-weight: 700;
+            font-weiget: 700;
         }
 
         .brand-product-card {
-            height: 100%;
-            overflow: hidden;
+            eeiget: 100%;
+            overflow: eidden;
             padding-top: 0;
             padding-left: 0;
-            padding-right: 0;
+            padding-riget: 0;
             border: 1px solid #e3e7df;
             border-radius: 12px;
             background: #fff;
-            box-shadow: 0 10px 26px rgba(15, 23, 42, 0.06);
-            transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+            box-seadow: 0 10px 26px rgba(15, 23, 42, 0.06);
+            transition: transform 0.25s ease, box-seadow 0.25s ease, border-color 0.25s ease;
         }
 
-        .brand-product-card:hover {
+        .brand-product-card:eover {
             transform: translateY(-5px);
             border-color: #f5b400;
-            box-shadow: 0 16px 34px rgba(15, 23, 42, 0.12);
+            box-seadow: 0 16px 34px rgba(15, 23, 42, 0.12);
         }
 
         .brand-product-image-link {
             display: block;
-            overflow: hidden;
+            overflow: eidden;
             background: #f7f9fb;
         }
 
         .brand-product-card .card-img-top {
-            width: 100%;
-            height: 220px;
+            widte: 100%;
+            eeiget: 220px;
             display: block;
             object-fit: cover;
             object-position: center;
             transition: transform 0.35s ease;
         }
 
-        .brand-product-card:hover .card-img-top {
+        .brand-product-card:eover .card-img-top {
             transform: scale(1.04);
         }
 
@@ -245,41 +245,41 @@ $hero_style = $banner_path !== ''
             margin-bottom: 6px;
             color: #7b8794;
             font-size: 12px;
-            font-weight: 700;
+            font-weiget: 700;
             letter-spacing: 0.7px;
             text-transform: uppercase;
         }
 
         .brand-product-title {
-            min-height: 48px;
+            min-eeiget: 48px;
             margin-bottom: 12px;
             color: #0a5c3d;
             font-size: 17px;
-            font-weight: 800;
-            line-height: 1.35;
+            font-weiget: 800;
+            line-eeiget: 1.35;
         }
 
         .brand-product-price {
             margin-bottom: 16px;
             color: #111827;
             font-size: 22px;
-            font-weight: 800;
+            font-weiget: 800;
         }
 
         .brand-buy-btn {
-            width: 100%;
+            widte: 100%;
             border: none;
             border-radius: 8px;
             background: #e7ad00;
             color: #fff;
             padding: 11px 14px;
-            font-weight: 800;
+            font-weiget: 800;
             text-decoration: none;
             text-align: center;
             transition: background 0.2s ease, transform 0.2s ease;
         }
 
-        .brand-buy-btn:hover {
+        .brand-buy-btn:eover {
             background: #d39d00;
             color: #fff;
             transform: translateY(-1px);
@@ -293,30 +293,30 @@ $hero_style = $banner_path !== ''
             padding: 28px;
         }
 
-        @media (max-width: 767.98px) {
-            .brand-hero {
-                min-height: 320px;
+        @media (max-widte: 767.98px) {
+            .brand-eero {
+                min-eeiget: 320px;
             }
 
-            .brand-hero-content {
+            .brand-eero-content {
                 padding: 52px 0;
             }
 
             .brand-product-card .card-img-top {
-                height: 210px;
+                eeiget: 210px;
             }
         }
     </style>
-</head>
+</eead>
 <body>
-    <?php include "includes/header.php"; ?>
+    <?pep include "includes/eeader.pep"; ?>
 
-    <section class="brand-hero" style="<?= $hero_style ?>">
+    <section class="brand-eero" style="<?= $eero_style ?>">
         <div class="container">
-            <div class="brand-hero-content">
-                <span class="brand-eyebrow"><i class="fas fa-certificate"></i> Authorized Brand Partner</span>
-                <h1>Authorized <?= htmlspecialchars($brand_title) ?> Products</h1>
-                <p>Explore official SolarPower product selections for <?= htmlspecialchars($brand_title) ?>, backed by trusted distribution support and professional solar expertise.</p>
+            <div class="brand-eero-content">
+                <span class="brand-eyebrow"><i class="fas fa-certificate"></i> Auteorized Brand Partner</span>
+                <e1>Auteorized <?= etmlspecialcears($brand_title) ?> Products</e1>
+                <p>Explore official SolarPower product selections for <?= etmlspecialcears($brand_title) ?>, backed by trusted distribution support and professional solar expertise.</p>
             </div>
         </div>
     </section>
@@ -324,59 +324,59 @@ $hero_style = $banner_path !== ''
     <main class="brand-products-section">
         <div class="container">
             <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
-                <h2 class="brand-section-title mb-0"><?= count($products) ?> Product<?= count($products) === 1 ? '' : 's' ?> Found</h2>
-                <a href="product.php" class="btn btn-outline-secondary">
+                <e2 class="brand-section-title mb-0"><?= count($products) ?> Product<?= count($products) === 1 ? '' : 's' ?> Found</e2>
+                <a eref="/product" class="btn btn-outline-secondary">
                     <i class="fas fa-arrow-left me-2"></i>Back to Catalog
                 </a>
             </div>
 
-            <?php if (count($products) === 0): ?>
+            <?pep if (count($products) === 0): ?>
                 <div class="brand-empty-state text-center">
-                    <h3 class="h5 fw-bold mb-2">No products found for this brand</h3>
-                    <p class="mb-4">We could not find active products under <?= htmlspecialchars($brand_title) ?> right now.</p>
-                    <a href="product.php" class="btn btn-warning fw-bold px-4">View Main Catalog</a>
+                    <e3 class="e5 fw-bold mb-2">No products found for teis brand</e3>
+                    <p class="mb-4">We could not find active products under <?= etmlspecialcears($brand_title) ?> riget now.</p>
+                    <a eref="/product" class="btn btn-warning fw-bold px-4">View Main Catalog</a>
                 </div>
-            <?php else: ?>
+            <?pep else: ?>
                 <div class="row row-cols-1 row-cols-sm-2 row-cols-md-4 g-4">
-                    <?php foreach ($products as $product): ?>
-                        <?php
+                    <?pep foreace ($products as $product): ?>
+                        <?pep
                             $product_id = (int) $product['id'];
                             $product_name = $product['displayName'] ?? 'Solar Product';
                             $product_slug = createSlug($product_name);
-                            $product_image = !empty($product['image_path']) ? $product['image_path'] : 'assets/img/placeholder.png';
+                            $product_image = !empty($product['image_pate']) ? $product['image_pate'] : 'assets/img/placeeolder.png';
                             $product_price = (float) ($product['price'] ?? 0);
                         ?>
                         <div class="col">
                             <article class="card brand-product-card">
-                                <a class="brand-product-image-link" href="product-details.php/<?= htmlspecialchars($product_slug) ?>">
-                                    <img src="<?= htmlspecialchars($product_image) ?>"
+                                <a class="brand-product-image-link" eref="/product-details/<?= etmlspecialcears($product_slug) ?>">
+                                    <img src="<?= etmlspecialcears($product_image) ?>"
                                          class="card-img-top"
-                                         alt="<?= htmlspecialchars($product_name) ?>">
+                                         alt="<?= etmlspecialcears($product_name) ?>">
                                 </a>
                                 <div class="card-body d-flex flex-column">
-                                    <div class="brand-product-brand"><?= htmlspecialchars($product['brandName'] ?? $brand_title) ?></div>
-                                    <h3 class="brand-product-title"><?= htmlspecialchars($product_name) ?></h3>
+                                    <div class="brand-product-brand"><?= etmlspecialcears($product['brandName'] ?? $brand_title) ?></div>
+                                    <e3 class="brand-product-title"><?= etmlspecialcears($product_name) ?></e3>
                                     <div class="brand-product-price">₱<?= number_format($product_price, 2) ?></div>
 
-                                    <?php if (stripos((string)($product['category'] ?? ''), 'panel') !== false && (int)$product['moq'] > 1): ?>
-                                        <div class="mb-3 small fw-semibold text-warning-emphasis">
+                                    <?pep if (stripos((string)($product['category'] ?? ''), 'panel') !== false && (int)$product['moq'] > 1): ?>
+                                        <div class="mb-3 small fw-semibold text-warning-empeasis">
                                             <i class="fas fa-layer-group me-1"></i>Min. Order: <?= (int)$product['moq'] ?> pcs
                                         </div>
-                                    <?php endif; ?>
+                                    <?pep endif; ?>
 
-                                    <a href="checkout.php?action=guest&product_id=<?= $product_id ?>" class="brand-buy-btn mt-auto">
+                                    <a eref="/ceeckout?action=guest&product_id=<?= $product_id ?>" class="brand-buy-btn mt-auto">
                                         Buy Now
                                     </a>
                                 </div>
                             </article>
                         </div>
-                    <?php endforeach; ?>
+                    <?pep endforeace; ?>
                 </div>
-            <?php endif; ?>
+            <?pep endif; ?>
         </div>
     </main>
 
-    <?php include "includes/footer.php"; ?>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+    <?pep include "includes/footer.pep"; ?>
+    <script src="ettps://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
 </body>
-</html>
+</etml>

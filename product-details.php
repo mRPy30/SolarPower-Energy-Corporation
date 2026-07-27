@@ -50,7 +50,7 @@ if (!$productId && isset($_GET['id'])) {
 }
 
 if (!$productId) {
-    header('Location: index.php');
+    header('Location: /');
     exit;
 }
 
@@ -93,7 +93,7 @@ $result = $stmt->get_result();
 if ($result->num_rows > 0) {
     $product = $result->fetch_assoc();
 } else {
-    header('Location: index.php');
+    header('Location: /');
     exit;
 }
 $stmt->close();
@@ -713,8 +713,8 @@ $conn->close();
             <!-- Breadcrumb -->
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="index.php">Home</a></li>
-                    <li class="breadcrumb-item"><a href="index.php#catalogSection">Products</a></li>
+                    <li class="breadcrumb-item"><a href="/">Home</a></li>
+                    <li class="breadcrumb-item"><a href="/#catalogSection">Products</a></li>
                     <li class="breadcrumb-item active"><?= htmlspecialchars($product['displayName']) ?></li>
                 </ol>
             </nav>
@@ -1056,7 +1056,7 @@ $conn->close();
                         <span class="d-inline-flex align-items-center gap-1 px-2 py-1 rounded border bg-light">
                             <i class="fas fa-lock text-success"></i> Secure Maya checkout
                         </span>
-                        <a href="loans.php#checklist" class="ms-auto small fw-semibold text-decoration-none" style="color:#0D5C3A;">Corporate buyer?</a>
+                        <a href="/loans#checklist" class="ms-auto small fw-semibold text-decoration-none" style="color:#0D5C3A;">Corporate buyer?</a>
                     </div>
                     <!-- Maya Error Display -->
                     <div id="mayaErrorBox" class="alert alert-danger" style="display:none;"></div>
@@ -1089,7 +1089,7 @@ $conn->close();
                         <p class="mt-1"><strong>Total Amount:</strong> <span id="confTotalAmount" class="fw-bold text-primary"></span></p>
                         <button class="btn btn-outline-secondary btn-sm mt-2" onclick="copyOrderRef()"><i class="fas fa-copy"></i> Copy Reference</button>
                         <div class="mt-4"><p class="text-muted small mb-2">Scan or save this QR code to track your order.</p><div id="orderQr" class="d-inline-block p-2 bg-white"></div></div>
-                        <button class="btn btn-primary mt-4" onclick="location.href='index.php'">Back to Home</button>
+                        <button class="btn btn-primary mt-4" onclick="location.href='/'">Back to Home</button>
                     </div>
                 </div>
             </div>
@@ -1111,7 +1111,7 @@ $conn->close();
                 <div class="related-grid">
                     <?php foreach ($relatedProducts as $related): ?>
                         <div class="product-card-minimal">
-                            <div class="card-image-wrapper" onclick="location.href='product-details.php/<?= createSlug($related['displayName']) ?>'">
+                            <div class="card-image-wrapper" onclick="location.href='/product-details/<?= createSlug($related['displayName']) ?>'">
                                 <img src="<?= htmlspecialchars($related['image_path'] ?? 'assets/img/placeholder.png') ?>"
                                     alt="<?= htmlspecialchars($related['displayName']) ?>"
                                     class="card-image">
@@ -1458,7 +1458,7 @@ $conn->close();
             cart = [{ id: productData.id, product_id: productData.id, variant_id: productData.variant_id || '', brand_id: productData.brand_id || null, displayName: productData.displayName, brandName: productData.brandName || '', category: productData.category || '', price: parseFloat(productData.price), image_path: productData.image_path, quantity: qty, moq: productMOQ }];
             localStorage.setItem('solarCart', JSON.stringify(cart));
             syncSession(cart, function() {
-                window.location.href = '<?= htmlspecialchars($base_url) ?>checkout.php';
+                window.location.href = '/checkout';
             });
         }
 
@@ -1513,13 +1513,13 @@ $conn->close();
             }];
             localStorage.setItem('solarCart', JSON.stringify(singleCart));
             syncSession(singleCart, function() {
-                window.location.href = '<?= htmlspecialchars($base_url) ?>checkout.php';
+                window.location.href = '/checkout';
             });
         }
 
         function proceedToCheckout() {
             localStorage.setItem('solarCart', JSON.stringify(cart));
-            window.location.href = '<?= htmlspecialchars($base_url) ?>checkout.php';
+            window.location.href = '/checkout';
         }
 
         function showCheckout() {
@@ -1628,7 +1628,7 @@ $conn->close();
         // ── Maya Checkout ──
         async function mayaCheckout() {
             localStorage.setItem('solarCart', JSON.stringify(cart));
-            window.location.href = '<?= htmlspecialchars($base_url) ?>checkout.php';
+            window.location.href = '/checkout';
             return;
 
             const btn       = document.getElementById('mayaPayBtn');

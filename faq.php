@@ -12,14 +12,14 @@
     <meta name="keywords" content="solar power FAQ Philippines, solar cost Philippines, solar panel return on investment, net metering Philippines, solar panel maintenance" />
     <meta name="author" content="SolarPower Energy Corporation" />
     <meta name="robots" content="index, follow" />
-    <link rel="canonical" href="https://solarpower.com.ph/faq.php" />
+    <link rel="canonical" href="https://solarpower.com.ph/faq" />
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
     <meta property="og:title" content="Frequently Asked Questions | SolarPower Energy Corporation" />
     <meta property="og:description" content="Answers to common questions about going solar in the Philippines. Learn about costs, ROI, hybrid systems, and net-metering setup." />
     <meta property="og:image" content="https://solarpower.com.ph/assets/img/logo.png" />
-    <meta property="og:url" content="https://solarpower.com.ph/faq.php" />
+    <meta property="og:url" content="https://solarpower.com.ph/faq" />
 
     <!-- Bootstrap CSS -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
@@ -382,7 +382,7 @@
             <h2>Still have questions?</h2>
             <p>Our DOE-accredited solar specialists are ready to help!</p>
             <div class="cta-buttons">
-                <a href="contact.php" class="cta-button">📞 Contact Us Now</a>
+                <a href="/contact" class="cta-button">📞 Contact Us Now</a>
                 <a href="tel:+639953947379" class="cta-button cta-button-secondary">📱 Call: +63 995 394 7379</a>
             </div>
         </div>

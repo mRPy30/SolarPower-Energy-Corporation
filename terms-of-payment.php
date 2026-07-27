@@ -15,14 +15,14 @@ $isLoggedIn = isset($_SESSION['user_id']);
     <meta name="keywords" content="payment terms, scope of work, solar warranty, SolarPower Energy Corp" />
     <meta name="author" content="SolarPower Energy Corporation" />
     <meta name="robots" content="index, follow" />
-    <link rel="canonical" href="https://solarpower.com.ph/terms-of-payment.php" />
+    <link rel="canonical" href="https://solarpower.com.ph/terms-of-payment" />
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
     <meta property="og:title" content="Terms of Payment & Scope of Work | SolarPower Energy Corporation" />
     <meta property="og:description" content="Review our payment terms, scope of works, and warranty provisions." />
     <meta property="og:image" content="https://solarpower.com.ph/assets/img/logo.png" />
-    <meta property="og:url" content="https://solarpower.com.ph/terms-of-payment.php" />
+    <meta property="og:url" content="https://solarpower.com.ph/terms-of-payment" />
 
     <!-- CDN Stylesheets -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">

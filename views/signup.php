@@ -63,7 +63,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         }
 
         .login-bg {
-            background: url('../assets/img/cover.png') no-repeat center center/cover;
+            background: url('/assets/img/cover.png') no-repeat center center/cover;
             height: 100vh;
             width: 100%;
             position: relative;
@@ -151,8 +151,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <!-- NAVBAR -->
 <nav class="navbar navbar-expand-lg navbar-light fixed-top">
     <div class="container">
-        <a class="navbar-brand" href="../index.php">
-            <img src="../assets/img/solarpower_energy_corp.png" alt="Site Logo" style="max-height: 100px; width: auto; object-fit: contain;">
+        <a class="navbar-brand" href="/">
+            <img src="/assets/img/solarpower_energy_corp.png" alt="Site Logo" style="max-height: 100px; width: auto; object-fit: contain;">
         </a>
 
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
@@ -161,12 +161,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         <div class="collapse navbar-collapse" id="navMenu">
             <ul class="navbar-nav ms-auto">
-                <li class="nav-item"><a href="../index.php" class="nav-link fw-semibold">HOME</a></li>
-                <li class="nav-item"><a href="../about.php" class="nav-link fw-semibold">ABOUT US</a></li>
-                <li class="nav-item"><a href="../services.php" class="nav-link fw-semibold">SERVICES</a></li>
-                <li class="nav-item"><a href="../product.php" class="nav-link fw-semibold">PRODUCTS</a></li>
+                <li class="nav-item"><a href="/" class="nav-link fw-semibold">HOME</a></li>
+                <li class="nav-item"><a href="/about" class="nav-link fw-semibold">ABOUT US</a></li>
+                <li class="nav-item"><a href="/services" class="nav-link fw-semibold">SERVICES</a></li>
+                <li class="nav-item"><a href="/product" class="nav-link fw-semibold">PRODUCTS</a></li>
                 <li class="nav-item"><a href="#projects" class="nav-link fw-semibold">PROJECTS</a></li>
-                <li class="nav-item"><a href="../contact.php" class="nav-link fw-semibold">CONTACT</a></li>
+                <li class="nav-item"><a href="/contact" class="nav-link fw-semibold">CONTACT</a></li>
             </ul>
         </div>
     </div>
@@ -177,7 +177,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <div class="login-card text-center">
         <h2 class="mb-4">Signup</h2>
 
-        <form method="POST" action="">
+        <form method="POST" action="/signup">
             <input type="text" name="firstName" class="form-control mb-3" placeholder="First Name" required>
             <input type="text" name="lastName" class="form-control mb-3" placeholder="Last Name" required>
             <input type="email" name="email" class="form-control mb-3" placeholder="Email" required>
@@ -185,7 +185,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
             <button class="btn btn-login w-100 mb-3" type="submit">Signup</button>
 
-            <a href="login.php" class="small text-decoration-none">I already have an account</a>
+            <a href="/login" class="small text-decoration-none">I already have an account</a>
         </form>
 
 

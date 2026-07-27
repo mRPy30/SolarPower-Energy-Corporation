@@ -558,7 +558,7 @@ $conn->close();
                              data-kw="<?= htmlspecialchars(str_replace('kW', '', $kw)) ?>">
                             
                             <!-- Clickable Product Image and Info -->
-                            <div onclick="location.href='product-details.php/<?= createSlug($p['displayName']) ?>'" style="cursor: pointer;">
+                            <div onclick="location.href='/product-details/<?= createSlug($p['displayName']) ?>'" style="cursor: pointer;">
                                 <div class="product-image">
                                     <img src="<?= htmlspecialchars($p['image_path'] ?? 'assets/img/placeholder.png') ?>" 
                                          alt="<?= htmlspecialchars($p['displayName']) ?>">
@@ -738,7 +738,7 @@ $conn->close();
                         <h3>Order Submitted</h3>
                         <p class="text-muted">Thank you! Your payment was successful.</p>
                         <p><strong>Order Reference:</strong> <span id="orderRef"></span></p>
-                        <button class="btn btn-primary mt-3" onclick="location.href='package.php'">
+                        <button class="btn btn-primary mt-3" onclick="location.href='/package'">
                             Back to Packages
                         </button>
                     </div>

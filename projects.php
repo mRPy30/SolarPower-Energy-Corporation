@@ -31,21 +31,6 @@ function project_images($rawImages): array
     return !empty($images) ? $images : [$fallback];
 }
 
-function project_metric_number($value): float
-{
-    $text = strtolower((string) $value);
-    if (!preg_match('/-?\d+(?:\.\d+)?/', $text, $match)) {
-        return 0.0;
-    }
-
-    $number = (float) $match[0];
-    if (strpos($text, 'k') !== false) {
-        $number *= 1000;
-    }
-
-    return max(0, $number);
-}
-
 function project_format_metric(float $value, string $unit = ''): string
 {
     if ($value >= 1000000) {
@@ -57,19 +42,6 @@ function project_format_metric(float $value, string $unit = ''): string
     }
 
     return rtrim(rtrim(number_format($value, 1), '0'), '.') . $unit;
-}
-
-function project_format_energy(float $kwh): string
-{
-    if ($kwh >= 1000000) {
-        return rtrim(rtrim(number_format($kwh / 1000000, 2), '0'), '.') . ' GWh';
-    }
-
-    if ($kwh >= 1000) {
-        return rtrim(rtrim(number_format($kwh / 1000, 1), '0'), '.') . ' MWh';
-    }
-
-    return rtrim(rtrim(number_format($kwh, 1), '0'), '.') . ' kWh';
 }
 
 function project_category(array $project): array
@@ -128,6 +100,53 @@ function project_specs(array $project): array
     ];
 }
 
+function project_ensure_video_table(mysqli $conn): void
+{
+    $sql = "CREATE TABLE IF NOT EXISTS portfolio_videos (
+        id INT(11) NOT NULL AUTO_INCREMENT,
+        title VARCHAR(255) NOT NULL,
+        project_id INT(11) DEFAULT NULL,
+        video_format ENUM('landscape','vertical') NOT NULL DEFAULT 'landscape',
+        media_type ENUM('file','url') NOT NULL DEFAULT 'url',
+        media_url TEXT NOT NULL,
+        thumbnail_url TEXT DEFAULT NULL,
+        category_tag ENUM('Residential','Commercial','Maintenance','Showcase') NOT NULL DEFAULT 'Showcase',
+        status ENUM('Published','Draft') NOT NULL DEFAULT 'Draft',
+        view_count INT UNSIGNED NOT NULL DEFAULT 0,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        PRIMARY KEY (id),
+        KEY idx_project_id (project_id),
+        KEY idx_status_format (status, video_format),
+        KEY idx_category_tag (category_tag)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci";
+
+    mysqli_query($conn, $sql);
+}
+
+function project_video_asset($path, string $fallback = 'assets/img/product-placeholder.png'): string
+{
+    $path = trim((string) $path);
+    return $path !== '' ? $path : $fallback;
+}
+
+function project_video_payload(array $video): array
+{
+    return [
+        'id' => (int) ($video['id'] ?? 0),
+        'title' => trim((string) ($video['title'] ?? 'Solar Video')),
+        'projectTitle' => trim((string) ($video['project_name'] ?? '')),
+        'format' => trim((string) ($video['video_format'] ?? 'landscape')),
+        'mediaType' => trim((string) ($video['media_type'] ?? 'url')),
+        'mediaUrl' => project_video_asset($video['media_url'] ?? ''),
+        'thumbnail' => project_video_asset($video['thumbnail_url'] ?? ''),
+        'category' => trim((string) ($video['category_tag'] ?? 'Showcase')),
+        'views' => (int) ($video['view_count'] ?? 0),
+    ];
+}
+
+project_ensure_video_table($conn);
+
 $portfolio_result = mysqli_query($conn, "SELECT * FROM portfolio_projects ORDER BY created_at DESC");
 $portfolio_projects = [];
 
@@ -137,20 +156,19 @@ if ($portfolio_result) {
     }
 }
 
-$totalCleanEnergyKwh = 0;
-$totalCo2Tons = 0;
-$totalTrees = 0;
+$portfolio_videos = [];
+$video_result = mysqli_query($conn, "SELECT v.*, p.project_name
+    FROM portfolio_videos v
+    LEFT JOIN portfolio_projects p ON p.id = v.project_id
+    WHERE v.status = 'Published'
+    ORDER BY v.created_at DESC, v.id DESC");
 
-foreach ($portfolio_projects as $project) {
-    $capacity = project_capacity_kw($project['system_type'] ?? '');
-    $totalCleanEnergyKwh += $capacity * 1460 * 25;
-    $totalCo2Tons += project_metric_number($project['co2_reduction'] ?? '');
-    $totalTrees += project_metric_number($project['efficiency_rate'] ?? '');
+if ($video_result) {
+    while ($row = mysqli_fetch_assoc($video_result)) {
+        $portfolio_videos[] = $row;
+    }
 }
 
-$totalCleanEnergyLabel = project_format_energy($totalCleanEnergyKwh);
-$totalCo2Label = project_format_metric($totalCo2Tons, 't');
-$totalTreesLabel = project_format_metric($totalTrees);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -176,9 +194,13 @@ $totalTreesLabel = project_format_metric($totalTrees);
             --project-ink: #17231d;
             --project-muted: #66746d;
             --project-line: rgba(10, 92, 61, 0.14);
-            --project-page: #f7faf8;
+            --project-page: #F8FAFC;
             --project-card: rgba(255, 255, 255, 0.92);
             --project-shadow: 0 18px 45px rgba(16, 35, 27, 0.10);
+        }
+
+        body {
+            background: #F8FAFC;
         }
 
         .hero-projects {
@@ -190,7 +212,7 @@ $totalTreesLabel = project_format_metric($totalTrees);
             overflow: hidden;
             color: #fff;
             background:
-                linear-gradient(135deg, rgba(11, 46, 32, 0.9) 0%, rgba(20, 35, 55, 0.85) 100%),
+                linear-gradient(135deg, rgba(15, 23, 42, 0.92) 0%, rgba(8, 63, 43, 0.78) 100%),
                 url('assets/img/projects.png') no-repeat center center/cover;
             z-index: 1;
         }
@@ -288,10 +310,11 @@ $totalTreesLabel = project_format_metric($totalTrees);
         }
 
         .project-showcase {
-            background:
-                radial-gradient(circle at 12% 0%, rgba(242, 169, 0, 0.10), transparent 30%),
-                linear-gradient(180deg, var(--project-page), #fff);
-            padding: 76px 0 90px;
+            position: relative;
+            z-index: 2;
+            margin-top: 0;
+            background: #F8FAFC;
+            padding: 76px 0 92px;
         }
 
         .portfolio-heading {
@@ -299,6 +322,7 @@ $totalTreesLabel = project_format_metric($totalTrees);
             grid-template-columns: minmax(0, 1fr);
             gap: 18px;
             margin-bottom: 28px;
+            padding-top: 0;
         }
 
         .portfolio-kicker {
@@ -324,42 +348,6 @@ $totalTreesLabel = project_format_metric($totalTrees);
             color: var(--project-muted);
             line-height: 1.75;
             margin: 12px 0 0;
-        }
-
-        .impact-bar {
-            display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 1px;
-            margin: 34px 0 34px;
-            overflow: hidden;
-            border: 1px solid var(--project-line);
-            border-radius: 18px;
-            background: var(--project-line);
-            box-shadow: var(--project-shadow);
-        }
-
-        .impact-item {
-            padding: 26px;
-            background: rgba(255, 255, 255, 0.88);
-            backdrop-filter: blur(16px);
-        }
-
-        .impact-value {
-            display: block;
-            color: var(--project-green);
-            font-size: clamp(1.5rem, 3vw, 2.25rem);
-            font-weight: 900;
-            line-height: 1;
-        }
-
-        .impact-label {
-            display: block;
-            margin-top: 8px;
-            color: var(--project-muted);
-            font-size: 0.76rem;
-            font-weight: 750;
-            letter-spacing: 0.06em;
-            text-transform: uppercase;
         }
 
         .project-filter-bar {
@@ -607,6 +595,277 @@ $totalTreesLabel = project_format_metric($totalTrees);
             background: var(--project-green);
             color: #fff;
             box-shadow: 0 18px 36px rgba(10, 92, 61, 0.20);
+        }
+
+        .solar-reels-section {
+            margin-top: 72px;
+            padding-top: 52px;
+            border-top: 1px solid rgba(15, 23, 42, 0.08);
+        }
+
+        .reels-heading {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            gap: 22px;
+            margin-bottom: 26px;
+        }
+
+        .reels-heading h2 {
+            margin: 0;
+            color: var(--project-ink);
+            font-size: clamp(1.65rem, 3vw, 2.45rem);
+            font-weight: 950;
+            letter-spacing: 0;
+        }
+
+        .reels-heading p {
+            max-width: 570px;
+            margin: 10px 0 0;
+            color: var(--project-muted);
+            line-height: 1.7;
+        }
+
+        .video-showcase-filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 0 0 24px;
+        }
+
+        .video-filter-btn {
+            border: 1px solid rgba(10, 92, 61, 0.16);
+            border-radius: 999px;
+            background: #fff;
+            color: var(--project-green-700);
+            padding: 10px 16px;
+            font-size: 0.84rem;
+            font-weight: 900;
+            cursor: pointer;
+            transition: background 0.22s ease, color 0.22s ease, border-color 0.22s ease, transform 0.22s ease;
+        }
+
+        .video-filter-btn:hover,
+        .video-filter-btn.is-active {
+            border-color: var(--project-green);
+            background: var(--project-green);
+            color: #fff;
+            transform: translateY(-1px);
+        }
+
+        .reels-track {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 18px;
+        }
+
+        .reel-card {
+            position: relative;
+            min-height: 410px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            border-radius: 24px;
+            background: #0f172a;
+            color: #fff;
+            cursor: pointer;
+            box-shadow: 0 20px 48px rgba(15, 23, 42, 0.15);
+            transition: transform 0.28s ease, box-shadow 0.28s ease;
+        }
+
+        .reel-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 28px 64px rgba(15, 23, 42, 0.24);
+        }
+
+        .reel-card.is-hidden {
+            display: none;
+        }
+
+        .reel-card img {
+            width: 100%;
+            height: 100%;
+            min-height: 410px;
+            object-fit: cover;
+            display: block;
+            opacity: 0.82;
+            transition: transform 0.55s ease, opacity 0.25s ease;
+        }
+
+        .reel-card:hover img {
+            transform: scale(1.05);
+            opacity: 0.74;
+        }
+
+        .reel-card::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg, rgba(15, 23, 42, 0.08) 0%, rgba(15, 23, 42, 0.74) 100%);
+        }
+
+        .reel-play {
+            position: absolute;
+            inset: 0;
+            z-index: 2;
+            display: grid;
+            place-items: center;
+            pointer-events: none;
+        }
+
+        .reel-play span {
+            width: 64px;
+            height: 64px;
+            display: grid;
+            place-items: center;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.93);
+            color: var(--project-green);
+            box-shadow: 0 20px 38px rgba(0, 0, 0, 0.22);
+        }
+
+        .reel-views {
+            position: absolute;
+            top: 14px;
+            right: 14px;
+            z-index: 2;
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            border-radius: 999px;
+            background: rgba(15, 23, 42, 0.62);
+            color: #fff;
+            padding: 7px 10px;
+            font-size: 0.74rem;
+            font-weight: 850;
+            backdrop-filter: blur(10px);
+        }
+
+        .reel-type {
+            position: absolute;
+            top: 14px;
+            left: 14px;
+            z-index: 2;
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.90);
+            color: var(--project-green-700);
+            padding: 7px 10px;
+            font-size: 0.72rem;
+            font-weight: 950;
+            backdrop-filter: blur(10px);
+        }
+
+        .reel-info {
+            position: absolute;
+            left: 18px;
+            right: 18px;
+            bottom: 18px;
+            z-index: 2;
+        }
+
+        .reel-category {
+            display: inline-flex;
+            margin-bottom: 10px;
+            border-radius: 999px;
+            background: rgba(242, 169, 0, 0.94);
+            color: #111;
+            padding: 6px 10px;
+            font-size: 0.68rem;
+            font-weight: 950;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+
+        .reel-title {
+            margin: 0;
+            color: #fff;
+            font-size: 1.02rem;
+            font-weight: 950;
+            line-height: 1.22;
+        }
+
+        .video-modal {
+            position: fixed;
+            inset: 0;
+            z-index: 1090;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 22px;
+            background: rgba(2, 6, 23, 0.82);
+            backdrop-filter: blur(14px);
+        }
+
+        .video-modal.is-open {
+            display: flex;
+        }
+
+        .video-modal-dialog {
+            width: min(980px, 100%);
+            max-height: 92vh;
+            border-radius: 24px;
+            overflow: hidden;
+            background: #020617;
+            box-shadow: 0 30px 90px rgba(0, 0, 0, 0.45);
+        }
+
+        .video-modal.is-vertical .video-modal-dialog {
+            width: min(440px, 100%);
+        }
+
+        .video-modal-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 16px 18px;
+            color: #fff;
+            background: #0f172a;
+        }
+
+        .video-modal-title {
+            margin: 0;
+            font-size: 1rem;
+            font-weight: 900;
+            line-height: 1.3;
+        }
+
+        .video-modal-close {
+            width: 38px;
+            height: 38px;
+            border: none;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.10);
+            color: #fff;
+            cursor: pointer;
+            transition: transform 0.2s ease, background 0.2s ease;
+        }
+
+        .video-modal-close:hover {
+            transform: rotate(90deg);
+            background: rgba(255, 255, 255, 0.18);
+        }
+
+        .video-player-shell {
+            position: relative;
+            aspect-ratio: 16 / 9;
+            background: #000;
+        }
+
+        .video-modal.is-vertical .video-player-shell {
+            aspect-ratio: 9 / 16;
+            max-height: calc(92vh - 74px);
+        }
+
+        .video-player-shell iframe,
+        .video-player-shell video {
+            width: 100%;
+            height: 100%;
+            display: block;
+            border: 0;
+            background: #000;
         }
 
         .project-modal {
@@ -880,8 +1139,20 @@ $totalTreesLabel = project_format_metric($totalTrees);
         }
 
         @media (max-width: 991px) {
-            .impact-bar {
-                grid-template-columns: 1fr;
+            .reels-heading {
+                display: block;
+            }
+
+            .reels-track {
+                display: flex;
+                overflow-x: auto;
+                scroll-snap-type: x mandatory;
+                padding-bottom: 10px;
+            }
+
+            .reel-card {
+                flex: 0 0 270px;
+                scroll-snap-align: start;
             }
 
             .project-modal-dialog {
@@ -907,10 +1178,6 @@ $totalTreesLabel = project_format_metric($totalTrees);
                 grid-template-columns: 1fr;
             }
 
-            .impact-item {
-                padding: 20px;
-            }
-
             .project-card-body {
                 padding: 18px;
             }
@@ -931,6 +1198,10 @@ $totalTreesLabel = project_format_metric($totalTrees);
             .modal-impact-grid {
                 grid-template-columns: 1fr;
             }
+
+            .video-modal {
+                padding: 10px;
+            }
         }
     </style>
 </head>
@@ -945,7 +1216,7 @@ $totalTreesLabel = project_format_metric($totalTrees);
             <p class="hero-copy">Explore SolarPower Energy Corporation installations across homes, businesses, and long-term maintenance projects.</p>
             <div class="hero-actions">
                 <a href="#projectShowcase" class="hero-btn hero-btn-primary">View Projects</a>
-                <a href="contact.php" class="hero-btn hero-btn-outline">Get a Similar Quote</a>
+                <a href="/contact" class="hero-btn hero-btn-outline">Get a Similar Quote</a>
             </div>
         </div>
     </section>
@@ -956,24 +1227,9 @@ $totalTreesLabel = project_format_metric($totalTrees);
                 <div>
                     <div class="portfolio-kicker">Project Showcase</div>
                     <h2 class="portfolio-title">Built solar systems with measurable impact.</h2>
-                    <p class="portfolio-subtitle">Browse recent installations and service work, filter by project category, then open each project for gallery images and technical details.</p>
+                    <p class="portfolio-subtitle">Browse recent installations and service work, then open each project for gallery images and technical details.</p>
                 </div>
             </div>
-
-            <section class="impact-bar" aria-label="Portfolio impact statistics" data-aos="fade-up" data-aos-delay="80">
-                <div class="impact-item">
-                    <span class="impact-value"><?= project_escape($totalCleanEnergyLabel); ?></span>
-                    <span class="impact-label">Total Clean Energy Generated</span>
-                </div>
-                <div class="impact-item">
-                    <span class="impact-value"><?= project_escape($totalCo2Label); ?></span>
-                    <span class="impact-label">Total Carbon CO2 Reduced</span>
-                </div>
-                <div class="impact-item">
-                    <span class="impact-value"><?= project_escape($totalTreesLabel); ?></span>
-                    <span class="impact-label">Trees Planted Equivalent</span>
-                </div>
-            </section>
 
             <div class="project-filter-bar" role="tablist" aria-label="Filter projects by category" data-aos="fade-up" data-aos-delay="120">
                 <button class="project-filter is-active" type="button" data-filter="all" role="tab" aria-selected="true"><span>All</span></button>
@@ -991,6 +1247,7 @@ $totalTreesLabel = project_format_metric($totalTrees);
                 <?php endif; ?>
 
                 <?php foreach ($portfolio_projects as $index => $project):
+                    $projectId = (int) ($project['id'] ?? 0);
                     $category = project_category($project);
                     $images = project_images($project['image_url'] ?? '');
                     $mainImage = $images[0];
@@ -1005,6 +1262,7 @@ $totalTreesLabel = project_format_metric($totalTrees);
                     $specs = project_specs($project);
                     $isInitiallyHidden = $index >= 6;
                     $projectPayload = [
+                        'id' => $projectId,
                         'title' => $title,
                         'category' => $category['label'],
                         'categorySlug' => $category['slug'],
@@ -1025,7 +1283,7 @@ $totalTreesLabel = project_format_metric($totalTrees);
                              data-project-index="<?= (int) $index; ?>"
                              data-aos="fade-up"
                              data-aos-delay="<?= (int) (($index % 6) * 70); ?>">
-                        <div class="portfolio-card" tabindex="0" role="button" aria-label="View details for <?= project_escape($title); ?>" data-project='<?= $projectJson; ?>'>
+                        <div class="portfolio-card" tabindex="0" role="button" aria-label="View details for <?= project_escape($title); ?>" data-project-id="<?= $projectId; ?>" data-project='<?= $projectJson; ?>'>
                             <div class="project-image-wrap">
                                 <img src="<?= project_escape($mainImage); ?>" alt="<?= project_escape($title); ?>" loading="lazy">
                                 <span class="system-badge"><?= project_escape(($systemType !== '' ? $systemType : $serviceType) . ' • ' . $category['label']); ?></span>
@@ -1061,6 +1319,54 @@ $totalTreesLabel = project_format_metric($totalTrees);
                         <i class="fas fa-chevron-down" aria-hidden="true"></i>
                     </button>
                 </div>
+            <?php endif; ?>
+
+            <?php if (!empty($portfolio_videos)): ?>
+                <section class="solar-reels-section" aria-label="Solar Video Tours and Site Reels">
+                    <div class="reels-heading" data-aos="fade-up">
+                        <div>
+                            <div class="portfolio-kicker">Video Showcase</div>
+                            <h2>Solar Video Tours &amp; Site Reels</h2>
+                        </div>
+                        <p>Watch our installation walkthroughs and solar short reels.</p>
+                    </div>
+
+                    <div class="video-showcase-filters" role="tablist" aria-label="Filter solar videos" data-aos="fade-up" data-aos-delay="70">
+                        <button class="video-filter-btn is-active" type="button" data-video-filter="all" aria-selected="true">All Videos</button>
+                        <button class="video-filter-btn" type="button" data-video-filter="landscape" aria-selected="false">Landscape Tours</button>
+                        <button class="video-filter-btn" type="button" data-video-filter="vertical" aria-selected="false">Short Reels</button>
+                    </div>
+
+                    <div class="reels-track">
+                        <?php foreach ($portfolio_videos as $videoIndex => $video):
+                            $videoPayload = project_video_payload($video);
+                            $videoJson = htmlspecialchars(json_encode($videoPayload, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT), ENT_QUOTES, 'UTF-8');
+                            $videoTitle = $videoPayload['title'];
+                            $videoThumb = $videoPayload['thumbnail'];
+                            $videoViews = project_format_metric((float) $videoPayload['views']);
+                            $videoFormat = $videoPayload['format'] === 'vertical' ? 'vertical' : 'landscape';
+                            $videoTypeLabel = $videoFormat === 'vertical' ? 'Short Reel' : 'Video Tour';
+                        ?>
+                            <article class="reel-card"
+                                     role="button"
+                                     tabindex="0"
+                                     data-video='<?= $videoJson; ?>'
+                                     data-video-format="<?= project_escape($videoFormat); ?>"
+                                     data-aos="fade-up"
+                                     data-aos-delay="<?= (int) (($videoIndex % 4) * 70); ?>"
+                                     aria-label="Play video <?= project_escape($videoTitle); ?>">
+                                <img src="<?= project_escape($videoThumb); ?>" alt="<?= project_escape($videoTitle); ?>" loading="lazy">
+                                <span class="reel-type"><i class="fas <?= $videoFormat === 'vertical' ? 'fa-mobile-screen-button' : 'fa-tv'; ?>" aria-hidden="true"></i><?= project_escape($videoTypeLabel); ?></span>
+                                <span class="reel-views"><i class="fas fa-eye" aria-hidden="true"></i><?= project_escape($videoViews); ?></span>
+                                <span class="reel-play"><span><i class="fas fa-play" aria-hidden="true"></i></span></span>
+                                <div class="reel-info">
+                                    <span class="reel-category"><?= project_escape($videoPayload['category']); ?></span>
+                                    <h3 class="reel-title"><?= project_escape($videoTitle); ?></h3>
+                                </div>
+                            </article>
+                        <?php endforeach; ?>
+                    </div>
+                </section>
             <?php endif; ?>
         </div>
     </main>
@@ -1111,11 +1417,23 @@ $totalTreesLabel = project_format_metric($totalTrees);
                     </div>
                 </div>
 
-                <a href="contact.php" class="modal-cta">
+                <a href="/contact" class="modal-cta">
                     Get a Similar Quote
                     <i class="fas fa-arrow-right" aria-hidden="true"></i>
                 </a>
             </section>
+        </div>
+    </div>
+
+    <div class="video-modal" id="videoModal" role="dialog" aria-modal="true" aria-labelledby="videoModalTitle">
+        <div class="video-modal-dialog">
+            <div class="video-modal-head">
+                <h2 class="video-modal-title" id="videoModalTitle">Solar Video</h2>
+                <button class="video-modal-close" type="button" id="videoModalClose" aria-label="Close video">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="video-player-shell" id="videoPlayerShell"></div>
         </div>
     </div>
 
@@ -1127,6 +1445,171 @@ $totalTreesLabel = project_format_metric($totalTrees);
         if (typeof AOS !== 'undefined') {
             AOS.init({ duration: 750, once: true, offset: 90 });
         }
+
+        (function () {
+            'use strict';
+
+            var modal = document.getElementById('videoModal');
+            var closeButton = document.getElementById('videoModalClose');
+            var title = document.getElementById('videoModalTitle');
+            var shell = document.getElementById('videoPlayerShell');
+
+            function sourceUrl(path) {
+                if (!path) {
+                    return '';
+                }
+                if (/^https?:\/\//i.test(path)) {
+                    return path;
+                }
+                return path.replace(/^\/+/, '');
+            }
+
+            function embedUrl(rawUrl) {
+                try {
+                    var url = new URL(rawUrl, window.location.href);
+                    var host = url.hostname.replace(/^www\./, '');
+                    var videoId = '';
+
+                    if (host === 'youtu.be') {
+                        videoId = url.pathname.split('/').filter(Boolean)[0] || '';
+                        return videoId ? 'https://www.youtube.com/embed/' + encodeURIComponent(videoId) + '?autoplay=1&rel=0' : rawUrl;
+                    }
+
+                    if (host.indexOf('youtube.com') !== -1) {
+                        if (url.pathname.indexOf('/shorts/') === 0) {
+                            videoId = url.pathname.split('/').filter(Boolean)[1] || '';
+                        } else {
+                            videoId = url.searchParams.get('v') || '';
+                        }
+                        return videoId ? 'https://www.youtube.com/embed/' + encodeURIComponent(videoId) + '?autoplay=1&rel=0' : rawUrl;
+                    }
+
+                    if (host.indexOf('vimeo.com') !== -1) {
+                        videoId = url.pathname.split('/').filter(Boolean).pop() || '';
+                        return videoId ? 'https://player.vimeo.com/video/' + encodeURIComponent(videoId) + '?autoplay=1' : rawUrl;
+                    }
+                } catch (error) {
+                    return rawUrl;
+                }
+
+                return rawUrl;
+            }
+
+            function looksLikeVideoFile(url) {
+                return /\.(mp4|webm|ogg|mov)(\?|#|$)/i.test(url || '');
+            }
+
+            function trackView(video) {
+                if (!video || !video.id) {
+                    return;
+                }
+
+                try {
+                    var fd = new FormData();
+                    fd.append('id', video.id);
+                    fetch('api/portfolio_video_view.php', { method: 'POST', body: fd }).catch(function () {});
+                } catch (error) {}
+            }
+
+            function openVideo(video) {
+                if (!modal || !shell || !video) {
+                    return;
+                }
+
+                var mediaUrl = sourceUrl(video.mediaUrl || video.media_url);
+                var isVertical = video.format === 'vertical' || video.video_format === 'vertical';
+                modal.classList.toggle('is-vertical', isVertical);
+                title.textContent = video.title || 'Solar Video';
+                shell.innerHTML = '';
+
+                if ((video.mediaType || video.media_type) === 'file' || looksLikeVideoFile(mediaUrl)) {
+                    var videoEl = document.createElement('video');
+                    videoEl.src = mediaUrl;
+                    videoEl.controls = true;
+                    videoEl.autoplay = true;
+                    videoEl.playsInline = true;
+                    shell.appendChild(videoEl);
+                } else {
+                    var iframe = document.createElement('iframe');
+                    iframe.src = embedUrl(mediaUrl);
+                    iframe.title = video.title || 'Solar video';
+                    iframe.allow = 'autoplay; fullscreen; picture-in-picture';
+                    iframe.allowFullscreen = true;
+                    shell.appendChild(iframe);
+                }
+
+                modal.classList.add('is-open');
+                document.body.style.overflow = 'hidden';
+                trackView(video);
+            }
+
+            function closeVideo() {
+                if (!modal || !shell) {
+                    return;
+                }
+                modal.classList.remove('is-open');
+                modal.classList.remove('is-vertical');
+                shell.innerHTML = '';
+                document.body.style.overflow = '';
+            }
+
+            document.querySelectorAll('.reel-card').forEach(function (card) {
+                function launch() {
+                    try {
+                        openVideo(JSON.parse(card.dataset.video));
+                    } catch (error) {
+                        console.error('Unable to open reel:', error);
+                    }
+                }
+
+                card.addEventListener('click', launch);
+                card.addEventListener('keydown', function (event) {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        launch();
+                    }
+                });
+            });
+
+            document.querySelectorAll('.video-filter-btn').forEach(function (button) {
+                button.addEventListener('click', function () {
+                    var filter = button.dataset.videoFilter || 'all';
+
+                    document.querySelectorAll('.video-filter-btn').forEach(function (item) {
+                        var isActive = item === button;
+                        item.classList.toggle('is-active', isActive);
+                        item.setAttribute('aria-selected', isActive ? 'true' : 'false');
+                    });
+
+                    document.querySelectorAll('.reel-card').forEach(function (card) {
+                        var matches = filter === 'all' || card.dataset.videoFormat === filter;
+                        card.classList.toggle('is-hidden', !matches);
+                    });
+
+                    if (typeof AOS !== 'undefined') {
+                        AOS.refresh();
+                    }
+                });
+            });
+
+            if (closeButton) {
+                closeButton.addEventListener('click', closeVideo);
+            }
+
+            if (modal) {
+                modal.addEventListener('click', function (event) {
+                    if (event.target === modal) {
+                        closeVideo();
+                    }
+                });
+            }
+
+            document.addEventListener('keydown', function (event) {
+                if (event.key === 'Escape' && modal && modal.classList.contains('is-open')) {
+                    closeVideo();
+                }
+            });
+        }());
 
         (function () {
             'use strict';
@@ -1153,7 +1636,8 @@ $totalTreesLabel = project_format_metric($totalTrees);
                 var hasHiddenProjects = false;
 
                 cards.forEach(function (card) {
-                    var matchesFilter = activeFilter === 'all' || card.dataset.category === activeFilter;
+                    var matchesFilter = activeFilter === 'all'
+                        || card.dataset.category === activeFilter;
 
                     if (!matchesFilter) {
                         setVisible(card, false);
@@ -1294,13 +1778,17 @@ $totalTreesLabel = project_format_metric($totalTrees);
                 document.body.style.overflow = '';
             }
 
+            function launchCard(card) {
+                try {
+                    openModal(JSON.parse(card.dataset.project));
+                } catch (error) {
+                    console.error('Unable to open project details:', error);
+                }
+            }
+
             document.querySelectorAll('.portfolio-card').forEach(function (card) {
                 function launch() {
-                    try {
-                        openModal(JSON.parse(card.dataset.project));
-                    } catch (error) {
-                        console.error('Unable to open project details:', error);
-                    }
+                    launchCard(card);
                 }
 
                 card.addEventListener('click', launch);
@@ -1311,6 +1799,30 @@ $totalTreesLabel = project_format_metric($totalTrees);
                     }
                 });
             });
+
+            (function openLinkedProject() {
+                var params = new URLSearchParams(window.location.search);
+                var projectId = params.get('project');
+                if (!projectId) {
+                    return;
+                }
+
+                var linkedCard = Array.prototype.slice.call(document.querySelectorAll('.portfolio-card')).find(function (card) {
+                    return String(card.dataset.projectId || '') === String(projectId);
+                });
+                if (!linkedCard) {
+                    return;
+                }
+
+                var showcase = document.getElementById('projectShowcase');
+                if (showcase) {
+                    showcase.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+
+                window.setTimeout(function () {
+                    launchCard(linkedCard);
+                }, 450);
+            }());
 
             closeButton.addEventListener('click', closeModal);
             modal.addEventListener('click', function (event) {

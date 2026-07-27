@@ -284,14 +284,19 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Solar Power - Staff</title>
-    <link rel="stylesheet" href="style.css">
+    <?php
+    $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' || ($_SERVER['SERVER_PORT'] ?? 80) == 443) ? "https://" : "http://";
+    $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+    $base_dir = (stripos($_SERVER['SCRIPT_NAME'], '/SolarPower-Energy-Corporation/') !== false) ? $protocol . $host . '/SolarPower-Energy-Corporation/views/staff/' : $protocol . $host . '/views/staff/';
+    ?>
+    <link rel="stylesheet" href="<?php echo $base_dir; ?>style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
 <div class="container">
     <aside class="sidebar">
         <div class="logo">
-            <a href="dashboard.php">
+            <a href="/dashboard">
                 <img src="../../assets/img/solarpower_energy_corp.png" alt="Solar Power Logo" style="max-height: 50px; width: auto; object-fit: contain;">
             </a>    
         </div>
@@ -353,7 +358,7 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
                     <div class="dropdown-header"><?php echo htmlspecialchars($fullName); ?></div>
                     <ul>
                         <li><i class="fas fa-user-circle"></i> View Profile</li>
-                        <li><a href="../../controllers/logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+                        <li><a href="/logout"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
                     </ul>
                 </div>
             </div>

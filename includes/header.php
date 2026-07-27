@@ -2,15 +2,16 @@
 if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
     session_start();
 }
+require_once __DIR__ . '/routes.php';
 
-$logo_path = 'assets/img/solarpower_energy_corp.png';
-$home_link = 'index.php';
+$logo_path = asset_url('assets/img/solarpower_energy_corp.png');
+$home_link = clean_url('index.php');
 $cart_count = session_status() === PHP_SESSION_ACTIVE && isset($_SESSION['cart']) && is_array($_SESSION['cart'])
     ? count($_SESSION['cart'])
     : 0;
 $cart_base_path = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? ''));
 $cart_base_path = ($cart_base_path === '/' || $cart_base_path === '\\') ? '/' : rtrim($cart_base_path, '/') . '/';
-$cart_checkout_href = $cart_base_path . 'checkout.php';
+$cart_checkout_href = clean_url('checkout.php');
 $cart_ajax_endpoint = $cart_base_path . 'add-to-cart-ajax.php';
 $cart_ajax_script = __DIR__ . '/../assets/cart-ajax.js';
 $order_tracking_css = __DIR__ . '/../assets/order-tracking.css';
@@ -29,7 +30,7 @@ function isActive($page)
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 <?php if (file_exists($order_tracking_css)): ?>
-    <link rel="stylesheet" href="<?php echo htmlspecialchars($cart_base_path . 'assets/order-tracking.css?v=' . filemtime($order_tracking_css)); ?>">
+    <link rel="stylesheet" href="<?php echo htmlspecialchars(asset_url('assets/order-tracking.css') . '?v=' . filemtime($order_tracking_css)); ?>">
 <?php endif; ?>
 
 <style>
@@ -802,8 +803,8 @@ function isActive($page)
         <div class="header-container">
             <div class="logo">
                 <div class="logo-img">
-                    <a href="index.php">
-                        <img src="assets/img/solarpower_energy_corp.png" alt="Solar Power Logo" class="sp-header-logo">
+                    <a href="<?php echo htmlspecialchars($home_link); ?>">
+                        <img src="<?php echo htmlspecialchars($logo_path); ?>" alt="Solar Power Logo" class="sp-header-logo">
                     </a>
                 </div>
             </div>
@@ -817,13 +818,13 @@ function isActive($page)
 
             <nav id="mobileNav">
                 <ul>
-                    <li><a href="index.php" class="<?php echo isActive('index.php'); ?>">HOME</a></li>
-                    <li><a href="about.php" class="<?php echo isActive('about.php'); ?>">ABOUT US</a></li>
-                    <li><a href="services.php" class="<?php echo isActive('services.php'); ?>">SERVICES</a></li>
-                    <li><a href="product.php" class="<?php echo isActive('product.php'); ?>">PRODUCTS</a></li>
-                    <li><a href="projects.php" class="<?php echo isActive('projects.php'); ?>">PROJECTS</a></li>
-                    <li><a href="loans.php" class="<?php echo isActive('loans.php'); ?>">SOLAR LOANS</a></li>
-                    <li><a href="contact.php" class="<?php echo isActive('contact.php'); ?>">CONTACT</a></li>
+                    <li><a href="<?php echo htmlspecialchars(clean_url('index.php')); ?>" class="<?php echo isActive('index.php'); ?>">HOME</a></li>
+                    <li><a href="<?php echo htmlspecialchars(clean_url('about.php')); ?>" class="<?php echo isActive('about.php'); ?>">ABOUT US</a></li>
+                    <li><a href="<?php echo htmlspecialchars(clean_url('services.php')); ?>" class="<?php echo isActive('services.php'); ?>">SERVICES</a></li>
+                    <li><a href="<?php echo htmlspecialchars(clean_url('product.php')); ?>" class="<?php echo isActive('product.php'); ?>">PRODUCTS</a></li>
+                    <li><a href="<?php echo htmlspecialchars(clean_url('projects.php')); ?>" class="<?php echo isActive('projects.php'); ?>">PROJECTS</a></li>
+                    <li><a href="<?php echo htmlspecialchars(clean_url('loans.php')); ?>" class="<?php echo isActive('loans.php'); ?>">SOLAR LOANS</a></li>
+                    <li><a href="<?php echo htmlspecialchars(clean_url('contact.php')); ?>" class="<?php echo isActive('contact.php'); ?>">CONTACT</a></li>
                     <li class="nav-actions-item">
                         <span class="nav-icon-tooltip" data-tooltip="Track Order">
                             <button type="button" class="order-tracking-nav-link" id="openOrderTracking" aria-label="Track Order">
@@ -967,7 +968,7 @@ function isActive($page)
     });
 </script>
 <?php if (file_exists($cart_ajax_script)): ?>
-    <script src="<?php echo htmlspecialchars($cart_base_path . 'assets/cart-ajax.js?v=' . filemtime($cart_ajax_script)); ?>"></script>
+    <script src="<?php echo htmlspecialchars(asset_url('assets/cart-ajax.js') . '?v=' . filemtime($cart_ajax_script)); ?>"></script>
 <?php endif; ?>
 <script>
     if (!window.jQuery) {
@@ -978,5 +979,5 @@ function isActive($page)
     }
 </script>
 <?php if (file_exists($order_tracking_script)): ?>
-    <script src="<?php echo htmlspecialchars($cart_base_path . 'assets/order-tracking.js?v=' . filemtime($order_tracking_script)); ?>" defer></script>
+    <script src="<?php echo htmlspecialchars(asset_url('assets/order-tracking.js') . '?v=' . filemtime($order_tracking_script)); ?>" defer></script>
 <?php endif; ?>

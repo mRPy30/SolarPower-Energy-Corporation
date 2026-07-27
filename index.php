@@ -30,6 +30,57 @@ if (!function_exists('renderProductBrandChips')) {
     }
 }
 
+if (!function_exists('portfolioProjectCapacityKw')) {
+    function portfolioProjectCapacityKw($systemType): float {
+        $text = strtolower((string) $systemType);
+        if (!preg_match('/\d+(?:\.\d+)?/', $text, $match)) {
+            return 0.0;
+        }
+
+        $capacity = (float) $match[0];
+        $isWattsOnly = preg_match('/\bwp?\b/', $text) && !preg_match('/k\s*w|kwp|kilowatt/', $text);
+
+        if ($isWattsOnly && $capacity > 100) {
+            $capacity = $capacity / 1000;
+        }
+
+        return max(0, $capacity);
+    }
+}
+
+if (!function_exists('portfolioProjectImages')) {
+    function portfolioProjectImages($rawImages): array {
+        $fallback = 'assets/img/product-placeholder.png';
+        $decoded = json_decode((string) $rawImages, true);
+
+        if (is_array($decoded) && !empty($decoded)) {
+            $images = $decoded;
+        } elseif (!empty($rawImages)) {
+            $images = [(string) $rawImages];
+        } else {
+            $images = [$fallback];
+        }
+
+        $images = array_values(array_filter(array_map('trim', $images)));
+        return !empty($images) ? $images : [$fallback];
+    }
+}
+
+if (!function_exists('portfolioProjectExcerpt')) {
+    function portfolioProjectExcerpt($value, int $limit = 92): string {
+        $text = trim(strip_tags((string) $value));
+        if ($text === '') {
+            return 'Completed SolarPower Energy Corporation project with a tailored system design and professional installation support.';
+        }
+
+        if (function_exists('mb_strlen') && function_exists('mb_substr')) {
+            return mb_strlen($text) > $limit ? rtrim(mb_substr($text, 0, $limit - 3)) . '...' : $text;
+        }
+
+        return strlen($text) > $limit ? rtrim(substr($text, 0, $limit - 3)) . '...' : $text;
+    }
+}
+
 // Handle Estimate Form Submission POST Request
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'submit_estimate') {
     header('Content-Type: application/json');
@@ -350,6 +401,44 @@ if ($stmt) {
     $stmt->close();
 }
 
+$featured_projects = [];
+$portfolio_result = $conn->query("SELECT id, project_name, subtitle, location, system_type, co2_reduction, efficiency_rate, service_type, image_url FROM portfolio_projects");
+if ($portfolio_result) {
+    while ($row = $portfolio_result->fetch_assoc()) {
+        $row['capacity_kw'] = portfolioProjectCapacityKw($row['system_type'] ?? '');
+        if ($row['capacity_kw'] <= 0) {
+            continue;
+        }
+        $featured_projects[] = $row;
+    }
+
+    usort($featured_projects, function ($a, $b) {
+        $capacityCompare = ($b['capacity_kw'] <=> $a['capacity_kw']);
+        if ($capacityCompare !== 0) {
+            return $capacityCompare;
+        }
+
+        return ((int) ($b['id'] ?? 0)) <=> ((int) ($a['id'] ?? 0));
+    });
+
+    $featured_projects = array_slice($featured_projects, 0, 3);
+}
+
+// Fetch latest 3 published videos for homepage showcase
+$homepage_videos = [];
+$hv_result = $conn->query(
+    "SELECT v.id, v.title, v.video_format, v.media_type, v.media_url, v.thumbnail_url, v.category_tag, v.view_count
+     FROM portfolio_videos v
+     WHERE v.status = 'Published'
+     ORDER BY v.created_at DESC, v.id DESC
+     LIMIT 3"
+);
+if ($hv_result) {
+    while ($row = $hv_result->fetch_assoc()) {
+        $homepage_videos[] = $row;
+    }
+}
+
 $conn->close();
 ?>
 <!DOCTYPE html>
@@ -501,6 +590,425 @@ $conn->close();
     <link rel="stylesheet" href="assets/checkout-gateway.css">
     <style>
         /* ── Contact Us Section (minimal redesign) ── */
+        .featured-projects-section {
+            overflow: hidden;
+            padding: 44px 0 48px;
+            background:
+                radial-gradient(circle at 12% 18%, rgba(242, 169, 0, 0.08), transparent 28%),
+                linear-gradient(180deg, #f7fafc 0%, #ffffff 100%);
+        }
+
+        .featured-projects-heading {
+            max-width: 760px;
+            margin: 0 auto 24px;
+            text-align: center;
+        }
+
+        .featured-projects-logo {
+            display: block;
+            width: min(200px, 55vw);
+            height: auto;
+            margin: 0 auto 8px;
+            object-fit: contain;
+        }
+
+        .featured-projects-heading h2 {
+            margin: 0;
+            color: #30343a;
+            font-size: 1.04rem;
+            font-weight: 900;
+            letter-spacing: 0;
+            text-transform: uppercase;
+        }
+
+        .featured-projects-heading p {
+            max-width: 620px;
+            margin: 10px auto 0;
+            color: #64748b;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .featured-projects-carousel {
+            position: relative;
+            height: 410px;
+            max-width: 1320px;
+            margin: 0 auto;
+        }
+
+        .featured-project-slide {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: clamp(280px, 32vw, 440px);
+            height: clamp(300px, 36vw, 370px);
+            border: 0;
+            border-radius: 10px;
+            overflow: hidden;
+            background: #0f241a;
+            box-shadow: 0 22px 60px rgba(15, 35, 28, 0.18);
+            opacity: 0;
+            pointer-events: none;
+            transform: translate(-50%, -50%) scale(0.78);
+            transition: transform 0.65s cubic-bezier(.2, .8, .2, 1), opacity 0.45s ease, filter 0.45s ease;
+        }
+
+        .featured-project-slide.is-active {
+            z-index: 4;
+            opacity: 1;
+            pointer-events: auto;
+            filter: none;
+            transform: translate(-50%, -50%) scale(1.05);
+        }
+
+        .featured-project-slide.is-prev {
+            z-index: 2;
+            opacity: 0.82;
+            filter: saturate(0.82) brightness(0.86);
+            transform: translate(calc(-50% - min(39vw, 470px)), -50%) scale(0.9);
+        }
+
+        .featured-project-slide.is-next {
+            z-index: 2;
+            opacity: 0.82;
+            filter: saturate(0.82) brightness(0.86);
+            transform: translate(calc(-50% + min(39vw, 470px)), -50%) scale(0.9);
+        }
+
+        .featured-project-slide.is-hidden {
+            opacity: 0;
+            transform: translate(-50%, -50%) scale(0.72);
+        }
+
+        .featured-project-slide img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            transition: transform 0.8s ease;
+        }
+
+        .featured-project-slide.is-active img {
+            transform: scale(1.04);
+        }
+
+        .featured-project-panel {
+            position: absolute;
+            inset: auto 0 0;
+            padding: 100px 26px 28px;
+            color: #fff;
+            background: linear-gradient(180deg, transparent 0%, rgba(5, 24, 16, 0.5) 36%, rgba(5, 24, 16, 0.94) 100%);
+            opacity: 0;
+            transform: translateY(18px);
+            transition: opacity 0.35s ease, transform 0.35s ease;
+        }
+
+        .featured-project-slide.is-active .featured-project-panel {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .featured-project-panel h3 {
+            margin: 0 0 12px;
+            color: #fff;
+            font-size: clamp(1.3rem, 2.1vw, 2rem);
+            font-weight: 900;
+            line-height: 1.08;
+        }
+
+        .featured-project-system {
+            display: inline-flex;
+            margin-bottom: 14px;
+            padding: 7px 11px;
+            border-radius: 999px;
+            background: rgba(242, 169, 0, 0.92);
+            color: #111827;
+            font-size: 0.78rem;
+            font-weight: 900;
+        }
+
+        .featured-project-meta {
+            display: grid;
+            gap: 7px;
+            margin-bottom: 16px;
+            color: rgba(255, 255, 255, 0.86);
+            font-size: 0.86rem;
+            line-height: 1.45;
+        }
+
+        .featured-project-meta span {
+            display: inline-flex;
+            gap: 8px;
+            align-items: flex-start;
+        }
+
+        .featured-project-meta i {
+            width: 16px;
+            margin-top: 3px;
+            color: #f2a900;
+        }
+
+        .featured-project-impact {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 0 0 18px;
+        }
+
+        .featured-project-impact span {
+            padding: 6px 10px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.12);
+            color: #fff;
+            font-size: 0.73rem;
+            font-weight: 800;
+            backdrop-filter: blur(10px);
+        }
+
+        .featured-project-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 42px;
+            padding: 0 22px;
+            border-radius: 999px;
+            background: #0d8f49;
+            color: #fff;
+            font-size: 0.86rem;
+            font-weight: 900;
+            text-decoration: none;
+            transition: background-color 0.2s ease, transform 0.2s ease;
+        }
+
+        .featured-project-btn:hover {
+            background: #f2a900;
+            color: #111827;
+            transform: translateY(-1px);
+            text-decoration: none;
+        }
+
+        .featured-carousel-dots {
+            display: flex;
+            justify-content: center;
+            gap: 9px;
+            margin-top: 26px;
+        }
+
+        .featured-carousel-dot {
+            width: 9px;
+            height: 9px;
+            border: 0;
+            border-radius: 999px;
+            background: rgba(13, 92, 58, 0.22);
+            cursor: pointer;
+            transition: width 0.2s ease, background-color 0.2s ease;
+        }
+
+        .featured-carousel-dot.is-active {
+            width: 28px;
+            background: #0d8f49;
+        }
+
+        @media (max-width: 991px) {
+            .featured-projects-carousel {
+                height: 520px;
+            }
+
+            .featured-project-slide {
+                width: min(74vw, 450px);
+            }
+
+            .featured-project-slide.is-prev {
+                transform: translate(calc(-50% - 42vw), -50%) scale(0.84);
+            }
+
+            .featured-project-slide.is-next {
+                transform: translate(calc(-50% + 42vw), -50%) scale(0.84);
+            }
+        }
+
+        @media (max-width: 640px) {
+            .featured-projects-section {
+                padding: 64px 0 72px;
+            }
+
+            .featured-projects-carousel {
+                height: 520px;
+            }
+
+            .featured-project-slide {
+                width: min(86vw, 390px);
+                height: 460px;
+            }
+
+            .featured-project-slide.is-prev,
+            .featured-project-slide.is-next {
+                opacity: 0.18;
+                transform: translate(-50%, -50%) scale(0.82);
+            }
+
+            .featured-project-panel {
+                padding: 88px 20px 22px;
+            }
+        }
+
+        .bnpl-modern-paylater {
+            position: relative;
+            padding: 44px 0 48px;
+            background: #F8F9FA;
+            overflow: hidden;
+            text-align: center;
+        }
+
+        .bnpl-modern-paylater::before {
+            content: none !important;
+        }
+
+        .bnpl-modern-header {
+            max-width: 720px;
+            margin: 0 auto 24px;
+            text-align: center;
+        }
+
+        .bnpl-modern-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 12px;
+            padding: 6px 14px;
+            border: 0;
+            border-radius: 999px;
+            background: #38A169;
+            color: #fff;
+            font-size: 0.72rem;
+            font-weight: 900;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            box-shadow: 0 6px 14px rgba(56, 161, 105, 0.16);
+        }
+
+        .bnpl-modern-title {
+            margin: 0;
+            color: #1A202C;
+            font-size: clamp(1.8rem, 3.5vw, 2.4rem);
+            line-height: 1.15;
+            font-weight: 900;
+            letter-spacing: 0;
+        }
+
+        .bnpl-card-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 20px;
+        }
+
+        .bnpl-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 200px;
+            padding: 24px 20px;
+            border: 1px solid rgba(26, 32, 44, 0.04);
+            border-radius: 16px;
+            background: #FFFFFF;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.04);
+            transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+        }
+
+        .bnpl-card:hover {
+            border-color: rgba(56, 161, 105, 0.18);
+            transform: translateY(-4px);
+            box-shadow: 0 16px 34px rgba(0, 0, 0, 0.07);
+        }
+
+        .bnpl-icon-box {
+            width: 52px;
+            height: 52px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 14px;
+            border: 1px solid #C6F6D5;
+            border-radius: 50%;
+            background: #F0FFF4;
+            color: #2F855A;
+        }
+
+        .bnpl-icon-box svg {
+            width: 24px;
+            height: 24px;
+            display: block;
+        }
+
+        .bnpl-card h3 {
+            margin: 0 0 14px;
+            color: #1A202C;
+            font-size: 1.05rem;
+            font-weight: 900;
+            line-height: 1.25;
+            letter-spacing: 0.02em;
+            text-transform: uppercase;
+        }
+
+        .bnpl-card p {
+            margin: 0;
+            max-width: 310px;
+            color: #4A5568;
+            font-size: 0.96rem;
+            line-height: 1.7;
+        }
+
+        .bnpl-modern-cta {
+            display: flex;
+            justify-content: center;
+            margin-top: 40px;
+        }
+
+        .bnpl-modern-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 52px;
+            padding: 0 34px;
+            border-radius: 999px;
+            background: #38A169;
+            color: #fff;
+            font-size: 0.95rem;
+            font-weight: 900;
+            letter-spacing: 0.02em;
+            text-decoration: none;
+            box-shadow: 0 12px 24px rgba(56, 161, 105, 0.22);
+            transition: transform 0.22s ease, box-shadow 0.22s ease, background-color 0.22s ease;
+        }
+
+        .bnpl-modern-btn:hover {
+            background: #2F855A;
+            color: #fff;
+            transform: translateY(-2px);
+            box-shadow: 0 16px 30px rgba(56, 161, 105, 0.3);
+            text-decoration: none;
+        }
+
+        @media (max-width: 991px) {
+            .bnpl-card-grid {
+                grid-template-columns: 1fr;
+                max-width: 520px;
+                margin: 0 auto;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .bnpl-modern-paylater {
+                padding: 64px 0;
+            }
+
+            .bnpl-card {
+                min-height: auto;
+                padding: 30px 22px;
+            }
+        }
+
         .contact-us {
             padding: 80px 0;
             background: #fff;
@@ -880,7 +1388,7 @@ $conn->close();
                     <p>Invest in solar today - enjoy decades of energy independence and savings.</p>
                     <div class="hero-cta d-flex flex-row gap-3">
                         <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#inspectionModal" style="background-color: #F2A900 !important; border-color: #F2A900 !important; color: #000000 !important; font-weight: bold;">GET A FREE QUOTE</button>
-                        <a href="loans.php" class="btn btn-secondary text-decoration-none d-inline-flex align-items-center justify-content-center" style="border: 2px solid #FFFFFF !important; color: #FFFFFF !important; font-weight: bold; background: transparent !important;">
+                        <a href="/loans" class="btn btn-secondary text-decoration-none d-inline-flex align-items-center justify-content-center" style="border: 2px solid #FFFFFF !important; color: #FFFFFF !important; font-weight: bold; background: transparent !important;">
                             EXPLORE FINANCING
                         </a>
                     </div>
@@ -987,7 +1495,7 @@ $conn->close();
                                         <span class="privacy-copy">
                                             <strong>Data Privacy Notice</strong>
                                             We value your privacy. By submitting this form, you agree to our
-                                            <a href="privacy-policy.php" target="_blank" rel="noopener">Privacy Policy</a>.
+                                            <a href="/privacy-policy" target="_blank" rel="noopener">Privacy Policy</a>.
                                             Your data is securely processed and used only to respond to your inquiry.
                                         </span>
                                     </label>
@@ -1078,7 +1586,6 @@ $conn->close();
             to { opacity: 1; transform: scale(1); }
         }
     </style>
-
 
 
     <!-- Trusted Partners Marquee Section -->
@@ -1182,7 +1689,7 @@ $conn->close();
                             data-price="<?= htmlspecialchars($p['price']) ?>">
 
                             <!-- Clickable Product Image and Info -->
-                            <div onclick="location.href='product-details.php/<?= createSlug($p['displayName']) ?>'" style="cursor: pointer;">
+                            <div onclick="location.href='/product-details/<?= createSlug($p['displayName']) ?>'" style="cursor: pointer;">
                                 <div class="product-image">
                                     <img src="<?= htmlspecialchars($p['image_path'] ?? 'assets/img/placeholder.png') ?>"
                                         alt="<?= htmlspecialchars($p['displayName']) ?>">
@@ -1242,67 +1749,52 @@ $conn->close();
         </div>
     </section>
 
-    <section class="bnpl-section" id="bnplSection" data-checkout-hide>
+    <section class="bnpl-section bnpl-modern-paylater" id="bnplSection" data-checkout-hide>
         <div class="container">
-            <!-- Header - Centered with aligned description -->
-            <div class="bnpl-header">
-                <h2>Install Now, <span class="highlight">Pay Later</span></h2>
-                <p class="bnpl-subtitle">Switch to Solar now and enjoy massive savings with 30% down payments.</p>
+            <div class="bnpl-modern-header">
+                <span class="bnpl-modern-badge">EASY 3-STEP PROCESS</span>
+                <h2 class="bnpl-modern-title">Install Now, Pay Later</h2>
             </div>
 
-            <!-- Steps Grid -->
-            <div class="bnpl-steps">
-                <!-- Step 1 -->
-                <div class="bnpl-step">
-                    <div class="step-circle" data-step="1">
-                        <div class="step-icon">
-                            <i class="fas fa-calendar-check"></i>
-                        </div>
+            <div class="bnpl-card-grid">
+                <article class="bnpl-card">
+                    <div class="bnpl-icon-box" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none">
+                            <path d="M7 4h10a2 2 0 0 1 2 2v14l-3-2-2 2-2-2-2 2-2-2-3 2V6a2 2 0 0 1 2-2Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                            <path d="M9 8h6M9 12h6M9 16h3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
                     </div>
-                    <h3>Book Ocular Inspection</h3>
-                    <p>Schedule your site visit and let our experts assess your property.</p>
-                </div>
+                    <h3>GET FREE QUOTATION</h3>
+                    <p>Contact our agent to discuss your solar panel needs and wait for your custom quotation.</p>
+                </article>
 
-                <!-- Step 2 -->
-                <div class="bnpl-step">
-                    <div class="step-circle" data-step="2">
-                        <div class="step-icon">
-                            <i class="fas fa-file-invoice-dollar"></i>
-                        </div>
+                <article class="bnpl-card">
+                    <div class="bnpl-icon-box" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none">
+                            <path d="M14.5 5.5 18 2l4 4-3.5 3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M3 21h5l10.5-10.5-5-5L3 16v5Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                            <path d="M12 7 17 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
                     </div>
-                    <h3>Get Free Quotation</h3>
-                    <p>Receive a detailed proposal tailored to your energy needs and budget.</p>
-                </div>
+                    <h3>INSTALLATION PROCESS</h3>
+                    <p>Schedule your ocular inspection and let our certified team install your solar system.</p>
+                </article>
 
-                <!-- Step 3 -->
-                <div class="bnpl-step">
-                    <div class="step-circle" data-step="3">
-                        <div class="step-icon">
-                            <i class="fas fa-tools"></i>
-                        </div>
+                <article class="bnpl-card">
+                    <div class="bnpl-icon-box" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none">
+                            <path d="M4 7h16a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                            <path d="M2 11h20M7 15h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                            <path d="M17 15.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z" fill="currentColor"/>
+                        </svg>
                     </div>
-                    <h3>Installation Process</h3>
-                    <p>Our certified team installs your solar system quickly and professionally.</p>
-                </div>
-
-                <!-- Step 4 -->
-                <div class="bnpl-step">
-                    <div class="step-circle" data-step="4">
-                        <div class="step-icon">
-                            <i class="fas fa-credit-card"></i>
-                        </div>
-                    </div>
-                    <h3>Pay Later</h3>
-                    <p>Flexible payment plans with zero interest. Start saving from day one!</p>
-                </div>
+                    <h3>START MONTHLY PAYMENT</h3>
+                    <p>Enjoy zero-hassle financing plans and start saving on electric bills right away.</p>
+                </article>
             </div>
 
-            <!-- Optional: Add CTA button -->
-            <div class="bnpl-cta" style="text-align: center; margin-top: 50px;">
-                <button class="btn btn-primary btn-lg" onclick="window.location.href='#inspectionModal'"
-                    data-bs-toggle="modal" data-bs-target="#inspectionModal">
-                    Get Started Today
-                </button>
+            <div class="bnpl-modern-cta">
+                <a href="/contact" class="bnpl-modern-btn">GET STARTED TODAY</a>
             </div>
         </div>
     </section>
@@ -1428,7 +1920,7 @@ $conn->close();
                         <span class="d-inline-flex align-items-center gap-1 px-2 py-1 rounded border bg-light">
                             <i class="fas fa-lock text-success"></i> Secure Maya checkout
                         </span>
-                        <a href="loans.php#checklist" class="ms-auto small fw-semibold text-decoration-none" style="color:#0D5C3A;">Corporate buyer?</a>
+                        <a href="/loans#checklist" class="ms-auto small fw-semibold text-decoration-none" style="color:#0D5C3A;">Corporate buyer?</a>
                     </div>
                     <!-- Action Buttons -->
                     <div class="checkout-actions mt-4">
@@ -1481,7 +1973,7 @@ $conn->close();
                             <div id="orderQr" class="d-inline-block p-2 bg-white"></div>
                         </div>
 
-                        <button class="btn btn-primary mt-4" onclick="location.href='index.php'">
+                        <button class="btn btn-primary mt-4" onclick="location.href='/'">
                             Back to Home
                         </button>
                     </div>
@@ -1502,14 +1994,558 @@ $conn->close();
     </section>
 
     <!-- ── SECTION 2: CORE SERVICES & PRODUCTS GRID (The 3-Pillar Solution) ── -->
-    <section class="py-5 bg-white" id="servicesGrid" data-checkout-hide>
-        <div class="container py-lg-4">
-            <div class="text-center mb-5" data-aos="fade-up">
+    <?php if (!empty($featured_projects)): ?>
+    <section class="featured-projects-section" id="featuredProjects" data-checkout-hide>
+        <div class="container">
+            <div class="featured-projects-heading" data-aos="fade-up">
+                <img src="assets/img/solarpower_energy_corp.png" alt="SolarPower Energy Corporation" class="featured-projects-logo">
+                <h2>Featured Projects</h2>
+                <p>Our highest-capacity portfolio highlights, automatically selected from the largest system sizes published in the project portfolio.</p>
+            </div>
+
+            <div class="featured-projects-carousel" data-featured-carousel data-aos="fade-up" data-aos-delay="100">
+                <?php foreach ($featured_projects as $featuredIndex => $featuredProject):
+                    $featuredImages = portfolioProjectImages($featuredProject['image_url'] ?? '');
+                    $featuredImage = $featuredImages[0] ?? 'assets/img/product-placeholder.png';
+                    $featuredTitle = trim((string) ($featuredProject['project_name'] ?? 'Featured Solar Project'));
+                    $featuredLocation = trim((string) ($featuredProject['location'] ?? 'Philippines'));
+                    $featuredSystem = trim((string) ($featuredProject['system_type'] ?? 'Solar system'));
+                    $featuredService = trim((string) ($featuredProject['service_type'] ?? 'Solar Installation'));
+                    $featuredSubtitle = trim((string) ($featuredProject['subtitle'] ?? ''));
+                    $featuredOverview = portfolioProjectExcerpt($featuredSubtitle !== '' ? $featuredSubtitle : $featuredService);
+                    $featuredCo2 = trim((string) ($featuredProject['co2_reduction'] ?? ''));
+                    $featuredTrees = trim((string) ($featuredProject['efficiency_rate'] ?? ''));
+                ?>
+                    <article class="featured-project-slide" data-featured-slide data-index="<?= (int) $featuredIndex; ?>">
+                        <img src="<?= htmlspecialchars($featuredImage); ?>" alt="<?= htmlspecialchars($featuredTitle); ?>">
+
+                        <div class="featured-project-panel">
+                            <span class="featured-project-system"><?= htmlspecialchars($featuredSystem); ?></span>
+                            <h3><?= htmlspecialchars($featuredTitle); ?></h3>
+
+                            <div class="featured-project-meta">
+                                <span><i class="fas fa-map-marker-alt"></i><?= htmlspecialchars($featuredLocation); ?></span>
+                                <span><i class="fas fa-briefcase"></i><?= htmlspecialchars($featuredService); ?></span>
+                                <span><i class="fas fa-solar-panel"></i><?= htmlspecialchars($featuredOverview); ?></span>
+                            </div>
+
+                            <?php if ($featuredCo2 !== '' || $featuredTrees !== ''): ?>
+                                <div class="featured-project-impact">
+                                    <?php if ($featuredCo2 !== ''): ?>
+                                        <span><i class="fas fa-leaf"></i> <?= htmlspecialchars($featuredCo2); ?> CO2 saved</span>
+                                    <?php endif; ?>
+                                    <?php if ($featuredTrees !== ''): ?>
+                                        <span><i class="fas fa-tree"></i> <?= htmlspecialchars($featuredTrees); ?> trees eq.</span>
+                                    <?php endif; ?>
+                                </div>
+                            <?php endif; ?>
+
+                            <a href="/projects?project=<?= (int) ($featuredProject['id'] ?? 0); ?>#projectShowcase" class="featured-project-btn">View More</a>
+                        </div>
+                    </article>
+                <?php endforeach; ?>
+            </div>
+
+            <div class="featured-carousel-dots" data-featured-dots aria-label="Featured project carousel controls">
+                <?php foreach ($featured_projects as $featuredIndex => $featuredProject): ?>
+                    <button class="featured-carousel-dot" type="button" data-featured-dot="<?= (int) $featuredIndex; ?>" aria-label="Show featured project <?= (int) $featuredIndex + 1; ?>"></button>
+                <?php endforeach; ?>
+            </div>
+        </div>
+    </section>
+    <?php endif; ?>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const carousel = document.querySelector('[data-featured-carousel]');
+            if (!carousel) return;
+
+            const slides = Array.from(carousel.querySelectorAll('[data-featured-slide]'));
+            const dots = Array.from(document.querySelectorAll('[data-featured-dot]'));
+            if (!slides.length) return;
+
+            let activeIndex = 0;
+            let intervalId = null;
+
+            function setActive(index) {
+                activeIndex = (index + slides.length) % slides.length;
+
+                slides.forEach(function (slide, slideIndex) {
+                    const offset = (slideIndex - activeIndex + slides.length) % slides.length;
+                    slide.classList.remove('is-active', 'is-prev', 'is-next', 'is-hidden');
+
+                    if (offset === 0) {
+                        slide.classList.add('is-active');
+                    } else if (offset === 1) {
+                        slide.classList.add('is-next');
+                    } else if (offset === slides.length - 1) {
+                        slide.classList.add('is-prev');
+                    } else {
+                        slide.classList.add('is-hidden');
+                    }
+                });
+
+                dots.forEach(function (dot, dotIndex) {
+                    const isActive = dotIndex === activeIndex;
+                    dot.classList.toggle('is-active', isActive);
+                    dot.setAttribute('aria-current', isActive ? 'true' : 'false');
+                });
+            }
+
+            function startAutoPlay() {
+                if (slides.length <= 1) return;
+                stopAutoPlay();
+                intervalId = window.setInterval(function () {
+                    setActive(activeIndex + 1);
+                }, 4200);
+            }
+
+            function stopAutoPlay() {
+                if (intervalId) {
+                    window.clearInterval(intervalId);
+                    intervalId = null;
+                }
+            }
+
+            dots.forEach(function (dot) {
+                dot.addEventListener('click', function () {
+                    const dotIndex = parseInt(dot.dataset.featuredDot || '0', 10);
+                    setActive(dotIndex);
+                    startAutoPlay();
+                });
+            });
+
+            carousel.addEventListener('mouseenter', stopAutoPlay);
+            carousel.addEventListener('mouseleave', startAutoPlay);
+            carousel.addEventListener('focusin', stopAutoPlay);
+            carousel.addEventListener('focusout', startAutoPlay);
+
+            setActive(0);
+            startAutoPlay();
+        });
+    </script>
+
+    <?php if (!empty($homepage_videos)): ?>
+    <!-- ── SECTION: LATEST SOLAR VIDEOS ── -->
+    <section class="hv-section" id="homepageVideos" data-checkout-hide>
+        <div class="container">
+            <div class="hv-heading" data-aos="fade-up">
+                <div>
+                    <span class="hv-kicker"><i class="fas fa-play-circle"></i> Video Showcase</span>
+                    <h2>Latest Solar Videos</h2>
+                </div>
+                <a href="/projects#videoShowcase" class="hv-view-all">View All Videos <i class="fas fa-arrow-right"></i></a>
+            </div>
+
+            <div class="hv-grid" data-aos="fade-up" data-aos-delay="80">
+                <?php foreach ($homepage_videos as $hvIdx => $hvVid):
+                    $hvTitle    = htmlspecialchars(trim((string)($hvVid['title'] ?? 'Solar Video')));
+                    $hvThumb    = htmlspecialchars(trim((string)($hvVid['thumbnail_url'] ?? 'assets/img/product-placeholder.png')));
+                    $hvFormat   = ($hvVid['video_format'] ?? 'landscape') === 'vertical' ? 'vertical' : 'landscape';
+                    $hvCat      = htmlspecialchars(trim((string)($hvVid['category_tag'] ?? 'Showcase')));
+                    $hvViews    = (int)($hvVid['view_count'] ?? 0);
+                    $hvViewsStr = $hvViews >= 1000 ? round($hvViews / 1000, 1) . 'k' : (string)$hvViews;
+                    $hvTypeLabel = $hvFormat === 'vertical' ? 'Short Reel' : 'Video Tour';
+                    $hvPayload  = json_encode([
+                        'id'        => (int)($hvVid['id'] ?? 0),
+                        'title'     => trim((string)($hvVid['title'] ?? 'Solar Video')),
+                        'format'    => $hvFormat,
+                        'mediaType' => trim((string)($hvVid['media_type'] ?? 'url')),
+                        'mediaUrl'  => trim((string)($hvVid['media_url'] ?? '')),
+                        'thumbnail' => trim((string)($hvVid['thumbnail_url'] ?? '')),
+                        'category'  => trim((string)($hvVid['category_tag'] ?? 'Showcase')),
+                        'views'     => (int)($hvVid['view_count'] ?? 0),
+                    ], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT);
+                ?>
+                <article class="hv-card hv-card--<?= $hvFormat ?>"
+                         role="button"
+                         tabindex="0"
+                         data-hv-video='<?= htmlspecialchars($hvPayload, ENT_QUOTES, 'UTF-8') ?>'
+                         data-aos="fade-up"
+                         data-aos-delay="<?= $hvIdx * 90 ?>"
+                         aria-label="Play: <?= $hvTitle ?>">
+                    <div class="hv-thumb">
+                        <img src="<?= $hvThumb ?>" alt="<?= $hvTitle ?>" loading="lazy">
+                        <span class="hv-badge"><?= $hvFormat === 'vertical' ? '<i class="fas fa-mobile-screen-button"></i>' : '<i class="fas fa-tv"></i>' ?> <?= $hvTypeLabel ?></span>
+                        <span class="hv-views"><i class="fas fa-eye"></i> <?= $hvViewsStr ?></span>
+                        <div class="hv-play"><i class="fas fa-play"></i></div>
+                    </div>
+                    <div class="hv-info">
+                        <span class="hv-cat"><?= $hvCat ?></span>
+                        <h3 class="hv-title"><?= $hvTitle ?></h3>
+                    </div>
+                </article>
+                <?php endforeach; ?>
+            </div>
+        </div>
+    </section>
+
+    <!-- Video Modal (Homepage) -->
+    <div class="hv-modal" id="hvModal" role="dialog" aria-modal="true" aria-labelledby="hvModalTitle">
+        <div class="hv-modal-dialog" id="hvModalDialog">
+            <div class="hv-modal-head">
+                <h2 class="hv-modal-title" id="hvModalTitle">Solar Video</h2>
+                <button class="hv-modal-close" type="button" id="hvModalClose" aria-label="Close video">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="hv-player-shell" id="hvPlayerShell"></div>
+        </div>
+    </div>
+
+    <style>
+        /* ── Homepage Video Section ── */
+        .hv-section {
+            padding: 40px 0 48px;
+            background: linear-gradient(160deg, #f0faf5 0%, #ffffff 60%, #fefce8 100%);
+        }
+        .hv-heading {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 22px;
+            flex-wrap: wrap;
+        }
+        .hv-kicker {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(13, 92, 58, 0.08);
+            color: #0D5C3A;
+            border-radius: 99px;
+            padding: 4px 12px;
+            font-size: 0.76rem;
+            font-weight: 700;
+            letter-spacing: 0.07em;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+        .hv-heading h2 {
+            font-size: clamp(1.6rem, 2.8vw, 2.1rem);
+            font-weight: 800;
+            color: #0D5C3A;
+            margin: 0;
+            line-height: 1.15;
+        }
+        .hv-view-all {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            padding: 8px 18px;
+            border: 2px solid #0D5C3A;
+            border-radius: 50px;
+            color: #0D5C3A;
+            font-weight: 700;
+            font-size: 0.82rem;
+            text-decoration: none;
+            white-space: nowrap;
+            transition: background 0.22s, color 0.22s, transform 0.18s;
+            flex-shrink: 0;
+        }
+        .hv-view-all:hover {
+            background: #0D5C3A;
+            color: #fff;
+            transform: translateY(-2px);
+        }
+
+        /* Grid */
+        .hv-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        @media (min-width: 768px) {
+            .hv-grid { grid-template-columns: repeat(3, 1fr); }
+        }
+
+        /* Card */
+        .hv-card {
+            border-radius: 16px;
+            overflow: hidden;
+            background: #fff;
+            box-shadow: 0 6px 24px rgba(13, 92, 58, 0.08);
+            cursor: pointer;
+            transition: transform 0.25s cubic-bezier(.34,1.56,.64,1), box-shadow 0.25s;
+            outline: none;
+        }
+        .hv-card:hover,
+        .hv-card:focus-visible {
+            transform: translateY(-4px);
+            box-shadow: 0 16px 40px rgba(13, 92, 58, 0.14);
+        }
+        .hv-thumb {
+            position: relative;
+            width: 100%;
+            overflow: hidden;
+        }
+        .hv-card--landscape .hv-thumb { aspect-ratio: 16/9; max-height: 200px; }
+        .hv-card--vertical   .hv-thumb { aspect-ratio: 9/16; max-height: 250px; }
+        .hv-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            transition: transform 0.4s;
+        }
+        .hv-card:hover .hv-thumb img { transform: scale(1.04); }
+
+        /* Overlays */
+        .hv-badge, .hv-views {
+            position: absolute;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 8px;
+            border-radius: 99px;
+            font-size: 0.68rem;
+            font-weight: 700;
+            backdrop-filter: blur(6px);
+        }
+        .hv-badge {
+            top: 10px; left: 10px;
+            background: rgba(13, 92, 58, 0.85);
+            color: #fff;
+        }
+        .hv-views {
+            top: 10px; right: 10px;
+            background: rgba(0,0,0,0.5);
+            color: #fff;
+        }
+        .hv-play {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.22s;
+        }
+        .hv-play span,
+        .hv-play i {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: rgba(13, 92, 58, 0.9);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            padding-left: 3px;
+            backdrop-filter: blur(4px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+        }
+        .hv-card:hover .hv-play { opacity: 1; }
+
+        .hv-info {
+            padding: 12px 14px 16px;
+        }
+        .hv-cat {
+            display: inline-block;
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #F2A900;
+            margin-bottom: 6px;
+        }
+        .hv-title {
+            font-size: 0.97rem;
+            font-weight: 700;
+            color: #17231d;
+            margin: 0;
+            line-height: 1.35;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        /* ── Video Modal ── */
+        .hv-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(5, 20, 12, 0.82);
+            z-index: 99990;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(6px);
+            padding: 20px;
+        }
+        .hv-modal.is-open { display: flex; }
+        .hv-modal-dialog {
+            background: #0f1c15;
+            border-radius: 18px;
+            width: 100%;
+            max-width: 900px;
+            overflow: hidden;
+            box-shadow: 0 30px 80px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+        }
+        .hv-modal.is-vertical .hv-modal-dialog {
+            max-width: 440px;
+        }
+        .hv-modal-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 20px;
+            background: rgba(255,255,255,0.04);
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+        .hv-modal-title {
+            color: #e0f2e9;
+            font-size: 1rem;
+            font-weight: 700;
+            margin: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .hv-modal-close {
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: #fff;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+            flex-shrink: 0;
+            margin-left: 12px;
+        }
+        .hv-modal-close:hover { background: rgba(255,255,255,0.22); }
+        .hv-player-shell {
+            width: 100%;
+            aspect-ratio: 16/9;
+            background: #000;
+        }
+        .hv-modal.is-vertical .hv-player-shell {
+            aspect-ratio: 9/16;
+        }
+        .hv-player-shell iframe,
+        .hv-player-shell video {
+            width: 100%;
+            height: 100%;
+            display: block;
+            border: none;
+        }
+    </style>
+
+    <script>
+        (function () {
+            'use strict';
+            var modal      = document.getElementById('hvModal');
+            var closeBtn   = document.getElementById('hvModalClose');
+            var titleEl    = document.getElementById('hvModalTitle');
+            var shell      = document.getElementById('hvPlayerShell');
+
+            function sourceUrl(path) {
+                if (!path) return '';
+                return /^https?:\/\//i.test(path) ? path : path.replace(/^\/+/, '');
+            }
+
+            function embedUrl(rawUrl) {
+                try {
+                    var url  = new URL(rawUrl, window.location.href);
+                    var host = url.hostname.replace(/^www\./, '');
+                    var vid  = '';
+                    if (host === 'youtu.be') {
+                        vid = url.pathname.split('/').filter(Boolean)[0] || '';
+                        return vid ? 'https://www.youtube.com/embed/' + encodeURIComponent(vid) + '?autoplay=1&rel=0' : rawUrl;
+                    }
+                    if (host.indexOf('youtube.com') !== -1) {
+                        if (url.pathname.indexOf('/shorts/') === 0) {
+                            vid = url.pathname.split('/').filter(Boolean)[1] || '';
+                        } else {
+                            vid = url.searchParams.get('v') || '';
+                        }
+                        return vid ? 'https://www.youtube.com/embed/' + encodeURIComponent(vid) + '?autoplay=1&rel=0' : rawUrl;
+                    }
+                    if (host.indexOf('vimeo.com') !== -1) {
+                        vid = url.pathname.split('/').filter(Boolean).pop() || '';
+                        return vid ? 'https://player.vimeo.com/video/' + encodeURIComponent(vid) + '?autoplay=1' : rawUrl;
+                    }
+                } catch (e) { return rawUrl; }
+                return rawUrl;
+            }
+
+            function isVideoFile(url) {
+                return /\.(mp4|webm|ogg|mov)(\?|#|$)/i.test(url || '');
+            }
+
+            function openVideo(video) {
+                var mediaUrl = sourceUrl(video.mediaUrl || '');
+                var isVert   = video.format === 'vertical';
+                modal.classList.toggle('is-vertical', isVert);
+                titleEl.textContent = video.title || 'Solar Video';
+                shell.innerHTML = '';
+
+                if ((video.mediaType === 'file') || isVideoFile(mediaUrl)) {
+                    var v = document.createElement('video');
+                    v.src = mediaUrl; v.controls = true; v.autoplay = true; v.playsInline = true;
+                    shell.appendChild(v);
+                } else {
+                    var f = document.createElement('iframe');
+                    f.src = embedUrl(mediaUrl);
+                    f.title = video.title || 'Solar video';
+                    f.allow = 'autoplay; fullscreen; picture-in-picture';
+                    f.allowFullscreen = true;
+                    shell.appendChild(f);
+                }
+                modal.classList.add('is-open');
+                document.body.style.overflow = 'hidden';
+
+                // track view
+                try {
+                    var fd = new FormData();
+                    fd.append('id', video.id);
+                    fetch('api/portfolio_video_view.php', { method: 'POST', body: fd }).catch(function(){});
+                } catch(e) {}
+            }
+
+            function closeVideo() {
+                modal.classList.remove('is-open', 'is-vertical');
+                shell.innerHTML = '';
+                document.body.style.overflow = '';
+            }
+
+            document.querySelectorAll('.hv-card').forEach(function (card) {
+                function launch() {
+                    try { openVideo(JSON.parse(card.dataset.hvVideo)); } catch(e) {}
+                }
+                card.addEventListener('click', launch);
+                card.addEventListener('keydown', function (e) {
+                    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); launch(); }
+                });
+            });
+
+            if (closeBtn) closeBtn.addEventListener('click', closeVideo);
+            modal.addEventListener('click', function (e) {
+                if (e.target === modal) closeVideo();
+            });
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape') closeVideo();
+            });
+        })();
+    </script>
+    <?php endif; ?>
+
+    <section class="py-4 bg-white" id="servicesGrid" data-checkout-hide>
+        <div class="container py-lg-3">
+            <div class="text-center mb-4" data-aos="fade-up">
                 <span class="text-uppercase fw-bold text-success" style="font-size: 0.85rem; letter-spacing: 1.5px; color: #0D5C3A !important;">Core Offerings</span>
-                <h2 class="fw-extrabold mt-2" style="color: #0D5C3A; font-family: var(--ff-poppins); font-size: 2.3rem;">Engineered Solar Solutions</h2>
+                <h2 class="fw-extrabold mt-2" style="color: #0D5C3A; font-family: var(--ff-poppins); font-size: 2.1rem;">Engineered Solar Solutions</h2>
                 <p class="text-muted">High-performance solar solutions designed for structural mastery and financial efficiency.</p>
             </div>
-            
+
             <div class="row g-4" data-aos="fade-up" data-aos-delay="100">
                 <!-- Card 1 -->
                 <div class="col-md-4">
@@ -1541,7 +2577,7 @@ $conn->close();
                         </div>
                         <h4 class="fw-bold mb-3" style="color: #0D5C3A;">Flexible Solar Financing</h4>
                         <p class="text-muted mb-4">Direct linkage to GSIS, Pag-IBIG, and SSS government backup programs, making clean energy affordable with zero cash outlays.</p>
-                        <a href="loans.php" class="btn btn-outline-success btn-sm w-100 mt-auto fw-bold" style="border-color: #0D5C3A; color: #0D5C3A; border-radius: 8px;">Explore Financing</a>
+                        <a href="/loans" class="btn btn-outline-success btn-sm w-100 mt-auto fw-bold" style="border-color: #0D5C3A; color: #0D5C3A; border-radius: 8px;">Explore Financing</a>
                     </div>
                 </div>
             </div>
@@ -1579,7 +2615,7 @@ $conn->close();
                         </div>
                         
                         <!-- Bottom CTA Bar -->
-                        <a href="loans.php" class="d-block text-center py-3 fw-bold text-uppercase text-decoration-none transition-all" style="background-color: #F2A900; color: #1A1A1A; letter-spacing: 1px; font-size: 0.95rem;">
+                        <a href="/loans" class="d-block text-center py-3 fw-bold text-uppercase text-decoration-none transition-all" style="background-color: #F2A900; color: #1A1A1A; letter-spacing: 1px; font-size: 0.95rem;">
                             See How Much Your Roof Can Save &rarr;
                         </a>
                     </div>
@@ -1609,7 +2645,7 @@ $conn->close();
                                 <h5 class="fw-bold mb-3" style="color: #0D5C3A; font-size: 1.15rem; line-height: 1.4;">GINHAWA SOLAR ENERGY LOAN: Shift to Clean Energy with GSIS</h5>
                                 <p class="text-muted small mb-0" style="line-height: 1.6;">The Ginhawa Solar Energy Loan (GSEL) gives GSIS members a smart and accessible way to shift to solar power by offering financing of up to ₱500,000 for home solar panel installation. With rising electricity costs, GSEL empowers members to take control of their energy expenses, reduce monthly bills, and enjoy long-term savings—all while increasing the value of their homes. It’s a practical investment that delivers immediate financial relief and lasting Ginhawa benefits, while supporting a cleaner, more sustainable future.</p>
                             </div>
-                            <a href="loans.php" class="btn btn-outline-success btn-sm mt-4 align-self-start fw-bold" style="border-color: #0D5C3A; color: #0D5C3A; border-radius: 8px;">Read More &rarr;</a>
+                            <a href="/loans" class="btn btn-outline-success btn-sm mt-4 align-self-start fw-bold" style="border-color: #0D5C3A; color: #0D5C3A; border-radius: 8px;">Read More &rarr;</a>
                         </div>
                     </div>
                 </div>
@@ -1624,7 +2660,7 @@ $conn->close();
                                 <h5 class="fw-bold mb-3" style="color: #0D5C3A; font-size: 1.15rem; line-height: 1.4;">Pag-IBIG Solar Loan 2026: Complete Guide to Financing Solar with Housing Loans</h5>
                                 <p class="text-muted small mb-0" style="line-height: 1.6;">Looking to go solar but don't have ₱300,000–₱500,000 in cash? Your Pag-IBIG housing loan might be the solution. The Home Development Mutual Fund (HDMF) allows qualified members to finance solar panel installations as part of their home improvement loan—potentially turning your electricity savings into your monthly loan payment.</p>
                             </div>
-                            <a href="loans.php" class="btn btn-outline-success btn-sm mt-4 align-self-start fw-bold" style="border-color: #0D5C3A; color: #0D5C3A; border-radius: 8px;">Read More &rarr;</a>
+                            <a href="/loans" class="btn btn-outline-success btn-sm mt-4 align-self-start fw-bold" style="border-color: #0D5C3A; color: #0D5C3A; border-radius: 8px;">Read More &rarr;</a>
                         </div>
                     </div>
                 </div>
@@ -1639,7 +2675,7 @@ $conn->close();
                                 <h5 class="fw-bold mb-3" style="color: #0D5C3A; font-size: 1.15rem; line-height: 1.4;">SSS Energy Sustainability Loan Program: What Filipino Households Need to Know</h5>
                                 <p class="text-muted small mb-0" style="line-height: 1.6;">The Social Security System (SSS) is set to introduce its Energy Sustainability Loan Program, which will allow qualified members to finance residential solar panel systems. The program represents a proactive response to emerging economic pressures, helping Filipino households save on high electricity rates.</p>
                             </div>
-                            <a href="loans.php" class="btn btn-outline-success btn-sm mt-4 align-self-start fw-bold" style="border-color: #0D5C3A; color: #0D5C3A; border-radius: 8px;">Read More &rarr;</a>
+                            <a href="/loans" class="btn btn-outline-success btn-sm mt-4 align-self-start fw-bold" style="border-color: #0D5C3A; color: #0D5C3A; border-radius: 8px;">Read More &rarr;</a>
                         </div>
                     </div>
                 </div>
@@ -2825,7 +3861,7 @@ $conn->close();
                                             <span class="privacy-copy">
                                                 <strong>Data Privacy Notice</strong>
                                                 We value your privacy. By submitting this form, you agree to our
-                                                <a href="privacy-policy.php" target="_blank" rel="noopener">Privacy Policy</a>.
+                                                <a href="/privacy-policy" target="_blank" rel="noopener">Privacy Policy</a>.
                                                 Your data is securely processed and used only to respond to your inquiry.
                                             </span>
                                         </label>
@@ -3607,9 +4643,9 @@ $conn->close();
 
                     <p class="checkout-gateway-legal">
                         By continuing, you agree to our
-                        <a href="terms-of-service.php" target="_blank" rel="noopener">Terms of Service</a>
+                        <a href="/terms-of-service" target="_blank" rel="noopener">Terms of Service</a>
                         and
-                        <a href="privacy-policy.php" target="_blank" rel="noopener">Privacy Policy</a>.
+                        <a href="/privacy-policy" target="_blank" rel="noopener">Privacy Policy</a>.
                     </p>
                 </div>
             </div>
@@ -4336,7 +5372,7 @@ $conn->close();
         }
 
         saveCartToMemory();
-        window.location.href = 'checkout.php';
+        window.location.href = '/checkout';
         return;
 
         // Close cart modal
@@ -4667,7 +5703,7 @@ $conn->close();
             return;
         }
         saveCartToMemory();
-        window.location.href = 'checkout.php';
+        window.location.href = '/checkout';
         return;
         console.log('🔐 Proceeding to Maya Checkout...');
 
@@ -5024,7 +6060,7 @@ $conn->close();
             return;
         }
         saveCartToMemory();
-        window.location.href = 'checkout.php';
+        window.location.href = '/checkout';
         return;
         console.log(' Processing Maya payment...');
 

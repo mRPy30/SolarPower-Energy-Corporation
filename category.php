@@ -457,7 +457,7 @@ $category_links = [
 
                 <nav class="category-switcher" aria-label="Switch product category">
                     <?php foreach ($category_links as $linkKey => $label): ?>
-                        <a href="category.php?category=<?= rawurlencode($linkKey) ?>"
+                        <a href="/category?category=<?= rawurlencode($linkKey) ?>"
                            class="<?= $linkKey === $category_key ? 'active' : '' ?>">
                             <?= htmlspecialchars($label) ?>
                         </a>
@@ -470,7 +470,7 @@ $category_links = [
                     <?php foreach ($products as $product): ?>
                         <?php
                         $detailsSlugSource = $product['parentDisplayName'] ?? $product['displayName'];
-                        $detailsUrl = 'product-details.php?id=' . rawurlencode(createSlug($detailsSlugSource));
+                        $detailsUrl = '/product-details/' . rawurlencode(createSlug($detailsSlugSource));
                         ?>
                         <article class="category-product-card">
                             <a href="<?= htmlspecialchars($detailsUrl) ?>" class="category-product-image">
@@ -507,7 +507,7 @@ $category_links = [
                     <i class="fas fa-box-open"></i>
                     <h3>No products found in this category yet.</h3>
                     <p class="text-muted mb-4">Please check the main catalog or update this category from the staff dashboard.</p>
-                    <a href="product.php" class="btn btn-warning fw-bold">Back to Products</a>
+                    <a href="/product" class="btn btn-warning fw-bold">Back to Products</a>
                 </div>
             <?php endif; ?>
         </div>

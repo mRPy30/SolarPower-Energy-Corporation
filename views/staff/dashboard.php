@@ -1721,7 +1721,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
     <link rel="icon" type="image/png" href="../../assets/img/icon.png">
     <title>SolarPower - Staff</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+    <?php
+    $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' || ($_SERVER['SERVER_PORT'] ?? 80) == 443) ? "https://" : "http://";
+    $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+    $base_dir = (stripos($_SERVER['SCRIPT_NAME'], '/SolarPower-Energy-Corporation/') !== false) ? $protocol . $host . '/SolarPower-Energy-Corporation/views/staff/' : $protocol . $host . '/views/staff/';
+    ?>
+    <link rel="stylesheet" href="<?php echo $base_dir; ?>style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Cropper.js for profile image cropping -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css">
@@ -1731,6 +1736,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
     <!-- Quill.js WYSIWYG – description editor -->
     <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
     <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
+    <!-- Absolute URL constants for AJAX so fetch() works under clean URL routing -->
+    <script>
+        const DASHBOARD_AJAX_URL = '<?php echo $base_dir; ?>dashboard.php';
+        const STAFF_BASE_URL    = '<?php echo $base_dir; ?>';
+    </script>
     <style>
         /* ── Quill editor inside the Add Product form ── */
         #quill-description-editor {
@@ -2517,6 +2527,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 <span>Project Portfolio</span>
             </div>
 
+            <div class="menu-item" onclick="showPage('portfolio-videos', 'Solar Reels & Videos')" data-tooltip="Solar Reels & Videos">
+                <i class="fas fa-video"></i>
+                <span>Solar Reels & Videos</span>
+            </div>
+
             <div class="menu-label">SALES & TRANSACTIONS</div>
             <div class="menu-item" onclick="showPage('tracking', 'Tracking')" data-tooltip="Tracking">
                 <i class="fas fa-map-marker-alt"></i>
@@ -3029,22 +3044,22 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
 
             <!-- Solar Estimates Page -->
             <div id="estimates" class="page-content">
-                <iframe src="estimates.php" style="width: 100%; height: calc(100vh - 120px); border: none; border-radius: 12px; background: white; box-shadow: 0 4px 20px rgba(0,0,0,0.05);"></iframe>
+                <iframe src="<?php echo $base_dir; ?>estimates.php" style="width: 100%; height: calc(100vh - 120px); border: none; border-radius: 12px; background: white; box-shadow: 0 4px 20px rgba(0,0,0,0.05);"></iframe>
             </div>
 
             <!-- Potential Clients Page -->
             <div id="subscribers" class="page-content">
-                <iframe src="subscribers.php" style="width: 100%; height: calc(100vh - 120px); border: none; border-radius: 12px; background: white; box-shadow: 0 4px 20px rgba(0,0,0,0.05);"></iframe>
+                <iframe src="<?php echo $base_dir; ?>subscribers.php" style="width: 100%; height: calc(100vh - 120px); border: none; border-radius: 12px; background: white; box-shadow: 0 4px 20px rgba(0,0,0,0.05);"></iframe>
             </div>
 
             <!-- Loan Applications Page -->
             <div id="loans" class="page-content">
-                <iframe src="loan_applications.php" style="width: 100%; height: calc(100vh - 120px); border: none; border-radius: 12px; background: white; box-shadow: 0 4px 20px rgba(0,0,0,0.05);"></iframe>
+                <iframe src="<?php echo $base_dir; ?>loan_applications.php" style="width: 100%; height: calc(100vh - 120px); border: none; border-radius: 12px; background: white; box-shadow: 0 4px 20px rgba(0,0,0,0.05);"></iframe>
             </div>
 
             <!-- Calculator Analytics Page -->
             <div id="calculator-analytics" class="page-content">
-                <iframe src="calculator_analytics.php" style="width: 100%; height: calc(100vh - 120px); border: none; border-radius: 12px; background: white; box-shadow: 0 4px 20px rgba(0,0,0,0.05);"></iframe>
+                <iframe src="<?php echo $base_dir; ?>calculator_analytics.php" style="width: 100%; height: calc(100vh - 120px); border: none; border-radius: 12px; background: white; box-shadow: 0 4px 20px rgba(0,0,0,0.05);"></iframe>
             </div>
 
             <div id="inquiries" class="page-content">
@@ -4935,6 +4950,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
 
             <?php include_once __DIR__ . '/includes/staff-promo-images.php'; ?>
             <?php include_once __DIR__ . '/includes/staff-portfolio-management.php'; ?>
+            <?php include_once __DIR__ . '/includes/staff-video-management.php'; ?>
 
             <div id="tracking" class="page-content">
                 <div class="tracking-page-container">
@@ -6270,7 +6286,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                         formData.append('remarks', remarks);
                         
                         try {
-                            const response = await fetch('quotation_api.php', {
+                            const response = await fetch(STAFF_BASE_URL + 'quotation_api.php', {
                                 method: 'POST',
                                 body: formData
                             });
@@ -6324,7 +6340,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
 
 
             <div id="delivery-rates" class="page-content">
-                <iframe src="delivery_rates.php" style="width: 100%; height: calc(100vh - 120px); border: none; border-radius: 12px; background: white; box-shadow: 0 4px 20px rgba(0,0,0,0.05);"></iframe>
+                <iframe src="<?php echo $base_dir; ?>delivery_rates.php" style="width: 100%; height: calc(100vh - 120px); border: none; border-radius: 12px; background: white; box-shadow: 0 4px 20px rgba(0,0,0,0.05);"></iframe>
             </div>
 
 
@@ -7198,7 +7214,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
 
             <!-- Staff Management Page -->
             <div id="staff_manage" class="page-content">
-                <iframe src="staff_manage.php" style="width: 100%; height: calc(100vh - 120px); border: none; border-radius: 12px; background: white; box-shadow: 0 4px 20px rgba(0,0,0,0.05);"></iframe>
+                <iframe src="<?php echo $base_dir; ?>staff_manage.php" style="width: 100%; height: calc(100vh - 120px); border: none; border-radius: 12px; background: white; box-shadow: 0 4px 20px rgba(0,0,0,0.05);"></iframe>
             </div>
 
             <!-- Calculator Settings Page -->
@@ -8128,7 +8144,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                             formData.append('profile_picture', blob, 'cropped_avatar.png');
 
                             try {
-                                const response = await fetch('profile_api.php', {
+                                const response = await fetch(STAFF_BASE_URL + 'profile_api.php', {
                                     method: 'POST',
                                     body: formData
                                 });
@@ -8626,7 +8642,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
 
             try {
-                const response = await fetch('profile_api.php', {
+                const response = await fetch(STAFF_BASE_URL + 'profile_api.php', {
                     method: 'POST',
                     body: formData
                 });
@@ -8722,7 +8738,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating...';
 
             try {
-                const response = await fetch('profile_api.php', {
+                const response = await fetch(STAFF_BASE_URL + 'profile_api.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(data)
@@ -9191,7 +9207,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
             async reloadProductList() {
                 try {
                     // Fetch fresh product list from server
-                    const response = await fetch('get_products_list.php');
+                    const response = await fetch(STAFF_BASE_URL + 'get_products_list.php');
                     const data = await response.json();
 
                     if (data.success && data.products) {
@@ -9848,7 +9864,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 const tbody = document.getElementById('clientsTableBody');
                 tbody.innerHTML = '<tr><td colspan="5">Loading clients...</td></tr>';
 
-                fetch('dashboard.php?ajax=1&action=fetch_clients')
+                fetch(DASHBOARD_AJAX_URL + '?ajax=1&action=fetch_clients')
                     .then(response => response.json())
                     .then(res => {
                         if (res.success) {
@@ -9908,7 +9924,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 if (empty) empty.style.display = 'none';
 
                 try {
-                    const res = await fetch('dashboard.php?ajax=1&action=fetch_orders');
+                    const res = await fetch(DASHBOARD_AJAX_URL + '?ajax=1&action=fetch_orders');
                     const json = await res.json();
 
                     if (!json.success) throw new Error(json.message || 'Server error');
@@ -10180,7 +10196,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 if (!confirm(`Are you sure you want to ${label} this payment?`)) return;
 
                 try {
-                    const res = await fetch('dashboard.php?ajax=1&action=verify_payment', {
+                    const res = await fetch(DASHBOARD_AJAX_URL + '?ajax=1&action=verify_payment', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ order_id: orderId, payment_status: newStatus })
@@ -10553,7 +10569,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
             },
 
             load() {
-                fetch('dashboard.php?ajax=1&action=fetch_calculator_settings')
+                fetch(DASHBOARD_AJAX_URL + '?ajax=1&action=fetch_calculator_settings')
                     .then(res => res.json())
                     .then(data => {
                         if (data.success) {
@@ -10619,7 +10635,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                     }
                 });
 
-                fetch('dashboard.php', {
+                fetch(DASHBOARD_AJAX_URL, {
                     method: 'POST',
                     body: formData
                 })
@@ -10826,7 +10842,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
 
         async function openProductReviewModal(productId) {
             try {
-                const response = await fetch(`get.product.php?id=${productId}`);
+                const response = await fetch(`${STAFF_BASE_URL}get.product.php?id=${productId}`);
                 const data = await response.json();
 
                 if (data.success) {
@@ -10964,7 +10980,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                     await fetchAndPopulateCategories();
                 }
 
-                const response = await fetch(`get.product.php?id=${productId}`);
+                const response = await fetch(`${STAFF_BASE_URL}get.product.php?id=${productId}`);
                 const data = await response.json();
 
                 if (data.success) {
@@ -11262,7 +11278,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 const formData = new FormData(this);
 
                 try {
-                    const response = await fetch('edit_product.php', {
+                    const response = await fetch(STAFF_BASE_URL + 'edit_product.php', {
                         method: 'POST',
                         body: formData
                     });
@@ -11292,7 +11308,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 if (productId && imageElement) {
                     try {
                         // Fetch the first image for this product
-                        const response = await fetch(`get_product_image.php?product_id=${productId}`);
+                        const response = await fetch(`${STAFF_BASE_URL}get_product_image.php?product_id=${productId}`);
                         const data = await response.json();
 
                         if (data.success && data.image_path) {
@@ -11407,7 +11423,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                     }
 
                     try {
-                        const response = await fetch('ajax_upload_images.php', {
+                        const response = await fetch(STAFF_BASE_URL + 'ajax_upload_images.php', {
                             method: 'POST',
                             body: formData
                         });
@@ -11615,7 +11631,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                     formData.append('product_ids', selectedIds.join(','));
                     formData.append('status', status);
 
-                    const res = await fetch('dashboard.php', {
+                    const res = await fetch(DASHBOARD_AJAX_URL, {
                         method: 'POST',
                         body: formData
                     });
@@ -11660,7 +11676,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
 
             async loadFromDatabase() {
                 try {
-                    const response = await fetch('quotation_api.php?action=fetch');
+                    const response = await fetch(STAFF_BASE_URL + 'quotation_api.php?action=fetch');
                     const result = await response.json();
 
                     if (result.success) {
@@ -11850,7 +11866,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 formData.append('remarks', document.getElementById('remarks').value);
 
                 try {
-                    const response = await fetch('quotation_api.php', {
+                    const response = await fetch(STAFF_BASE_URL + 'quotation_api.php', {
                         method: 'POST',
                         body: formData
                     });
@@ -11883,7 +11899,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
 
             async loadOfficers() {
                 try {
-                    const response = await fetch('quotation_api.php?action=fetch_officers');
+                    const response = await fetch(STAFF_BASE_URL + 'quotation_api.php?action=fetch_officers');
                     const result = await response.json();
 
                     if (result.success) {
@@ -11931,7 +11947,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 formData.append('id', this.deleteQuotationId);
 
                 try {
-                    const response = await fetch('quotation_api.php', {
+                    const response = await fetch(STAFF_BASE_URL + 'quotation_api.php', {
                         method: 'POST',
                         body: formData
                     });
@@ -12070,7 +12086,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
             if (!categorySelect && !editCategorySelect) return;
 
             try {
-                const response = await fetch('dashboard.php?ajax=1&action=fetch_categories');
+                const response = await fetch(DASHBOARD_AJAX_URL + '?ajax=1&action=fetch_categories');
                 const data = await response.json();
                 
                 if (data.success && data.data && data.data.length > 0) {
@@ -12894,11 +12910,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 this.loadCategories().then(() => this.loadBrands());
             },
 
-            ajaxUrl: 'dashboard.php?ajax=1',
+            ajaxUrl: DASHBOARD_AJAX_URL + '?ajax=1',
 
             async post(formData) {
                 formData.append('ajax', '1');
-                const res = await fetch('dashboard.php', { method: 'POST', body: formData });
+                const res = await fetch(DASHBOARD_AJAX_URL, { method: 'POST', body: formData });
                 return res.json();
             },
 
@@ -13383,11 +13399,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 this.loadCategories();
             },
 
-            ajaxUrl: 'dashboard.php?ajax=1',
+            ajaxUrl: DASHBOARD_AJAX_URL + '?ajax=1',
 
             async post(formData) {
                 formData.append('ajax', '1');
-                const res = await fetch('dashboard.php', { method: 'POST', body: formData });
+                const res = await fetch(DASHBOARD_AJAX_URL, { method: 'POST', body: formData });
                 return res.json();
             },
 
@@ -13942,7 +13958,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
             formData.append('revenue_date', revenueDate);
 
             try {
-                const response = await fetch('dashboard.php?ajax=1', {
+                const response = await fetch(DASHBOARD_AJAX_URL + '?ajax=1', {
                     method: 'POST',
                     body: formData
                 });
@@ -14039,7 +14055,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
             formData.append('roof_type', roofType);
 
             try {
-                const response = await fetch('dashboard.php?ajax=1', {
+                const response = await fetch(DASHBOARD_AJAX_URL + '?ajax=1', {
                     method: 'POST',
                     body: formData
                 });

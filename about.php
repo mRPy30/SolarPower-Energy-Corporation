@@ -12,14 +12,14 @@
     <meta name="keywords" content="About SolarPower, solar developer Philippines, DOE accredited solar installer, renewable energy provider, solar panel installation Manila" />
     <meta name="author" content="SolarPower Energy Corporation" />
     <meta name="robots" content="index, follow" />
-    <link rel="canonical" href="https://solarpower.com.ph/about.php" />
+    <link rel="canonical" href="https://solarpower.com.ph/about" />
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
     <meta property="og:title" content="About Us | SolarPower Energy Corporation" />
     <meta property="og:description" content="Discover our journey, accredited team, and why SolarPower is the Philippines' most trusted partner in solar panel installation and renewable energy." />
     <meta property="og:image" content="https://solarpower.com.ph/assets/img/logo.png" />
-    <meta property="og:url" content="https://solarpower.com.ph/about.php" />
+    <meta property="og:url" content="https://solarpower.com.ph/about" />
 
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -218,9 +218,8 @@ Greener Future</h1>
     <section class="py-5 bg-white">
         <div class="container py-lg-5">
             <div class="row g-5 align-items-center">
-                <!-- Left Column: Logo Only -->
                 <div class="col-lg-5 pe-lg-5 text-center" data-aos="fade-right">
-                    <img src="assets/img/solarpower_energy_corp.png" alt="SolarPower Logo" style="max-height: 180px; width: auto; object-fit: contain;">
+                    <img src="assets/img/solarpower_energy_corp.png" alt="SolarPower Logo" style="max-height: 150px; max-width: 100%; width: auto; object-fit: contain;">
                 </div>
 
                 <!-- Right Column: Corporate Profile Text & DOE Status Hub -->

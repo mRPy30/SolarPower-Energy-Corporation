@@ -809,7 +809,7 @@ $conn->close();
                 <!-- Logos Set 1 -->
                 <div class="flex items-center gap-6 px-3">
                     <?php foreach ($logo_brands as $brand): ?>
-                    <a href="brand.php?name=<?= rawurlencode($brand['brand_name']) ?>" class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
+                    <a href="/brand?name=<?= rawurlencode($brand['brand_name']) ?>" class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
                         <img src="<?= htmlspecialchars($brand['logo_image']) ?>" alt="<?= htmlspecialchars($brand['brand_name']) ?>" class="w-full h-full object-contain mix-blend-multiply opacity-90">
                     </a>
                     <?php endforeach; ?>
@@ -818,7 +818,7 @@ $conn->close();
                 <!-- Logos Set 2 (Duplicate for Seamless Loop) -->
                 <div class="flex items-center gap-6 px-3" aria-hidden="true">
                     <?php foreach ($logo_brands as $brand): ?>
-                    <a href="brand.php?name=<?= rawurlencode($brand['brand_name']) ?>" class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
+                    <a href="/brand?name=<?= rawurlencode($brand['brand_name']) ?>" class="w-40 h-20 md:w-56 md:h-28 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
                         <img src="<?= htmlspecialchars($brand['logo_image']) ?>" alt="<?= htmlspecialchars($brand['brand_name']) ?>" class="w-full h-full object-contain mix-blend-multiply opacity-90">
                     </a>
                     <?php endforeach; ?>
@@ -847,13 +847,13 @@ $conn->close();
 
     <section class="container my-4 promo-banners-section">
         <div class="promo-banners-grid">
-            <a href="brand.php?name=Huawei" class="promo-banner-card">
+            <a href="/brand?name=Huawei" class="promo-banner-card">
                 <img src="assets/img/product-cover-1.jpg" alt="Huawei solar product promotion">
             </a>
-            <a href="brand.php?name=Solis" class="promo-banner-card">
+            <a href="/brand?name=Solis" class="promo-banner-card">
                 <img src="assets/img/product-cover-2.jpg" alt="Solis solar product promotion">
             </a>
-            <a href="brand.php?name=Pylontech" class="promo-banner-card">
+            <a href="/brand?name=Pylontech" class="promo-banner-card">
                 <img src="assets/img/product-cover-3.jpg" alt="Pylontech solar product promotion">
             </a>
         </div>
@@ -911,27 +911,27 @@ $conn->close();
                 </div>
 
                 <div class="marketplace-category-grid">
-                    <a href="category.php?category=panel" class="category-option-card">
+                    <a href="/category?category=panel" class="category-option-card">
                         <span class="category-icon"><i class="fas fa-solar-panel"></i></span>
                         <span>Solar Panels</span>
                     </a>
-                    <a href="category.php?category=inverter" class="category-option-card">
+                    <a href="/category?category=inverter" class="category-option-card">
                         <span class="category-icon"><i class="fas fa-plug-circle-bolt"></i></span>
                         <span>Inverters</span>
                     </a>
-                    <a href="category.php?category=battery" class="category-option-card">
+                    <a href="/category?category=battery" class="category-option-card">
                         <span class="category-icon"><i class="fas fa-car-battery"></i></span>
                         <span>Batteries</span>
                     </a>
-                    <a href="category.php?category=package" class="category-option-card">
+                    <a href="/category?category=package" class="category-option-card">
                         <span class="category-icon"><i class="fas fa-boxes-stacked"></i></span>
                         <span>Package Setups</span>
                     </a>
-                    <a href="category.php?category=mounting" class="category-option-card">
+                    <a href="/category?category=mounting" class="category-option-card">
                         <span class="category-icon"><i class="fas fa-screwdriver-wrench"></i></span>
                         <span>Mounting Accessories</span>
                     </a>
-                    <a href="category.php?category=all" class="category-option-card">
+                    <a href="/category?category=all" class="category-option-card">
                         <span class="category-icon"><i class="fas fa-border-all"></i></span>
                         <span>All Products</span>
                     </a>
@@ -993,7 +993,7 @@ $conn->close();
             <div class="products-grid" id="productsGrid">
                 <?php if ($products): ?>
                     <?php foreach ($products as $index => $p): ?>
-                        <?php $productDetailUrl = 'product-details.php?id=' . rawurlencode(createSlug($p['displayName'])); ?>
+                        <?php $productDetailUrl = '/product-details/' . rawurlencode(createSlug($p['displayName'])); ?>
                         <div class="product-card"
                             data-category="<?= htmlspecialchars($p['category']) ?>"
                             data-brand="<?= htmlspecialchars($p['brandName']) ?>"
@@ -1076,7 +1076,7 @@ $conn->close();
 
             <div class="shop-brand-grid">
                 <?php foreach ($uploaded_logo_brands as $brand): ?>
-                    <a href="brand.php?name=<?= rawurlencode($brand['brand_name']) ?>" class="shop-brand-card">
+                    <a href="/brand?name=<?= rawurlencode($brand['brand_name']) ?>" class="shop-brand-card">
                         <img src="<?= htmlspecialchars($brand['logo_image']) ?>"
                              alt="<?= htmlspecialchars($brand['brand_name']) ?>"
                              class="shop-brand-logo">
@@ -1360,7 +1360,7 @@ $conn->close();
                             <div id="orderQr" class="d-inline-block p-2 bg-white"></div>
                         </div>
 
-                        <button class="btn btn-primary mt-4" onclick="location.href='index.php'">
+                        <button class="btn btn-primary mt-4" onclick="location.href='/'">
                             Back to Home
                         </button>
                     </div>
@@ -1493,9 +1493,9 @@ $conn->close();
 
                     <p class="checkout-gateway-legal">
                         By continuing, you agree to our
-                        <a href="terms-of-service.php" target="_blank" rel="noopener">Terms of Service</a>
+                        <a href="/terms-of-service" target="_blank" rel="noopener">Terms of Service</a>
                         and
-                        <a href="privacy-policy.php" target="_blank" rel="noopener">Privacy Policy</a>.
+                        <a href="/privacy-policy" target="_blank" rel="noopener">Privacy Policy</a>.
                     </p>
                 </div>
             </div>
@@ -2000,7 +2000,7 @@ $conn->close();
         }
 
         saveCartToMemory();
-        window.location.href = 'checkout.php';
+        window.location.href = '/checkout';
         return;
 
         const cartModal = bootstrap.Modal.getInstance(document.getElementById('cartModal'));

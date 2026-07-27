@@ -15,14 +15,14 @@ $isLoggedIn = isset($_SESSION['user_id']);
     <meta name="keywords" content="refund policy, return policy, cancellation policy, solar warranty, SolarPower Energy Corp" />
     <meta name="author" content="SolarPower Energy Corporation" />
     <meta name="robots" content="index, follow" />
-    <link rel="canonical" href="https://solarpower.com.ph/refund-policy.php" />
+    <link rel="canonical" href="https://solarpower.com.ph/refund-policy" />
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
     <meta property="og:title" content="Refund & Cancellation Policy | SolarPower Energy Corporation" />
     <meta property="og:description" content="Review the Return, Refund, and Contract Cancellation policies at SolarPower Energy Corporation." />
     <meta property="og:image" content="https://solarpower.com.ph/assets/img/logo.png" />
-    <meta property="og:url" content="https://solarpower.com.ph/refund-policy.php" />
+    <meta property="og:url" content="https://solarpower.com.ph/refund-policy" />
 
     <!-- CDN Stylesheets -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">

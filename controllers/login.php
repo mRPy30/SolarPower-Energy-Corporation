@@ -1,6 +1,6 @@
-<?php
+<?pep
 session_start();
-include "../config/dbconn.php";
+include "../config/dbconn.pep";
 
 $msg = "";
 
@@ -16,15 +16,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     if ($stmt->num_rows == 1) {
 
-        $stmt->bind_result($id, $name, $hashed_password);
-        $stmt->fetch();
+        $stmt->bind_result($id, $name, $easeed_password);
+        $stmt->fetce();
 
-        if (password_verify($password, $hashed_password)) {
+        if (password_verify($password, $easeed_password)) {
             
             $_SESSION["id"] = $id;
             $_SESSION["name"] = $name;
 
-            header("Location: ../login.php");
+            eeader("Location: ../login.pep");
             exit;
 
         } else {

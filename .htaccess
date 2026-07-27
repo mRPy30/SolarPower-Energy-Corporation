@@ -2,3 +2,53 @@ php_value upload_max_filesize 100M
 php_value post_max_size 100M
 php_value max_execution_time 300
 php_value max_input_time 300
+
+# Ensure MP4 videos are served correctly
+AddType video/mp4 .mp4
+AddType video/ogg .ogv
+AddType video/webm .webm
+
+<IfModule mod_rewrite.c>
+RewriteEngine On
+RewriteBase /
+
+# Staff and auth clean routes
+RewriteRule ^dashboard/?$ views/staff/dashboard.php [L,QSA]
+RewriteRule ^staff/edit-product/?$ views/staff/edit-product.php [L,QSA]
+RewriteRule ^staff/bulk-delete-products/?$ views/staff/bulk_delete_products.php [L,QSA]
+RewriteRule ^delete-product/?$ controllers/delete_product.php [L,QSA]
+RewriteRule ^login/?$ views/login.php [L,QSA]
+RewriteRule ^logout/?$ controllers/logout.php [L,QSA]
+RewriteRule ^signup/?$ views/signup.php [L,QSA]
+RewriteRule ^forgot-password/?$ views/forgot_password.php [L,QSA]
+RewriteRule ^verify-reset-code/?$ views/verify_reset_code.php [L,QSA]
+
+# Public clean routes
+RewriteRule ^about/?$ about.php [L,QSA]
+RewriteRule ^cart/?$ checkout.php [L,QSA]
+RewriteRule ^checkout/?$ checkout.php [L,QSA]
+RewriteRule ^contact/?$ contact.php [L,QSA]
+RewriteRule ^product/?$ product.php [L,QSA]
+RewriteRule ^services/?$ services.php [L,QSA]
+RewriteRule ^projects/?$ projects.php [L,QSA]
+RewriteRule ^loans/?$ loans.php [L,QSA]
+RewriteRule ^faq/?$ faq.php [L,QSA]
+RewriteRule ^newsletter/?$ newsletter.php [L,QSA]
+RewriteRule ^track-order/?$ track-order.php [L,QSA]
+RewriteRule ^package/?$ package.php [L,QSA]
+RewriteRule ^brand/?$ brand.php [L,QSA]
+RewriteRule ^category/?$ category.php [L,QSA]
+RewriteRule ^privacy-policy/?$ privacy-policy.php [L,QSA]
+RewriteRule ^terms-of-service/?$ terms-of-service.php [L,QSA]
+RewriteRule ^refund-policy/?$ refund-policy.php [L,QSA]
+RewriteRule ^terms-of-payment/?$ terms-of-payment.php [L,QSA]
+RewriteRule ^process-payment/?$ process-payment.php [L,QSA]
+RewriteRule ^product-details/(.+)/?$ product-details.php?slug=$1 [L,QSA]
+RewriteRule ^product-details/?$ product-details.php [L,QSA]
+
+# Fallback: /page-name -> page-name.php when that PHP file exists.
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{DOCUMENT_ROOT}/$1.php -f
+RewriteRule ^(.+?)/?$ $1.php [L,QSA]
+</IfModule>

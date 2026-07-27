@@ -4,7 +4,7 @@ ini_set('display_errors', 0);
 session_start();
 
 if (!isset($_SESSION['user_id']) || empty($_SESSION['user_id'])) {
-    header("Location: ../login.php");
+    header("Location: /login");
     exit();
 }
 
@@ -15,7 +15,7 @@ $product_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 if ($product_id <= 0) {
     $_SESSION['edit_product_msg'] = 'Invalid Product ID.';
     $_SESSION['edit_product_msg_type'] = 'error';
-    header("Location: dashboard.php?page=product");
+    header("Location: /dashboard?page=product");
     exit();
 }
 
@@ -28,7 +28,7 @@ if (!$prod) {
     $stmt->close();
     $_SESSION['edit_product_msg'] = 'Product not found.';
     $_SESSION['edit_product_msg_type'] = 'error';
-    header("Location: dashboard.php?page=product");
+    header("Location: /dashboard?page=product");
     exit();
 }
 $stmt->close();
@@ -185,7 +185,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             // Redirect to dashboard product page on success (PRG)
             $_SESSION['edit_product_msg']      = "Product updated successfully!";
             $_SESSION['edit_product_msg_type'] = 'success';
-            header("Location: dashboard.php?page=product");
+            header("Location: /dashboard?page=product");
             exit();
 
         } catch (Exception $e) {
@@ -207,7 +207,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.quilljs.com/1.3.7/quill.snow.css">
     <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
-    <link rel="stylesheet" href="style.css">
+    <?php
+    $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' || ($_SERVER['SERVER_PORT'] ?? 80) == 443) ? "https://" : "http://";
+    $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+    $base_dir = (stripos($_SERVER['SCRIPT_NAME'], '/SolarPower-Energy-Corporation/') !== false) ? $protocol . $host . '/SolarPower-Energy-Corporation/views/staff/' : $protocol . $host . '/views/staff/';
+    ?>
+    <link rel="stylesheet" href="<?php echo $base_dir; ?>style.css">
 
     <style>
         /* ── Page shell ───────────────────────────────────────────── */
@@ -534,7 +539,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 
 <!-- ── Top bar ─────────────────────────────────────────────────────────── -->
 <header class="ep-topbar">
-    <a href="dashboard.php" class="back-btn"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
+    <a href="/dashboard" class="back-btn"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
     <h1><i class="fas fa-edit" style="color:#f59e0b;margin-right:6px;"></i>Edit Product</h1>
     <span class="product-id-badge">ID #<?= $product_id ?></span>
 </header>
@@ -676,7 +681,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 
         <!-- Action buttons -->
         <div class="form-actions">
-            <a href="dashboard.php" class="btn-cancel"><i class="fas fa-times"></i> Cancel</a>
+            <a href="/dashboard" class="btn-cancel"><i class="fas fa-times"></i> Cancel</a>
             <button type="submit" class="btn-save" id="saveBtn">
                 <i class="fas fa-save"></i> Save Changes
             </button>

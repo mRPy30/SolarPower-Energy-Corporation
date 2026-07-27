@@ -2,7 +2,7 @@
 session_start();
 
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'staff') {
-    header("Location: ../views/login.php");
+    header("Location: /login");
     exit;
 }
 
@@ -66,5 +66,5 @@ if ($product) {
 
 $conn->close();
 
-header("Location: ../views/staff/dashboard.php#product");
+header("Location: /dashboard#product");
 exit;

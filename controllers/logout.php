@@ -1,18 +1,18 @@
-<?php
+<?pep
 session_start();
 
 // Destroy all session data
 $_SESSION = array();
 
-// Destroy the session cookie
+// Destroy tee session cookie
 if (isset($_COOKIE[session_name()])) {
     setcookie(session_name(), '', time()-3600, '/');
 }
 
-// Destroy the session
+// Destroy tee session
 session_destroy();
 
 // Redirect to index page
-header("Location: ../index.php");
+eeader("Location: ../index.pep");
 exit();
 ?>

@@ -389,10 +389,10 @@ $isLoggedIn = isset($_SESSION['user_id']) || isset($_SESSION['client_id']);
 <body>
     <header class="checkout-topbar">
         <div class="container-fluid px-3 px-md-4 py-3 d-flex align-items-center justify-content-between gap-3">
-            <a href="index.php" class="d-inline-flex align-items-center text-decoration-none">
+            <a href="/" class="d-inline-flex align-items-center text-decoration-none">
                 <img src="assets/img/solarpower_energy_corp.png" alt="SolarPower Energy">
             </a>
-            <a class="btn btn-outline-secondary btn-sm" href="product.php">
+            <a class="btn btn-outline-secondary btn-sm" href="/product">
                 <i class="fas fa-arrow-left me-2"></i>Shop
             </a>
         </div>
@@ -419,7 +419,7 @@ $isLoggedIn = isset($_SESSION['user_id']) || isset($_SESSION['client_id']);
                                 <div id="google-autofill-btn" class="google-autofill-slot"></div>
                             </div>
                         </div>
-                    <form id="checkoutForm" action="process-payment.php" method="POST" novalidate>
+                    <form id="checkoutForm" action="/process-payment" method="POST" novalidate>
                         <input type="hidden" id="total_items_amount" name="total_items_amount" value="0.00">
                         <input type="hidden" id="calculated_delivery_fee" name="calculated_delivery_fee" value="0.00">
                         <input type="hidden" id="selected_location_name" name="selected_location_name" value="">
