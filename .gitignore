@@ -1,2 +1,10 @@
 solarpower.zip
 config/resend.local.php
+.env
+.env.*
+!.env.example
+config/*.local.php
+!config/*.local.example.php
+*.zip
+*.rar
+*.7z

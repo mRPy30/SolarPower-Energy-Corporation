@@ -5,6 +5,11 @@ ini_set('display_errors', 0);
 header('Content-Type: application/json');
 include "../config/dbconn.php";
 
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    echo json_encode(["success" => false, "message" => "Invalid request method."]);
+    exit;
+}
+
 $resendMailerPath = __DIR__ . '/../includes/resend-mailer.php';
 if (is_file($resendMailerPath)) {
     require_once $resendMailerPath;
@@ -40,6 +45,11 @@ $privacyConsent = isset($_POST['privacy_consent']) && $_POST['privacy_consent'] 
 
 if (!$name || !$email || !$message) {
     echo json_encode(["success" => false, "message" => "Required fields missing"]);
+    exit;
+}
+
+if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+    echo json_encode(["success" => false, "message" => "Please enter a valid email address."]);
     exit;
 }
 
@@ -135,10 +145,14 @@ try {
     error_log('Contact inquiry email exception: ' . $e->getMessage());
 }
 
+$emailSent = (bool) $emailResult['sent'];
+
 echo json_encode([
-    "success" => true,
-    "message" => "Message saved successfully",
-    "email_sent" => (bool) $emailResult['sent'],
+    "success" => $emailSent,
+    "message" => $emailSent
+        ? "Message sent successfully"
+        : "Message was saved, but email notification failed: " . ($emailResult['message'] ?: 'Please check Resend configuration.'),
+    "email_sent" => $emailSent,
     "email_provider" => $emailResult['provider'],
     "email_message" => $emailResult['message']
 ]);

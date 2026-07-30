@@ -1,3 +1,9 @@
+<?php
+session_start();
+
+$estimateFlash = $_SESSION['estimate_flash'] ?? null;
+unset($_SESSION['estimate_flash']);
+?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -305,6 +311,33 @@
  
         .contact-form textarea.form-control {
             resize: none;
+        }
+
+        .contact-privacy-notice {
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+            padding: 12px 14px;
+            border: 1px solid #dbe7e1;
+            border-radius: 10px;
+            background: #f7fbf8;
+            color: #44564f;
+            font-size: 0.82rem;
+            line-height: 1.55;
+        }
+
+        .contact-privacy-notice input {
+            width: 16px;
+            height: 16px;
+            margin-top: 3px;
+            accent-color: var(--clr-secondary);
+            flex: 0 0 auto;
+        }
+
+        .contact-privacy-notice a {
+            color: var(--clr-secondary);
+            font-weight: 700;
+            text-decoration: none;
         }
  
         .btn-submit {
@@ -694,7 +727,7 @@
                         <!-- Visit Us Section -->
                         <div class="visit-us-section">
                             <h3>Visit Us</h3>
-                            <p>Come visit our showroom to see our solar products and speak with our experts in person.
+                            <p>Connect with our solarpower experts to discuss the best energy solutions for your needs.
                             </p>
                             <a href="https://api.whatsapp.com/send?phone=639953947379" class="whatsapp-btn" target="_blank">
                                 <i class="fab fa-whatsapp"></i>
@@ -788,7 +821,7 @@
                 <div class="col-lg-7">
                     <div class="contact-form-wrapper">
                         <h3 class="mb-4">Send us a Message</h3>
-                        <form class="contact-form" id="contactForm" onsubmit="submitContactForm(event)">
+                        <form class="contact-form" id="contactForm" method="POST" action="/controllers/contact_submit.php" onsubmit="submitContactForm(event)">
                             <div class="row">
                                 <div class="col-md-6 mb-3">
                                     <input type="text" class="form-control" id="contact_name" name="name"
@@ -811,6 +844,17 @@
                                 <div class="col-12 mb-4">
                                     <textarea class="form-control" id="contact_message" name="message" rows="6"
                                         placeholder="Your Message *" required></textarea>
+                                </div>
+
+                                <div class="col-12 mb-3">
+                                    <label class="contact-privacy-notice" for="contact_privacy_consent">
+                                        <input type="checkbox" id="contact_privacy_consent" name="privacy_consent" value="1" required>
+                                        <span>
+                                            We value your privacy. By submitting this form, you agree to our
+                                            <a href="/privacy-policy" target="_blank" rel="noopener">Privacy Policy</a>.
+                                            Your information will only be used to respond to your solar inquiry.
+                                        </span>
+                                    </label>
                                 </div>
 
                                 <div class="col-12">
@@ -878,7 +922,9 @@
                             <p class="text-muted small">We'll contact you within 24 hours.</p>
                         </div>
 
-                        <form id="inspectionForm" class="inspection-form">
+                        <form id="inspectionForm" class="inspection-form" method="POST" action="/index.php" onsubmit="return window.submitInspectionEstimate ? window.submitInspectionEstimate(event) : true;">
+                            <input type="hidden" name="action" value="submit_estimate">
+                            <input type="hidden" name="redirect_to" value="/contact">
                             <div class="row">
 
                                 <div class="col-md-6 mb-3">
@@ -1007,6 +1053,25 @@
             </div>
         </div>
     </div>
+
+    <script>
+        window.SOLAR_ESTIMATE_FLASH = <?= json_encode($estimateFlash, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>;
+        document.addEventListener('DOMContentLoaded', function() {
+            const flash = window.SOLAR_ESTIMATE_FLASH;
+            if (!flash) return;
+
+            if (flash.success) {
+                const successModal = document.getElementById('inspectionSuccessModal');
+                if (successModal && window.bootstrap) {
+                    new bootstrap.Modal(successModal).show();
+                } else {
+                    alert(flash.message || 'Request submitted!');
+                }
+            } else if (flash.message) {
+                alert(flash.message);
+            }
+        });
+    </script>
 
 <!-- Contact Success Modal -->
     <div class="modal fade" id="contactSuccessModal" tabindex="-1" aria-hidden="true">
@@ -1253,6 +1318,13 @@ async function submitContactForm(event) {
     const submitBtn   = document.getElementById('contactSubmitBtn');
     const btnText     = submitBtn.querySelector('.btn-text');
     const btnSpinner  = submitBtn.querySelector('.btn-spinner');
+    const privacyInput = document.getElementById('contact_privacy_consent');
+
+    if (privacyInput && !privacyInput.checked) {
+        showNotificationModal('error', 'Please confirm the Data Privacy Notice before submitting.');
+        privacyInput.focus();
+        return;
+    }
 
     // Combine +63 prefix with phone digits
     const phoneInput = document.getElementById('contact_phone');
@@ -1270,12 +1342,18 @@ async function submitContactForm(event) {
     try {
         const formData = new FormData(form);
 
-        const response = await fetch('controllers/contact_submit.php', {
+        const response = await fetch('/controllers/contact_submit.php', {
             method: 'POST',
             body: formData
         });
 
-        const result = await response.json();
+        const responseText = await response.text();
+        let result;
+        try {
+            result = JSON.parse(responseText);
+        } catch (parseError) {
+            throw new Error('Invalid server response: ' + responseText.slice(0, 180));
+        }
 
         if (result.success) {
             form.reset();
@@ -1344,15 +1422,27 @@ async function submitContactForm(event) {
 
             try {
                 const formData = new FormData(inspectionForm);
-                formData.append('action', 'submit_estimate');
+                if (!formData.has('action')) {
+                    formData.append('action', 'submit_estimate');
+                }
 
-                const phpResponse = await fetch('index.php', {
+                const phpResponse = await fetch('/index.php', {
                     method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
                     body: formData
                 });
-                const phpResult = await phpResponse.json();
+                const responseText = await phpResponse.text();
+                let phpResult;
+                try {
+                    phpResult = JSON.parse(responseText);
+                } catch (parseError) {
+                    throw new Error('Invalid server response: ' + responseText.slice(0, 180));
+                }
 
-                if (phpResult.success) {
+                if (phpResult.success && phpResult.email_sent !== false) {
                     showSuccessAndReset();
                     return;
                 } else {

@@ -19,7 +19,7 @@ $mailerPath = $rootPath . '/includes/resend-mailer.php';
 function diagnostic_safe_message($value): string
 {
     $message = (string) $value;
-    $message = preg_replace('/re_[A-Za-z0-9]+_[A-Za-z0-9]{10,}/', '[redacted-resend-key]', $message);
+    $message = preg_replace('/re_[A-Za-z0-9_-]{8,}/', '[redacted-resend-key]', $message);
     return substr($message, 0, 1200);
 }
 

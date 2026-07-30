@@ -1,6 +1,9 @@
 <?php
 session_start();
 
+$estimateFlash = $_SESSION['estimate_flash'] ?? null;
+unset($_SESSION['estimate_flash']);
+
 if (!function_exists('createSlug')) {
     function createSlug($text) {
         $text = preg_replace('~[^\pL\d]+~u', '-', $text);
@@ -81,9 +84,52 @@ if (!function_exists('portfolioProjectExcerpt')) {
     }
 }
 
+if (!function_exists('solarEstimateWantsJson')) {
+    function solarEstimateWantsJson(): bool {
+        $requestedWith = strtolower($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '');
+        $accept = strtolower($_SERVER['HTTP_ACCEPT'] ?? '');
+
+        return $requestedWith === 'xmlhttprequest' || strpos($accept, 'application/json') !== false;
+    }
+}
+
+if (!function_exists('solarEstimateRedirectTarget')) {
+    function solarEstimateRedirectTarget(): string {
+        $target = trim((string) ($_POST['redirect_to'] ?? '/'));
+        $allowedTargets = [
+            '/' => '/',
+            '/contact' => '/contact',
+            '/index.php' => '/',
+            'index.php' => '/',
+            'contact.php' => '/contact',
+        ];
+
+        return $allowedTargets[$target] ?? '/';
+    }
+}
+
+if (!function_exists('solarEstimateRespond')) {
+    function solarEstimateRespond(array $payload, int $statusCode = 200): void {
+        if (solarEstimateWantsJson()) {
+            http_response_code($statusCode);
+            header('Content-Type: application/json');
+            echo json_encode($payload);
+            exit;
+        }
+
+        $_SESSION['estimate_flash'] = [
+            'success' => (bool) ($payload['success'] ?? false),
+            'saved' => (bool) ($payload['saved'] ?? false),
+            'message' => (string) ($payload['message'] ?? ''),
+        ];
+
+        header('Location: ' . solarEstimateRedirectTarget(), true, 303);
+        exit;
+    }
+}
+
 // Handle Estimate Form Submission POST Request
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'submit_estimate') {
-    header('Content-Type: application/json');
     require_once __DIR__ . '/config/db_pdo.php';
 
     $resendMailerPath = __DIR__ . '/includes/resend-mailer.php';
@@ -261,36 +307,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             error_log('Estimate request email failed: ' . $emailResult['message']);
         }
         
-        echo json_encode([
-            'success' => true,
-            'message' => $emailResult['sent']
+        $emailSent = (bool) $emailResult['sent'];
+        solarEstimateRespond([
+            'success' => $emailSent,
+            'saved' => true,
+            'message' => $emailSent
                 ? 'Estimate request saved and notification sent!'
-                : 'Estimate request saved, but email notification failed.',
-            'email_sent' => (bool) $emailResult['sent'],
+                : 'Estimate request saved, but email notification failed: ' . ($emailResult['message'] ?: 'Please check Resend configuration.'),
+            'email_sent' => $emailSent,
             'email_provider' => $emailResult['provider'],
             'email_message' => $emailResult['message']
         ]);
-        exit;
     } catch (Exception $e) {
         if (!$estimateSaved) {
-            echo json_encode([
+            solarEstimateRespond([
                 'success' => false,
                 'message' => $e->getMessage()
-            ]);
-            exit;
+            ], 400);
         }
 
         $emailResult = ['sent' => false, 'provider' => 'resend', 'message' => $e->getMessage()];
         error_log('Estimate request email exception: ' . $e->getMessage());
 
-        echo json_encode([
-            'success' => true,
-            'message' => 'Estimate request saved, but email notification failed.',
+        solarEstimateRespond([
+            'success' => false,
+            'saved' => true,
+            'message' => 'Estimate request saved, but email notification failed: ' . ($emailResult['message'] ?: 'Please check Resend configuration.'),
             'email_sent' => false,
             'email_provider' => $emailResult['provider'],
             'email_message' => $emailResult['message']
-        ]);
-        exit;
+        ], 500);
     }
 }
 
@@ -3826,7 +3872,7 @@ $conn->close();
                 <div class="col-lg-7" data-aos="fade-left">
                     <div class="contact-form-wrapper">
                         <h3 class="mb-4">Send us a Message</h3>
-                        <form class="contact-form" id="contactForm" onsubmit="submitContactForm(event)">
+                        <form class="contact-form" id="contactForm" method="POST" action="/controllers/contact_submit.php" onsubmit="submitContactForm(event)">
                             <div class="row">
                                 <div class="col-md-6 mb-3">
                                     <input type="text" class="form-control" id="contact_name" name="name"
@@ -3985,7 +4031,9 @@ $conn->close();
                             <p class="text-muted small">We'll contact you within 24 hours.</p>
                         </div>
 
-                        <form id="inspectionForm" class="inspection-form">
+                        <form id="inspectionForm" class="inspection-form" method="POST" action="/index.php" onsubmit="return window.submitInspectionEstimate ? window.submitInspectionEstimate(event) : true;">
+                            <input type="hidden" name="action" value="submit_estimate">
+                            <input type="hidden" name="redirect_to" value="/">
                             <div class="row">
 
                                 <div class="col-md-6 mb-3">
@@ -4115,6 +4163,25 @@ $conn->close();
             </div>
         </div>
     </div>
+
+    <script>
+        window.SOLAR_ESTIMATE_FLASH = <?= json_encode($estimateFlash, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>;
+        document.addEventListener('DOMContentLoaded', function() {
+            const flash = window.SOLAR_ESTIMATE_FLASH;
+            if (!flash) return;
+
+            if (flash.success) {
+                const successModal = document.getElementById('inspectionSuccessModal');
+                if (successModal && window.bootstrap) {
+                    new bootstrap.Modal(successModal).show();
+                } else {
+                    alert(flash.message || 'Request submitted!');
+                }
+            } else if (flash.message) {
+                alert(flash.message);
+            }
+        });
+    </script>
 
     <!-- Delivery Fee Modal -->
     <!-- ═══════════════════════════════════════════════════════
@@ -6610,12 +6677,18 @@ $conn->close();
             const formData = new FormData(form);
             formData.set('privacy_consent', '1');
 
-            const response = await fetch('controllers/contact_submit.php', {
+            const response = await fetch('/controllers/contact_submit.php', {
                 method: 'POST',
                 body: formData
             });
 
-            const result = await response.json();
+            const responseText = await response.text();
+            let result;
+            try {
+                result = JSON.parse(responseText);
+            } catch (parseError) {
+                throw new Error('Invalid server response: ' + responseText.slice(0, 180));
+            }
 
             if (result.success) {
                 form.reset();
@@ -6681,18 +6754,30 @@ $conn->close();
 
             try {
                 const formData = new FormData(inspectionForm);
-                formData.append('action', 'submit_estimate');
+                if (!formData.has('action')) {
+                    formData.append('action', 'submit_estimate');
+                }
 
                 console.log('📧 Saving lead and sending email notification via PHP/Resend...');
 
-                const phpResponse = await fetch('index.php', {
+                const phpResponse = await fetch('/index.php', {
                     method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
                     body: formData
                 });
 
-                const phpResult = await phpResponse.json();
+                const responseText = await phpResponse.text();
+                let phpResult;
+                try {
+                    phpResult = JSON.parse(responseText);
+                } catch (parseError) {
+                    throw new Error('Invalid server response: ' + responseText.slice(0, 180));
+                }
 
-                if (phpResult.success) {
+                if (phpResult.success && phpResult.email_sent !== false) {
                     console.log('✅ Lead saved and email sent successfully');
                     showSuccessAndReset();
                 } else {

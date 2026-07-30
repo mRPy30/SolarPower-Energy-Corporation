@@ -11,6 +11,7 @@ if (!isset($_SESSION['user_id']) || empty($_SESSION['user_id'])) {
 }
 
 require_once '../../config/db_pdo.php';
+require_once '../../includes/resend-mailer.php';
 $db = getPDO();
 
 // Auto-create table if not exists just in case
@@ -34,9 +35,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     }
 
     try {
-        // Send email via Resend API
-        $resendApiKey = 're_Fh6X1rKo_JzjtWaAfUfRiEQs5HHxE4VsV'; 
-        
         $emailBody = "
         <html>
         <head>
@@ -63,27 +61,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             </div>
         </body>
         </html>";
-
-        $payload = [
-            'from' => 'SolarPower Energy Corporation <solar@solarpower.com.ph>',
-            'to' => [$email],
-            'subject' => $subject,
-            'html' => $emailBody
-        ];
-
-        $ch = curl_init('https://api.resend.com/emails');
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, [
-            'Authorization: Bearer ' . $resendApiKey,
-            'Content-Type: application/json'
-        ]);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
-        $res = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
-
-        $resendSuccess = ($httpCode === 200 || $httpCode === 201);
+        $resendResult = solar_send_resend_email($email, $subject, $emailBody);
+        $resendSuccess = !empty($resendResult['success']);
         $mailSent = false;
 
         if ($resendSuccess) {
@@ -120,7 +99,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         } else {
             echo json_encode([
                 'success' => false,
-                'message' => "Failed to send email. Resend API returned status {$httpCode} and PHP mail() fallback failed. Please check your Resend key/domain configuration."
+                'message' => 'Failed to send email. ' . ($resendResult['message'] ?? 'Please check your Resend key/domain configuration.') . ' PHP mail() fallback also failed.'
             ]);
         }
     } catch (Exception $e) {
