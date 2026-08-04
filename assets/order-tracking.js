@@ -1,5 +1,19 @@
 (function () {
-    const endpoint = (window.SOLAR_APP_BASE || '') + 'fetch-order-status.php';
+    function joinUrl(base, path) {
+        const cleanBase = String(base || '').replace(/\/+$/, '');
+        const cleanPath = String(path || '').replace(/^\/+/, '');
+        return (cleanBase ? cleanBase + '/' : '/') + cleanPath;
+    }
+
+    function resolveTrackingEndpoint() {
+        if (window.SOLAR_ORDER_TRACKING_ENDPOINT) {
+            return window.SOLAR_ORDER_TRACKING_ENDPOINT;
+        }
+
+        return joinUrl(window.SOLAR_APP_BASE || '', 'fetch-order-status.php');
+    }
+
+    const endpoint = resolveTrackingEndpoint();
     const milestonesFallback = [
         {
             stage: 1,

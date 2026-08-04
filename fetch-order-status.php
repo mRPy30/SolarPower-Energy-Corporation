@@ -90,6 +90,83 @@ function tracking_format_timestamp($value): string
     return date('M j, Y g:i A', $time);
 }
 
+function tracking_identifier(string $name): string
+{
+    return '`' . str_replace('`', '``', $name) . '`';
+}
+
+function tracking_table_exists(mysqli $conn, string $table): bool
+{
+    $stmt = $conn->prepare('SHOW TABLES LIKE ?');
+    if (!$stmt) {
+        return false;
+    }
+
+    $stmt->bind_param('s', $table);
+    $stmt->execute();
+    $stmt->store_result();
+    $exists = $stmt->num_rows > 0;
+    $stmt->close();
+
+    return $exists;
+}
+
+function tracking_column_exists(mysqli $conn, string $table, string $column): bool
+{
+    $sql = 'SHOW COLUMNS FROM ' . tracking_identifier($table) . ' LIKE ?';
+    $stmt = $conn->prepare($sql);
+    if (!$stmt) {
+        return false;
+    }
+
+    $stmt->bind_param('s', $column);
+    $stmt->execute();
+    $stmt->store_result();
+    $exists = $stmt->num_rows > 0;
+    $stmt->close();
+
+    return $exists;
+}
+
+function tracking_add_column_if_missing(mysqli $conn, string $table, string $column, string $definition): void
+{
+    if (tracking_column_exists($conn, $table, $column)) {
+        return;
+    }
+
+    @$conn->query(
+        'ALTER TABLE ' . tracking_identifier($table) .
+        ' ADD COLUMN ' . tracking_identifier($column) . ' ' . $definition
+    );
+}
+
+function tracking_ensure_schema(mysqli $conn): void
+{
+    if (!tracking_table_exists($conn, 'orders')) {
+        return;
+    }
+
+    tracking_add_column_if_missing($conn, 'orders', 'tracking_number', 'VARCHAR(120) DEFAULT NULL');
+    tracking_add_column_if_missing($conn, 'orders', 'current_location', 'VARCHAR(255) DEFAULT NULL');
+    tracking_add_column_if_missing($conn, 'orders', 'estimated_delivery', 'DATE DEFAULT NULL');
+    tracking_add_column_if_missing($conn, 'orders', 'delivered_at', 'TIMESTAMP NULL DEFAULT NULL');
+
+    @$conn->query(
+        "CREATE TABLE IF NOT EXISTS order_tracking_history (
+            id INT(11) NOT NULL AUTO_INCREMENT,
+            order_id INT(11) NOT NULL,
+            status VARCHAR(50) NOT NULL,
+            location VARCHAR(255) DEFAULT NULL,
+            description TEXT DEFAULT NULL,
+            updated_by_staff_id INT(11) DEFAULT NULL,
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (id),
+            KEY order_tracking_history_order_id_idx (order_id),
+            KEY order_tracking_history_created_at_idx (created_at)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
+    );
+}
+
 $input = json_decode(file_get_contents('php://input'), true);
 if (!is_array($input)) {
     $input = $_POST ?: $_GET ?: [];
@@ -112,14 +189,16 @@ if (!isset($conn) || !($conn instanceof mysqli) || $conn->connect_errno) {
     ], 500);
 }
 
+tracking_ensure_schema($conn);
+
 $stmt = $conn->prepare(
-    'SELECT id, order_reference, customer_name, customer_email, customer_phone,
+    "SELECT id, order_reference, customer_name, customer_email, customer_phone,
             total_amount, payment_method, payment_status, order_status,
             tracking_number, current_location, estimated_delivery, delivered_at, created_at
      FROM orders
      WHERE UPPER(order_reference) = ?
-        OR UPPER(tracking_number) = ?
-     LIMIT 1'
+        OR UPPER(COALESCE(tracking_number, '')) = ?
+     LIMIT 1"
 );
 
 if (!$stmt) {
@@ -132,7 +211,43 @@ if (!$stmt) {
 
 $stmt->bind_param('ss', $reference, $reference);
 $stmt->execute();
-$order = $stmt->get_result()->fetch_assoc();
+
+$stmt->bind_result(
+    $orderId,
+    $orderReference,
+    $customerName,
+    $customerEmail,
+    $customerPhone,
+    $totalAmount,
+    $paymentMethod,
+    $paymentStatus,
+    $orderStatus,
+    $trackingNumber,
+    $currentLocation,
+    $estimatedDelivery,
+    $deliveredAt,
+    $createdAt
+);
+
+$order = null;
+if ($stmt->fetch()) {
+    $order = [
+        'id' => $orderId,
+        'order_reference' => $orderReference,
+        'customer_name' => $customerName,
+        'customer_email' => $customerEmail,
+        'customer_phone' => $customerPhone,
+        'total_amount' => $totalAmount,
+        'payment_method' => $paymentMethod,
+        'payment_status' => $paymentStatus,
+        'order_status' => $orderStatus,
+        'tracking_number' => $trackingNumber,
+        'current_location' => $currentLocation,
+        'estimated_delivery' => $estimatedDelivery,
+        'delivered_at' => $deliveredAt,
+        'created_at' => $createdAt,
+    ];
+}
 $stmt->close();
 
 if (!$order) {
@@ -144,8 +259,7 @@ if (!$order) {
 }
 
 $history = [];
-$historyResult = $conn->query("SHOW TABLES LIKE 'order_tracking_history'");
-if ($historyResult && $historyResult->num_rows > 0) {
+if (tracking_table_exists($conn, 'order_tracking_history')) {
     $historyStmt = $conn->prepare(
         'SELECT status, location, description, created_at
          FROM order_tracking_history
@@ -157,10 +271,17 @@ if ($historyResult && $historyResult->num_rows > 0) {
         $orderId = (int) $order['id'];
         $historyStmt->bind_param('i', $orderId);
         $historyStmt->execute();
-        $historyRows = $historyStmt->get_result();
-        while ($row = $historyRows->fetch_assoc()) {
-            $history[] = $row;
+        $historyStmt->bind_result($historyStatus, $historyLocation, $historyDescription, $historyCreatedAt);
+
+        while ($historyStmt->fetch()) {
+            $history[] = [
+                'status' => $historyStatus,
+                'location' => $historyLocation,
+                'description' => $historyDescription,
+                'created_at' => $historyCreatedAt,
+            ];
         }
+
         $historyStmt->close();
     }
 }
@@ -175,11 +296,28 @@ $stageTimestamps = [
     4 => $order['delivered_at'] ?? '',
 ];
 
+$historyMaxStage = 0;
+$latestHistoryLocation = '';
+
 foreach ($history as $row) {
     $historyStage = tracking_stage_from_history_status($row['status'] ?? '');
+    $historyMaxStage = max($historyMaxStage, $historyStage);
+
     if ($historyStage > 0 && empty($stageTimestamps[$historyStage])) {
         $stageTimestamps[$historyStage] = $row['created_at'] ?? '';
     }
+
+    if (!empty($row['location'])) {
+        $latestHistoryLocation = (string) $row['location'];
+    }
+}
+
+if ($historyMaxStage > $stage) {
+    $stage = $historyMaxStage;
+}
+
+if (empty($order['current_location']) && $latestHistoryLocation !== '') {
+    $order['current_location'] = $latestHistoryLocation;
 }
 
 if ($stage >= 4 && empty($stageTimestamps[4])) {

@@ -81,7 +81,68 @@ $lastName = $_SESSION['lastName'] ?? '';
 $fullName = trim($firstName . ' ' . $lastName);
 $initials = strtoupper(substr($firstName, 0, 1) . substr($lastName, 0, 1));
 
+if (!function_exists('staff_dashboard_wants_json')) {
+    function staff_dashboard_wants_json(): bool
+    {
+        $requestedWith = strtolower($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '');
+        $accept = strtolower($_SERVER['HTTP_ACCEPT'] ?? '');
 
+        return $requestedWith === 'xmlhttprequest' || strpos($accept, 'application/json') !== false;
+    }
+}
+
+if (!function_exists('staff_set_add_product_result')) {
+    function staff_set_add_product_result(string $message, string $type = 'error'): void
+    {
+        $_SESSION['add_product_msg'] = $message;
+        $_SESSION['add_product_msg_type'] = $type === 'success' ? 'success' : 'error';
+    }
+}
+
+if (!function_exists('staff_finish_add_product_request')) {
+    function staff_finish_add_product_request(): void
+    {
+        $type = $_SESSION['add_product_msg_type'] ?? 'error';
+        $message = $_SESSION['add_product_msg'] ?? 'Unable to save product. Please try again.';
+
+        if (staff_dashboard_wants_json()) {
+            unset($_SESSION['add_product_msg'], $_SESSION['add_product_msg_type']);
+
+            while (ob_get_level() > 0) {
+                ob_end_clean();
+            }
+
+            header('Content-Type: application/json');
+            echo json_encode([
+                'success' => $type === 'success',
+                'message' => $message,
+            ]);
+            exit;
+        }
+
+        header("Location: /dashboard", true, 303);
+        exit;
+    }
+}
+
+if (!function_exists('staff_ensure_column')) {
+    function staff_ensure_column(mysqli $conn, string $table, string $column, string $alterSql): void
+    {
+        $safeTable = str_replace('`', '``', $table);
+        $safeColumn = $conn->real_escape_string($column);
+        $check = $conn->query("SHOW COLUMNS FROM `{$safeTable}` LIKE '{$safeColumn}'");
+
+        if (!$check) {
+            throw new Exception("Unable to inspect {$table}.{$column}: " . $conn->error);
+        }
+
+        if ($check && $check->num_rows === 0) {
+            if (!$conn->query($alterSql)) {
+                throw new Exception("Unable to update {$table}.{$column}: " . $conn->error);
+            }
+        }
+    }
+}
 
 function get_dashboard_analytics($conn)
 {
@@ -1470,13 +1531,37 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
 // ── PRG: Handle add_product POST before any HTML output ──
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['action'] === 'add_product') {
     $conn_post = mysqli_connect($servername, $username, $password, $dbname);
-    if ($conn_post->connect_error) {
-        $_SESSION['add_product_msg'] = 'Connection failed: ' . $conn_post->connect_error;
-        $_SESSION['add_product_msg_type'] = 'error';
+    if (!$conn_post || $conn_post->connect_error) {
+        staff_set_add_product_result('Connection failed: ' . mysqli_connect_error(), 'error');
     } else {
-        $variantColumnCheck = $conn_post->query("SHOW COLUMNS FROM product_brand_variants LIKE 'variant_name'");
-        if ($variantColumnCheck && $variantColumnCheck->num_rows === 0) {
-            $conn_post->query("ALTER TABLE product_brand_variants ADD COLUMN variant_name VARCHAR(255) NOT NULL DEFAULT '' AFTER brand_id");
+        try {
+            $conn_post->query("CREATE TABLE IF NOT EXISTS `product_images` (
+                `id` INT AUTO_INCREMENT PRIMARY KEY,
+                `product_id` INT NOT NULL,
+                `image_path` VARCHAR(255) NOT NULL,
+                `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                INDEX (`product_id`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+
+            $conn_post->query("CREATE TABLE IF NOT EXISTS `product_brand_variants` (
+                `id` INT AUTO_INCREMENT PRIMARY KEY,
+                `product_id` INT NULL,
+                `brand_id` INT NULL,
+                `variant_name` VARCHAR(255) NOT NULL DEFAULT '',
+                `price` DECIMAL(10,2) NULL,
+                `variant_image` VARCHAR(255) NULL,
+                INDEX (`product_id`),
+                INDEX (`brand_id`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+
+            staff_ensure_column($conn_post, 'product', 'packageType', "ALTER TABLE `product` ADD COLUMN `packageType` ENUM('On-Grid','Hybrid','Off-Grid') DEFAULT NULL AFTER `category`");
+            staff_ensure_column($conn_post, 'product', 'moq', "ALTER TABLE `product` ADD COLUMN `moq` INT NOT NULL DEFAULT 1 COMMENT 'Minimum Order Quantity. Only enforced for Solar Panel and Mounting & Accessories categories.' AFTER `postedByStaffId`");
+            staff_ensure_column($conn_post, 'product', 'status', "ALTER TABLE `product` ADD COLUMN `status` ENUM('Active','Hidden') NOT NULL DEFAULT 'Active' AFTER `moq`");
+            staff_ensure_column($conn_post, 'product_brand_variants', 'variant_name', "ALTER TABLE `product_brand_variants` ADD COLUMN `variant_name` VARCHAR(255) NOT NULL DEFAULT '' AFTER `brand_id`");
+        } catch (Exception $e) {
+            staff_set_add_product_result('Database setup failed: ' . $e->getMessage(), 'error');
+            $conn_post->close();
+            staff_finish_add_product_request();
         }
 
         $category = $conn_post->real_escape_string($_POST['category'] ?? '');
@@ -1485,7 +1570,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
 
         $packageType = $conn_post->real_escape_string($_POST['package-type'] ?? '');
         if (empty($packageType)) $packageType = NULL;
-        $status = 'Active';
+        $postedStatus = $_POST['status'] ?? 'Active';
+        $status = in_array($postedStatus, ['Active', 'Hidden'], true) ? $postedStatus : 'Active';
         
         $productName = $conn_post->real_escape_string($_POST['product-name'] ?? '');
         $warranty = $conn_post->real_escape_string($_POST['warranty'] ?? '');
@@ -1524,14 +1610,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
         }
 
         if (empty($category) || empty($productName)) {
-            $_SESSION['add_product_msg'] = 'Please fill all required fields correctly.';
-            $_SESSION['add_product_msg_type'] = 'error';
+            staff_set_add_product_result('Please fill all required fields correctly.', 'error');
         } elseif ($isSingleBrandSeries && ($singleSeriesBrandId <= 0 || empty($validSingleVariants))) {
-            $_SESSION['add_product_msg'] = 'Please select one brand and add at least one panel/model row with a valid price.';
-            $_SESSION['add_product_msg_type'] = 'error';
+            staff_set_add_product_result('Please select one brand and add at least one panel/model row with a valid price.', 'error');
         } elseif ($isVariantCategory && !$isSingleBrandSeries && empty($brand_ids)) {
-            $_SESSION['add_product_msg'] = 'Please select at least one supplier brand for this category.';
-            $_SESSION['add_product_msg_type'] = 'error';
+            staff_set_add_product_result('Please select at least one supplier brand for this category.', 'error');
         } else {
             // First we need to determine the default Brand Name and Price for the product table fallbacks
             $first_brand_name = 'Various';
@@ -1695,20 +1778,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
 
                 // Commit transaction
                 $conn_post->commit();
-                $_SESSION['add_product_msg'] = $isSingleBrandSeries
+                staff_set_add_product_result($isSingleBrandSeries
                     ? "Product '{$productName}' series posted and auto-approved successfully!"
-                    : "Product '{$productName}' with brand variants added and auto-approved successfully!";
-                $_SESSION['add_product_msg_type'] = 'success';
+                    : "Product '{$productName}' with brand variants added and auto-approved successfully!", 'success');
             } catch (Exception $e) {
                 $conn_post->rollback();
-                $_SESSION['add_product_msg'] = 'Transaction failed: ' . $e->getMessage();
-                $_SESSION['add_product_msg_type'] = 'error';
+                staff_set_add_product_result('Transaction failed: ' . $e->getMessage(), 'error');
             }
         }
         $conn_post->close();
     }
-    header("Location: dashboard.php");
-    exit;
+    staff_finish_add_product_request();
 }
 ?>
 
@@ -3392,7 +3472,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                                 </div>
 
                                 <div class="product-actions-btn-group">
-                                    <a href="edit-product.php?id=<?php echo $product['id']; ?>" class="btn-card-edit" title="Edit Product">
+                                    <a href="<?php echo htmlspecialchars($base_dir . 'edit-product.php?id=' . urlencode((string) $product['id'])); ?>" class="btn-card-edit" title="Edit Product">
                                         <i class="fas fa-edit"></i>
                                     </a>
                                 </div>
@@ -3494,7 +3574,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                     <h2>Confirm Deletion</h2>
                     <p>Are you sure you want to delete this product?</p>
                     <p class="warning-text">This action cannot be undone.</p>
-                    <form id="deleteProductForm" method="POST" action="delete_product.php">
+                    <form id="deleteProductForm" method="POST" action="/controllers/delete_product.php">
                         <input type="hidden" name="product_id" id="deleteProductId">
                         <div class="modal-actions">
                             <button type="button" onclick="closeDeleteModal()" class="btn-cancel">Cancel</button>
@@ -3510,7 +3590,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                     <span class="close" onclick="closeBulkDeleteModal()">&times;</span>
                     <h2>Confirm Bulk Archived</h2>
                     <p>Are you sure you want to archive <strong id="bulkDeleteCount">0</strong> selected product(s)?</p>
-                    <form id="bulkDeleteForm" method="POST" action="bulk_delete_products.php">
+                    <form id="bulkDeleteForm" method="POST" action="<?php echo htmlspecialchars($base_dir . 'bulk_delete_products.php'); ?>">
                         <input type="hidden" name="product_ids" id="bulkDeleteProductIds">
                         <div class="modal-actions">
                             <button type="button" onclick="closeBulkDeleteModal()" class="btn-cancel">Cancel</button>
@@ -9156,17 +9236,46 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 const formData = new FormData(form);
 
                 try {
-                    // Submit the form via AJAX
+                    // Submit the form via AJAX and ask PHP for a JSON result.
                     const response = await fetch(window.location.href, {
                         method: 'POST',
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
                         body: formData
                     });
 
-                    const html = await response.text();
+                    const contentType = response.headers.get('content-type') || '';
+                    const responseText = await response.text();
+
+                    if (contentType.includes('application/json')) {
+                        let result;
+                        try {
+                            result = JSON.parse(responseText);
+                        } catch (parseError) {
+                            throw new Error('Invalid JSON response: ' + responseText.slice(0, 180));
+                        }
+
+                        if (result.success) {
+                            this.showSuccessNotification(result.message || 'Product posted successfully!');
+                            form.reset();
+                            ProductPreview.reset();
+                            await this.reloadProductList();
+
+                            setTimeout(() => {
+                                showPage('product', 'Product');
+                            }, 1500);
+                        } else {
+                            this.showErrorNotification(result.message || 'Unable to save product.');
+                        }
+
+                        return;
+                    }
 
                     // Parse the response to check for success
                     const parser = new DOMParser();
-                    const doc = parser.parseFromString(html, 'text/html');
+                    const doc = parser.parseFromString(responseText, 'text/html');
                     // Class was renamed to .add-product-alert to avoid Bootstrap .alert collision
                     const successAlert = doc.querySelector('.add-product-alert.success');
                     const errorAlert   = doc.querySelector('.add-product-alert.error');
@@ -9285,7 +9394,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                                      </div>
                                  </div>
                                  <div class="product-actions-btn-group">
-                                     <a href="edit-product.php?id=${product.id}" class="btn-card-edit" title="Edit Product">
+                                     <a href="${STAFF_BASE_URL}edit-product.php?id=${encodeURIComponent(product.id)}" class="btn-card-edit" title="Edit Product">
                                          <i class="fas fa-edit"></i>
                                      </a>
                                  </div>
@@ -9452,9 +9561,24 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 const customLocation = document.getElementById('trackingCustomLocation');
                 const description = document.getElementById('trackingDescription');
 
-                if (statusSelect) statusSelect.addEventListener('change', () => this.updatePreview());
-                if (locationSelect) locationSelect.addEventListener('change', () => this.updatePreview());
-                if (customLocation) customLocation.addEventListener('input', () => this.updatePreview());
+                if (statusSelect) {
+                    statusSelect.addEventListener('change', () => {
+                        this.syncTrackingStatusLocation('status');
+                        this.updatePreview();
+                    });
+                }
+                if (locationSelect) {
+                    locationSelect.addEventListener('change', () => {
+                        this.syncTrackingStatusLocation('location');
+                        this.updatePreview();
+                    });
+                }
+                if (customLocation) {
+                    customLocation.addEventListener('input', () => {
+                        this.syncTrackingStatusLocation('custom');
+                        this.updatePreview();
+                    });
+                }
                 if (description) description.addEventListener('input', () => this.updatePreview());
             },
 
@@ -9465,7 +9589,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 if (loading) loading.style.display = 'block';
 
                 try {
-                    const response = await fetch('../../controllers/get_tracking.php');
+                    const trackingListEndpoint = new URL('../../controllers/get_tracking.php', STAFF_BASE_URL).href;
+                    const response = await fetch(trackingListEndpoint);
                     const data = await response.json();
 
                     if (data.success) {
@@ -9497,8 +9622,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
             },
 
             createTrackingCard(order) {
-                const statusClass = order.order_status.replace(/_/g, '-');
-                const statusText = this.getStatusText(order.order_status);
+                const displayStatus = this.getEffectiveTrackingStatus(order);
+                const statusClass = displayStatus.replace(/_/g, '-');
+                const statusText = this.getStatusText(displayStatus);
                 const date = new Date(order.created_at).toLocaleDateString('en-US', {
                     month: 'short',
                     day: 'numeric',
@@ -9506,7 +9632,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 });
 
                 return `
-            <div class="tracking-card" style="border-left-color: ${this.getStatusColor(order.order_status)}">
+            <div class="tracking-card" style="border-left-color: ${this.getStatusColor(displayStatus)}">
                 <div class="tracking-card-header">
                     <div class="tracking-card-info">
                         <h3>${this.escapeHtml(order.order_reference)}</h3>
@@ -9565,7 +9691,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
 
             createTimeline(order) {
                 const statuses = ['pending', 'confirmed', 'preparing', 'ready_to_ship', 'in_transit', 'out_for_delivery', 'delivered'];
-                const currentIndex = statuses.indexOf(order.order_status);
+                const currentIndex = statuses.indexOf(this.getEffectiveTrackingStatus(order));
 
                 return statuses.slice(0, currentIndex + 1).map((status, index) => {
                     const isActive = index === currentIndex;
@@ -9591,6 +9717,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 </div>
             `;
                 }).join('');
+            },
+
+            getEffectiveTrackingStatus(order) {
+                const rawStatus = String(order?.order_status || '').toLowerCase();
+                const rawLocation = String(order?.current_location || '').trim().toLowerCase();
+
+                if (rawStatus !== 'cancelled' && (rawStatus === 'delivered' || rawLocation === 'delivered' || order?.delivered_at)) {
+                    return 'delivered';
+                }
+
+                return rawStatus || 'confirmed';
             },
 
             getStatusText(status) {
@@ -9623,14 +9760,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
 
             updateStats() {
                 const total = this.trackingData.length;
-                const inTransit = this.trackingData.filter(o => o.order_status === 'in_transit').length;
-                const outForDelivery = this.trackingData.filter(o => o.order_status === 'out_for_delivery').length;
+                const inTransit = this.trackingData.filter(o => this.getEffectiveTrackingStatus(o) === 'in_transit').length;
+                const outForDelivery = this.trackingData.filter(o => this.getEffectiveTrackingStatus(o) === 'out_for_delivery').length;
 
                 const today = new Date().toDateString();
                 const deliveredToday = this.trackingData.filter(o => {
-                    return o.order_status === 'delivered' &&
-                        o.delivered_at &&
-                        new Date(o.delivered_at).toDateString() === today;
+                    const deliveredDate = o.delivered_at || o.updated_at || o.created_at;
+                    return this.getEffectiveTrackingStatus(o) === 'delivered' &&
+                        deliveredDate &&
+                        new Date(deliveredDate).toDateString() === today;
                 }).length;
 
                 document.getElementById('trackingTotalOrders').textContent = total;
@@ -9653,7 +9791,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 const statusFilter = document.getElementById('trackingStatusFilter').value;
 
                 if (statusFilter) {
-                    this.filteredData = this.filteredData.filter(o => o.order_status === statusFilter);
+                    this.filteredData = this.filteredData.filter(o => this.getEffectiveTrackingStatus(o) === statusFilter);
                 }
 
                 this.renderTracking();
@@ -9700,7 +9838,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 document.getElementById('trackingOrderId').value = order.id;
                 document.getElementById('trackingOrderRef').value = order.order_reference;
                 document.getElementById('trackingCustomerName').value = order.customer_name;
-                let orderStatus = order.order_status;
+                let orderStatus = this.getEffectiveTrackingStatus(order);
                 if (!orderStatus || orderStatus === 'pending' || orderStatus === 'processing') {
                     orderStatus = 'confirmed';
                 }
@@ -9734,6 +9872,34 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 document.getElementById('updateTrackingForm').reset();
             },
 
+            syncTrackingStatusLocation(source) {
+                const statusSelect = document.getElementById('trackingOrderStatus');
+                const locationSelect = document.getElementById('trackingCurrentLocation');
+                const customLocation = document.getElementById('trackingCustomLocation');
+
+                if (!statusSelect || !locationSelect || !customLocation) {
+                    return;
+                }
+
+                const selectedLocation = locationSelect.value;
+                const typedLocation = customLocation.value.trim().toLowerCase();
+
+                if ((selectedLocation === 'Delivered' || typedLocation === 'delivered') && statusSelect.value !== 'cancelled') {
+                    statusSelect.value = 'delivered';
+                    return;
+                }
+
+                const matchingLocation = {
+                    in_transit: 'In Transit',
+                    out_for_delivery: 'Out for Delivery',
+                    delivered: 'Delivered'
+                }[statusSelect.value];
+
+                if (source === 'status' && matchingLocation && customLocation.value.trim() === '') {
+                    locationSelect.value = matchingLocation;
+                }
+            },
+
             updatePreview() {
                 const status = document.getElementById('trackingOrderStatus').value;
                 const location = document.getElementById('trackingCustomLocation').value ||
@@ -9759,6 +9925,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                     return;
                 }
                 this.isUpdatingTracking = true;
+                this.syncTrackingStatusLocation('submit');
 
                 const formData = {
                     order_id: document.getElementById('trackingOrderId').value,
@@ -9778,7 +9945,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 submitBtn.disabled = true;
 
                 try {
-                    const response = await fetch('../../controllers/staff_update_tracking.php', {
+                    const trackingEndpoint = new URL('../../controllers/staff_update_tracking.php', STAFF_BASE_URL).href;
+                    const response = await fetch(trackingEndpoint, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(formData)
@@ -9801,7 +9969,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                         if (result.email_sent) {
                             successMessage += `\nCustomer email sent via ${result.email_provider || 'email'}.`;
                         } else if (result.email_message) {
-                            successMessage += `\nTracking was saved, but email was not sent: ${result.email_message}`;
+                            successMessage += `\nEmail notification was not sent: ${result.email_message}`;
                         }
 
                         alert(successMessage);
@@ -10693,6 +10861,19 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 CalculatorSettingsModule.init();
             }
 
+            const initialPageFromHash = (window.location.hash || '').replace('#', '');
+            const initialPageTitles = {
+                product: 'Product',
+                archive: 'Archive',
+                dashboard: 'Dashboard',
+                tracking: 'Tracking',
+                quotation: 'Quotation'
+            };
+
+            if (initialPageTitles[initialPageFromHash]) {
+                setTimeout(() => showPage(initialPageFromHash, initialPageTitles[initialPageFromHash]), 0);
+            }
+
             const filterButtons = document.querySelectorAll('.filter-btn');
             const productCountElement = document.getElementById('displayedProductCount');
             const searchInput = document.getElementById('productSearchInput');
@@ -10840,13 +11021,32 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
         let reviewImages = [];
         let currentReviewImageIndex = 0;
 
+        async function fetchStaffProductDetails(productId) {
+            const response = await fetch(`${STAFF_BASE_URL}get.product.php?id=${encodeURIComponent(productId)}`, {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+            const responseText = await response.text();
+
+            let data;
+            try {
+                data = JSON.parse(responseText);
+            } catch (parseError) {
+                throw new Error('Invalid product details response: ' + responseText.slice(0, 180));
+            }
+
+            if (!response.ok || !data.success) {
+                throw new Error(data.message || data.error || `Unable to load product details. HTTP ${response.status}`);
+            }
+
+            return data.product;
+        }
+
         async function openProductReviewModal(productId) {
             try {
-                const response = await fetch(`${STAFF_BASE_URL}get.product.php?id=${productId}`);
-                const data = await response.json();
-
-                if (data.success) {
-                    const product = data.product;
+                const product = await fetchStaffProductDetails(productId);
 
                     // Set texts
                     document.getElementById('reviewSku').textContent = product.id;
@@ -10885,12 +11085,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
 
                     // Show modal
                     document.getElementById('productReviewModal').style.display = 'block';
-                } else {
-                    alert('Failed to load product details.');
-                }
             } catch (error) {
                 console.error('Error fetching product details:', error);
-                alert('An error occurred while loading product details.');
+                alert('Failed to load product details: ' + error.message);
             }
         }
 
@@ -10972,6 +11169,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
         let imagesToDelete = [];
 
         async function openEditModal(productId) {
+            if (!document.getElementById('editProductModal')) {
+                window.location.href = `${STAFF_BASE_URL}edit-product.php?id=${encodeURIComponent(productId)}`;
+                return;
+            }
+
             imagesToDelete = []; // Reset deletion array
 
             try {
@@ -10980,11 +11182,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                     await fetchAndPopulateCategories();
                 }
 
-                const response = await fetch(`${STAFF_BASE_URL}get.product.php?id=${productId}`);
-                const data = await response.json();
-
-                if (data.success) {
-                    const product = data.product;
+                const product = await fetchStaffProductDetails(productId);
 
                     // Populate form fields
                     document.getElementById('editProductId').value = product.id;
@@ -11063,12 +11261,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
 
                     // Show modal
                     document.getElementById('editProductModal').style.display = 'block';
-                } else {
-                    alert('Error loading product details: ' + data.message);
-                }
             } catch (error) {
                 console.error('Error:', error);
-                alert('Failed to load product details. Please try again.');
+                alert('Failed to load product details: ' + error.message);
             }
         }
 
@@ -11608,7 +11803,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 const selectedIds = Array.from(selectedCheckboxes).map(cb => cb.dataset.productId);
 
                 if (selectedIds.length === 1) {
-                    openEditModal(selectedIds[0]);
+                    window.location.href = `${STAFF_BASE_URL}edit-product.php?id=${encodeURIComponent(selectedIds[0])}`;
                 } else {
                     alert(`Bulk editing ${selectedIds.length} products at once is not supported yet. Please select only one product to edit.`);
                 }

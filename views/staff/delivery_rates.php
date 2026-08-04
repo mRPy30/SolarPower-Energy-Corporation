@@ -7,6 +7,10 @@ if (!isset($_SESSION['user_id']) || empty($_SESSION['user_id'])) {
     header('Location: /login');
     exit;
 }
+
+$scriptName = str_replace('\\', '/', (string) ($_SERVER['SCRIPT_NAME'] ?? ''));
+$sitePrefix = stripos($scriptName, '/SolarPower-Energy-Corporation/') !== false ? '/SolarPower-Energy-Corporation' : '';
+$deliveryRatesApiUrl = $sitePrefix . '/views/staff/delivery-rates-api.php';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -207,6 +211,64 @@ if (!isset($_SESSION['user_id']) || empty($_SESSION['user_id'])) {
             color: var(--danger);
         }
 
+        .rate-modal-backdrop {
+            position: fixed;
+            inset: 0;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background: rgba(8, 18, 13, 0.58);
+            z-index: 1000;
+        }
+
+        .rate-modal-backdrop.show {
+            display: flex;
+        }
+
+        .rate-modal-card {
+            width: min(520px, 100%);
+            background: #fff;
+            border-radius: 14px;
+            border: 1px solid rgba(13, 92, 58, 0.18);
+            box-shadow: 0 24px 70px rgba(8, 18, 13, 0.26);
+            overflow: hidden;
+        }
+
+        .rate-modal-head {
+            padding: 17px 20px;
+            border-bottom: 1px solid var(--line);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .rate-modal-head h3 {
+            margin: 0;
+            font-size: 18px;
+        }
+
+        .rate-modal-close {
+            width: 34px;
+            min-height: 34px;
+            padding: 0;
+            border-radius: 999px;
+            background: #f3f6f4;
+            color: var(--muted);
+        }
+
+        .rate-modal-body {
+            padding: 20px;
+        }
+
+        .rate-modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            padding-top: 6px;
+        }
+
         @media (max-width: 860px) {
             .rates-grid {
                 grid-template-columns: 1fr;
@@ -286,12 +348,75 @@ if (!isset($_SESSION['user_id']) || empty($_SESSION['user_id'])) {
         </div>
     </main>
 
+    <div class="rate-modal-backdrop" id="editRateModal" aria-hidden="true">
+        <section class="rate-modal-card" role="dialog" aria-modal="true" aria-labelledby="editRateModalTitle">
+            <div class="rate-modal-head">
+                <h3 id="editRateModalTitle"><i class="fas fa-pen"></i> Edit Delivery Rate</h3>
+                <button class="rate-modal-close" type="button" id="closeEditRateModal" aria-label="Close edit delivery rate modal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="rate-modal-body">
+                <form id="editRateForm">
+                    <input type="hidden" id="edit_rate_id" name="id">
+                    <input type="hidden" id="edit_origin_address" name="origin_address" value="Madrigal Business Park, Alabang, Muntinlupa">
+
+                    <div class="field">
+                        <label for="edit_rate_type">Rate type</label>
+                        <select id="edit_rate_type" name="rate_type" required>
+                            <option value="km_range">Metro Manila km range</option>
+                            <option value="province">Luzon province</option>
+                        </select>
+                    </div>
+
+                    <div class="field">
+                        <label for="edit_location_name">Location name</label>
+                        <input id="edit_location_name" name="location_name" maxlength="100" required>
+                    </div>
+
+                    <div class="field">
+                        <label for="edit_price">Delivery fee</label>
+                        <input id="edit_price" name="price" type="number" min="0" step="0.01" required>
+                    </div>
+
+                    <div class="rate-modal-actions">
+                        <button class="btn-secondary" type="button" id="cancelEditRate">
+                            <i class="fas fa-times"></i> Cancel
+                        </button>
+                        <button class="btn-primary" type="submit">
+                            <i class="fas fa-save"></i> Save Changes
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </section>
+    </div>
+
     <script>
-        const apiUrl = 'delivery-rates-api.php';
+        const apiUrl = <?php echo json_encode($deliveryRatesApiUrl); ?>;
         const form = document.getElementById('rateForm');
+        const editForm = document.getElementById('editRateForm');
+        const editRateModal = document.getElementById('editRateModal');
         const table = document.getElementById('ratesTable');
         const notice = document.getElementById('rateNotice');
         let rates = [];
+
+        async function readApiJson(response) {
+            const text = await response.text();
+            let data = {};
+
+            try {
+                data = text ? JSON.parse(text) : {};
+            } catch (error) {
+                throw new Error('Delivery Rates API returned an invalid response. Please make sure views/staff/delivery-rates-api.php is uploaded.');
+            }
+
+            if (!response.ok || !data.success) {
+                throw new Error(data.message || `Delivery Rates API failed with HTTP ${response.status}.`);
+            }
+
+            return data;
+        }
 
         function money(value) {
             return 'PHP ' + (Number(value) || 0).toLocaleString('en-PH', {
@@ -313,6 +438,34 @@ if (!isset($_SESSION['user_id']) || empty($_SESSION['user_id'])) {
             form.reset();
             document.getElementById('rate_id').value = '';
             document.getElementById('origin_address').value = 'Madrigal Business Park, Alabang, Muntinlupa';
+        }
+
+        function openEditRateModal(rate) {
+            document.getElementById('edit_rate_id').value = rate.id;
+            document.getElementById('edit_rate_type').value = rate.rate_type;
+            document.getElementById('edit_location_name').value = rate.location_name;
+            document.getElementById('edit_price').value = Number(rate.price).toFixed(2);
+            document.getElementById('edit_origin_address').value = rate.origin_address || 'Madrigal Business Park, Alabang, Muntinlupa';
+            editRateModal.classList.add('show');
+            editRateModal.setAttribute('aria-hidden', 'false');
+            document.getElementById('edit_location_name').focus();
+        }
+
+        function closeEditRateModal() {
+            editRateModal.classList.remove('show');
+            editRateModal.setAttribute('aria-hidden', 'true');
+            editForm.reset();
+        }
+
+        async function saveRate(payload) {
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
+                body: JSON.stringify(payload)
+            });
+
+            return readApiJson(response);
         }
 
         function renderRates() {
@@ -348,11 +501,7 @@ if (!isset($_SESSION['user_id']) || empty($_SESSION['user_id'])) {
         async function loadRates() {
             table.innerHTML = '<tr><td class="empty" colspan="5">Loading rates...</td></tr>';
             const response = await fetch(apiUrl, { credentials: 'same-origin' });
-            const data = await response.json();
-
-            if (!response.ok || !data.success) {
-                throw new Error(data.message || 'Unable to load rates.');
-            }
+            const data = await readApiJson(response);
 
             rates = data.rates || [];
             renderRates();
@@ -362,31 +511,26 @@ if (!isset($_SESSION['user_id']) || empty($_SESSION['user_id'])) {
             const rate = rates.find((item) => item.id === id);
             if (!rate) return;
 
-            document.getElementById('rate_id').value = rate.id;
-            document.getElementById('rate_type').value = rate.rate_type;
-            document.getElementById('location_name').value = rate.location_name;
-            document.getElementById('price').value = Number(rate.price).toFixed(2);
-            document.getElementById('origin_address').value = rate.origin_address || 'Madrigal Business Park, Alabang, Muntinlupa';
+            openEditRateModal(rate);
         };
 
         window.deleteRate = async function (id) {
             if (!confirm('Delete this delivery rate?')) return;
 
-            const response = await fetch(apiUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'same-origin',
-                body: JSON.stringify({ action: 'delete', id })
-            });
-            const data = await response.json();
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({ action: 'delete', id })
+                });
+                const data = await readApiJson(response);
 
-            if (!response.ok || !data.success) {
-                showNotice(data.message || 'Unable to delete rate.', 'error');
-                return;
+                showNotice(data.message || 'Delivery rate deleted.', 'ok');
+                await loadRates();
+            } catch (error) {
+                showNotice(error.message || 'Unable to delete rate.', 'error');
             }
-
-            showNotice(data.message || 'Delivery rate deleted.', 'ok');
-            await loadRates();
         };
 
         form.addEventListener('submit', async (event) => {
@@ -401,26 +545,53 @@ if (!isset($_SESSION['user_id']) || empty($_SESSION['user_id'])) {
                 price: document.getElementById('price').value
             };
 
-            const response = await fetch(apiUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'same-origin',
-                body: JSON.stringify(payload)
-            });
-            const data = await response.json();
+            try {
+                const data = await saveRate(payload);
 
-            if (!response.ok || !data.success) {
-                showNotice(data.message || 'Unable to save rate.', 'error');
-                return;
+                resetForm();
+                showNotice(data.message || 'Delivery rate saved.', 'ok');
+                await loadRates();
+            } catch (error) {
+                showNotice(error.message || 'Unable to save rate.', 'error');
             }
+        });
 
-            resetForm();
-            showNotice(data.message || 'Delivery rate saved.', 'ok');
-            await loadRates();
+        editForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            const payload = {
+                action: 'save',
+                id: document.getElementById('edit_rate_id').value,
+                origin_address: document.getElementById('edit_origin_address').value,
+                rate_type: document.getElementById('edit_rate_type').value,
+                location_name: document.getElementById('edit_location_name').value,
+                price: document.getElementById('edit_price').value
+            };
+
+            try {
+                const data = await saveRate(payload);
+                closeEditRateModal();
+                showNotice(data.message || 'Delivery rate updated.', 'ok');
+                await loadRates();
+            } catch (error) {
+                showNotice(error.message || 'Unable to update rate.', 'error');
+            }
         });
 
         document.getElementById('resetBtn').addEventListener('click', resetForm);
         document.getElementById('refreshBtn').addEventListener('click', () => loadRates().catch((error) => showNotice(error.message, 'error')));
+        document.getElementById('closeEditRateModal').addEventListener('click', closeEditRateModal);
+        document.getElementById('cancelEditRate').addEventListener('click', closeEditRateModal);
+        editRateModal.addEventListener('click', (event) => {
+            if (event.target === editRateModal) {
+                closeEditRateModal();
+            }
+        });
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && editRateModal.classList.contains('show')) {
+                closeEditRateModal();
+            }
+        });
 
         loadRates().catch((error) => showNotice(error.message, 'error'));
     </script>

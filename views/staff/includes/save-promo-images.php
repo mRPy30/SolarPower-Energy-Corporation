@@ -9,13 +9,37 @@
 
 date_default_timezone_set('Asia/Manila');
 
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+if (empty($_SESSION['user_id'])) {
+    http_response_code(403);
+    exit('Forbidden');
+}
+
+function promo_save_base_path(): string {
+    $configuredBase = trim((string) (getenv('APP_BASE_PATH') ?: ''));
+    if ($configuredBase !== '') {
+        return '/' . trim($configuredBase, '/');
+    }
+
+    $scriptName = str_replace('\\', '/', $_SERVER['SCRIPT_NAME'] ?? '');
+    $localFolder = '/SolarPower-Energy-Corporation/';
+    if (stripos($scriptName, $localFolder) !== false) {
+        return rtrim(substr($scriptName, 0, stripos($scriptName, $localFolder) + strlen($localFolder) - 1), '/');
+    }
+
+    return '';
+}
+
 // ── Config ──────────────────────────────────────────────────────────────────
 
 define('UPLOAD_DIR',   __DIR__ . '/../../../assets/img/');   // where images are saved
 define('CONFIG_FILE',  __DIR__ . '/promo-images.json'); // persists active paths
 define('MAX_SIZE',     5 * 1024 * 1024);             // 5 MB
 define('ALLOWED_MIME', ['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
-define('ADMIN_URL',    '../dashboard.php');    // redirect back here
+define('ADMIN_URL',    promo_save_base_path() . '/dashboard');    // redirect back here
 
 // Slot → saved filename map
 $slotMap = [

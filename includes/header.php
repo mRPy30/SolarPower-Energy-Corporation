@@ -889,6 +889,7 @@ function isActive($page)
 
 <script>
     window.SOLAR_APP_BASE = window.SOLAR_APP_BASE || <?php echo json_encode($cart_base_path); ?>;
+    window.SOLAR_ORDER_TRACKING_ENDPOINT = <?php echo json_encode(asset_url('fetch-order-status.php')); ?>;
     window.SOLAR_CART_AJAX_ENDPOINT = <?php echo json_encode($cart_ajax_endpoint); ?>;
 
     // Scroll effect for header

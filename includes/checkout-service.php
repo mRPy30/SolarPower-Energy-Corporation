@@ -114,6 +114,7 @@ function checkout_assert_order_schema(mysqli $conn): void
     checkout_add_column_if_missing($conn, 'orders', 'delivery_fee', 'DECIMAL(12,2) NOT NULL DEFAULT 0.00');
     checkout_add_column_if_missing($conn, 'orders', 'delivery_location', 'VARCHAR(150) DEFAULT NULL');
     checkout_add_column_if_missing($conn, 'orders', 'sales_channel', "VARCHAR(50) NOT NULL DEFAULT 'Website'");
+    checkout_add_column_if_missing($conn, 'orders', 'tracking_number', 'VARCHAR(120) DEFAULT NULL');
 
     $required = [
         'client_id',
@@ -130,6 +131,7 @@ function checkout_assert_order_schema(mysqli $conn): void
         'payment_status',
         'order_status',
         'sales_channel',
+        'tracking_number',
     ];
 
     $columns = checkout_table_columns($conn, 'orders');
@@ -604,6 +606,234 @@ function checkout_generate_order_reference(): string
     return 'SP-' . date('YmdHis') . '-' . strtoupper(substr(bin2hex(random_bytes(4)), 0, 6));
 }
 
+function checkout_generate_tracking_number(int $orderId, array $validated): string
+{
+    $category = strtolower((string) ($validated['items'][0]['category'] ?? 'general'));
+    $code = 'gen';
+
+    if (strpos($category, 'panel') !== false || strpos($category, 'solar panel') !== false) {
+        $code = 'pnl';
+    } elseif (strpos($category, 'batter') !== false) {
+        $code = 'btt';
+    } elseif (strpos($category, 'invert') !== false) {
+        $code = 'inv';
+    } elseif (strpos($category, 'mount') !== false || strpos($category, 'racking') !== false) {
+        $code = 'mnt';
+    } elseif (strpos($category, 'package') !== false || strpos($category, 'kit') !== false) {
+        $code = 'pck';
+    } elseif (strpos($category, 'accessori') !== false || strpos($category, 'product') !== false) {
+        $code = 'prd';
+    }
+
+    return 'spec-' . $code . '-' . date('mdy') . '-' . str_pad((string) $orderId, 4, '0', STR_PAD_LEFT);
+}
+
+function checkout_require_resend_mailer(): bool
+{
+    $mailerPath = __DIR__ . '/resend-mailer.php';
+    if (is_file($mailerPath)) {
+        require_once $mailerPath;
+    }
+
+    return function_exists('solar_send_resend_email');
+}
+
+function checkout_escape_email($value): string
+{
+    return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
+}
+
+function checkout_items_email_rows(array $items): string
+{
+    $rows = '';
+
+    foreach ($items as $item) {
+        $productName = checkout_escape_email($item['product_name'] ?? 'Solar Product');
+        $quantity = (int) ($item['quantity'] ?? 1);
+        $price = number_format((float) ($item['price'] ?? 0), 2);
+        $subtotal = number_format((float) ($item['subtotal'] ?? 0), 2);
+
+        $rows .= "
+            <tr>
+                <td style='padding:10px 12px; border-bottom:1px solid #e5ece8;'>{$productName}</td>
+                <td style='padding:10px 12px; border-bottom:1px solid #e5ece8; text-align:center;'>{$quantity}</td>
+                <td style='padding:10px 12px; border-bottom:1px solid #e5ece8; text-align:right;'>PHP {$price}</td>
+                <td style='padding:10px 12px; border-bottom:1px solid #e5ece8; text-align:right;'>PHP {$subtotal}</td>
+            </tr>";
+    }
+
+    return $rows;
+}
+
+function checkout_notification_items_from_cart(array $items): array
+{
+    $normalized = [];
+
+    foreach ($items as $item) {
+        $quantity = max(1, (int) ($item['quantity'] ?? 1));
+        $price = round((float) ($item['price'] ?? 0), 2);
+        $productName = checkout_clean_text($item['product_name'] ?? $item['displayName'] ?? $item['name'] ?? 'Solar Product');
+
+        $normalized[] = [
+            'product_id' => (int) ($item['product_id'] ?? $item['id'] ?? 0),
+            'product_name' => $productName,
+            'category' => checkout_clean_text($item['category'] ?? ''),
+            'quantity' => $quantity,
+            'price' => $price,
+            'subtotal' => round((float) ($item['subtotal'] ?? ($price * $quantity)), 2),
+        ];
+    }
+
+    return $normalized;
+}
+
+function checkout_order_tracking_url(string $trackingNumber): string
+{
+    return checkout_app_base_url() . '/index.php?track_order=' . rawurlencode($trackingNumber);
+}
+
+function checkout_send_customer_order_email(array $order, array $customer, array $validated): array
+{
+    if (!checkout_require_resend_mailer()) {
+        return ['success' => false, 'message' => 'Resend mailer is unavailable.'];
+    }
+
+    $to = trim((string) ($customer['email'] ?? ''));
+    if ($to === '' || !filter_var($to, FILTER_VALIDATE_EMAIL)) {
+        return ['success' => false, 'message' => 'Customer email is missing or invalid.'];
+    }
+
+    $customerName = checkout_escape_email($customer['name'] ?? 'Customer');
+    $orderRef = checkout_escape_email($order['reference'] ?? '');
+    $trackingNumberRaw = (string) ($order['tracking_number'] ?? $order['reference'] ?? '');
+    $trackingNumber = checkout_escape_email($trackingNumberRaw);
+    $trackingUrl = checkout_escape_email(checkout_order_tracking_url($trackingNumberRaw));
+    $total = number_format((float) ($order['total'] ?? 0), 2);
+    $rows = checkout_items_email_rows($validated['items'] ?? []);
+
+    $subject = 'SolarPower Order Confirmation - ' . ($order['reference'] ?? $trackingNumberRaw);
+    $html = "
+        <div style='margin:0; padding:0; background:#f4f7f3; font-family:Arial, sans-serif; color:#122033;'>
+            <div style='max-width:640px; margin:0 auto; padding:24px;'>
+                <div style='background:#0b5f3a; color:#ffffff; padding:24px; border-radius:14px 14px 0 0;'>
+                    <h1 style='margin:0; font-size:22px;'>Thank you for choosing SolarPower Energy Corporation!</h1>
+                    <p style='margin:8px 0 0; color:#d9f7e6;'>Your order has been received successfully.</p>
+                </div>
+                <div style='background:#ffffff; padding:28px; border:1px solid #dce7de; border-top:0; border-radius:0 0 14px 14px;'>
+                    <p style='margin:0 0 16px;'>Hi {$customerName},</p>
+                    <p style='margin:0 0 18px;'>Please save your tracking number so you can check your order progress anytime.</p>
+
+                    <div style='background:#fff9e7; border-left:5px solid #f3b400; border-radius:10px; padding:18px; margin:18px 0;'>
+                        <p style='margin:0 0 8px; font-size:13px; color:#6b7280; text-transform:uppercase; font-weight:700;'>Tracking Number</p>
+                        <p style='margin:0; font-size:22px; font-weight:800; color:#0b5f3a;'>{$trackingNumber}</p>
+                    </div>
+
+                    <p style='margin:10px 0;'><strong>Order Reference:</strong> {$orderRef}</p>
+                    <p style='margin:10px 0 18px;'><strong>Total Amount:</strong> PHP {$total}</p>
+
+                    <table style='width:100%; border-collapse:collapse; margin:18px 0; font-size:14px;'>
+                        <thead>
+                            <tr style='background:#f6faf7; color:#0b5f3a;'>
+                                <th style='padding:10px 12px; text-align:left;'>Product</th>
+                                <th style='padding:10px 12px; text-align:center;'>Qty</th>
+                                <th style='padding:10px 12px; text-align:right;'>Price</th>
+                                <th style='padding:10px 12px; text-align:right;'>Subtotal</th>
+                            </tr>
+                        </thead>
+                        <tbody>{$rows}</tbody>
+                    </table>
+
+                    <a href='{$trackingUrl}' style='display:inline-block; background:#f3b400; color:#102018; padding:12px 20px; border-radius:8px; text-decoration:none; font-weight:700;'>Track Your Order Now</a>
+                    <p style='margin:24px 0 0; font-size:13px; color:#596579;'>Need help? Contact us at solar@solarpower.com.ph or 0995 394 7379.</p>
+                </div>
+                <p style='font-size:12px; color:#7b8794; text-align:center; margin:18px 0 0;'>This is an automated order notification.</p>
+            </div>
+        </div>";
+
+    return solar_send_resend_email($to, $subject, $html, [
+        'from' => 'SolarPower Energy Corporation <solar@solarpower.com.ph>',
+        'reply_to' => 'solar@solarpower.com.ph',
+    ]);
+}
+
+function checkout_send_solar_order_email(array $order, array $customer, array $validated): array
+{
+    if (!checkout_require_resend_mailer()) {
+        return ['success' => false, 'message' => 'Resend mailer is unavailable.'];
+    }
+
+    $customerName = checkout_escape_email($customer['name'] ?? 'Customer');
+    $customerEmail = checkout_escape_email($customer['email'] ?? '');
+    $customerPhone = checkout_escape_email($customer['phone'] ?? '');
+    $customerAddress = checkout_escape_email($customer['address'] ?? '');
+    $orderRef = checkout_escape_email($order['reference'] ?? '');
+    $trackingNumber = checkout_escape_email($order['tracking_number'] ?? $order['reference'] ?? '');
+    $total = number_format((float) ($order['total'] ?? 0), 2);
+    $rows = checkout_items_email_rows($validated['items'] ?? []);
+    $dashboardUrl = checkout_escape_email(checkout_app_base_url() . '/dashboard#tracking');
+
+    $subject = 'You have a new order - ' . ($order['reference'] ?? '');
+    $html = "
+        <div style='margin:0; padding:0; background:#f4f7f3; font-family:Arial, sans-serif; color:#122033;'>
+            <div style='max-width:640px; margin:0 auto; padding:24px;'>
+                <div style='background:#0b5f3a; color:#ffffff; padding:24px; border-radius:14px 14px 0 0;'>
+                    <h1 style='margin:0; font-size:22px;'>You have a new order</h1>
+                    <p style='margin:8px 0 0; color:#d9f7e6;'>A customer placed an order on the SolarPower website.</p>
+                </div>
+                <div style='background:#ffffff; padding:28px; border:1px solid #dce7de; border-top:0; border-radius:0 0 14px 14px;'>
+                    <p style='margin:0 0 10px;'><strong>Order Reference:</strong> {$orderRef}</p>
+                    <p style='margin:0 0 10px;'><strong>Tracking Number:</strong> {$trackingNumber}</p>
+                    <p style='margin:0 0 10px;'><strong>Total Amount:</strong> PHP {$total}</p>
+                    <p style='margin:0 0 10px;'><strong>Customer:</strong> {$customerName}</p>
+                    <p style='margin:0 0 10px;'><strong>Email:</strong> {$customerEmail}</p>
+                    <p style='margin:0 0 10px;'><strong>Phone:</strong> {$customerPhone}</p>
+                    <p style='margin:0 0 18px;'><strong>Address:</strong> {$customerAddress}</p>
+
+                    <table style='width:100%; border-collapse:collapse; margin:18px 0; font-size:14px;'>
+                        <thead>
+                            <tr style='background:#f6faf7; color:#0b5f3a;'>
+                                <th style='padding:10px 12px; text-align:left;'>Product</th>
+                                <th style='padding:10px 12px; text-align:center;'>Qty</th>
+                                <th style='padding:10px 12px; text-align:right;'>Price</th>
+                                <th style='padding:10px 12px; text-align:right;'>Subtotal</th>
+                            </tr>
+                        </thead>
+                        <tbody>{$rows}</tbody>
+                    </table>
+
+                    <p style='margin:18px 0;'>Please log in now to review and process this order.</p>
+                    <a href='{$dashboardUrl}' style='display:inline-block; background:#f3b400; color:#102018; padding:12px 20px; border-radius:8px; text-decoration:none; font-weight:700;'>Login Now</a>
+                </div>
+            </div>
+        </div>";
+
+    return solar_send_resend_email('solar@solarpower.com.ph', $subject, $html, [
+        'from' => 'SolarPower Energy Corporation <solar@solarpower.com.ph>',
+        'reply_to' => $customer['email'] ?? 'solar@solarpower.com.ph',
+    ]);
+}
+
+function checkout_send_order_notifications(array $order, array $customer, array $validated): array
+{
+    $customerResult = checkout_send_customer_order_email($order, $customer, $validated);
+    $solarResult = checkout_send_solar_order_email($order, $customer, $validated);
+
+    if (empty($customerResult['success'])) {
+        error_log('Checkout customer order email failed for ' . ($order['reference'] ?? '') . ': ' . ($customerResult['message'] ?? 'Unknown error'));
+    }
+
+    if (empty($solarResult['success'])) {
+        error_log('Checkout SolarPower order email failed for ' . ($order['reference'] ?? '') . ': ' . ($solarResult['message'] ?? 'Unknown error'));
+    }
+
+    return [
+        'customer_sent' => !empty($customerResult['success']),
+        'solar_sent' => !empty($solarResult['success']),
+        'customer_message' => $customerResult['message'] ?? '',
+        'solar_message' => $solarResult['message'] ?? '',
+    ];
+}
+
 function checkout_create_order(mysqli $conn, array $customer, array $validated, array $deliveryRate, ?string $orderRef = null, string $paymentStatus = 'paid', string $orderStatus = 'confirmed'): array
 {
     checkout_assert_order_schema($conn);
@@ -673,12 +903,30 @@ function checkout_create_order(mysqli $conn, array $customer, array $validated, 
         }
 
         $itemStmt->close();
+
+        $trackingNumber = checkout_generate_tracking_number((int) $orderId, $validated);
+        $trackingStmt = $conn->prepare('UPDATE orders SET tracking_number = ? WHERE id = ?');
+        $trackingStmt->bind_param('si', $trackingNumber, $orderId);
+        $trackingStmt->execute();
+        $trackingStmt->close();
+
         $conn->commit();
+
+        $orderPayload = [
+            'id' => $orderId,
+            'reference' => $orderRef,
+            'tracking_number' => $trackingNumber,
+            'total' => $grandTotal,
+        ];
+        $emailResult = checkout_send_order_notifications($orderPayload, $customer, $validated);
+        $orderPayload['email'] = $emailResult;
 
         return [
             'id' => $orderId,
             'reference' => $orderRef,
+            'tracking_number' => $trackingNumber,
             'total' => $grandTotal,
+            'email' => $emailResult,
         ];
     } catch (Throwable $e) {
         $conn->rollback();
@@ -783,7 +1031,7 @@ function checkout_load_pending_maya_checkout(mysqli $conn, string $orderRef): ?a
 
 function checkout_find_order_by_reference(mysqli $conn, string $orderRef): ?array
 {
-    $stmt = $conn->prepare('SELECT id, order_reference, total_amount, payment_status, order_status FROM orders WHERE order_reference = ? LIMIT 1');
+    $stmt = $conn->prepare('SELECT id, order_reference, total_amount, payment_status, order_status, tracking_number FROM orders WHERE order_reference = ? LIMIT 1');
     $stmt->bind_param('s', $orderRef);
     $stmt->execute();
     $order = $stmt->get_result()->fetch_assoc();
@@ -821,6 +1069,7 @@ function checkout_finalize_paid_maya_order(mysqli $conn, string $orderRef, strin
         return [
             'id' => (int) $existingOrder['id'],
             'reference' => $existingOrder['order_reference'],
+            'tracking_number' => $existingOrder['tracking_number'] ?? '',
             'total' => (float) $existingOrder['total_amount'],
             'already_saved' => true,
         ];

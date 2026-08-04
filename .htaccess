@@ -8,6 +8,8 @@ AddType video/mp4 .mp4
 AddType video/ogg .ogv
 AddType video/webm .webm
 
+ErrorDocument 404 /404.php
+
 <IfModule mod_rewrite.c>
 RewriteEngine On
 RewriteBase /
@@ -16,12 +18,15 @@ RewriteBase /
 RewriteRule ^dashboard/?$ views/staff/dashboard.php [L,QSA]
 RewriteRule ^staff/edit-product/?$ views/staff/edit-product.php [L,QSA]
 RewriteRule ^staff/bulk-delete-products/?$ views/staff/bulk_delete_products.php [L,QSA]
+RewriteRule ^staff/save-promo-images/?$ views/staff/includes/save-promo-images.php [L,QSA]
+RewriteRule ^includes/save-promo-images\.php$ views/staff/includes/save-promo-images.php [L,QSA]
 RewriteRule ^delete-product/?$ controllers/delete_product.php [L,QSA]
 RewriteRule ^login/?$ views/login.php [L,QSA]
 RewriteRule ^logout/?$ controllers/logout.php [L,QSA]
 RewriteRule ^signup/?$ views/signup.php [L,QSA]
 RewriteRule ^forgot-password/?$ views/forgot_password.php [L,QSA]
 RewriteRule ^verify-reset-code/?$ views/verify_reset_code.php [L,QSA]
+RewriteRule ^404/?$ 404.php [L,QSA]
 
 # Public clean routes
 RewriteRule ^about/?$ about.php [L,QSA]
@@ -35,6 +40,7 @@ RewriteRule ^loans/?$ loans.php [L,QSA]
 RewriteRule ^faq/?$ faq.php [L,QSA]
 RewriteRule ^newsletter/?$ newsletter.php [L,QSA]
 RewriteRule ^track-order/?$ track-order.php [L,QSA]
+RewriteRule ^fetch-order-status/?$ fetch-order-status.php [L,QSA]
 RewriteRule ^package/?$ package.php [L,QSA]
 RewriteRule ^brand/?$ brand.php [L,QSA]
 RewriteRule ^category/?$ category.php [L,QSA]

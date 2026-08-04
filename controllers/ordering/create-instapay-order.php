@@ -1,6 +1,7 @@
 <?php
 session_start();
 header('Content-Type: application/json');
+require_once __DIR__ . '/../../includes/checkout-service.php';
 
 // Enable full error reporting for mysqli to catch all issues in the try-catch block
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
@@ -92,6 +93,8 @@ try {
         }
     }
 
+    checkout_add_column_if_missing($conn, 'orders', 'tracking_number', 'VARCHAR(120) DEFAULT NULL');
+
     // Begin transaction
     $conn->begin_transaction();
 
@@ -152,15 +155,41 @@ try {
     }
     
     $itemStmt->close();
+
+    $notificationItems = checkout_notification_items_from_cart($items);
+    $trackingNumber = checkout_generate_tracking_number((int) $orderId, ['items' => $notificationItems]);
+    $trackingStmt = $conn->prepare("UPDATE orders SET tracking_number = ? WHERE id = ?");
+    $trackingStmt->bind_param("si", $trackingNumber, $orderId);
+    $trackingStmt->execute();
+    $trackingStmt->close();
     
     // Commit transaction
     $conn->commit();
+
+    $emailResult = checkout_send_order_notifications(
+        [
+            'id' => $orderId,
+            'reference' => $orderReference,
+            'tracking_number' => $trackingNumber,
+            'total' => $totalAmount,
+        ],
+        [
+            'name' => $customerName,
+            'email' => $customerEmail,
+            'phone' => $customerPhone,
+            'address' => $customerAddress,
+        ],
+        ['items' => $notificationItems]
+    );
+
     $conn->close();
     
     echo json_encode([
         'success' => true,
         'message' => 'Order placed successfully',
-        'orderRef' => $orderReference
+        'orderRef' => $orderReference,
+        'trackingNumber' => $trackingNumber,
+        'email' => $emailResult
     ]);
     
 } catch (Throwable $e) {

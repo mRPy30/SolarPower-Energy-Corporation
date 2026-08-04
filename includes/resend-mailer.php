@@ -10,6 +10,8 @@ if (!function_exists('solar_resend_config')) {
             'api_key' => trim((string) (getenv('RESEND_API_KEY') ?: ($fileConfig['api_key'] ?? ''))),
             'from' => trim((string) (getenv('RESEND_FROM_EMAIL') ?: ($fileConfig['from'] ?? 'SolarPower Energy Corporation <solar@solarpower.com.ph>'))),
             'reply_to' => trim((string) (getenv('RESEND_REPLY_TO') ?: ($fileConfig['reply_to'] ?? 'solar@solarpower.com.ph'))),
+            'timeout' => (int) (getenv('RESEND_TIMEOUT') ?: ($fileConfig['timeout'] ?? 25)),
+            'connect_timeout' => (int) (getenv('RESEND_CONNECT_TIMEOUT') ?: ($fileConfig['connect_timeout'] ?? 8)),
         ];
     }
 }
@@ -44,13 +46,21 @@ if (!function_exists('solar_send_resend_email')) {
             $payload['reply_to'] = $replyTo;
         }
 
+        $timeout = max(10, min(60, (int) ($config['timeout'] ?? 25)));
+        $connectTimeout = max(3, min($timeout, (int) ($config['connect_timeout'] ?? 8)));
+
         $ch = curl_init('https://api.resend.com/emails');
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 12);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, $connectTimeout);
+        curl_setopt($ch, CURLOPT_TIMEOUT, $timeout);
+        if (defined('CURLOPT_IPRESOLVE') && defined('CURL_IPRESOLVE_V4')) {
+            curl_setopt($ch, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4);
+        }
         curl_setopt($ch, CURLOPT_HTTPHEADER, [
             'Authorization: Bearer ' . $config['api_key'],
             'Content-Type: application/json',
+            'User-Agent: SolarPower-Website/1.0',
         ]);
         curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
 

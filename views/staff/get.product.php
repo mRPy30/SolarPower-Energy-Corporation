@@ -4,13 +4,61 @@ header('Content-Type: application/json');
 // Database connection
 include "../../config/dbconn.php";
 
+function product_api_fail(string $message, int $statusCode = 500): void
+{
+    http_response_code($statusCode);
+    echo json_encode([
+        'success' => false,
+        'message' => $message,
+        'error' => $message,
+    ]);
+    exit;
+}
+
+function product_api_ensure_column(mysqli $conn, string $table, string $column, string $alterSql): void
+{
+    $safeTable = str_replace('`', '``', $table);
+    $safeColumn = $conn->real_escape_string($column);
+    $check = $conn->query("SHOW COLUMNS FROM `{$safeTable}` LIKE '{$safeColumn}'");
+
+    if (!$check) {
+        product_api_fail("Unable to inspect {$table}.{$column}: " . $conn->error);
+    }
+
+    if ($check->num_rows === 0 && !$conn->query($alterSql)) {
+        product_api_fail("Unable to update {$table}.{$column}: " . $conn->error);
+    }
+}
+
+$conn->query("CREATE TABLE IF NOT EXISTS `product_images` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `product_id` INT NOT NULL,
+    `image_path` VARCHAR(255) NOT NULL,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX (`product_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+
+$conn->query("CREATE TABLE IF NOT EXISTS `product_brand_variants` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `product_id` INT NULL,
+    `brand_id` INT NULL,
+    `variant_name` VARCHAR(255) NOT NULL DEFAULT '',
+    `price` DECIMAL(10,2) NULL,
+    `variant_image` VARCHAR(255) NULL,
+    INDEX (`product_id`),
+    INDEX (`brand_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+
+product_api_ensure_column($conn, 'product', 'packageType', "ALTER TABLE `product` ADD COLUMN `packageType` ENUM('On-Grid','Hybrid','Off-Grid') DEFAULT NULL AFTER `category`");
+product_api_ensure_column($conn, 'product', 'moq', "ALTER TABLE `product` ADD COLUMN `moq` INT NOT NULL DEFAULT 1 AFTER `postedByStaffId`");
+product_api_ensure_column($conn, 'product', 'status', "ALTER TABLE `product` ADD COLUMN `status` ENUM('Active','Hidden') NOT NULL DEFAULT 'Active' AFTER `moq`");
+product_api_ensure_column($conn, 'product_brand_variants', 'variant_name', "ALTER TABLE `product_brand_variants` ADD COLUMN `variant_name` VARCHAR(255) NOT NULL DEFAULT '' AFTER `brand_id`");
+
 // Get product ID from query parameter
 $productId = isset($_GET['id']) ? intval($_GET['id']) : 0;
 
 if ($productId <= 0) {
-    http_response_code(400);
-    echo json_encode(['error' => 'Invalid product ID']);
-    exit;
+    product_api_fail('Invalid product ID', 400);
 }
 
 // Fetch product details
@@ -43,9 +91,7 @@ WHERE p.id = ?";
 
 $stmt = $conn->prepare($sql);
 if (!$stmt) {
-    http_response_code(500);
-    echo json_encode(['error' => 'Failed to prepare statement']);
-    exit;
+    product_api_fail('Failed to prepare product details query: ' . $conn->error);
 }
 
 $stmt->bind_param("i", $productId);
@@ -53,9 +99,7 @@ $stmt->execute();
 $result = $stmt->get_result();
 
 if ($result->num_rows === 0) {
-    http_response_code(404);
-    echo json_encode(['error' => 'Product not found']);
-    exit;
+    product_api_fail('Product not found', 404);
 }
 
 $product = $result->fetch_assoc();

@@ -32,6 +32,16 @@ $trackingNumber = $trackingNumber === '' ? null : $trackingNumber;
 $currentLocation = $currentLocation === '' ? null : $currentLocation;
 $estimatedDelivery = $estimatedDelivery === '' ? null : $estimatedDelivery;
 
+// Keep order status and location consistent. Staff often uses the location
+// dropdown as the delivery declaration, so protect the saved order status too.
+if (strtolower((string) $currentLocation) === 'delivered' && $orderStatus !== 'cancelled') {
+    $orderStatus = 'delivered';
+}
+
+if ($orderStatus === 'delivered') {
+    $currentLocation = 'Delivered';
+}
+
 // Validate order status
 $validOrderStatuses = [
     'pending', 
@@ -97,10 +107,15 @@ if (!function_exists('solar_send_resend_email')) {
         $ch = curl_init('https://api.resend.com/emails');
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 12);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 8);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 25);
+        if (defined('CURLOPT_IPRESOLVE') && defined('CURL_IPRESOLVE_V4')) {
+            curl_setopt($ch, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4);
+        }
         curl_setopt($ch, CURLOPT_HTTPHEADER, [
             'Authorization: Bearer ' . $apiKey,
             'Content-Type: application/json',
+            'User-Agent: SolarPower-Website/1.0',
         ]);
         curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
 
@@ -140,7 +155,7 @@ $orderStmt->close();
 // Set delivered_at timestamp if status is delivered
 $deliveredAt = null;
 if ($orderStatus === 'delivered') {
-    $deliveredAt = date('Y-m-d H:i:s');
+    $deliveredAt = !empty($currentOrder['delivered_at']) ? $currentOrder['delivered_at'] : date('Y-m-d H:i:s');
 }
 
 // Begin transaction

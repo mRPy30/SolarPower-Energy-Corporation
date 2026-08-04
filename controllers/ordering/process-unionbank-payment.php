@@ -6,12 +6,7 @@
 
 session_start();
 require_once '../../config/dbconn.php';
-
-// PHPMailer for sending emails
-use PHPMailer\PHPMailer\PHPMailer;
-use PHPMailer\PHPMailer\Exception;
-
-require '../../vendor/autoload.php'; // Make sure you have PHPMailer installed
+require_once __DIR__ . '/../../includes/checkout-service.php';
 
 header('Content-Type: application/json');
 
@@ -76,6 +71,8 @@ try {
     // Generate order reference
     $orderRef = 'UB-' . strtoupper(substr($paymentType, 0, 1)) . '-' . date('Ymd') . '-' . strtoupper(substr(uniqid(), -6));
     
+    checkout_add_column_if_missing($conn, 'orders', 'tracking_number', 'VARCHAR(120) DEFAULT NULL');
+
     // Start transaction
     $conn->begin_transaction();
     
@@ -145,17 +142,38 @@ try {
             }
         }
         $stmtItems->close();
-        
-        // 3. Send email notifications
-        sendOrderConfirmationEmail($orderRef, $customerName, $customerEmail, $items, $totalAmount, $amountToPay, $paymentType, $receiptPath);
-        sendAdminNotificationEmail($orderRef, $customerName, $customerEmail, $customerPhone, $items, $totalAmount, $amountToPay, $paymentType, $receiptPath);
+
+        $notificationItems = checkout_notification_items_from_cart($items);
+        $trackingNumber = checkout_generate_tracking_number((int) $orderId, ['items' => $notificationItems]);
+        $trackingStmt = $conn->prepare("UPDATE orders SET tracking_number = ? WHERE id = ?");
+        $trackingStmt->bind_param("si", $trackingNumber, $orderId);
+        $trackingStmt->execute();
+        $trackingStmt->close();
         
         // Commit transaction
         $conn->commit();
+
+        $emailResult = checkout_send_order_notifications(
+            [
+                'id' => $orderId,
+                'reference' => $orderRef,
+                'tracking_number' => $trackingNumber,
+                'total' => $totalAmount,
+            ],
+            [
+                'name' => $customerName,
+                'email' => $customerEmail,
+                'phone' => $customerPhone,
+                'address' => $customerAddress,
+            ],
+            ['items' => $notificationItems]
+        );
         
         echo json_encode([
             'success' => true,
             'orderRef' => $orderRef,
+            'trackingNumber' => $trackingNumber,
+            'email' => $emailResult,
             'message' => 'Order submitted successfully'
         ]);
         

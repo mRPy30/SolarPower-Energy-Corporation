@@ -70,6 +70,11 @@ $conn->close();
             <div class="alert alert-success mt-4">
                 <strong>Order Reference:</strong><br>
                 <span style="font-size: 1.2rem; font-weight: bold;"><?php echo htmlspecialchars($order['reference']); ?></span>
+                <?php if (!empty($order['tracking_number'])): ?>
+                    <hr>
+                    <strong>Tracking Number:</strong><br>
+                    <span style="font-size: 1.15rem; font-weight: bold;"><?php echo htmlspecialchars($order['tracking_number']); ?></span>
+                <?php endif; ?>
             </div>
             <p class="text-muted">Your paid order has been recorded and is now ready for tracking.</p>
         <?php else: ?>

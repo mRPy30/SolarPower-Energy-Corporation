@@ -9,6 +9,23 @@ date_default_timezone_set('Asia/Manila');
 
 $configFile = __DIR__ . '/promo-images.json';
 
+function staff_promo_base_path(): string {
+  $configuredBase = trim((string) (getenv('APP_BASE_PATH') ?: ''));
+  if ($configuredBase !== '') {
+    return '/' . trim($configuredBase, '/');
+  }
+
+  $scriptName = str_replace('\\', '/', $_SERVER['SCRIPT_NAME'] ?? '');
+  $localFolder = '/SolarPower-Energy-Corporation/';
+  if (stripos($scriptName, $localFolder) !== false) {
+    return rtrim(substr($scriptName, 0, stripos($scriptName, $localFolder) + strlen($localFolder) - 1), '/');
+  }
+
+  return '';
+}
+
+$savePromoAction = staff_promo_base_path() . '/staff/save-promo-images';
+
 function format_start_display(string $value): string {
   $value = trim($value);
   if ($value === '') {
@@ -210,7 +227,7 @@ $error   = $_GET['error']  ?? false;
         <div class="p-6">
           
           <!-- SLOT: MAIN BANNER FORM -->
-          <form method="POST" action="includes/save-promo-images.php" enctype="multipart/form-data" id="form-slot-main" class="slot-form-block flex flex-col gap-6">
+          <form method="POST" action="<?= htmlspecialchars($savePromoAction) ?>" enctype="multipart/form-data" id="form-slot-main" class="slot-form-block flex flex-col gap-6">
             <input type="hidden" name="slot" value="main">
             
             <!-- Header slot info & Live indicator status -->
@@ -303,7 +320,7 @@ $error   = $_GET['error']  ?? false;
           </form>
 
           <!-- SLOT: TOP RIGHT FORM -->
-          <form method="POST" action="includes/save-promo-images.php" enctype="multipart/form-data" id="form-slot-top" class="slot-form-block flex flex-col gap-6 hidden">
+          <form method="POST" action="<?= htmlspecialchars($savePromoAction) ?>" enctype="multipart/form-data" id="form-slot-top" class="slot-form-block flex flex-col gap-6 hidden">
             <input type="hidden" name="slot" value="top">
             
             <!-- Header slot info & Live indicator status -->
@@ -396,7 +413,7 @@ $error   = $_GET['error']  ?? false;
           </form>
 
           <!-- SLOT: BOTTOM RIGHT FORM -->
-          <form method="POST" action="includes/save-promo-images.php" enctype="multipart/form-data" id="form-slot-bottom" class="slot-form-block flex flex-col gap-6 hidden">
+          <form method="POST" action="<?= htmlspecialchars($savePromoAction) ?>" enctype="multipart/form-data" id="form-slot-bottom" class="slot-form-block flex flex-col gap-6 hidden">
             <input type="hidden" name="slot" value="bottom">
             
             <!-- Header slot info & Live indicator status -->
