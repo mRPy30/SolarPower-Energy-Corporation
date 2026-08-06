@@ -2603,12 +2603,16 @@ function normalizeCatalogValue(value) {
 }
 
 function initializeFilters() {
-    const filterButtons = document.querySelectorAll('.filter-btn');
+    const catalogSection = document.getElementById('catalogSection');
+    const filterButtons = (catalogSection || document).querySelectorAll('.filter-btn');
     filterButtons.forEach(btn => {
-        btn.addEventListener('click', function() {
+        if (btn.dataset.filterBound === 'true') return;
+        btn.dataset.filterBound = 'true';
+        btn.addEventListener('click', function(event) {
+            event.preventDefault();
             filterButtons.forEach(b => b.classList.remove('active'));
             this.classList.add('active');
-            filterProducts(this.getAttribute('data-category') || 'all');
+            filterProducts(this.getAttribute('data-category') || this.getAttribute('data-filter') || 'all');
         });
     });
 }
@@ -2622,6 +2626,10 @@ function initializeCategoryShortcuts() {
 
             categoryCards.forEach(item => item.classList.remove('active'));
             this.classList.add('active');
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                const btnCategory = btn.getAttribute('data-category') || btn.getAttribute('data-filter') || 'all';
+                btn.classList.toggle('active', normalizeCatalogValue(btnCategory) === normalizeCatalogValue(category));
+            });
             filterProducts(category);
 
             const catalog = document.getElementById('catalogSection');
@@ -2757,8 +2765,8 @@ function escapeHtml(string) {
 
 function applyCatalogFilters(options = {}) {
     const grid = document.getElementById('productsGrid');
-    const products = document.querySelectorAll('.product-card');
     if (!grid) return;
+    const products = grid.querySelectorAll('.product-card');
 
     if (!options.preserveExpanded) {
         grid.classList.remove('show-all');
@@ -2789,37 +2797,64 @@ function applyCatalogFilters(options = {}) {
 }
 
 function filterProducts(category) {
-    activeCatalogCategory = category || 'all';
+    activeCatalogCategory = normalizeCatalogValue(category || 'all') || 'all';
     applyCatalogFilters({ preserveExpanded: false });
 }
 
 function initializeSort() {
     const sortSelect = document.getElementById('sortSelect');
-    if (sortSelect) {
-        sortSelect.addEventListener('change', function() {
-            sortProducts(this.value);
-        });
+    if (!sortSelect || sortSelect.dataset.sortBound === 'true') return;
+
+    sortSelect.dataset.sortBound = 'true';
+    sortSelect.addEventListener('change', function() {
+        sortProducts(this.value);
+    });
+
+    if (sortSelect.value && sortSelect.value !== 'default') {
+        sortProducts(sortSelect.value);
     }
+}
+
+function ensureProductSortIndexes(grid) {
+    grid.querySelectorAll('.product-card').forEach((product, index) => {
+        if (!product.dataset.originalIndex) {
+            product.dataset.originalIndex = String(index);
+        }
+    });
+}
+
+function getProductSortPrice(product) {
+    const rawPrice = product.getAttribute('data-price') || product.dataset.price || '0';
+    return parseFloat(String(rawPrice).replace(/[^\d.-]/g, '')) || 0;
+}
+
+function getProductSortName(product) {
+    return (product.getAttribute('data-name') || product.dataset.name || '').toString().trim();
 }
 
 function sortProducts(sortType) {
     const grid = document.getElementById('productsGrid');
     if (!grid) return;
-    const products = Array.from(document.querySelectorAll('.product-card'));
+
+    ensureProductSortIndexes(grid);
+    const selectedSort = sortType || 'default';
+    const products = Array.from(grid.querySelectorAll('.product-card'));
+
     products.sort((a, b) => {
-        switch(sortType) {
+        switch(selectedSort) {
             case 'price-low':
-                return parseFloat(a.getAttribute('data-price')) - parseFloat(b.getAttribute('data-price'));
+                return getProductSortPrice(a) - getProductSortPrice(b);
             case 'price-high':
-                return parseFloat(b.getAttribute('data-price')) - parseFloat(a.getAttribute('data-price'));
+                return getProductSortPrice(b) - getProductSortPrice(a);
             case 'name-asc':
-                return a.getAttribute('data-name').localeCompare(b.getAttribute('data-name'));
+                return getProductSortName(a).localeCompare(getProductSortName(b), undefined, { sensitivity: 'base' });
             case 'name-desc':
-                return b.getAttribute('data-name').localeCompare(a.getAttribute('data-name'));
+                return getProductSortName(b).localeCompare(getProductSortName(a), undefined, { sensitivity: 'base' });
             default:
-                return 0;
+                return (parseInt(a.dataset.originalIndex || '0', 10) || 0) - (parseInt(b.dataset.originalIndex || '0', 10) || 0);
         }
     });
+
     products.forEach(product => { grid.appendChild(product); });
     applyCatalogFilters({ preserveExpanded: true });
 }

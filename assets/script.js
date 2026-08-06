@@ -255,11 +255,18 @@ function saveFilterPreference(category) {
  */
 function loadFilterPreference() {
     const preferredCategory = getCookie('preferred_category');
-    if (preferredCategory) {
-        const filterBtn = document.querySelector(`[data-category="${preferredCategory}"]`);
-        if (filterBtn) {
-            filterBtn.click();
-        }
+    if (!preferredCategory) {
+        return;
+    }
+
+    const preferred = normalizeSharedFilterValue(preferredCategory);
+    const filterBtn = Array.from(document.querySelectorAll('.filter-btn')).find(btn => {
+        const buttonCategory = btn.getAttribute('data-category') || btn.getAttribute('data-filter') || 'all';
+        return normalizeSharedFilterValue(buttonCategory) === preferred;
+    });
+
+    if (filterBtn) {
+        filterBtn.click();
     }
 }
 
@@ -533,13 +540,70 @@ function filterProducts(category) {
     }
 }
 
-// Save sort preference when changed
-const originalSortProducts = sortProducts;
+function initializeSorting() {
+    const sortSelect = document.getElementById('sortSelect');
+    if (!sortSelect || sortSelect.dataset.sortBound === 'true') return;
+
+    sortSelect.dataset.sortBound = 'true';
+    sortSelect.addEventListener('change', function() {
+        sortProducts(this.value);
+    });
+
+    if (sortSelect.value && sortSelect.value !== 'default') {
+        sortProducts(sortSelect.value);
+    }
+}
+
+function ensureSharedProductSortIndexes(grid) {
+    grid.querySelectorAll('.product-card').forEach((product, index) => {
+        if (!product.dataset.originalIndex) {
+            product.dataset.originalIndex = String(index);
+        }
+    });
+}
+
+function getSharedProductPrice(product) {
+    const rawPrice = product.getAttribute('data-price') || product.dataset.price || '0';
+    return parseFloat(String(rawPrice).replace(/[^\d.-]/g, '')) || 0;
+}
+
+function getSharedProductName(product) {
+    return (product.getAttribute('data-name') || product.dataset.name || '').toString().trim();
+}
+
 function sortProducts(sortType) {
-    originalSortProducts(sortType);
+    const grid = document.getElementById('productsGrid');
+    if (!grid) return;
+
+    ensureSharedProductSortIndexes(grid);
+    const selectedSort = sortType || 'default';
+    const products = Array.from(grid.querySelectorAll('.product-card'));
+
+    products.sort((a, b) => {
+        switch (selectedSort) {
+            case 'price-low':
+                return getSharedProductPrice(a) - getSharedProductPrice(b);
+            case 'price-high':
+                return getSharedProductPrice(b) - getSharedProductPrice(a);
+            case 'name-asc':
+                return getSharedProductName(a).localeCompare(getSharedProductName(b), undefined, { sensitivity: 'base' });
+            case 'name-desc':
+                return getSharedProductName(b).localeCompare(getSharedProductName(a), undefined, { sensitivity: 'base' });
+            default:
+                return (parseInt(a.dataset.originalIndex || '0', 10) || 0) - (parseInt(b.dataset.originalIndex || '0', 10) || 0);
+        }
+    });
+
+    products.forEach(product => grid.appendChild(product));
+
+    if (typeof filterProducts === 'function') {
+        const currentCategory = typeof activeCatalogCategory !== 'undefined' ? activeCatalogCategory : 'all';
+        filterProducts(currentCategory, true);
+    }
+
     const consent = getCookie('cookie_consent');
     if (consent === 'accepted') {
-        saveSortPreference(sortType);
+        saveSortPreference(selectedSort);
     }
 }
 
@@ -736,47 +800,97 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log(`Hidden products: ${hiddenProducts.length}`);
 });
 
+function normalizeSharedFilterValue(value) {
+    return (value || '').toString().trim().toLowerCase();
+}
+
+function sharedProductMatchesCategory(product, category) {
+    const selectedCategory = normalizeSharedFilterValue(category || 'all');
+    const productCategory = normalizeSharedFilterValue(product.getAttribute('data-category'));
+    const packageType = normalizeSharedFilterValue(product.getAttribute('data-package-type'));
+    const productName = normalizeSharedFilterValue(product.getAttribute('data-name'));
+    const packageTypes = ['hybrid', 'on-grid', 'off-grid', 'grid-tie', 'package'];
+
+    if (!selectedCategory || selectedCategory === 'all') {
+        return true;
+    }
+
+    if (selectedCategory === 'package setup' || selectedCategory === 'package') {
+        return productCategory === 'package' || packageTypes.includes(packageType) || productName.includes('package');
+    }
+
+    if (selectedCategory === 'panel' || selectedCategory === 'panels') {
+        return productCategory === 'panel' || productCategory === 'panels' || productName.includes('panel');
+    }
+
+    if (selectedCategory === 'inverter' || selectedCategory === 'inverters') {
+        return productCategory === 'inverter' || productCategory === 'inverters' || productName.includes('inverter');
+    }
+
+    if (selectedCategory === 'battery' || selectedCategory === 'batteries') {
+        return productCategory === 'battery' || productCategory === 'batteries' || productName.includes('battery');
+    }
+
+    if (selectedCategory === 'mounting & accessories' || selectedCategory === 'mounting accessories') {
+        return productCategory.includes('mount') ||
+            productCategory.includes('accessor') ||
+            productCategory.includes('wiring') ||
+            productName.includes('mount') ||
+            productName.includes('accessor') ||
+            productName.includes('clamp') ||
+            productName.includes('rail');
+    }
+
+    return productCategory === selectedCategory;
+}
+
 /**
- * Optional: Add filter functionality that respects the view more state
+ * Shared fallback filter for pages that do not provide their own catalog logic.
  */
 function filterProducts(category) {
     const productsGrid = document.getElementById('productsGrid');
-    const products = document.querySelectorAll('.product-card');
+    if (!productsGrid) return;
+
+    const products = productsGrid.querySelectorAll('.product-card');
     const viewMoreBtn = document.getElementById('viewMoreBtn');
     const viewMoreContainer = document.getElementById('viewMoreContainer');
-    
+    const collapseLimit = typeof PRODUCTS_COLLAPSE_LIMIT !== 'undefined' ? PRODUCTS_COLLAPSE_LIMIT : 4;
     let visibleCount = 0;
-    
-    products.forEach((product, index) => {
-        const productCategory = product.getAttribute('data-category');
-        
-        if (category === 'All' || productCategory === category) {
-            product.style.display = 'flex';
-            visibleCount++;
-            
-            // Apply hidden-product class to items after the 4th
-            if (visibleCount > 4) {
-                product.classList.add('hidden-product');
-            } else {
-                product.classList.remove('hidden-product');
-            }
-        } else {
-            product.style.display = 'none';
-            product.classList.remove('hidden-product');
-        }
-    });
-    
-    // Reset the grid to collapsed state
+
     productsGrid.classList.remove('show-all');
+
+    products.forEach(product => {
+        const show = sharedProductMatchesCategory(product, category);
+        product.dataset.filterMatch = show ? 'true' : 'false';
+        product.classList.remove('show-product');
+
+        if (!show) {
+            product.classList.remove('hidden-product');
+            product.style.display = 'none';
+            return;
+        }
+
+        visibleCount++;
+        const shouldCollapse = visibleCount > collapseLimit;
+        product.classList.toggle('hidden-product', shouldCollapse);
+        product.style.display = shouldCollapse ? 'none' : 'flex';
+    });
+
     if (viewMoreBtn) {
         viewMoreBtn.classList.remove('expanded');
-        const btnText = viewMoreBtn.childNodes[viewMoreBtn.childNodes.length - 1];
-        btnText.textContent = ' View More';
+        const label = viewMoreBtn.querySelector('span');
+        if (label) {
+            label.textContent = 'View More Products';
+        }
     }
-    
-    // Show/hide view more button based on filtered results
+
     if (viewMoreContainer) {
-        viewMoreContainer.style.display = visibleCount > 4 ? 'block' : 'none';
+        viewMoreContainer.style.display = visibleCount > collapseLimit ? 'flex' : 'none';
+    }
+
+    const noProductsMsg = document.querySelector('.no-products-filter');
+    if (noProductsMsg) {
+        noProductsMsg.style.display = visibleCount === 0 ? 'block' : 'none';
     }
 }
 

@@ -6452,64 +6452,144 @@ $conn->close();
     // ============================================
     // 7. FILTERS & SEARCH
     // ============================================
+    function normalizeIndexCatalogValue(value) {
+        return (value || '').toString().trim().toLowerCase();
+    }
+
+    function productMatchesSearch(product) {
+        if (!catalogSearchQuery) {
+            return true;
+        }
+
+        const query = normalizeIndexCatalogValue(catalogSearchQuery);
+        const name = normalizeIndexCatalogValue(product.getAttribute('data-name'));
+        const brand = normalizeIndexCatalogValue(product.getAttribute('data-brand'));
+        return name.includes(query) || brand.includes(query);
+    }
+
+    function initializeSearchFilter() {
+        const searchInput = document.getElementById('productSearchInput');
+        const clearBtn = document.getElementById('searchClearBtn');
+        const searchMeta = document.getElementById('searchMeta');
+        if (!searchInput || searchInput.dataset.searchBound === 'true') return;
+
+        searchInput.dataset.searchBound = 'true';
+        searchInput.addEventListener('input', function() {
+            catalogSearchQuery = this.value.trim();
+            if (clearBtn) clearBtn.style.display = catalogSearchQuery ? 'block' : 'none';
+            filterProducts(activeCatalogCategory);
+
+            if (searchMeta) {
+                const grid = document.getElementById('productsGrid');
+                const matchCount = grid ? Array.from(grid.querySelectorAll('.product-card'))
+                    .filter(product => product.dataset.filterMatch === 'true').length : 0;
+                searchMeta.innerHTML = catalogSearchQuery
+                    ? `Found <span class="highlight-count">${matchCount}</span> product${matchCount === 1 ? '' : 's'} matching "<span class="text-dark fw-semibold">${catalogSearchQuery.replace(/[&<>"']/g, '')}</span>"`
+                    : '';
+            }
+        });
+
+        if (clearBtn && clearBtn.dataset.clearBound !== 'true') {
+            clearBtn.dataset.clearBound = 'true';
+            clearBtn.addEventListener('click', function() {
+                searchInput.value = '';
+                catalogSearchQuery = '';
+                this.style.display = 'none';
+                if (searchMeta) searchMeta.innerHTML = '';
+                filterProducts(activeCatalogCategory);
+            });
+        }
+    }
+
     function initializeFilters() {
-        const filterButtons = document.querySelectorAll('.filter-btn');
+        const catalogSection = document.getElementById('catalogSection');
+        const filterButtons = (catalogSection || document).querySelectorAll('.filter-btn');
 
         filterButtons.forEach(btn => {
-            btn.addEventListener('click', function() {
+            if (btn.dataset.filterBound === 'true') return;
+            btn.dataset.filterBound = 'true';
+            btn.addEventListener('click', function(event) {
+                event.preventDefault();
                 filterButtons.forEach(b => b.classList.remove('active'));
                 this.classList.add('active');
-                const filterValue = this.getAttribute('data-filter');
+                const filterValue = this.getAttribute('data-filter') || this.getAttribute('data-category') || 'all';
                 filterProducts(filterValue);
             });
         });
     }
 
-    function filterProducts(filterValue) {
+    function productMatchesFilterCategory(product, filterValue) {
+        const selectedCategory = normalizeIndexCatalogValue(filterValue || 'all');
+        const productCategory = normalizeIndexCatalogValue(product.getAttribute('data-category'));
+        const productPackageType = normalizeIndexCatalogValue(product.getAttribute('data-package-type'));
+        const productName = normalizeIndexCatalogValue(product.getAttribute('data-name'));
+        const packageTypes = ['hybrid', 'on-grid', 'off-grid', 'grid-tie', 'package'];
+
+        if (!selectedCategory || selectedCategory === 'all') {
+            return true;
+        }
+
+        if (selectedCategory === 'package setup' || selectedCategory === 'package') {
+            return productCategory === 'package' || packageTypes.includes(productPackageType) || productName.includes('package');
+        }
+
+        if (selectedCategory === 'panel' || selectedCategory === 'panels') {
+            return productCategory === 'panel' || productCategory === 'panels' || productName.includes('panel');
+        }
+
+        if (selectedCategory === 'inverter' || selectedCategory === 'inverters') {
+            return productCategory === 'inverter' || productCategory === 'inverters' || productName.includes('inverter');
+        }
+
+        if (selectedCategory === 'battery' || selectedCategory === 'batteries') {
+            return productCategory === 'battery' || productCategory === 'batteries' || productName.includes('battery');
+        }
+
+        if (selectedCategory === 'mounting & accessories' || selectedCategory === 'mounting accessories') {
+            return productCategory.includes('mount') ||
+                productCategory.includes('accessor') ||
+                productCategory.includes('wiring') ||
+                productName.includes('mount') ||
+                productName.includes('accessor') ||
+                productName.includes('clamp') ||
+                productName.includes('rail');
+        }
+
+        return productCategory === selectedCategory;
+    }
+
+    function filterProducts(filterValue, preserveExpanded = false) {
         if (filterValue !== undefined) {
-            activeCatalogCategory = filterValue;
+            activeCatalogCategory = normalizeIndexCatalogValue(filterValue) || 'all';
         }
 
         const productsGrid = document.getElementById('productsGrid');
-        const products = document.querySelectorAll('.product-card');
+        if (!productsGrid) return;
+
+        const products = productsGrid.querySelectorAll('.product-card');
         const viewMoreContainer = document.getElementById('viewMoreContainer');
         const viewMoreBtn = document.getElementById('viewMoreBtn');
-        const packageTypes = ['hybrid', 'on-grid', 'off-grid', 'grid-tie'];
+        const collapseLimit = 4;
 
         let visibleCount = 0;
 
+        if (!preserveExpanded) {
+            productsGrid.classList.remove('show-all');
+        }
+
+        const isExpanded = productsGrid.classList.contains('show-all');
+
         products.forEach(product => {
-            const productCategory = product.getAttribute('data-category') || '';
-            const productPackageType = (product.getAttribute('data-package-type') || '').toLowerCase();
-            let showCategory = false;
-
-            if (activeCatalogCategory === 'all') {
-                showCategory = true;
-            } else if (activeCatalogCategory === 'Package Setup') {
-                // Show products whose category is 'Package' OR whose packageType matches any package keyword
-                showCategory = productCategory.toLowerCase() === 'package' || packageTypes.includes(productPackageType);
-            } else if (activeCatalogCategory === 'Panel') {
-                showCategory = productCategory === 'Panel' || productCategory === 'Panels';
-            } else if (activeCatalogCategory === 'Inverter') {
-                showCategory = productCategory === 'Inverter' || productCategory === 'Inverters';
-            } else if (activeCatalogCategory === 'Battery') {
-                showCategory = productCategory === 'Battery' || productCategory === 'Batteries';
-            } else {
-                showCategory = productCategory === activeCatalogCategory;
-            }
-
-            const show = showCategory && productMatchesSearch(product);
+            const show = productMatchesFilterCategory(product, activeCatalogCategory) && productMatchesSearch(product);
+            product.dataset.filterMatch = show ? 'true' : 'false';
 
             if (show) {
-                product.style.display = 'flex';
                 visibleCount++;
 
                 // Handle hidden-product class for View More functionality
-                if (visibleCount > 4) {
-                    product.classList.add('hidden-product');
-                } else {
-                    product.classList.remove('hidden-product');
-                }
+                const shouldCollapse = visibleCount > collapseLimit;
+                product.classList.toggle('hidden-product', shouldCollapse);
+                product.style.display = (!shouldCollapse || isExpanded) ? 'flex' : 'none';
             } else {
                 product.style.display = 'none';
                 product.classList.remove('hidden-product');
@@ -6517,50 +6597,74 @@ $conn->close();
         });
 
         // Reset the grid to collapsed state
-        if (productsGrid) productsGrid.classList.remove('show-all');
         if (viewMoreBtn) {
             viewMoreBtn.classList.remove('expanded');
-            const btnText = viewMoreBtn.childNodes[viewMoreBtn.childNodes.length - 1];
-            if (btnText) btnText.textContent = ' View More';
+            const btnText = viewMoreBtn.querySelector('span');
+            if (btnText) btnText.textContent = isExpanded ? 'View Less Products' : 'View More Products';
         }
 
         // Show/hide view more button based on filtered results
         if (viewMoreContainer) {
-            viewMoreContainer.style.display = visibleCount > 4 ? 'block' : 'none';
+            viewMoreContainer.style.display = visibleCount > collapseLimit ? 'block' : 'none';
         }
     }
 
     function initializeSort() {
         const sortSelect = document.getElementById('sortSelect');
-        if (sortSelect) {
-            sortSelect.addEventListener('change', function() {
-                sortProducts(this.value);
-            });
+        if (!sortSelect || sortSelect.dataset.sortBound === 'true') return;
+
+        sortSelect.dataset.sortBound = 'true';
+        sortSelect.addEventListener('change', function() {
+            sortProducts(this.value);
+        });
+
+        if (sortSelect.value && sortSelect.value !== 'default') {
+            sortProducts(sortSelect.value);
         }
+    }
+
+    function ensureIndexProductSortIndexes(grid) {
+        grid.querySelectorAll('.product-card').forEach((product, index) => {
+            if (!product.dataset.originalIndex) {
+                product.dataset.originalIndex = String(index);
+            }
+        });
+    }
+
+    function getIndexProductPrice(product) {
+        const rawPrice = product.getAttribute('data-price') || product.dataset.price || '0';
+        return parseFloat(String(rawPrice).replace(/[^\d.-]/g, '')) || 0;
+    }
+
+    function getIndexProductName(product) {
+        return (product.getAttribute('data-name') || product.dataset.name || '').toString().trim();
     }
 
     function sortProducts(sortType) {
         const grid = document.getElementById('productsGrid');
         if (!grid) return;
 
-        const products = Array.from(document.querySelectorAll('.product-card'));
+        ensureIndexProductSortIndexes(grid);
+        const selectedSort = sortType || 'default';
+        const products = Array.from(grid.querySelectorAll('.product-card'));
 
         products.sort((a, b) => {
-            switch (sortType) {
+            switch (selectedSort) {
                 case 'price-low':
-                    return parseFloat(a.getAttribute('data-price')) - parseFloat(b.getAttribute('data-price'));
+                    return getIndexProductPrice(a) - getIndexProductPrice(b);
                 case 'price-high':
-                    return parseFloat(b.getAttribute('data-price')) - parseFloat(a.getAttribute('data-price'));
+                    return getIndexProductPrice(b) - getIndexProductPrice(a);
                 case 'name-asc':
-                    return a.getAttribute('data-name').localeCompare(b.getAttribute('data-name'));
+                    return getIndexProductName(a).localeCompare(getIndexProductName(b), undefined, { sensitivity: 'base' });
                 case 'name-desc':
-                    return b.getAttribute('data-name').localeCompare(a.getAttribute('data-name'));
+                    return getIndexProductName(b).localeCompare(getIndexProductName(a), undefined, { sensitivity: 'base' });
                 default:
-                    return 0;
+                    return (parseInt(a.dataset.originalIndex || '0', 10) || 0) - (parseInt(b.dataset.originalIndex || '0', 10) || 0);
             }
         });
 
         products.forEach(product => grid.appendChild(product));
+        filterProducts(activeCatalogCategory, true);
     }
 
     // ============================================
@@ -6850,20 +6954,21 @@ $conn->close();
     function toggleViewMore() {
         const productsGrid = document.getElementById('productsGrid');
         const viewMoreBtn = document.getElementById('viewMoreBtn');
-        const btnIcon = viewMoreBtn.querySelector('i');
-        const btnText = viewMoreBtn.childNodes[viewMoreBtn.childNodes.length - 1];
+        if (!productsGrid || !viewMoreBtn) return;
+        const btnText = viewMoreBtn.querySelector('span');
 
         // Toggle the show-all class
         productsGrid.classList.toggle('show-all');
+        filterProducts(activeCatalogCategory, true);
 
         // Update button appearance and text
         if (productsGrid.classList.contains('show-all')) {
             viewMoreBtn.classList.add('expanded');
-            btnText.textContent = ' View Less';
+            if (btnText) btnText.textContent = 'View Less Products';
 
             // Scroll smoothly to show newly revealed products
             setTimeout(() => {
-                const firstHiddenProduct = document.querySelector('.hidden-product');
+                const firstHiddenProduct = productsGrid.querySelector('.hidden-product');
                 if (firstHiddenProduct) {
                     firstHiddenProduct.scrollIntoView({
                         behavior: 'smooth',
@@ -6873,7 +6978,7 @@ $conn->close();
             }, 100);
         } else {
             viewMoreBtn.classList.remove('expanded');
-            btnText.textContent = ' View More';
+            if (btnText) btnText.textContent = 'View More Products';
 
             // Scroll back to the beginning of the grid
             const catalogSection = document.querySelector('.catalogs-section');
