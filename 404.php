@@ -1,14 +1,12 @@
 <?php
 http_response_code(404);
-
 require_once __DIR__ . '/includes/routes.php';
 
 $homeUrl = clean_url('index.php');
-$productsUrl = clean_url('product.php');
-$contactUrl = clean_url('contact.php');
+// Using the login URL for the secondary button
+$loginUrl = clean_url('login.php');
 $logoUrl = asset_url('assets/img/solarpower_energy_corp.png');
 $iconUrl = asset_url('assets/img/icon.png');
-$backgroundUrl = asset_url('assets/img/homepage-cover.png');
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -17,279 +15,194 @@ $backgroundUrl = asset_url('assets/img/homepage-cover.png');
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>404 Not Found | SolarPower Energy</title>
     <link rel="icon" type="image/png" href="<?php echo htmlspecialchars($iconUrl); ?>">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@700;800;900&display=swap" rel="stylesheet">
     <style>
         :root {
-            --forest: #0f382c;
-            --green: #176b45;
-            --gold: #f3b400;
-            --ink: #13231d;
-            --muted: #5f7069;
-            --line: rgba(15, 56, 44, 0.14);
-            --panel: rgba(255, 255, 255, 0.88);
+            --brand-green: #0D5C3A;
+            --brand-amber: #F2A900;
+            --brand-amber-hover: #D99700;
+            --text-dark: #1F2937;
+            --text-gray: #4B5563;
         }
 
         * {
             box-sizing: border-box;
-        }
-
-        html,
-        body {
-            min-height: 100%;
             margin: 0;
+            padding: 0;
         }
 
         body {
-            font-family: Arial, Helvetica, sans-serif;
-            color: var(--ink);
-            background:
-                linear-gradient(120deg, rgba(12, 39, 31, 0.94), rgba(20, 87, 57, 0.76)),
-                url('<?php echo htmlspecialchars($backgroundUrl); ?>') center/cover no-repeat fixed;
-        }
-
-        .error-page {
+            font-family: 'Inter', sans-serif;
+            background-color: #FFFFFF;
+            color: var(--text-dark);
             min-height: 100vh;
             display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 28px;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .error-page::before {
-            content: '';
-            position: absolute;
-            inset: auto -12vw -18vw auto;
-            width: 44vw;
-            height: 44vw;
-            min-width: 360px;
-            min-height: 360px;
-            border-radius: 999px;
-            background: radial-gradient(circle, rgba(243, 180, 0, 0.28), rgba(243, 180, 0, 0));
-            pointer-events: none;
-        }
-
-        .error-shell {
-            width: min(100%, 1040px);
-            display: grid;
-            grid-template-columns: 0.96fr 1.04fr;
-            border: 1px solid rgba(255, 255, 255, 0.42);
-            border-radius: 24px;
-            background: rgba(255, 255, 255, 0.2);
-            box-shadow: 0 28px 80px rgba(2, 19, 12, 0.34);
-            backdrop-filter: blur(18px);
-            overflow: hidden;
-            position: relative;
-            z-index: 1;
-        }
-
-        .brand-panel {
-            min-height: 560px;
-            padding: 44px;
-            color: #fff;
-            display: flex;
             flex-direction: column;
-            justify-content: space-between;
-            background:
-                linear-gradient(160deg, rgba(15, 56, 44, 0.96), rgba(23, 107, 69, 0.86)),
-                url('<?php echo htmlspecialchars($backgroundUrl); ?>') center/cover no-repeat;
         }
 
-        .brand-logo {
-            width: 230px;
-            max-width: 80%;
-            height: auto;
-            display: block;
-            filter: drop-shadow(0 12px 20px rgba(0, 0, 0, 0.2));
-        }
-
-        .brand-kicker {
-            display: inline-flex;
-            align-items: center;
-            gap: 9px;
-            width: fit-content;
-            margin-top: 34px;
-            padding: 9px 14px;
-            border-radius: 999px;
-            border: 1px solid rgba(255, 255, 255, 0.26);
-            background: rgba(255, 255, 255, 0.12);
-            font-size: 13px;
-            font-weight: 800;
-            letter-spacing: 0;
-        }
-
-        .brand-kicker span {
-            width: 8px;
-            height: 8px;
-            border-radius: 999px;
-            background: var(--gold);
-            box-shadow: 0 0 0 6px rgba(243, 180, 0, 0.18);
-        }
-
-        .brand-panel h1 {
-            margin: 22px 0 14px;
-            font-size: clamp(40px, 6vw, 72px);
-            line-height: 0.96;
-            letter-spacing: 0;
-        }
-
-        .brand-panel p {
-            max-width: 420px;
-            margin: 0;
-            color: rgba(255, 255, 255, 0.82);
-            font-size: 17px;
-            line-height: 1.65;
-        }
-
-        .brand-footnote {
-            display: grid;
-            gap: 8px;
-            color: rgba(255, 255, 255, 0.82);
-            font-size: 14px;
-            line-height: 1.5;
-        }
-
-        .content-panel {
-            padding: 52px;
-            display: flex;
-            align-items: center;
-            background: var(--panel);
-        }
-
-        .content-inner {
+        .header {
+            padding: 24px 48px;
             width: 100%;
         }
 
-        .error-code {
-            display: inline-flex;
+        .brand-logo {
+            height: 48px;
+            width: auto;
+        }
+
+        .error-container {
+            flex: 1;
+            display: flex;
             align-items: center;
             justify-content: center;
-            min-width: 108px;
-            height: 48px;
-            padding: 0 20px;
-            border-radius: 999px;
-            background: #fff7dc;
-            color: #8a6300;
-            border: 1px solid rgba(243, 180, 0, 0.42);
-            font-size: 18px;
+            padding: 40px 24px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .solar-bg-element {
+            position: absolute;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(242, 169, 0, 0.08) 0%, rgba(242, 169, 0, 0) 70%);
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 0;
+            pointer-events: none;
+            /* Simple fade in animation */
+            animation: glowFadeIn 2s ease-out forwards;
+        }
+
+        @keyframes glowFadeIn {
+            from { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+            to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .solar-bg-element {
+                animation: none;
+                opacity: 1;
+            }
+        }
+
+        .error-content {
+            position: relative;
+            z-index: 1;
+            max-width: 640px;
+            text-align: center;
+        }
+
+        .error-code {
+            font-family: 'Poppins', sans-serif;
+            font-size: clamp(80px, 12vw, 140px);
             font-weight: 900;
+            line-height: 1;
+            color: var(--brand-green);
+            margin-bottom: 16px;
+            text-shadow: 0 10px 30px rgba(13, 92, 58, 0.1);
         }
 
-        .content-panel h2 {
-            margin: 24px 0 12px;
-            color: var(--forest);
-            font-size: clamp(34px, 4vw, 56px);
-            line-height: 1.02;
-            letter-spacing: 0;
+        .headline {
+            font-family: 'Poppins', sans-serif;
+            font-size: clamp(28px, 4vw, 40px);
+            font-weight: 800;
+            color: var(--text-dark);
+            margin-bottom: 16px;
+            line-height: 1.2;
         }
 
-        .content-panel p {
-            margin: 0;
-            color: var(--muted);
-            font-size: 17px;
-            line-height: 1.7;
+        .subtext {
+            font-size: 1.125rem;
+            color: var(--text-gray);
+            line-height: 1.6;
+            margin-bottom: 40px;
+            max-width: 540px;
+            margin-left: auto;
+            margin-right: auto;
         }
 
-        .action-row {
+        .action-buttons {
             display: flex;
+            gap: 16px;
+            justify-content: center;
+            margin-bottom: 48px;
             flex-wrap: wrap;
-            gap: 12px;
-            margin-top: 30px;
         }
 
         .btn {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            min-height: 48px;
-            padding: 0 20px;
-            border-radius: 999px;
+            padding: 14px 28px;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 8px;
             text-decoration: none;
-            font-weight: 900;
-            font-size: 14px;
-            transition: transform 180ms ease, box-shadow 180ms ease, background 180ms ease;
+            transition: all 0.2s ease;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .btn:focus-visible {
+            outline: 3px solid rgba(242, 169, 0, 0.5);
+            outline-offset: 2px;
         }
 
         .btn-primary {
-            background: var(--gold);
-            color: #17211c;
-            box-shadow: 0 14px 28px rgba(243, 180, 0, 0.28);
+            background-color: var(--brand-amber);
+            color: #FFFFFF;
+            border: 2px solid var(--brand-amber);
+            box-shadow: 0 4px 12px rgba(242, 169, 0, 0.25);
+        }
+
+        .btn-primary:hover {
+            background-color: var(--brand-amber-hover);
+            border-color: var(--brand-amber-hover);
+            transform: translateY(-2px);
         }
 
         .btn-secondary {
-            background: #fff;
-            color: var(--forest);
-            border: 1px solid var(--line);
+            background-color: transparent;
+            color: var(--brand-green);
+            border: 2px solid var(--brand-green);
         }
 
-        .btn:hover,
-        .btn:focus {
+        .btn-secondary:hover {
+            background-color: rgba(13, 92, 58, 0.05);
             transform: translateY(-2px);
-            outline: none;
         }
 
-        .btn-primary:hover,
-        .btn-primary:focus {
-            box-shadow: 0 18px 36px rgba(243, 180, 0, 0.34);
+        .help-section {
+            padding-top: 32px;
+            border-top: 1px solid #E5E7EB;
         }
 
-        .help-strip {
-            margin-top: 34px;
-            padding: 18px;
-            border-radius: 18px;
-            border: 1px solid var(--line);
-            background: rgba(255, 255, 255, 0.74);
-            color: var(--muted);
-            font-size: 14px;
-            line-height: 1.6;
+        .help-heading {
+            font-family: 'Poppins', sans-serif;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--brand-green);
+            margin-bottom: 8px;
         }
 
-        .help-strip strong {
-            display: block;
-            margin-bottom: 2px;
-            color: var(--forest);
+        .help-text {
+            font-size: 1rem;
+            color: var(--text-gray);
+            line-height: 1.5;
         }
 
-        @media (max-width: 860px) {
-            .error-page {
-                padding: 18px;
-                align-items: flex-start;
+        @media (max-width: 640px) {
+            .header {
+                padding: 20px;
+                text-align: center;
             }
-
-            .error-shell {
-                grid-template-columns: 1fr;
-                border-radius: 20px;
+            .action-buttons {
+                flex-direction: column;
+                gap: 12px;
             }
-
-            .brand-panel {
-                min-height: auto;
-                gap: 56px;
-                padding: 30px;
-            }
-
-            .content-panel {
-                padding: 32px 26px;
-            }
-
-            .brand-logo {
-                width: 190px;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .error-page {
-                padding: 12px;
-            }
-
-            .brand-panel,
-            .content-panel {
-                padding: 24px 20px;
-            }
-
-            .action-row {
-                display: grid;
-            }
-
             .btn {
                 width: 100%;
             }
@@ -297,42 +210,31 @@ $backgroundUrl = asset_url('assets/img/homepage-cover.png');
     </style>
 </head>
 <body>
-    <main class="error-page">
-        <section class="error-shell" aria-labelledby="errorTitle">
-            <aside class="brand-panel">
-                <div>
-                    <img src="<?php echo htmlspecialchars($logoUrl); ?>" alt="SolarPower Energy Corporation" class="brand-logo">
-                    <div class="brand-kicker"><span></span> SolarPower Energy Corporation</div>
-                    <h1>Lost in the grid?</h1>
-                    <p>The page you opened is unavailable, but your solar journey can continue from the right place.</p>
-                </div>
-                <div class="brand-footnote">
-                    <strong>Need help?</strong>
-                    <span>Our team can guide you back to products, services, solar loans, or estimates.</span>
-                </div>
-            </aside>
+    <header class="header">
+        <a href="<?php echo htmlspecialchars($homeUrl); ?>">
+            <img src="<?php echo htmlspecialchars($logoUrl); ?>" alt="SolarPower Energy Corporation" class="brand-logo">
+        </a>
+    </header>
 
-            <div class="content-panel">
-                <div class="content-inner">
-                    <span class="error-code">404</span>
-                    <h2 id="errorTitle">Page not found</h2>
-                    <p>
-                        This link may have moved, expired, or been typed incorrectly. Use the button below to return to the homepage.
-                    </p>
-
-                    <div class="action-row">
-                        <a href="<?php echo htmlspecialchars($homeUrl); ?>" class="btn btn-primary">Back to Home</a>
-                        <a href="<?php echo htmlspecialchars($productsUrl); ?>" class="btn btn-secondary">Browse Products</a>
-                        <a href="<?php echo htmlspecialchars($contactUrl); ?>" class="btn btn-secondary">Contact Us</a>
-                    </div>
-
-                    <div class="help-strip">
-                        <strong>Tip for staff access</strong>
-                        Use the clean login URL: <a href="<?php echo htmlspecialchars(clean_url('login.php')); ?>">Login</a>
-                    </div>
-                </div>
+    <main class="error-container">
+        <div class="solar-bg-element"></div>
+        <div class="error-content">
+            <div class="error-code">404</div>
+            <h1 class="headline">Lost in the grid?</h1>
+            <p class="subtext">
+                The page you opened is unavailable, but your solar journey can continue from the right place.
+            </p>
+            
+            <div class="action-buttons">
+                <a href="<?php echo htmlspecialchars($homeUrl); ?>" class="btn btn-primary">Go Back Home</a>
+                <a href="<?php echo htmlspecialchars($loginUrl); ?>" class="btn btn-secondary">Log In Again</a>
             </div>
-        </section>
+
+            <div class="help-section">
+                <h3 class="help-heading">Need help?</h3>
+                <p class="help-text">Our team can guide you back to products, services, solar loans, or estimates.</p>
+            </div>
+        </div>
     </main>
 </body>
 </html>

@@ -972,12 +972,19 @@ unset($_SESSION['estimate_flash']);
                                         placeholder="House No., Street, Brgy, City" required></textarea>
                                 </div>
 
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label fw-semibold small text-uppercase">Preferred Assessment Date</label>
-                                    <input type="date" name="inspection_date" class="form-control" required>
+                                <div class="col-md-6 mb-3 assessment-aligned-field">
+                                    <?php 
+                                    $fieldPath = __DIR__ . '/includes/assessment-date-field.php';
+                                    if (file_exists($fieldPath)) {
+                                        include $fieldPath;
+                                    } else {
+                                        echo '<label class="form-label fw-semibold small text-uppercase">Preferred Assessment Date</label>';
+                                        echo '<input type="date" name="inspection_date" class="form-control" required>';
+                                    }
+                                    ?>
                                 </div>
 
-                                <div class="col-md-6 mb-3">
+                                <div class="col-md-6 mb-3 assessment-aligned-field">
                                     <label class="form-label fw-semibold small text-uppercase">Monthly Bill (₱)</label>
                                     <div class="input-group">
                                         <span class="input-group-text">₱</span>

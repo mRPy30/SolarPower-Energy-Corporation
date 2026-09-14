@@ -1,0 +1,76 @@
+/* Electrical field sheet. Yellow = solar; pine = power connections. */
+.solar-options { --pine:#173d2e; --ink:#203129; --paper:#f6f3ea; --sun:#e8b43b; --slate:#526158; --rule:#c5cdbf; padding:clamp(48px,7vw,96px) 0; background:var(--paper); color:var(--ink); font-family:'Trebuchet MS',sans-serif; }
+.solar-options-heading { display:grid; grid-template-columns:3fr 2fr; align-items:end; gap:40px; margin-bottom:48px; }
+.solar-options-heading h2 { color:var(--pine); font:400 clamp(36px,4.5vw,60px)/1.06 Georgia,serif; letter-spacing:-1.8px; margin:0; max-width:560px; }
+.solar-options-heading h2 span { display:block; }
+.solar-options-heading > p { font-size:16px; line-height:1.65; color:var(--slate); max-width:390px; margin:0; }
+.solar-options-progression { display:flex; align-items:center; gap:20px; font-size:13px; color:var(--slate); margin-bottom:28px; }
+.solar-options-progression::after { content:''; flex:1; height:1px; background:var(--slate); order:1; }
+.solar-options-progression span:last-child { order:2; }
+.solar-options-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); }
+.solar-option-card { position:relative; min-width:0; display:flex; flex-direction:column; padding:0 28px; border-right:1px solid var(--rule); scroll-margin-top:100px; }
+.solar-option-card:first-child { padding-left:0; }
+.solar-option-card:last-child { padding-right:0; border-right:0; }
+.solar-option-connection { position:relative; padding-top:20px; margin-bottom:26px; font-size:12px; line-height:1.5; color:var(--slate); min-height:56px; }
+.solar-option-connection::before { content:''; position:absolute; left:-28px; right:-28px; top:0; border-top:3px solid var(--pine); }
+.solar-option-card:first-child .solar-option-connection::before { left:0; }
+.solar-option-card--offgrid .solar-option-connection::before { left:0; right:0; border-top:3px dashed var(--rule); }
+.solar-option-card h3 { color:var(--pine); font:400 clamp(29px,3vw,40px)/1.15 Georgia,serif; margin:0 0 20px; letter-spacing:-.7px; }
+.solar-option-card h3 span { display:block; margin-top:7px; font:14px/1.4 'Trebuchet MS',sans-serif; letter-spacing:0; color:var(--slate); }
+.solar-option-diagram { display:block; width:100%; height:220px; margin-bottom:24px; overflow:visible; }
+.solar-option-diagram text { text-anchor:middle; font:12px 'Trebuchet MS',sans-serif; fill:var(--ink); }
+.solar-option-diagram path,.solar-option-diagram rect { fill:none; stroke:var(--pine); stroke-width:2; stroke-linejoin:round; }
+.solar-option-diagram .solar-wire { stroke:var(--sun); stroke-width:5; }
+.solar-option-diagram .panel-node { fill:var(--sun); stroke-width:1.5; }
+.solar-option-diagram .property-node { fill:var(--paper); }
+.solar-option-diagram .storage-wire { stroke-width:3; }
+.solar-option-diagram .battery-node { fill:var(--paper); }
+.solar-option-diagram .disconnected-label { fill:var(--slate); font-size:11px; }
+.solar-option-diagram .disconnected-mark { stroke:var(--slate); stroke-width:1.5; }
+.solar-option-body { display:flex; flex:1; flex-direction:column; }
+.solar-option-description { font-size:15px; line-height:1.7; color:var(--slate); margin:0 0 24px; min-height:102px; }
+.solar-option-specs { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:0 0 26px; padding:18px 0; border-block:1px solid var(--rule); }
+.solar-option-specs dt { font-size:12px; font-weight:400; color:var(--slate); margin-bottom:8px; }
+.solar-option-specs dd { font-size:14px; font-weight:700; line-height:1.5; margin:0; }
+.solar-option-best > span { font-size:14px; font-weight:700; color:var(--pine); }
+.solar-option-best p { font-size:15px; line-height:1.6; margin:8px 0 18px; min-height:72px; }
+.solar-option-features { list-style:none; padding:0; margin:0 0 30px; }
+.solar-option-features li { position:relative; font-size:14px; line-height:1.65; padding:10px 0 10px 16px; border-bottom:1px solid var(--rule); }
+.solar-option-features li::before { content:''; position:absolute; top:20px; left:0; width:5px; height:5px; background:var(--pine); }
+.solar-option-note { margin:auto 0 0; padding:4px 0 4px 14px; border-left:3px solid var(--sun); font-size:13px; line-height:1.65; color:var(--slate); min-height:82px; }
+.solar-option-note strong { display:block; color:var(--ink); font-size:12px; margin-bottom:5px; }
+.solar-options-help { margin-top:48px; padding-top:28px; border-top:2px solid var(--pine); display:flex; align-items:center; justify-content:space-between; gap:32px; }
+.solar-options-help h3 { color:var(--pine); font:400 30px/1.2 Georgia,serif; margin:0 0 10px; }
+.solar-options-help p { color:var(--slate); font-size:15px; line-height:1.6; margin:0; }
+.solar-options-cta { flex-shrink:0; border:2px solid var(--pine); border-radius:0; background:var(--pine); color:var(--paper); padding:16px 22px; font:700 15px/1.5 'Trebuchet MS',sans-serif; cursor:pointer; }
+.solar-options-cta:hover { background:var(--paper); color:var(--pine); }
+.solar-options-cta:focus-visible { outline:3px solid var(--pine); outline-offset:5px; }
+@media(max-width:991px) {
+ .solar-options-heading { gap:24px; }
+ .solar-option-card { padding-inline:16px; }
+ .solar-option-connection::before { left:-16px; right:-16px; }
+ .solar-option-description { min-height:153px; }
+ .solar-option-specs { grid-template-columns:1fr; min-height:140px; }
+ .solar-option-best p { min-height:120px; }
+ .solar-options-help { align-items:flex-start; flex-direction:column; }
+}
+@media(max-width:767px) {
+ .solar-options-heading { grid-template-columns:1fr; margin-bottom:30px; }
+ .solar-options-heading h2 { letter-spacing:-1px; }
+ .solar-options-heading h2 span { display:inline; }
+ .solar-options-progression { gap:12px; font-size:11px; }
+ .solar-options-grid { grid-template-columns:1fr; gap:38px; }
+ .solar-option-card,.solar-option-card:first-child,.solar-option-card:last-child { padding:0; border-right:0; }
+ .solar-option-connection { margin-bottom:16px; min-height:0; }
+ .solar-option-connection::before { left:0; right:0; }
+ .solar-option-card h3 { font-size:36px; }
+ .solar-option-diagram { max-width:360px; align-self:center; }
+ .solar-option-description,.solar-option-best p,.solar-option-specs,.solar-option-note { min-height:0; }
+ .solar-option-specs { grid-template-columns:1fr 1fr; }
+ .solar-options-help { margin-top:36px; }
+ .solar-options-cta { width:100%; }
+}
+@media(forced-colors:active) {
+ .solar-option-diagram path,.solar-option-diagram rect { stroke:CanvasText; }
+ .solar-option-diagram text { fill:CanvasText; }
+}

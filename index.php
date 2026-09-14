@@ -1038,9 +1038,31 @@ $conn->close();
 
         @media (max-width: 991px) {
             .bnpl-card-grid {
-                grid-template-columns: 1fr;
-                max-width: 520px;
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+                gap: 12px;
+                max-width: 100%;
                 margin: 0 auto;
+            }
+            .bnpl-card {
+                padding: 16px 12px;
+                min-height: auto;
+            }
+            .bnpl-icon-box {
+                width: 40px;
+                height: 40px;
+                margin-bottom: 10px;
+            }
+            .bnpl-icon-box svg {
+                width: 20px;
+                height: 20px;
+            }
+            .bnpl-card h3 {
+                font-size: 0.85rem;
+                margin: 0 0 10px;
+            }
+            .bnpl-card p {
+                font-size: 0.8rem;
+                line-height: 1.5;
             }
         }
 
@@ -1049,9 +1071,30 @@ $conn->close();
                 padding: 64px 0;
             }
 
+            .bnpl-card-grid {
+                gap: 8px;
+            }
+
             .bnpl-card {
-                min-height: auto;
-                padding: 30px 22px;
+                padding: 12px 8px;
+            }
+            
+            .bnpl-icon-box {
+                width: 32px;
+                height: 32px;
+                margin-bottom: 8px;
+            }
+            .bnpl-icon-box svg {
+                width: 16px;
+                height: 16px;
+            }
+            .bnpl-card h3 {
+                font-size: 0.7rem;
+                margin: 0 0 6px;
+            }
+            .bnpl-card p {
+                font-size: 0.65rem;
+                line-height: 1.4;
             }
         }
 
@@ -2594,7 +2637,7 @@ $conn->close();
 
             <div class="row g-4" data-aos="fade-up" data-aos-delay="100">
                 <!-- Card 1 -->
-                <div class="col-md-4">
+                <div class="col-12 col-md-6 col-lg-4">
                     <div class="card h-100 p-4 border-0 shadow-sm transition-all" style="border-bottom: 5px solid #F2A900 !important; border-radius: 16px; background: #FFFFFF;">
                         <div class="mb-4 text-success d-flex align-items-center justify-content-center rounded-circle" style="width: 60px; height: 60px; background-color: rgba(13, 92, 58, 0.05); font-size: 1.75rem;">
                             <i class="fas fa-home"></i>
@@ -2605,7 +2648,7 @@ $conn->close();
                 </div>
 
                 <!-- Card 2 -->
-                <div class="col-md-4">
+                <div class="col-12 col-md-6 col-lg-4">
                     <div class="card h-100 p-4 border-0 shadow-sm transition-all" style="border-bottom: 5px solid #F2A900 !important; border-radius: 16px; background: #FFFFFF;">
                         <div class="mb-4 text-success d-flex align-items-center justify-content-center rounded-circle" style="width: 60px; height: 60px; background-color: rgba(13, 92, 58, 0.05); font-size: 1.75rem;">
                             <i class="fas fa-industry"></i>
@@ -2616,7 +2659,7 @@ $conn->close();
                 </div>
 
                 <!-- Card 3 -->
-                <div class="col-md-4">
+                <div class="col-12 col-md-6 col-lg-4">
                     <div class="card h-100 p-4 border-0 shadow-sm transition-all" style="border-bottom: 5px solid #F2A900 !important; border-radius: 16px; background: #FFFFFF;">
                         <div class="mb-4 text-success d-flex align-items-center justify-content-center rounded-circle" style="width: 60px; height: 60px; background-color: rgba(13, 92, 58, 0.05); font-size: 1.75rem;">
                             <i class="fas fa-hand-holding-usd"></i>
@@ -3320,117 +3363,441 @@ $conn->close();
                 <p class="section-subtitle">Find the right solar setup for your home or business</p>
             </div>
 
-            <!-- Video Grid -->
-            <div class="row g-4 mb-5 justify-content-center">
-                <div class="col-lg-6 col-md-10">
-                    <div class="video-card">
-                        <div class="video-wrapper">
-                            <div class="fb-video-responsive">
-                                <iframe
-                                    src="https://www.facebook.com/plugins/video.php?href=https%3A%2F%2Fwww.facebook.com%2Freel%2F1556081359036132%2F&show_text=false"
-                                    allowfullscreen="true"
-                                    allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share">
-                                </iframe>
-                            </div>
+            <!-- Solar System Types — Comparison -->
+            <style>
+                /* ── SST Comparison: scoped styles ── */
+                .sst {
+                    display: grid;
+                    grid-template-columns: repeat(3, 1fr);
+                    border: 1px solid #D1D5DB;
+                    background: #FFFFFF;
+                    overflow: hidden;
+                }
+
+                .sst-col {
+                    position: relative;
+                    padding: 40px 32px 36px;
+                    display: flex;
+                    flex-direction: column;
+                    border-right: 1px solid #E5E7EB;
+                }
+                .sst-col:last-child { border-right: none; }
+
+                /* ── Grid-tether bar ──
+                   A vertical bar on the left edge of each column.
+                   Height shrinks across columns: tall → medium → gone.
+                   Represents grid dependency decreasing. */
+                .sst-col::before {
+                    content: '';
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    width: 4px;
+                }
+                .sst-col--grid::before {
+                    height: 100%;
+                    background: #F2A900;
+                }
+                .sst-col--hybrid::before {
+                    height: 50%;
+                    background: #0a5c3d;
+                    opacity: 0.5;
+                }
+                .sst-col--off::before {
+                    height: 0; /* severed — no bar */
+                }
+
+                /* Hybrid gets a faint background tint to mark the middle step */
+                .sst-col--hybrid { background: #F3F4F6; }
+
+                /* ── Hover: top-border highlight tied to column meaning ── */
+                .sst-col { border-top: 3px solid transparent; transition: border-top-color 0.2s ease; }
+                .sst-col--grid:hover  { border-top-color: #F2A900; }
+                .sst-col--hybrid:hover { border-top-color: rgba(10,92,61,0.4); }
+                .sst-col--off:hover    { border-top-color: #0a5c3d; }
+
+                /* ── Column heading ── */
+                .sst-name {
+                    font-family: var(--ff-poppins, 'Poppins', sans-serif);
+                    font-size: 1.5rem;
+                    font-weight: 700;
+                    color: #0a5c3d;
+                    margin: 0 0 10px;
+                    line-height: 1.2;
+                }
+
+                /* ── Description ── */
+                .sst-desc {
+                    font-family: var(--ff-body);
+                    font-size: 0.95rem;
+                    color: #6B7280;
+                    line-height: 1.6;
+                    margin: 0 0 16px;
+                }
+
+                /* ── Custom Vector Illustration Container ── */
+                .sst-illustration {
+                    width: 100%;
+                    height: 105px;
+                    margin: 12px 0 24px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                }
+                .sst-illustration svg {
+                    width: 82%;
+                    max-width: 240px;
+                    height: 100%;
+                    max-height: 105px;
+                }
+
+                /* ── Spec rows (label → value) ── */
+                .sst-specs {
+                    margin-bottom: 28px;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 0;
+                }
+                .sst-spec {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: baseline;
+                    padding: 10px 0;
+                    border-bottom: 1px solid #E5E7EB;
+                }
+                .sst-spec:last-child { border-bottom: none; }
+
+                .sst-spec-lbl {
+                    font-family: var(--ff-body);
+                    font-size: 0.8rem;
+                    font-weight: 500;
+                    text-transform: uppercase;
+                    letter-spacing: 0.06em;
+                    color: #9CA3AF;
+                }
+                .sst-spec-val {
+                    font-family: var(--ff-body);
+                    font-size: 0.95rem;
+                    font-weight: 700;
+                    color: #1F2937;
+                    text-align: right;
+                }
+                /* "None" value gets a muted treatment */
+                .sst-spec-val--muted { color: #D1D5DB; }
+
+                /* ── "Ideal for" section ── */
+                .sst-ideal {
+                    flex-grow: 1;
+                    margin-bottom: 28px;
+                }
+                .sst-ideal-hd {
+                    font-family: var(--ff-body);
+                    font-size: 0.8rem;
+                    font-weight: 700;
+                    text-transform: uppercase;
+                    letter-spacing: 0.08em;
+                    color: #9CA3AF;
+                    margin: 0 0 14px;
+                }
+                .sst-ul {
+                    list-style: none;
+                    padding: 0;
+                    margin: 0;
+                }
+                .sst-ul li {
+                    position: relative;
+                    padding-left: 18px;
+                    font-family: var(--ff-body);
+                    font-size: 0.95rem;
+                    color: #374151;
+                    line-height: 1.45;
+                    margin-bottom: 12px;
+                }
+                .sst-ul li:last-child { margin-bottom: 0; }
+                .sst-ul li::before {
+                    content: '—';
+                    position: absolute;
+                    left: 0;
+                    color: #F2A900;
+                    font-weight: 700;
+                }
+
+                /* ── Caveat footnote ── */
+                .sst-caveat {
+                    font-family: var(--ff-body);
+                    font-size: 0.875rem;
+                    font-weight: 500;
+                    line-height: 1.5;
+                    padding: 12px 14px;
+                    border-left: 3px solid;
+                    margin-top: auto;
+                }
+                /* Colors tied to meaning: caution → neutral → affirmative */
+                .sst-caveat--warn   { background: #FFF7ED; border-left-color: #F97316; color: #9A3412; }
+                .sst-caveat--info   { background: #F0F9FF; border-left-color: #0EA5E9; color: #075985; }
+                .sst-caveat--good   { background: #ECFDF5; border-left-color: #0a5c3d; color: #065F46; }
+
+                /* ── CTA line ── */
+                .sst-cta {
+                    margin-top: 40px;
+                    font-family: var(--ff-poppins, 'Poppins', sans-serif);
+                    font-size: 1.1rem;
+                    font-weight: 700;
+                    color: #374151;
+                    line-height: 1.5;
+                }
+                .sst-cta a {
+                    color: #F2A900;
+                    text-decoration: none;
+                    border-bottom: 2px solid transparent;
+                    transition: border-bottom-color 0.2s ease;
+                }
+                .sst-cta a:hover,
+                .sst-cta a:focus {
+                    border-bottom-color: #F2A900;
+                }
+                .sst-cta a:focus-visible {
+                    outline: 2px solid #F2A900;
+                    outline-offset: 3px;
+                    border-radius: 2px;
+                }
+
+                /* ── Responsive ── */
+                @media (max-width: 991px) {
+                    .sst {
+                        grid-template-columns: 1fr;
+                    }
+                    .sst-col {
+                        border-right: none;
+                        border-bottom: 1px solid #E5E7EB;
+                        border-top: none !important;
+                    }
+                    .sst-col:last-child { border-bottom: none; }
+
+                    /* On mobile, tether bar moves to top edge (horizontal) */
+                    .sst-col::before {
+                        top: 0; left: 0;
+                        height: 4px !important;
+                        width: 100%;
+                    }
+                    .sst-col--grid::before  { width: 100%; height: 4px !important; }
+                    .sst-col--hybrid::before { width: 50%;  height: 4px !important; opacity: 0.5; }
+                    .sst-col--off::before    { width: 0;    height: 4px !important; }
+
+                    .sst-col--grid  { padding-top: 44px; } /* extra space for the bar */
+                    .sst-col--hybrid { padding-top: 44px; }
+                }
+
+                @media (max-width: 480px) {
+                    .sst-col { padding: 32px 20px 28px; }
+                    .sst-name { font-size: 1.3rem; }
+                    .sst-cta { font-size: 1rem; }
+                }
+            </style>
+
+            <div class="sst" role="region" aria-label="Solar system types comparison">
+                <!-- Grid-Tied -->
+                <article class="sst-col sst-col--grid">
+                    <h3 class="sst-name">Grid-Tied</h3>
+                    <p class="sst-desc">The simplest and most cost-effective setup. Your panels feed directly into the utility grid, which acts as a virtual battery through net metering.</p>
+
+                    <!-- Custom SVG Illustration: Grid-Tied -->
+                    <div class="sst-illustration" aria-hidden="true">
+                        <svg viewBox="0 0 280 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <!-- Ground Line -->
+                            <line x1="10" y1="105" x2="270" y2="105" stroke="#2D3748" stroke-width="3" stroke-linecap="round"/>
+                            
+                            <!-- House Body & Roof -->
+                            <rect x="35" y="55" width="60" height="50" rx="2" stroke="#2D3748" stroke-width="3" fill="#FFFFFF"/>
+                            <path d="M25 55 L65 25 L105 55 Z" stroke="#2D3748" stroke-width="3" fill="#FFFFFF"/>
+                            
+                            <!-- Solar Panel on Roof -->
+                            <path d="M38 48 L65 30 L88 48" stroke="#F2A900" stroke-width="4" stroke-linecap="round"/>
+                            
+                            <!-- Door & Window -->
+                            <rect x="58" y="72" width="16" height="33" fill="#F7FAFC" stroke="#2D3748" stroke-width="2"/>
+                            <rect x="42" y="70" width="12" height="14" fill="#F7FAFC" stroke="#2D3748" stroke-width="2"/>
+                            
+                            <!-- Sun -->
+                            <circle cx="65" cy="13" r="6" fill="#F2A900"/>
+                            <line x1="65" y1="3" x2="65" y2="5" stroke="#F2A900" stroke-width="2" stroke-linecap="round"/>
+                            <line x1="74" y1="13" x2="76" y2="13" stroke="#F2A900" stroke-width="2" stroke-linecap="round"/>
+                            <line x1="56" y1="13" x2="54" y2="13" stroke="#F2A900" stroke-width="2" stroke-linecap="round"/>
+                            
+                            <!-- Grid Connection Line & Arrow -->
+                            <path d="M95 75 H195" stroke="#F2A900" stroke-width="3"/>
+                            <path d="M150 68 L162 75 L150 82" stroke="#F2A900" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                            
+                            <!-- Utility Pole -->
+                            <line x1="205" y1="20" x2="205" y2="105" stroke="#2D3748" stroke-width="3" stroke-linecap="round"/>
+                            <line x1="185" y1="32" x2="225" y2="32" stroke="#2D3748" stroke-width="3" stroke-linecap="round"/>
+                            <line x1="190" y1="42" x2="220" y2="42" stroke="#2D3748" stroke-width="2" stroke-linecap="round"/>
+                            <circle cx="190" cy="28" r="3" fill="#F2A900"/>
+                            <circle cx="220" cy="28" r="3" fill="#F2A900"/>
+                            <line x1="225" y1="32" x2="260" y2="28" stroke="#A0AEC0" stroke-width="2" stroke-dasharray="4 3"/>
+                        </svg>
+                    </div>
+
+                    <div class="sst-specs">
+                        <div class="sst-spec">
+                            <span class="sst-spec-lbl">Grid Reliance</span>
+                            <span class="sst-spec-val">High</span>
+                        </div>
+                        <div class="sst-spec">
+                            <span class="sst-spec-lbl">Battery Storage</span>
+                            <span class="sst-spec-val sst-spec-val--muted">None</span>
                         </div>
                     </div>
-                </div>
-                <div class="col-lg-6 col-md-10">
-                    <div class="video-card">
-                        <div class="video-wrapper">
-                            <div class="fb-video-responsive">
-                                <iframe
-                                    src="https://www.facebook.com/plugins/video.php?href=https://www.facebook.com/61578373983187/videos/1562743611632906/?__so__=watchlist&__rv__=video_home_www_playlist_video_list"
-                                    allowfullscreen="true"
-                                    allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share">
-                                </iframe>
-                            </div>
+
+                    <div class="sst-ideal">
+                        <p class="sst-ideal-hd">Ideal for</p>
+                        <ul class="sst-ul">
+                            <li>Maximum ROI and lowest upfront cost</li>
+                            <li>Areas with reliable grid power</li>
+                            <li>Earning net metering credits</li>
+                            <li>Fastest payback period</li>
+                        </ul>
+                    </div>
+
+                    <div class="sst-caveat sst-caveat--warn">
+                        Shuts down completely during grid blackouts — no backup power.
+                    </div>
+                </article>
+
+                <!-- Hybrid -->
+                <article class="sst-col sst-col--hybrid">
+                    <h3 class="sst-name">Hybrid</h3>
+                    <p class="sst-desc">Grid-connected with battery backup. Panels power your home and charge the battery; the grid fills remaining gaps.</p>
+
+                    <!-- Custom SVG Illustration: Hybrid -->
+                    <div class="sst-illustration" aria-hidden="true">
+                        <svg viewBox="0 0 280 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <!-- Ground Line -->
+                            <line x1="10" y1="105" x2="270" y2="105" stroke="#2D3748" stroke-width="3" stroke-linecap="round"/>
+                            
+                            <!-- House Body & Roof -->
+                            <rect x="25" y="55" width="55" height="50" rx="2" stroke="#2D3748" stroke-width="3" fill="#FFFFFF"/>
+                            <path d="M15 55 L52.5 25 L90 55 Z" stroke="#2D3748" stroke-width="3" fill="#FFFFFF"/>
+                            
+                            <!-- Solar Panel on Roof -->
+                            <path d="M28 48 L52.5 30 L74 48" stroke="#0a5c3d" stroke-width="4" stroke-linecap="round"/>
+                            
+                            <!-- Integrated Wall-Mounted Battery -->
+                            <rect x="86" y="58" width="22" height="47" rx="3" stroke="#0a5c3d" stroke-width="3" fill="#EDF7F2"/>
+                            <rect x="93" y="52" width="8" height="6" rx="1" fill="#0a5c3d"/>
+                            <path d="M98 67 L94 76 H100 L96 86" stroke="#0a5c3d" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                            
+                            <!-- Two-Way Flow Arrows & Grid Line -->
+                            <path d="M108 75 H205" stroke="#F2A900" stroke-width="3"/>
+                            <!-- Arrow Right -->
+                            <path d="M165 67 L175 75 L165 83" stroke="#F2A900" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                            <!-- Arrow Left -->
+                            <path d="M150 67 L140 75 L150 83" stroke="#0a5c3d" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                            
+                            <!-- Utility Pole -->
+                            <line x1="205" y1="20" x2="205" y2="105" stroke="#2D3748" stroke-width="3" stroke-linecap="round"/>
+                            <line x1="185" y1="32" x2="225" y2="32" stroke="#2D3748" stroke-width="3" stroke-linecap="round"/>
+                            <circle cx="190" cy="28" r="3" fill="#0a5c3d"/>
+                            <circle cx="220" cy="28" r="3" fill="#0a5c3d"/>
+                        </svg>
+                    </div>
+
+                    <div class="sst-specs">
+                        <div class="sst-spec">
+                            <span class="sst-spec-lbl">Grid Reliance</span>
+                            <span class="sst-spec-val">Moderate</span>
+                        </div>
+                        <div class="sst-spec">
+                            <span class="sst-spec-lbl">Battery Storage</span>
+                            <span class="sst-spec-val">Included</span>
                         </div>
                     </div>
-                </div>
+
+                    <div class="sst-ideal">
+                        <p class="sst-ideal-hd">Ideal for</p>
+                        <ul class="sst-ul">
+                            <li>Backup power during outages</li>
+                            <li>Storing excess solar for night use</li>
+                            <li>Maximizing self-consumption</li>
+                            <li>Areas with frequent brownouts</li>
+                        </ul>
+                    </div>
+
+                    <div class="sst-caveat sst-caveat--info">
+                        Continues working during blackouts using stored battery energy.
+                    </div>
+                </article>
+
+                <!-- Off-Grid -->
+                <article class="sst-col sst-col--off">
+                    <h3 class="sst-name">Off-Grid</h3>
+                    <p class="sst-desc">Complete energy independence. You generate, store, and consume 100% of your own power with no utility connection.</p>
+
+                    <!-- Custom SVG Illustration: Off-Grid -->
+                    <div class="sst-illustration" aria-hidden="true">
+                        <svg viewBox="0 0 280 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <!-- Ground Line -->
+                            <line x1="10" y1="105" x2="270" y2="105" stroke="#2D3748" stroke-width="3" stroke-linecap="round"/>
+                            
+                            <!-- House Body & Roof -->
+                            <rect x="25" y="55" width="55" height="50" rx="2" stroke="#2D3748" stroke-width="3" fill="#FFFFFF"/>
+                            <path d="M15 55 L52.5 25 L90 55 Z" stroke="#2D3748" stroke-width="3" fill="#FFFFFF"/>
+                            
+                            <!-- Solar Panel on Roof -->
+                            <path d="M28 48 L52.5 30 L74 48" stroke="#0a5c3d" stroke-width="4" stroke-linecap="round"/>
+                            
+                            <!-- Prominent / Larger Battery Bank -->
+                            <rect x="90" y="42" width="34" height="63" rx="4" stroke="#0a5c3d" stroke-width="3" fill="#EDF7F2"/>
+                            <rect x="101" y="35" width="12" height="7" rx="2" fill="#0a5c3d"/>
+                            <rect x="96" y="51" width="22" height="9" rx="2" fill="#0a5c3d"/>
+                            <rect x="96" y="65" width="22" height="9" rx="2" fill="#0a5c3d"/>
+                            <rect x="96" y="79" width="22" height="9" rx="2" fill="#0a5c3d"/>
+                            
+                            <!-- Cable House to Battery -->
+                            <path d="M80 75 H90" stroke="#0a5c3d" stroke-width="3.5"/>
+                            
+                            <!-- Terminated / Broken Line -->
+                            <path d="M124 75 H165" stroke="#A0AEC0" stroke-width="2.5" stroke-dasharray="6 5"/>
+                            <!-- Line termination cap -->
+                            <circle cx="165" cy="75" r="4" fill="#A0AEC0"/>
+                            
+                            <!-- Faded / Distant Unconnected Pole -->
+                            <line x1="225" y1="40" x2="225" y2="105" stroke="#CBD5E0" stroke-width="2" stroke-dasharray="4 3" stroke-linecap="round"/>
+                            <line x1="210" y1="52" x2="240" y2="52" stroke="#CBD5E0" stroke-width="2" stroke-dasharray="4 3" stroke-linecap="round"/>
+                        </svg>
+                    </div>
+
+                    <div class="sst-specs">
+                        <div class="sst-spec">
+                            <span class="sst-spec-lbl">Grid Reliance</span>
+                            <span class="sst-spec-val">Zero</span>
+                        </div>
+                        <div class="sst-spec">
+                            <span class="sst-spec-lbl">Battery Storage</span>
+                            <span class="sst-spec-val">Required (large bank)</span>
+                        </div>
+                    </div>
+
+                    <div class="sst-ideal">
+                        <p class="sst-ideal-hd">Ideal for</p>
+                        <ul class="sst-ul">
+                            <li>Remote properties without grid access</li>
+                            <li>Full energy self-sufficiency</li>
+                            <li>Zero dependence on utility providers</li>
+                            <li>Rural farms and island homes</li>
+                        </ul>
+                    </div>
+
+                    <div class="sst-caveat sst-caveat--good">
+                        Completely immune to grid failures and utility rate increases.
+                    </div>
+                </article>
             </div>
 
-            <!-- Solar System Types Comparison -->
-            <div class="solar-systems-wrapper">
-
-                <!-- 01 Grid-Tied — right to left -->
-                <div class="solar-system-row" id="system-gridtied" data-aos="fade-left" data-aos-duration="900">
-                    <div class="system-image-col">
-                        <div class="system-img-frame">
-                            <img src="assets/img/gridtied.png" alt="Grid-Tied Solar System" class="system-img">
-                        </div>
-                    </div>
-                    <div class="system-info-col">
-                        <span class="system-badge">01 — Grid-Tied</span>
-                        <h3 class="system-title">Grid-Tie Solar System</h3>
-                        <p class="system-desc">The simplest and most cost-effective setup. Your panels feed directly
-                            into the utility grid, which acts as a virtual battery through net metering.</p>
-                        <ul class="system-features">
-                            <li>Uses the grid as a virtual battery — no local storage needed</li>
-                            <li>Excess power fed back to the grid earns you credits</li>
-                            <li>Lowest upfront cost of any solar configuration</li>
-                            <li>Fastest return on investment (ROI)</li>
-                        </ul>
-                        <div class="system-note system-note--warning">
-                            <i class="fas fa-exclamation-triangle"></i>
-                            Shuts down completely during grid blackouts
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 02 Hybrid — left to right -->
-                <div class="solar-system-row solar-system-row--reverse" id="system-hybrid" data-aos="fade-right"
-                    data-aos-duration="900">
-                    <div class="system-image-col">
-                        <div class="system-img-frame">
-                            <img src="assets/img/hybrid-solar.png" alt="Hybrid Solar System" class="system-img">
-                        </div>
-                    </div>
-                    <div class="system-info-col">
-                        <span class="system-badge">02 — Hybrid</span>
-                        <h3 class="system-title">Hybrid Solar System</h3>
-                        <p class="system-desc">The best of both worlds — grid-connected with battery backup. Panels
-                            power your home, charge the battery, and the grid fills any remaining gaps.</p>
-                        <ul class="system-features">
-                            <li>Grid-tied system with built-in battery backup storage</li>
-                            <li>Solar panels power the home and charge batteries simultaneously</li>
-                            <li>Grid provides supplemental power when solar falls short</li>
-                            <li>Continues working during blackouts via stored energy</li>
-                        </ul>
-                        <div class="system-note system-note--success">
-                            <i class="fas fa-bolt"></i>
-                            Works during blackouts using stored battery energy
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 03 Off-Grid — right to left -->
-                <div class="solar-system-row" id="system-offgrid" data-aos="fade-left" data-aos-duration="900">
-                    <div class="system-image-col">
-                        <div class="system-img-frame">
-                            <img src="assets/img/offgrid.png" alt="Off-Grid Solar System" class="system-img">
-                        </div>
-                    </div>
-                    <div class="system-info-col">
-                        <span class="system-badge">03 — Off-Grid</span>
-                        <h3 class="system-title">Off-Grid Solar System</h3>
-                        <p class="system-desc">Complete energy independence. Ideal for remote cabins and rural
-                            properties where grid connection is unavailable or simply unwanted.</p>
-                        <ul class="system-features">
-                            <li>Fully self-sufficient — zero grid connection required</li>
-                            <li>Must produce 100% of all energy needs from solar</li>
-                            <li>Battery bank and backup generator ensure reliability</li>
-                            <li>Complete independence from utility providers</li>
-                        </ul>
-                        <div class="system-note system-note--green">
-                            <i class="fas fa-leaf"></i>
-                            Completely independent from the utility grid
-                        </div>
-                    </div>
-                </div>
-
-
-            </div>
+            <!-- CTA — a sentence, not a billboard -->
+            <p class="sst-cta">
+                Not sure which system fits your property? <a href="/contact">Request a free site assessment →</a>
+            </p>
         </div>
     </section>
 
@@ -4081,12 +4448,19 @@ $conn->close();
                                         placeholder="House No., Street, Brgy, City" required></textarea>
                                 </div>
 
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label fw-semibold small text-uppercase">Preferred Assessment Date</label>
-                                    <input type="date" name="inspection_date" class="form-control" required>
+                                <div class="col-md-6 mb-3 assessment-aligned-field">
+                                    <?php 
+                                    $fieldPath = __DIR__ . '/includes/assessment-date-field.php';
+                                    if (file_exists($fieldPath)) {
+                                        include $fieldPath;
+                                    } else {
+                                        echo '<label class="form-label fw-semibold small text-uppercase">Preferred Assessment Date</label>';
+                                        echo '<input type="date" name="inspection_date" class="form-control" required>';
+                                    }
+                                    ?>
                                 </div>
 
-                                <div class="col-md-6 mb-3">
+                                <div class="col-md-6 mb-3 assessment-aligned-field">
                                     <label class="form-label fw-semibold small text-uppercase">Monthly Bill (₱)</label>
                                     <div class="input-group">
                                         <span class="input-group-text">₱</span>
