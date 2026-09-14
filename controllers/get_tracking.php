@@ -18,6 +18,7 @@ try {
             LEFT JOIN order_items oi ON oi.id = first_item.min_item_id
             LEFT JOIN product p ON p.id = oi.product_id
             WHERE o.payment_status = 'paid'
+              AND (o.order_reference NOT LIKE 'OFF-%' OR o.order_reference IS NULL)
               AND (
                   o.sales_channel IS NULL
                   OR o.sales_channel = ''

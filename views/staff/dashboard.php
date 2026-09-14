@@ -9594,7 +9594,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                     const data = await response.json();
 
                     if (data.success) {
-                        this.trackingData = data.tracking;
+                        this.trackingData = (data.tracking || []).filter(item => !item.order_reference || !item.order_reference.toUpperCase().startsWith('OFF-'));
                         this.filteredData = [...this.trackingData];
                         this.renderTracking();
                         this.updateStats();

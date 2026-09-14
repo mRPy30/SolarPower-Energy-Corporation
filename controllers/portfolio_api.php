@@ -239,6 +239,12 @@ function portfolio_delete_uploaded_image($imagePath) {
     return @unlink($fullPath);
 }
 
+// Ensure status column exists in portfolio_projects table
+$checkStatusCol = @mysqli_query($conn, "SHOW COLUMNS FROM `portfolio_projects` LIKE 'status'");
+if ($checkStatusCol && mysqli_num_rows($checkStatusCol) === 0) {
+    @mysqli_query($conn, "ALTER TABLE `portfolio_projects` ADD COLUMN `status` VARCHAR(20) NOT NULL DEFAULT 'Published'");
+}
+
 $method = $_SERVER['REQUEST_METHOD'];
 
 // Handle GET requests (Fetch all projects)
@@ -246,15 +252,33 @@ if ($method === 'GET') {
     $result = mysqli_query($conn, "SELECT * FROM portfolio_projects ORDER BY created_at DESC");
     $projects = [];
     while ($row = mysqli_fetch_assoc($result)) {
+        if (empty($row['status'])) {
+            $row['status'] = 'Published';
+        }
         $projects[] = $row;
     }
     echo json_encode(["status" => "success", "data" => $projects]);
     exit;
 }
 
-// Handle POST requests (Insert, Update, Delete)
+// Handle POST requests (Insert, Update, Delete, Toggle Status)
 if ($method === 'POST') {
     $action = $_POST['action'] ?? '';
+
+    // TOGGLE HIDE / SHOW STATUS Action
+    if ($action === 'toggle_status') {
+        $id = intval($_POST['id']);
+        $newStatus = (isset($_POST['status']) && $_POST['status'] === 'Hidden') ? 'Hidden' : 'Published';
+        
+        $stmt = $conn->prepare("UPDATE portfolio_projects SET status = ? WHERE id = ?");
+        $stmt->bind_param("si", $newStatus, $id);
+        if ($stmt->execute()) {
+            echo json_encode(["status" => "success", "message" => "Project visibility updated.", "new_status" => $newStatus]);
+        } else {
+            echo json_encode(["status" => "error", "message" => "Failed to update project status."]);
+        }
+        exit;
+    }
 
     // DELETE IMAGE Action
     if ($action === 'delete_image') {

@@ -147,7 +147,7 @@ function project_video_payload(array $video): array
 
 project_ensure_video_table($conn);
 
-$portfolio_result = mysqli_query($conn, "SELECT * FROM portfolio_projects ORDER BY created_at DESC");
+$portfolio_result = mysqli_query($conn, "SELECT * FROM portfolio_projects WHERE status = 'Published' OR status IS NULL OR status = '' ORDER BY created_at DESC");
 $portfolio_projects = [];
 
 if ($portfolio_result) {

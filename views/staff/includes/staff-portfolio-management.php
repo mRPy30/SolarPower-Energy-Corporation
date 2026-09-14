@@ -197,11 +197,12 @@
             <th>Location</th>
             <th>System Type</th>
             <th>Service Type</th>
+            <th>Status</th>
             <th style="text-align: right;">Actions</th>
           </tr>
         </thead>
         <tbody id="portfolio-table-body">
-          <tr><td colspan="6" style="text-align:center;">Loading projects...</td></tr>
+          <tr><td colspan="7" style="text-align:center;">Loading projects...</td></tr>
         </tbody>
       </table>
     </div>
@@ -369,6 +370,70 @@
     </div>
   </div>
 </div>
+
+<!-- THE VIEW DETAILS MODAL -->
+<div class="pm-modal-overlay" id="portfolioViewModal">
+  <div class="pm-modal-content" style="max-width: 850px;">
+    <div class="pm-modal-header" style="background: #1A3C5E; color: #fff;">
+      <h2 style="color: #fff; text-transform: uppercase; font-size: 1.1rem; margin: 0;"><i class="fas fa-eye me-2"></i> Project Details</h2>
+      <button class="pm-modal-close" onclick="closePortfolioViewModal()" style="color: #fff;"><i class="fas fa-times"></i></button>
+    </div>
+
+    <div class="pm-modal-body" style="grid-template-columns: 1fr; padding: 24px; max-height: 80vh; overflow-y: auto;">
+      <!-- Project Summary Banner -->
+      <div style="display: flex; justify-content: space-between; align-items: center; background: #fff; padding: 18px 24px; border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
+        <div>
+          <h3 id="view-modal-title" style="margin: 0 0 4px 0; font-size: 1.3rem; font-weight: 800; color: #1b262c; text-transform: uppercase;"></h3>
+          <span id="view-modal-subtitle" style="font-size: 0.75rem; font-weight: 700; color: var(--sun); letter-spacing: 1px; text-transform: uppercase;"></span>
+        </div>
+        <div id="view-modal-status-badge"></div>
+      </div>
+
+      <!-- Main Image & Gallery -->
+      <div style="background: #fff; padding: 18px; border-radius: 12px; border: 1px solid var(--border);">
+        <div style="width: 100%; height: 300px; border-radius: 10px; overflow: hidden; background: #f1f5f9; margin-bottom: 14px; position: relative;">
+          <img id="view-modal-main-img" src="" style="width: 100%; height: 100%; object-fit: cover;">
+          <span id="view-modal-img-badge" style="position: absolute; top: 12px; left: 12px; background: rgba(15,23,42,0.78); color: #fff; font-size: 0.7rem; font-weight: 700; padding: 4px 12px; border-radius: 20px;">Main Image</span>
+        </div>
+        <div id="view-modal-gallery-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 10px;"></div>
+      </div>
+
+      <!-- Key Specs Grid -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+        <div style="background: #fff; padding: 16px 20px; border-radius: 10px; border: 1px solid var(--border);">
+          <div style="font-size: 0.7rem; font-weight: 700; color: var(--muted); text-transform: uppercase;">Location</div>
+          <div id="view-modal-location" style="font-size: 1rem; font-weight: 800; color: var(--text); margin-top: 4px;"></div>
+        </div>
+        <div style="background: #fff; padding: 16px 20px; border-radius: 10px; border: 1px solid var(--border);">
+          <div style="font-size: 0.7rem; font-weight: 700; color: var(--muted); text-transform: uppercase;">System Type</div>
+          <div id="view-modal-system" style="font-size: 1rem; font-weight: 800; color: var(--text); margin-top: 4px;"></div>
+        </div>
+        <div style="background: #fff; padding: 16px 20px; border-radius: 10px; border: 1px solid var(--border);">
+          <div style="font-size: 0.7rem; font-weight: 700; color: var(--muted); text-transform: uppercase;">Service Type</div>
+          <div id="view-modal-service" style="font-size: 1rem; font-weight: 800; color: var(--text); margin-top: 4px;"></div>
+        </div>
+        <div style="background: #fff; padding: 16px 20px; border-radius: 10px; border: 1px solid var(--border);">
+          <div style="font-size: 0.7rem; font-weight: 700; color: var(--muted); text-transform: uppercase;">CO2 Reduction</div>
+          <div id="view-modal-co2" style="font-size: 1rem; font-weight: 800; color: #38A169; margin-top: 4px;"></div>
+        </div>
+        <div style="background: #fff; padding: 16px 20px; border-radius: 10px; border: 1px solid var(--border);">
+          <div style="font-size: 0.7rem; font-weight: 700; color: var(--muted); text-transform: uppercase;">Efficiency Rate</div>
+          <div id="view-modal-efficiency" style="font-size: 1rem; font-weight: 800; color: var(--solar-mid); margin-top: 4px;"></div>
+        </div>
+      </div>
+
+      <!-- Quick Controls -->
+      <div style="display: flex; justify-content: space-between; align-items: center; background: #fff; padding: 18px 24px; border-radius: 12px; border: 1px solid var(--border); margin-top: 8px;">
+        <button id="view-modal-toggle-btn" class="pm-btn-primary" style="background: #2D6A9F;">
+          <i class="fas fa-eye-slash"></i> Hide Project
+        </button>
+        <button id="view-modal-edit-btn" class="pm-btn-primary" style="background: var(--sun);">
+          <i class="fas fa-edit"></i> Edit Project
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
 </div> <!-- End page-content -->
 
 <script>
@@ -397,7 +462,7 @@ function renderPortfolioTable() {
   tbody.innerHTML = '';
   
   if (projectsDb.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No projects found. Add one above!</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">No projects found. Add one above!</td></tr>';
   }
 
   let resCount = 0;
@@ -420,16 +485,28 @@ function renderPortfolioTable() {
     let firstImg = images[0] || 'assets/img/product-placeholder.png';
     let imageSrc = (firstImg.startsWith('uploads') || firstImg.startsWith('assets')) ? '../../' + firstImg : firstImg;
     
+    let isHidden = proj.status === 'Hidden';
+    let statusBadge = isHidden 
+      ? `<span class="pm-status-badge badge-hidden" style="background:#FFF5F5; color:#C53030; border: 1px solid #FEB2B2;"><i class="fas fa-eye-slash me-1"></i> Hidden</span>`
+      : `<span class="pm-status-badge badge-published" style="background:#F0FFF4; color:#2F855A; border: 1px solid #9AE6B4;"><i class="fas fa-check-circle me-1"></i> Visible</span>`;
+
+    let toggleTitle = isHidden ? "Hidden: Click to Show on Website" : "Visible: Click to Hide from Website";
+    let toggleIcon = isHidden ? `<i class="fas fa-toggle-off" style="color: #E53E3E; font-size: 1.15rem;"></i>` : `<i class="fas fa-toggle-on" style="color: #38A169; font-size: 1.15rem;"></i>`;
+    let rowStyle = isHidden ? `style="opacity: 0.65; background-color: #FFF5F5;"` : ``;
+
     tbody.innerHTML += `
-      <tr>
+      <tr ${rowStyle}>
         <td><img src="${imageSrc}" class="pm-table-img"></td>
         <td><strong>${proj.project_name}</strong></td>
         <td>${proj.location}</td>
         <td>${proj.system_type}</td>
         <td><span class="pm-status-badge ${badgeClass}">${proj.service_type || 'Supply and Install'}</span></td>
-        <td style="text-align: right;">
-          <button class="pm-action-btn" onclick="editProject('${proj.id}')"><i class="fas fa-edit"></i></button>
-          <button class="pm-action-btn delete" onclick="deleteProject('${proj.id}')"><i class="fas fa-trash"></i></button>
+        <td>${statusBadge}</td>
+        <td style="text-align: right; white-space: nowrap;">
+          <button class="pm-action-btn view" title="View Full Details (Popup)" onclick="viewProject('${proj.id}')"><i class="fas fa-info-circle" style="color: #2B6CB0; font-size: 1.05rem;"></i></button>
+          <button class="pm-action-btn toggle-status" title="${toggleTitle}" onclick="toggleProjectStatus('${proj.id}', '${isHidden ? 'Published' : 'Hidden'}')">${toggleIcon}</button>
+          <button class="pm-action-btn" title="Edit Project" onclick="editProject('${proj.id}')"><i class="fas fa-edit"></i></button>
+          <button class="pm-action-btn delete" title="Delete Project" onclick="deleteProject('${proj.id}')"><i class="fas fa-trash"></i></button>
         </td>
       </tr>
     `;
@@ -825,12 +902,118 @@ document.addEventListener('DOMContentLoaded', () => {
   fetchPortfolioProjects();
 });
 
-// Close modal if clicking outside the modal content
+/* ── VIEW & HIDE/SHOW LOGIC ── */
+function viewProject(id) {
+  const p = projectsDb.find(x => x.id == id);
+  if (!p) return;
+
+  document.getElementById('view-modal-title').innerText = p.project_name;
+  document.getElementById('view-modal-subtitle').innerText = p.subtitle || 'SOLAR PROJECT';
+  document.getElementById('view-modal-location').innerText = p.location || '—';
+  document.getElementById('view-modal-system').innerText = p.system_type || '—';
+  document.getElementById('view-modal-service').innerText = p.service_type || 'Supply and Install';
+  document.getElementById('view-modal-co2').innerText = p.co2_reduction ? p.co2_reduction + ' kg/yr' : '—';
+  document.getElementById('view-modal-efficiency').innerText = p.efficiency_rate ? p.efficiency_rate + '%' : '—';
+
+  const isHidden = p.status === 'Hidden';
+  const statusBadge = isHidden 
+    ? `<span class="pm-status-badge badge-hidden" style="background:#FFF5F5; color:#C53030; border: 1px solid #FEB2B2; padding: 6px 14px; font-size: 0.75rem;"><i class="fas fa-eye-slash me-1"></i> Hidden on Website</span>`
+    : `<span class="pm-status-badge badge-published" style="background:#F0FFF4; color:#2F855A; border: 1px solid #9AE6B4; padding: 6px 14px; font-size: 0.75rem;"><i class="fas fa-check-circle me-1"></i> Visible on Website</span>`;
+  
+  document.getElementById('view-modal-status-badge').innerHTML = statusBadge;
+
+  // Decode image list
+  let images = [];
+  try {
+    images = JSON.parse(p.image_url);
+    if (!Array.isArray(images)) images = [p.image_url];
+  } catch(e) {
+    images = [p.image_url];
+  }
+
+  let firstImg = images[0] || 'assets/img/product-placeholder.png';
+  let mainSrc = (firstImg.startsWith('uploads') || firstImg.startsWith('assets')) ? '../../' + firstImg : firstImg;
+  
+  const mainImgEl = document.getElementById('view-modal-main-img');
+  mainImgEl.src = mainSrc;
+  document.getElementById('view-modal-img-badge').innerText = `Main Image (1 of ${images.length})`;
+
+  let galleryHTML = '';
+  images.forEach((img, idx) => {
+    let src = (img.startsWith('uploads') || img.startsWith('assets')) ? '../../' + img : img;
+    galleryHTML += `<img src="${src}" onclick="document.getElementById('view-modal-main-img').src='${src}'; document.getElementById('view-modal-img-badge').innerText='Image ${idx+1} of ${images.length}'" style="width: 100%; height: 65px; border-radius: 6px; object-fit: cover; cursor: pointer; border: 2px solid ${idx===0?'var(--solar-mid)':'#cbd5e1'};">`;
+  });
+  document.getElementById('view-modal-gallery-grid').innerHTML = galleryHTML;
+
+  // Toggle button state inside View Modal
+  const toggleBtn = document.getElementById('view-modal-toggle-btn');
+  if (isHidden) {
+    toggleBtn.innerHTML = `<i class="fas fa-globe me-1"></i> Publish to Website`;
+    toggleBtn.style.background = '#38A169';
+    toggleBtn.onclick = async () => {
+      closePortfolioViewModal();
+      await toggleProjectStatus(p.id, 'Published');
+    };
+  } else {
+    toggleBtn.innerHTML = `<i class="fas fa-eye-slash me-1"></i> Hide from Website`;
+    toggleBtn.style.background = '#E53E3E';
+    toggleBtn.onclick = async () => {
+      closePortfolioViewModal();
+      await toggleProjectStatus(p.id, 'Hidden');
+    };
+  }
+
+  const editBtn = document.getElementById('view-modal-edit-btn');
+  editBtn.onclick = () => {
+    closePortfolioViewModal();
+    editProject(p.id);
+  };
+
+  document.getElementById('portfolioViewModal').classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+
+function closePortfolioViewModal() {
+  const modal = document.getElementById('portfolioViewModal');
+  if (modal) modal.classList.remove('active');
+  document.body.style.overflow = '';
+}
+
+async function toggleProjectStatus(id, newStatus) {
+  const fd = new FormData();
+  fd.append('action', 'toggle_status');
+  fd.append('id', id);
+  fd.append('status', newStatus);
+
+  try {
+    const res = await fetch('../../controllers/portfolio_api.php', { method: 'POST', body: fd });
+    const json = await res.json();
+    if (json.status === 'success') {
+      await fetchPortfolioProjects();
+    } else {
+      alert(json.message || 'Unable to update project status.');
+    }
+  } catch(e) {
+    console.error(e);
+    alert('Network Error while updating status.');
+  }
+}
+
+// Close modals if clicking outside content
 document.getElementById('portfolioModal').addEventListener('click', function(e) {
   if (e.target === this) {
     closePortfolioModal();
   }
 });
+
+const viewModalEl = document.getElementById('portfolioViewModal');
+if (viewModalEl) {
+  viewModalEl.addEventListener('click', function(e) {
+    if (e.target === this) {
+      closePortfolioViewModal();
+    }
+  });
+}
 
 // Drag and drop for main image
 const mainDZ = document.getElementById('pf-main-drop-zone');

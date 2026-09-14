@@ -448,7 +448,7 @@ if ($stmt) {
 }
 
 $featured_projects = [];
-$portfolio_result = $conn->query("SELECT id, project_name, subtitle, location, system_type, co2_reduction, efficiency_rate, service_type, image_url FROM portfolio_projects");
+$portfolio_result = $conn->query("SELECT id, project_name, subtitle, location, system_type, co2_reduction, efficiency_rate, service_type, image_url FROM portfolio_projects WHERE status = 'Published' OR status IS NULL OR status = ''");
 if ($portfolio_result) {
     while ($row = $portfolio_result->fetch_assoc()) {
         $row['capacity_kw'] = portfolioProjectCapacityKw($row['system_type'] ?? '');
