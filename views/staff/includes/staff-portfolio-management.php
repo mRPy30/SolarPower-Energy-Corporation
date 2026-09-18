@@ -131,21 +131,24 @@
   .preview-topbar-label { margin-left: auto; font-size: .7rem; font-weight: 600; color: var(--muted); letter-spacing: .8px; text-transform: uppercase; }
   .preview-body { padding: 0; background: #f8fafc; display: flex; justify-content: center; }
   
-  /* Exact CSS Cloned from projects.php */
-  .live-project-card { background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08); transition: transform 0.3s ease, box-shadow 0.3s ease; border: 1px solid rgba(0, 0, 0, 0.04); width: 100%; margin: 20px; cursor: default; }
-  .live-card-img-panel { position: relative; height: 180px; overflow: hidden; }
-  .live-card-img-panel img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s ease; }
-  .live-card-img-panel::after { content: ''; position: absolute; bottom: -15px; left: -10%; right: -10%; height: 40px; background: #fff; transform: rotate(-3deg); z-index: 2; }
-  .live-card-info-panel { padding: 20px 24px 28px; background: #fff; position: relative; z-index: 3; }
-  .live-card-project-title { font-size: 1.15rem; font-weight: 900; color: #1b262c; text-transform: uppercase; letter-spacing: 0.02em; margin: 0 0 4px 0; }
-  .live-card-project-subtitle { font-size: 0.65rem; font-weight: 700; color: var(--sun); letter-spacing: 0.15em; text-transform: uppercase; margin: 0 0 16px 0; }
-  .live-project-detail-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 12px; }
-  .live-project-detail-item { display: flex; align-items: flex-start; gap: 12px; }
-  .live-detail-icon-wrap { width: 28px; height: 28px; border-radius: 50%; background: rgba(10, 92, 61, 0.08); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-  .live-detail-icon-wrap i { font-size: 0.8rem; color: #0a5c3d; }
-  .live-detail-text-wrap { display: flex; flex-direction: column; }
-  .live-detail-value { font-size: 0.9rem; font-weight: 800; color: #1b262c; }
-  .live-detail-label { font-size: 0.6rem; font-weight: 600; text-transform: uppercase; color: #7a8c95; letter-spacing: 0.05em; }
+  /* New Card Design CSS matching projects.php and index.php */
+  .portfolio-card { height: 100%; position: relative; display: flex; flex-direction: column; border: 1px solid rgba(0, 0, 0, 0.06); border-radius: 16px; overflow: hidden; background: #ffffff; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08); }
+  .project-image-wrap { position: relative; aspect-ratio: 16 / 10; overflow: hidden; background: #e2e8f0; height: 180px; }
+  .project-image-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .project-pill-badge { position: absolute; top: 12px; left: 12px; z-index: 3; display: inline-flex; align-items: center; gap: 6px; background: #e6f4ea; color: #137333; padding: 5px 12px; border-radius: 999px; font-size: 0.76rem; font-weight: 800; border: 1px solid rgba(56, 161, 105, 0.25); box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06); }
+  .project-pill-badge i { color: #34a853; font-size: 0.78rem; }
+  .project-card-body { flex: 1; display: flex; flex-direction: column; justify-content: space-between; padding: 20px 22px 22px; background: #ffffff; }
+  .project-title { color: #1a2b49; font-size: 1.15rem; font-weight: 850; line-height: 1.25; margin: 0 0 2px 0; text-transform: uppercase; letter-spacing: 0.01em; }
+  .project-subtitle { color: #8c9bae; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 14px 0; }
+  .project-card-split { display: flex; align-items: stretch; justify-content: space-between; gap: 12px; margin-top: 12px; }
+  .project-info-list { display: flex; flex-direction: column; gap: 7px; flex: 1; min-width: 0; }
+  .project-info-item { display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: #4a5568; font-weight: 600; }
+  .project-info-item i { width: 14px; text-align: center; color: #718096; font-size: 0.85rem; flex-shrink: 0; }
+  .project-info-item span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .project-impact-box { border-left: 1px solid #e2e8f0; padding-left: 14px; display: flex; flex-direction: column; justify-content: center; flex-shrink: 0; min-width: 95px; }
+  .project-impact-val { display: flex; align-items: center; gap: 5px; color: #1a2b49; font-size: 0.95rem; font-weight: 850; }
+  .project-impact-val i { color: #38a169; font-size: 0.95rem; }
+  .project-impact-lbl { font-size: 0.68rem; color: #718096; font-weight: 500; margin-top: 2px; line-height: 1.1; display: block; }
 
 </style>
 
@@ -321,45 +324,44 @@
           </div>
           <div class="preview-body">
             
-            <div class="live-project-card">
-              <div class="live-card-img-panel">
+            <div class="portfolio-card" style="margin: 20px; width: 100%;">
+              <div class="project-image-wrap">
                   <img id="live-img" src="../../assets/img/product-placeholder.png" alt="Project Image">
-              </div>
-              <div class="live-card-info-panel">
-                  <div>
-                      <h4 class="live-card-project-title" id="live-title">PROJECT TITLE</h4>
-                      <p class="live-card-project-subtitle" id="live-subtitle">CATEGORY</p>
+                  <div class="project-pill-badge">
+                      <i class="fas fa-bolt"></i>
+                      <span id="live-system-badge">12kW Hybrid Setup</span>
                   </div>
-                  <ul class="live-project-detail-list">
-                      <li class="live-project-detail-item">
-                          <div class="live-detail-icon-wrap"><i class="fas fa-map-marker-alt"></i></div>
-                          <div class="live-detail-text-wrap">
-                              <span class="live-detail-value" id="live-location">-</span>
-                              <span class="live-detail-label">Location</span>
+              </div>
+              <div class="project-card-body">
+                  <div>
+                      <h3 class="project-title" id="live-title">PROJECT TITLE</h3>
+                      <div class="project-subtitle" id="live-subtitle">CATEGORY</div>
+                  </div>
+
+                  <div class="project-card-split">
+                      <div class="project-info-list">
+                          <div class="project-info-item">
+                              <i class="fas fa-map-marker-alt"></i>
+                              <span id="live-location">Location</span>
                           </div>
-                      </li>
-                      <li class="live-project-detail-item" id="live-metric-system-item">
-                          <div class="live-detail-icon-wrap"><i class="fas fa-solar-panel"></i></div>
-                          <div class="live-detail-text-wrap">
-                              <span class="live-detail-value" id="live-system">-</span>
-                              <span class="live-detail-label">System Size</span>
+                          <div class="project-info-item">
+                              <i class="fas fa-home"></i>
+                              <span id="live-service">Supply and Install</span>
                           </div>
-                      </li>
-                      <li class="live-project-detail-item" id="live-metric-co2-item">
-                          <div class="live-detail-icon-wrap"><i class="fas fa-smog"></i></div>
-                          <div class="live-detail-text-wrap">
-                              <span class="live-detail-value" id="live-co2">-</span>
-                              <span class="live-detail-label">CO₂ Emissions Saved</span>
+                          <div class="project-info-item" id="live-metric-system-item">
+                              <i class="fas fa-th-large"></i>
+                              <span id="live-system">12kW Residential</span>
                           </div>
-                      </li>
-                      <li class="live-project-detail-item" id="live-metric-efficiency-item">
-                          <div class="live-detail-icon-wrap"><i class="fas fa-tree"></i></div>
-                          <div class="live-detail-text-wrap">
-                              <span class="live-detail-value" id="live-efficiency">-</span>
-                              <span class="live-detail-label">Equivalent Trees Planted</span>
+                      </div>
+
+                      <div class="project-impact-box">
+                          <div class="project-impact-val">
+                              <i class="fas fa-leaf"></i>
+                              <strong id="live-efficiency">14.10 kW</strong>
                           </div>
-                      </li>
-                  </ul>
+                          <span class="project-impact-lbl">trees eq. saved</span>
+                      </div>
+                  </div>
               </div>
             </div>
 

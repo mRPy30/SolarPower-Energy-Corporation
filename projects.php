@@ -147,7 +147,16 @@ function project_video_payload(array $video): array
 
 project_ensure_video_table($conn);
 
-$portfolio_result = mysqli_query($conn, "SELECT * FROM portfolio_projects WHERE status = 'Published' OR status IS NULL OR status = '' ORDER BY created_at DESC");
+$checkStatusCol = mysqli_query($conn, "SHOW COLUMNS FROM portfolio_projects LIKE 'status'");
+$hasStatusCol = ($checkStatusCol && mysqli_num_rows($checkStatusCol) > 0);
+if (!$hasStatusCol) {
+    @mysqli_query($conn, "ALTER TABLE portfolio_projects ADD COLUMN status VARCHAR(20) DEFAULT 'Published'");
+    $checkStatusCol = mysqli_query($conn, "SHOW COLUMNS FROM portfolio_projects LIKE 'status'");
+    $hasStatusCol = ($checkStatusCol && mysqli_num_rows($checkStatusCol) > 0);
+}
+$statusWhere = $hasStatusCol ? "WHERE status = 'Published' OR status IS NULL OR status = ''" : "";
+
+$portfolio_result = mysqli_query($conn, "SELECT * FROM portfolio_projects $statusWhere ORDER BY created_at DESC");
 $portfolio_projects = [];
 
 if ($portfolio_result) {
@@ -423,11 +432,11 @@ if ($video_result) {
             position: relative;
             display: flex;
             flex-direction: column;
-            border: 1px solid rgba(10, 92, 61, 0.12);
+            border: 1px solid rgba(0, 0, 0, 0.06);
             border-radius: 16px;
             overflow: hidden;
-            background: var(--project-card);
-            box-shadow: 0 12px 34px rgba(16, 35, 27, 0.08);
+            background: #ffffff;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
             cursor: pointer;
             transition: transform 0.28s ease, box-shadow 0.28s ease, border-color 0.28s ease;
         }
@@ -435,15 +444,15 @@ if ($video_result) {
         .portfolio-card:hover,
         .portfolio-card:focus-within {
             transform: translateY(-6px);
-            border-color: rgba(242, 169, 0, 0.45);
-            box-shadow: 0 24px 56px rgba(16, 35, 27, 0.15);
+            border-color: rgba(56, 161, 105, 0.35);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
         }
 
         .project-image-wrap {
             position: relative;
-            aspect-ratio: 16 / 9;
+            aspect-ratio: 16 / 10;
             overflow: hidden;
-            background: #dfe9e3;
+            background: #e2e8f0;
         }
 
         .project-image-wrap img {
@@ -458,66 +467,128 @@ if ($video_result) {
             transform: scale(1.05);
         }
 
-        .system-badge {
+        .project-pill-badge {
             position: absolute;
-            top: 14px;
-            right: 14px;
-            max-width: calc(100% - 28px);
-            border: 1px solid rgba(255, 255, 255, 0.45);
+            top: 12px;
+            left: 12px;
+            z-index: 3;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #e6f4ea;
+            color: #137333;
+            padding: 5px 12px;
             border-radius: 999px;
-            background: rgba(9, 34, 23, 0.68);
-            color: #fff;
-            padding: 7px 11px;
-            font-size: 0.72rem;
-            font-weight: 850;
-            line-height: 1.2;
-            backdrop-filter: blur(12px);
+            font-size: 0.76rem;
+            font-weight: 800;
+            border: 1px solid rgba(56, 161, 105, 0.25);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06);
+            backdrop-filter: blur(8px);
+        }
+
+        .project-pill-badge i {
+            color: #34a853;
+            font-size: 0.78rem;
         }
 
         .project-card-body {
             flex: 1;
             display: flex;
             flex-direction: column;
-            padding: 22px;
+            justify-content: space-between;
+            padding: 20px 22px 22px;
+            background: #ffffff;
         }
 
         .project-title {
-            color: var(--project-ink);
+            color: #1a2b49;
             font-size: 1.15rem;
-            font-weight: 900;
-            line-height: 1.2;
-            margin: 0;
-            letter-spacing: 0;
-        }
-
-        .project-location {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-top: 11px;
-            color: var(--project-muted);
-            font-size: 0.9rem;
-        }
-
-        .project-location i {
-            color: var(--project-gold);
-        }
-
-        .project-spec-line {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin: 18px 0 0;
-            color: var(--project-green-700);
             font-weight: 850;
-            font-size: 0.92rem;
+            line-height: 1.25;
+            margin: 0 0 2px 0;
+            text-transform: uppercase;
+            letter-spacing: 0.01em;
         }
 
-        .impact-chips {
+        .project-subtitle {
+            color: #8c9bae;
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin: 0 0 14px 0;
+        }
+
+        .project-card-split {
             display: flex;
-            flex-wrap: wrap;
+            align-items: stretch;
+            justify-content: space-between;
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .project-info-list {
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+            flex: 1;
+            min-width: 0;
+        }
+
+        .project-info-item {
+            display: flex;
+            align-items: center;
             gap: 8px;
-            margin-top: 16px;
+            font-size: 0.82rem;
+            color: #4a5568;
+            font-weight: 600;
+        }
+
+        .project-info-item i {
+            width: 14px;
+            text-align: center;
+            color: #718096;
+            font-size: 0.85rem;
+            flex-shrink: 0;
+        }
+
+        .project-info-item span {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .project-impact-box {
+            border-left: 1px solid #e2e8f0;
+            padding-left: 14px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            flex-shrink: 0;
+            min-width: 95px;
+        }
+
+        .project-impact-val {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            color: #1a2b49;
+            font-size: 0.95rem;
+            font-weight: 850;
+        }
+
+        .project-impact-val i {
+            color: #38a169;
+            font-size: 0.95rem;
+        }
+
+        .project-impact-lbl {
+            font-size: 0.68rem;
+            color: #718096;
+            font-weight: 500;
+            margin-top: 2px;
+            line-height: 1.1;
+            display: block;
         }
 
         .impact-chip {
@@ -597,40 +668,71 @@ if ($video_result) {
             box-shadow: 0 18px 36px rgba(10, 92, 61, 0.20);
         }
 
+        /* ── VIDEO SHOWCASE CAROUSEL SECTION ── */
         .solar-reels-section {
-            margin-top: 72px;
-            padding-top: 52px;
+            padding: 70px 0 60px;
+            position: relative;
+            overflow: hidden;
             border-top: 1px solid rgba(15, 23, 42, 0.08);
+            margin-top: 60px;
         }
 
         .reels-heading {
-            display: flex;
-            align-items: flex-end;
-            justify-content: space-between;
-            gap: 22px;
-            margin-bottom: 26px;
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: center !important;
+            text-align: center !important;
+            max-width: 800px;
+            margin: 0 auto 28px;
         }
 
-        .reels-heading h2 {
-            margin: 0;
+        .reels-eyebrow {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            color: var(--project-gold);
+            font-size: 0.78rem;
+            font-weight: 850;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 12px;
+        }
+
+        .eyebrow-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--project-gold);
+            display: inline-block;
+        }
+
+        .reels-title {
             color: var(--project-ink);
-            font-size: clamp(1.65rem, 3vw, 2.45rem);
-            font-weight: 950;
-            letter-spacing: 0;
+            font-size: clamp(1.8rem, 3.2vw, 2.6rem);
+            font-weight: 900;
+            margin: 0 0 14px;
+            line-height: 1.2;
+            letter-spacing: -0.01em;
+            text-align: center;
+            width: 100%;
         }
 
-        .reels-heading p {
-            max-width: 570px;
-            margin: 10px 0 0;
+        .reels-subtitle {
             color: var(--project-muted);
-            line-height: 1.7;
+            font-size: 0.92rem;
+            line-height: 1.65;
+            margin: 0 auto;
+            max-width: 680px;
+            text-align: center;
         }
 
         .video-showcase-filters {
             display: flex;
+            justify-content: center;
             flex-wrap: wrap;
             gap: 10px;
-            margin: 0 0 24px;
+            margin-bottom: 32px;
         }
 
         .video-filter-btn {
@@ -638,11 +740,11 @@ if ($video_result) {
             border-radius: 999px;
             background: #fff;
             color: var(--project-green-700);
-            padding: 10px 16px;
-            font-size: 0.84rem;
-            font-weight: 900;
+            padding: 8px 18px;
+            font-size: 0.82rem;
+            font-weight: 800;
             cursor: pointer;
-            transition: background 0.22s ease, color 0.22s ease, border-color 0.22s ease, transform 0.22s ease;
+            transition: all 0.25s ease;
         }
 
         .video-filter-btn:hover,
@@ -650,123 +752,283 @@ if ($video_result) {
             border-color: var(--project-green);
             background: var(--project-green);
             color: #fff;
-            transform: translateY(-1px);
+            box-shadow: 0 4px 14px rgba(10, 92, 61, 0.28);
+        }
+
+        /* Carousel Shell & Viewport */
+        .reels-carousel-shell {
+            position: relative;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        .reels-carousel-viewport {
+            overflow: hidden;
+            width: 100%;
+            padding: 24px 0 38px;
+            cursor: grab;
+        }
+
+        .reels-carousel-viewport:active {
+            cursor: grabbing;
         }
 
         .reels-track {
-            display: grid;
-            grid-template-columns: repeat(4, minmax(0, 1fr));
-            gap: 18px;
+            display: flex;
+            gap: 20px;
+            transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+            align-items: center;
+            width: max-content;
         }
 
         .reel-card {
             position: relative;
-            min-height: 410px;
+            width: clamp(250px, 24vw, 320px);
+            height: clamp(330px, 32vw, 390px);
+            flex-shrink: 0;
+            border-radius: 18px;
             overflow: hidden;
-            border: 1px solid rgba(255, 255, 255, 0.5);
-            border-radius: 24px;
             background: #0f172a;
             color: #fff;
             cursor: pointer;
-            box-shadow: 0 20px 48px rgba(15, 23, 42, 0.15);
-            transition: transform 0.28s ease, box-shadow 0.28s ease;
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+            opacity: 0.65;
+            filter: saturate(0.75) brightness(0.88);
+            transform: scale(0.88);
+            transition: transform 0.45s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.35s ease, filter 0.35s ease, box-shadow 0.35s ease;
         }
 
-        .reel-card:hover {
-            transform: translateY(-6px);
-            box-shadow: 0 28px 64px rgba(15, 23, 42, 0.24);
+        .reel-card.is-nearby {
+            opacity: 0.88;
+            filter: saturate(0.88) brightness(0.94);
+            transform: scale(0.95);
+            z-index: 3;
+        }
+
+        .reel-card.is-active {
+            opacity: 1;
+            filter: none;
+            transform: scale(1.05);
+            box-shadow: 0 20px 50px rgba(15, 23, 42, 0.22);
+            z-index: 5;
         }
 
         .reel-card.is-hidden {
-            display: none;
+            display: none !important;
         }
 
         .reel-card img {
             width: 100%;
             height: 100%;
-            min-height: 410px;
             object-fit: cover;
             display: block;
-            opacity: 0.82;
-            transition: transform 0.55s ease, opacity 0.25s ease;
+            transition: transform 0.6s ease;
         }
 
         .reel-card:hover img {
             transform: scale(1.05);
-            opacity: 0.74;
         }
 
         .reel-card::after {
             content: "";
             position: absolute;
             inset: 0;
-            background: linear-gradient(180deg, rgba(15, 23, 42, 0.08) 0%, rgba(15, 23, 42, 0.74) 100%);
-        }
-
-        .reel-play {
-            position: absolute;
-            inset: 0;
-            z-index: 2;
-            display: grid;
-            place-items: center;
-            pointer-events: none;
-        }
-
-        .reel-play span {
-            width: 64px;
-            height: 64px;
-            display: grid;
-            place-items: center;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.93);
-            color: var(--project-green);
-            box-shadow: 0 20px 38px rgba(0, 0, 0, 0.22);
-        }
-
-        .reel-views {
-            position: absolute;
-            top: 14px;
-            right: 14px;
-            z-index: 2;
-            display: inline-flex;
-            align-items: center;
-            gap: 7px;
-            border-radius: 999px;
-            background: rgba(15, 23, 42, 0.62);
-            color: #fff;
-            padding: 7px 10px;
-            font-size: 0.74rem;
-            font-weight: 850;
-            backdrop-filter: blur(10px);
+            background: linear-gradient(180deg, rgba(15, 23, 42, 0.05) 0%, rgba(15, 23, 42, 0.68) 100%);
         }
 
         .reel-type {
             position: absolute;
             top: 14px;
             left: 14px;
-            z-index: 2;
+            z-index: 3;
             display: inline-flex;
             align-items: center;
-            gap: 7px;
+            gap: 6px;
             border-radius: 999px;
-            background: rgba(255, 255, 255, 0.90);
-            color: var(--project-green-700);
-            padding: 7px 10px;
-            font-size: 0.72rem;
-            font-weight: 950;
+            background: rgba(255, 255, 255, 0.92);
+            color: var(--project-ink);
+            padding: 5px 12px;
+            font-size: 0.73rem;
+            font-weight: 800;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+        }
+
+        .reel-type i {
+            color: var(--project-green);
+        }
+
+        .reel-views {
+            position: absolute;
+            top: 14px;
+            right: 14px;
+            z-index: 3;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            border-radius: 999px;
+            background: rgba(15, 23, 42, 0.65);
+            color: #fff;
+            padding: 5px 10px;
+            font-size: 0.73rem;
+            font-weight: 800;
             backdrop-filter: blur(10px);
         }
 
-        .reel-info {
+        .reel-play-btn {
             position: absolute;
-            left: 18px;
-            right: 18px;
-            bottom: 18px;
-            z-index: 2;
+            top: 42%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 3;
+            pointer-events: none;
+            transition: transform 0.3s ease;
         }
 
-        .reel-category {
-            display: inline-flex;
+        .reel-play-btn span {
+            width: 56px;
+            height: 56px;
+            display: grid;
+            place-items: center;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.95);
+            color: var(--project-green);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s ease, background 0.3s ease;
+        }
+
+        .reel-card:hover .reel-play-btn span {
+            transform: scale(1.12);
+            background: var(--project-green);
+            color: #ffffff;
+        }
+
+        /* Floating Overlay Box at bottom of active card */
+        .reel-floating-overlay {
+            position: absolute;
+            bottom: 16px;
+            left: 16px;
+            right: 16px;
+            z-index: 5;
+            background: #ffffff;
+            padding: 14px 18px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.14);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            transform: translateY(6px);
+            opacity: 0.92;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+        }
+
+        .reel-card.is-active .reel-floating-overlay {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .reel-overlay-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .reel-overlay-title {
+            margin: 0 0 2px 0;
+            color: var(--project-ink);
+            font-size: 0.98rem;
+            font-weight: 850;
+            line-height: 1.25;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .reel-overlay-desc {
+            margin: 0;
+            color: var(--project-muted);
+            font-size: 0.75rem;
+            line-height: 1.35;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .reel-overlay-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            background: var(--project-green);
+            color: #ffffff;
+            display: grid;
+            place-items: center;
+            font-size: 0.95rem;
+            flex-shrink: 0;
+            transition: background 0.2s ease, transform 0.2s ease, color 0.2s ease;
+        }
+
+        .reel-card:hover .reel-overlay-btn {
+            background: var(--project-gold);
+            color: #1a2b49;
+            transform: translateX(3px);
+        }
+
+        /* Controls: Prev/Next & Dots */
+        .reels-nav-btn {
+            position: absolute;
+            top: 48%;
+            transform: translateY(-50%);
+            z-index: 10;
+            width: 46px;
+            height: 46px;
+            border-radius: 50%;
+            border: 1px solid rgba(26, 43, 73, 0.12);
+            background: #ffffff;
+            color: var(--project-ink);
+            display: grid;
+            place-items: center;
+            font-size: 1rem;
+            cursor: pointer;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+            transition: all 0.25s ease;
+        }
+
+        .reels-nav-btn:hover {
+            background: var(--project-green);
+            color: #ffffff;
+            border-color: var(--project-green);
+            transform: translateY(-50%) scale(1.08);
+        }
+
+        .reels-nav-btn.prev {
+            left: 10px;
+        }
+
+        .reels-nav-btn.next {
+            right: 10px;
+        }
+
+        .reels-carousel-dots {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 20px;
+        }
+
+        .reels-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 999px;
+            border: none;
+            background: rgba(26, 43, 73, 0.2);
+            cursor: pointer;
+            transition: width 0.25s ease, background 0.25s ease;
+        }
+
+        .reels-dot.is-active {
+            width: 28px;
+            background: var(--project-green);
+        }
             margin-bottom: 10px;
             border-radius: 999px;
             background: rgba(242, 169, 0, 0.94);
@@ -1169,17 +1431,84 @@ if ($video_result) {
             }
         }
 
-        @media (max-width: 575px) {
+        @media (max-width: 767px) {
             .project-showcase {
-                padding: 56px 0 72px;
+                padding: 48px 0 64px;
             }
 
             .projects-grid {
-                grid-template-columns: 1fr;
+                grid-template-columns: repeat(2, 1fr) !important;
+                gap: 12px !important;
+            }
+
+            .portfolio-card {
+                border-radius: 16px;
+            }
+
+            .project-image-wrap {
+                aspect-ratio: 16 / 10;
+                border-radius: 16px 16px 0 0;
+            }
+
+            .project-pill-badge {
+                top: 8px;
+                left: 8px;
+                padding: 3px 8px;
+                font-size: 0.65rem;
+                gap: 4px;
+            }
+
+            .project-pill-badge i {
+                font-size: 0.65rem;
             }
 
             .project-card-body {
-                padding: 18px;
+                padding: 10px 10px 12px;
+            }
+
+            .project-title {
+                font-size: 0.85rem;
+                line-height: 1.2;
+                margin-bottom: 2px;
+            }
+
+            .project-subtitle {
+                font-size: 0.66rem;
+                margin-bottom: 6px;
+                line-height: 1.2;
+            }
+
+            .project-card-split {
+                flex-direction: column;
+                gap: 6px;
+                margin-top: 6px;
+            }
+
+            .project-info-item {
+                font-size: 0.72rem;
+                gap: 5px;
+            }
+
+            .project-info-item i {
+                width: 12px;
+                font-size: 0.72rem;
+            }
+
+            .project-impact-box {
+                border-left: none;
+                border-top: 1px dashed #e2e8f0;
+                padding-left: 0;
+                padding-top: 6px;
+                min-width: 0;
+                margin-top: 2px;
+            }
+
+            .project-impact-val {
+                font-size: 0.76rem;
+            }
+
+            .project-impact-lbl {
+                font-size: 0.62rem;
             }
 
             .project-modal {
@@ -1201,6 +1530,20 @@ if ($video_result) {
 
             .video-modal {
                 padding: 10px;
+            }
+        }
+
+        @media (max-width: 380px) {
+            .projects-grid {
+                gap: 8px !important;
+            }
+
+            .project-card-body {
+                padding: 8px 8px 10px;
+            }
+
+            .project-title {
+                font-size: 0.78rem;
             }
         }
     </style>
@@ -1286,26 +1629,51 @@ if ($video_result) {
                         <div class="portfolio-card" tabindex="0" role="button" aria-label="View details for <?= project_escape($title); ?>" data-project-id="<?= $projectId; ?>" data-project='<?= $projectJson; ?>'>
                             <div class="project-image-wrap">
                                 <img src="<?= project_escape($mainImage); ?>" alt="<?= project_escape($title); ?>" loading="lazy">
-                                <span class="system-badge"><?= project_escape(($systemType !== '' ? $systemType : $serviceType) . ' • ' . $category['label']); ?></span>
-                            </div>
-                            <div class="project-card-body">
-                                <h3 class="project-title"><?= project_escape($title); ?></h3>
-                                <div class="project-location">
-                                    <i class="fas fa-map-marker-alt" aria-hidden="true"></i>
-                                    <span><?= project_escape($location); ?></span>
-                                </div>
-                                <div class="project-spec-line">
-                                    <i class="fas fa-solar-panel" aria-hidden="true"></i>
+                                <div class="project-pill-badge">
+                                    <i class="fas fa-bolt"></i>
                                     <span><?= project_escape($systemType !== '' ? $systemType : $serviceType); ?></span>
                                 </div>
-                                <div class="impact-chips" aria-label="Environmental impact">
-                                    <span class="impact-chip"><i class="fas fa-smog" aria-hidden="true"></i><?= project_escape($co2); ?> CO2 saved</span>
-                                    <span class="impact-chip gold"><i class="fas fa-tree" aria-hidden="true"></i><?= project_escape($trees); ?> trees</span>
+                            </div>
+                            <div class="project-card-body">
+                                <div>
+                                    <h3 class="project-title"><?= project_escape($title); ?></h3>
+                                    <?php if (!empty($subtitle)): ?>
+                                        <div class="project-subtitle"><?= project_escape($subtitle); ?></div>
+                                    <?php endif; ?>
                                 </div>
-                                <span class="card-action">
-                                    View Project Details
-                                    <i class="fas fa-arrow-right" aria-hidden="true"></i>
-                                </span>
+
+                                <div class="project-card-split">
+                                    <div class="project-info-list">
+                                        <?php if ($location !== ''): ?>
+                                            <div class="project-info-item">
+                                                <i class="fas fa-map-marker-alt" aria-hidden="true"></i>
+                                                <span><?= project_escape($location); ?></span>
+                                            </div>
+                                        <?php endif; ?>
+                                        <?php if ($serviceType !== ''): ?>
+                                            <div class="project-info-item">
+                                                <i class="fas fa-home" aria-hidden="true"></i>
+                                                <span><?= project_escape($serviceType); ?></span>
+                                            </div>
+                                        <?php endif; ?>
+                                        <?php if ($systemType !== '' && $systemType !== $serviceType): ?>
+                                            <div class="project-info-item">
+                                                <i class="fas fa-th-large" aria-hidden="true"></i>
+                                                <span><?= project_escape($systemType); ?></span>
+                                            </div>
+                                        <?php endif; ?>
+                                    </div>
+
+                                    <?php if ($trees !== '' || $co2 !== ''): ?>
+                                        <div class="project-impact-box">
+                                            <div class="project-impact-val">
+                                                <i class="fas fa-leaf" aria-hidden="true"></i>
+                                                <strong><?= project_escape($trees !== '' ? $trees : $co2); ?></strong>
+                                            </div>
+                                            <span class="project-impact-lbl"><?= $trees !== '' ? 'trees eq. saved' : 'CO2 saved'; ?></span>
+                                        </div>
+                                    <?php endif; ?>
+                                </div>
                             </div>
                         </div>
                     </article>
@@ -1324,11 +1692,11 @@ if ($video_result) {
             <?php if (!empty($portfolio_videos)): ?>
                 <section class="solar-reels-section" aria-label="Solar Video Tours and Site Reels">
                     <div class="reels-heading" data-aos="fade-up">
-                        <div>
-                            <div class="portfolio-kicker">Video Showcase</div>
-                            <h2>Solar Video Tours &amp; Site Reels</h2>
+                        <div class="reels-eyebrow">
+                            <span class="eyebrow-dot"></span> OUR RECENT WORKS
                         </div>
-                        <p>Watch our installation walkthroughs and solar short reels.</p>
+                        <h2 class="reels-title">Explore The Recent Works We Have Done!</h2>
+                        <p class="reels-subtitle">Real stories from customers who made the switch to solar and battery solutions with us—sharing their experiences of savings, reliability, and sustainability.</p>
                     </div>
 
                     <div class="video-showcase-filters" role="tablist" aria-label="Filter solar videos" data-aos="fade-up" data-aos-delay="70">
@@ -1337,34 +1705,53 @@ if ($video_result) {
                         <button class="video-filter-btn" type="button" data-video-filter="vertical" aria-selected="false">Short Reels</button>
                     </div>
 
-                    <div class="reels-track">
-                        <?php foreach ($portfolio_videos as $videoIndex => $video):
-                            $videoPayload = project_video_payload($video);
-                            $videoJson = htmlspecialchars(json_encode($videoPayload, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT), ENT_QUOTES, 'UTF-8');
-                            $videoTitle = $videoPayload['title'];
-                            $videoThumb = $videoPayload['thumbnail'];
-                            $videoViews = project_format_metric((float) $videoPayload['views']);
-                            $videoFormat = $videoPayload['format'] === 'vertical' ? 'vertical' : 'landscape';
-                            $videoTypeLabel = $videoFormat === 'vertical' ? 'Short Reel' : 'Video Tour';
-                        ?>
-                            <article class="reel-card"
-                                     role="button"
-                                     tabindex="0"
-                                     data-video='<?= $videoJson; ?>'
-                                     data-video-format="<?= project_escape($videoFormat); ?>"
-                                     data-aos="fade-up"
-                                     data-aos-delay="<?= (int) (($videoIndex % 4) * 70); ?>"
-                                     aria-label="Play video <?= project_escape($videoTitle); ?>">
-                                <img src="<?= project_escape($videoThumb); ?>" alt="<?= project_escape($videoTitle); ?>" loading="lazy">
-                                <span class="reel-type"><i class="fas <?= $videoFormat === 'vertical' ? 'fa-mobile-screen-button' : 'fa-tv'; ?>" aria-hidden="true"></i><?= project_escape($videoTypeLabel); ?></span>
-                                <span class="reel-views"><i class="fas fa-eye" aria-hidden="true"></i><?= project_escape($videoViews); ?></span>
-                                <span class="reel-play"><span><i class="fas fa-play" aria-hidden="true"></i></span></span>
-                                <div class="reel-info">
-                                    <span class="reel-category"><?= project_escape($videoPayload['category']); ?></span>
-                                    <h3 class="reel-title"><?= project_escape($videoTitle); ?></h3>
-                                </div>
-                            </article>
-                        <?php endforeach; ?>
+                    <div class="reels-carousel-shell" data-aos="fade-up" data-aos-delay="100">
+                        <button class="reels-nav-btn prev" id="reelsPrev" type="button" aria-label="Previous video"><i class="fas fa-chevron-left"></i></button>
+                        <button class="reels-nav-btn next" id="reelsNext" type="button" aria-label="Next video"><i class="fas fa-chevron-right"></i></button>
+
+                        <div class="reels-carousel-viewport" id="reelsViewport">
+                            <div class="reels-track" id="reelsTrack">
+                                <?php foreach ($portfolio_videos as $videoIndex => $video):
+                                    $videoPayload = project_video_payload($video);
+                                    $videoJson = htmlspecialchars(json_encode($videoPayload, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT), ENT_QUOTES, 'UTF-8');
+                                    $videoTitle = $videoPayload['title'];
+                                    $videoThumb = $videoPayload['thumbnail'];
+                                    $videoViews = project_format_metric((float) $videoPayload['views']);
+                                    $videoFormat = $videoPayload['format'] === 'vertical' ? 'vertical' : 'landscape';
+                                    $videoTypeLabel = $videoFormat === 'vertical' ? 'Short Reel' : 'Video Tour';
+                                    $videoProjectName = !empty($videoPayload['projectTitle']) ? $videoPayload['projectTitle'] : $videoPayload['category'];
+                                ?>
+                                    <article class="reel-card<?= $videoIndex === 0 ? ' is-active' : ''; ?>"
+                                             role="button"
+                                             tabindex="0"
+                                             data-video='<?= $videoJson; ?>'
+                                             data-video-format="<?= project_escape($videoFormat); ?>"
+                                             data-index="<?= (int) $videoIndex; ?>"
+                                             aria-label="Play video <?= project_escape($videoTitle); ?>">
+                                        <img src="<?= project_escape($videoThumb); ?>" alt="<?= project_escape($videoTitle); ?>" loading="lazy">
+                                        <span class="reel-type"><i class="fas <?= $videoFormat === 'vertical' ? 'fa-mobile-screen-button' : 'fa-tv'; ?>" aria-hidden="true"></i><?= project_escape($videoTypeLabel); ?></span>
+                                        <span class="reel-views"><i class="fas fa-eye" aria-hidden="true"></i><?= project_escape($videoViews); ?></span>
+                                        <span class="reel-play-btn"><span><i class="fas fa-play" aria-hidden="true"></i></span></span>
+                                        
+                                        <div class="reel-floating-overlay">
+                                            <div class="reel-overlay-info">
+                                                <h3 class="reel-overlay-title"><?= project_escape($videoTitle); ?></h3>
+                                                <p class="reel-overlay-desc"><?= project_escape($videoProjectName); ?> • Solar Solutions</p>
+                                            </div>
+                                            <span class="reel-overlay-btn" aria-hidden="true">
+                                                <i class="fas fa-arrow-right"></i>
+                                            </span>
+                                        </div>
+                                    </article>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+
+                        <div class="reels-carousel-dots" id="reelsDots">
+                            <?php foreach ($portfolio_videos as $videoIndex => $video): ?>
+                                <button class="reels-dot<?= $videoIndex === 0 ? ' is-active' : ''; ?>" type="button" data-index="<?= (int) $videoIndex; ?>" aria-label="Go to video <?= (int) $videoIndex + 1; ?>"></button>
+                            <?php endforeach; ?>
+                        </div>
                     </div>
                 </section>
             <?php endif; ?>
@@ -1608,6 +1995,150 @@ if ($video_result) {
                 if (event.key === 'Escape' && modal && modal.classList.contains('is-open')) {
                     closeVideo();
                 }
+            });
+        }());
+
+        /* Video Carousel Controller */
+        (function () {
+            'use strict';
+            var viewport = document.getElementById('reelsViewport');
+            var track = document.getElementById('reelsTrack');
+            var prevBtn = document.getElementById('reelsPrev');
+            var nextBtn = document.getElementById('reelsNext');
+            var dotsContainer = document.getElementById('reelsDots');
+
+            if (!viewport || !track) return;
+
+            var activeIndex = 0;
+            var isDragging = false;
+            var startX = 0;
+            var currentTranslate = 0;
+            var prevTranslate = 0;
+
+            function getVisibleCards() {
+                return Array.prototype.slice.call(track.querySelectorAll('.reel-card:not(.is-hidden)'));
+            }
+
+            function getInitialIndex() {
+                var cards = getVisibleCards();
+                if (!cards.length) return 0;
+                return Math.floor(cards.length / 2);
+            }
+
+            function setSlide(index) {
+                var cards = getVisibleCards();
+                if (!cards.length) return;
+
+                activeIndex = (index + cards.length) % cards.length;
+
+                cards.forEach(function (card, i) {
+                    var dist = Math.abs(i - activeIndex);
+                    card.classList.toggle('is-active', i === activeIndex);
+                    card.classList.toggle('is-nearby', dist === 1);
+                    card.classList.toggle('is-far', dist >= 2);
+                });
+
+                var activeCard = cards[activeIndex];
+                var viewportWidth = viewport.offsetWidth;
+                var cardOffsetLeft = activeCard.offsetLeft;
+                var cardWidth = activeCard.offsetWidth;
+
+                var targetScroll = cardOffsetLeft - (viewportWidth / 2) + (cardWidth / 2);
+                prevTranslate = -targetScroll;
+                track.style.transform = 'translateX(' + (-targetScroll) + 'px)';
+
+                if (dotsContainer) {
+                    var dots = dotsContainer.querySelectorAll('.reels-dot');
+                    dots.forEach(function (dot, i) {
+                        dot.classList.toggle('is-active', i === activeIndex);
+                    });
+                }
+            }
+
+            if (prevBtn) {
+                prevBtn.addEventListener('click', function () {
+                    setSlide(activeIndex - 1);
+                });
+            }
+
+            if (nextBtn) {
+                nextBtn.addEventListener('click', function () {
+                    setSlide(activeIndex + 1);
+                });
+            }
+
+            if (dotsContainer) {
+                dotsContainer.addEventListener('click', function (e) {
+                    var dot = e.target.closest('.reels-dot');
+                    if (dot) {
+                        var idx = parseInt(dot.dataset.index, 10);
+                        if (!isNaN(idx)) setSlide(idx);
+                    }
+                });
+            }
+
+            // Click side cards to bring to center
+            track.addEventListener('click', function (e) {
+                var card = e.target.closest('.reel-card');
+                if (!card) return;
+                var cards = getVisibleCards();
+                var cardIndex = cards.indexOf(card);
+
+                if (cardIndex !== -1 && cardIndex !== activeIndex) {
+                    e.stopPropagation();
+                    setSlide(cardIndex);
+                }
+            }, true);
+
+            // Touch & Drag Support
+            viewport.addEventListener('mousedown', dragStart);
+            viewport.addEventListener('touchstart', dragStart, { passive: true });
+            window.addEventListener('mousemove', dragMove);
+            window.addEventListener('touchmove', dragMove, { passive: true });
+            window.addEventListener('mouseup', dragEnd);
+            window.addEventListener('touchend', dragEnd);
+
+            function dragStart(e) {
+                isDragging = true;
+                startX = getPositionX(e);
+                track.style.transition = 'none';
+            }
+
+            function dragMove(e) {
+                if (!isDragging) return;
+                var currentX = getPositionX(e);
+                var diff = currentX - startX;
+                currentTranslate = prevTranslate + diff;
+                track.style.transform = 'translateX(' + currentTranslate + 'px)';
+            }
+
+            function dragEnd() {
+                if (!isDragging) return;
+                isDragging = false;
+                track.style.transition = 'transform 0.5s cubic-bezier(0.25, 1, 0.5, 1)';
+                var movedBy = currentTranslate - prevTranslate;
+
+                if (movedBy < -40) {
+                    setSlide(activeIndex + 1);
+                } else if (movedBy > 40) {
+                    setSlide(activeIndex - 1);
+                } else {
+                    setSlide(activeIndex);
+                }
+            }
+
+            function getPositionX(e) {
+                return e.type && e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+            }
+
+            window.addEventListener('load', function () { setSlide(getInitialIndex()); });
+            window.addEventListener('resize', function () { setSlide(activeIndex); });
+            setTimeout(function () { setSlide(getInitialIndex()); }, 300);
+
+            document.querySelectorAll('.video-filter-btn').forEach(function (button) {
+                button.addEventListener('click', function () {
+                    setTimeout(function () { setSlide(getInitialIndex()); }, 60);
+                });
             });
         }());
 

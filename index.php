@@ -448,7 +448,16 @@ if ($stmt) {
 }
 
 $featured_projects = [];
-$portfolio_result = $conn->query("SELECT id, project_name, subtitle, location, system_type, co2_reduction, efficiency_rate, service_type, image_url FROM portfolio_projects WHERE status = 'Published' OR status IS NULL OR status = ''");
+$checkStatusCol = $conn->query("SHOW COLUMNS FROM portfolio_projects LIKE 'status'");
+$hasStatusCol = ($checkStatusCol && $checkStatusCol->num_rows > 0);
+if (!$hasStatusCol) {
+    @$conn->query("ALTER TABLE portfolio_projects ADD COLUMN status VARCHAR(20) DEFAULT 'Published'");
+    $checkStatusCol = $conn->query("SHOW COLUMNS FROM portfolio_projects LIKE 'status'");
+    $hasStatusCol = ($checkStatusCol && $checkStatusCol->num_rows > 0);
+}
+$statusWhere = $hasStatusCol ? "WHERE status = 'Published' OR status IS NULL OR status = ''" : "";
+
+$portfolio_result = $conn->query("SELECT id, project_name, subtitle, location, system_type, co2_reduction, efficiency_rate, service_type, image_url FROM portfolio_projects $statusWhere");
 if ($portfolio_result) {
     while ($row = $portfolio_result->fetch_assoc()) {
         $row['capacity_kw'] = portfolioProjectCapacityKw($row['system_type'] ?? '');
@@ -686,17 +695,18 @@ $conn->close();
             position: absolute;
             top: 50%;
             left: 50%;
-            width: clamp(280px, 32vw, 440px);
-            height: clamp(300px, 36vw, 370px);
-            border: 0;
-            border-radius: 10px;
+            width: clamp(300px, 32vw, 440px);
+            border: 1px solid rgba(0, 0, 0, 0.06);
+            border-radius: 16px;
             overflow: hidden;
-            background: #0f241a;
-            box-shadow: 0 22px 60px rgba(15, 35, 28, 0.18);
+            background: #ffffff;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
             opacity: 0;
             pointer-events: none;
             transform: translate(-50%, -50%) scale(0.78);
-            transition: transform 0.65s cubic-bezier(.2, .8, .2, 1), opacity 0.45s ease, filter 0.45s ease;
+            transition: transform 0.65s cubic-bezier(.2, .8, .2, 1), opacity 0.45s ease, filter 0.45s ease, box-shadow 0.3s ease;
+            display: flex;
+            flex-direction: column;
         }
 
         .featured-project-slide.is-active {
@@ -705,20 +715,21 @@ $conn->close();
             pointer-events: auto;
             filter: none;
             transform: translate(-50%, -50%) scale(1.05);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
         }
 
         .featured-project-slide.is-prev {
             z-index: 2;
-            opacity: 0.82;
-            filter: saturate(0.82) brightness(0.86);
-            transform: translate(calc(-50% - min(39vw, 470px)), -50%) scale(0.9);
+            opacity: 0.85;
+            filter: saturate(0.85) brightness(0.9);
+            transform: translate(calc(-50% - min(37vw, 450px)), -50%) scale(0.9);
         }
 
         .featured-project-slide.is-next {
             z-index: 2;
-            opacity: 0.82;
-            filter: saturate(0.82) brightness(0.86);
-            transform: translate(calc(-50% + min(39vw, 470px)), -50%) scale(0.9);
+            opacity: 0.85;
+            filter: saturate(0.85) brightness(0.9);
+            transform: translate(calc(-50% + min(37vw, 450px)), -50%) scale(0.9);
         }
 
         .featured-project-slide.is-hidden {
@@ -726,7 +737,15 @@ $conn->close();
             transform: translate(-50%, -50%) scale(0.72);
         }
 
-        .featured-project-slide img {
+        .featured-project-img-panel {
+            position: relative;
+            height: clamp(160px, 18vw, 200px);
+            width: 100%;
+            overflow: hidden;
+            background: #e2e8f0;
+        }
+
+        .featured-project-img-panel img {
             width: 100%;
             height: 100%;
             object-fit: cover;
@@ -734,103 +753,133 @@ $conn->close();
             transition: transform 0.8s ease;
         }
 
-        .featured-project-slide.is-active img {
+        .featured-project-slide.is-active .featured-project-img-panel img {
             transform: scale(1.04);
         }
 
-        .featured-project-panel {
+        .featured-project-system-badge {
             position: absolute;
-            inset: auto 0 0;
-            padding: 100px 26px 28px;
-            color: #fff;
-            background: linear-gradient(180deg, transparent 0%, rgba(5, 24, 16, 0.5) 36%, rgba(5, 24, 16, 0.94) 100%);
-            opacity: 0;
-            transform: translateY(18px);
-            transition: opacity 0.35s ease, transform 0.35s ease;
-        }
-
-        .featured-project-slide.is-active .featured-project-panel {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        .featured-project-panel h3 {
-            margin: 0 0 12px;
-            color: #fff;
-            font-size: clamp(1.3rem, 2.1vw, 2rem);
-            font-weight: 900;
-            line-height: 1.08;
-        }
-
-        .featured-project-system {
-            display: inline-flex;
-            margin-bottom: 14px;
-            padding: 7px 11px;
-            border-radius: 999px;
-            background: rgba(242, 169, 0, 0.92);
-            color: #111827;
-            font-size: 0.78rem;
-            font-weight: 900;
-        }
-
-        .featured-project-meta {
-            display: grid;
-            gap: 7px;
-            margin-bottom: 16px;
-            color: rgba(255, 255, 255, 0.86);
-            font-size: 0.86rem;
-            line-height: 1.45;
-        }
-
-        .featured-project-meta span {
-            display: inline-flex;
-            gap: 8px;
-            align-items: flex-start;
-        }
-
-        .featured-project-meta i {
-            width: 16px;
-            margin-top: 3px;
-            color: #f2a900;
-        }
-
-        .featured-project-impact {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin: 0 0 18px;
-        }
-
-        .featured-project-impact span {
-            padding: 6px 10px;
-            border-radius: 999px;
-            background: rgba(255, 255, 255, 0.12);
-            color: #fff;
-            font-size: 0.73rem;
-            font-weight: 800;
-            backdrop-filter: blur(10px);
-        }
-
-        .featured-project-btn {
+            top: 12px;
+            left: 12px;
+            z-index: 3;
             display: inline-flex;
             align-items: center;
-            justify-content: center;
-            min-height: 42px;
-            padding: 0 22px;
+            gap: 6px;
+            background: #e6f4ea;
+            color: #137333;
+            padding: 5px 12px;
             border-radius: 999px;
-            background: #0d8f49;
-            color: #fff;
-            font-size: 0.86rem;
-            font-weight: 900;
-            text-decoration: none;
-            transition: background-color 0.2s ease, transform 0.2s ease;
+            font-size: 0.76rem;
+            font-weight: 800;
+            border: 1px solid rgba(56, 161, 105, 0.25);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.06);
+            backdrop-filter: blur(8px);
         }
 
-        .featured-project-btn:hover {
-            background: #f2a900;
-            color: #111827;
-            transform: translateY(-1px);
-            text-decoration: none;
+        .featured-project-system-badge i {
+            color: #34a853;
+            font-size: 0.78rem;
+        }
+
+        .featured-project-card-body {
+            padding: 20px 22px 22px;
+            background: #ffffff;
+            color: #1a202c;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .featured-project-title {
+            margin: 0 0 2px;
+            color: #1a2b49;
+            font-size: 1.15rem;
+            font-weight: 850;
+            line-height: 1.25;
+            text-transform: uppercase;
+            letter-spacing: 0.01em;
+        }
+
+        .featured-project-subtitle {
+            margin: 0 0 14px;
+            color: #8c9bae;
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .featured-project-card-split {
+            display: flex;
+            align-items: stretch;
+            justify-content: space-between;
+            gap: 12px;
+            margin-top: 10px;
+        }
+
+        .featured-project-info-list {
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+            flex: 1;
+            min-width: 0;
+        }
+
+        .featured-project-info-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.82rem;
+            color: #4a5568;
+            font-weight: 600;
+        }
+
+        .featured-project-info-item i {
+            width: 14px;
+            text-align: center;
+            color: #718096;
+            font-size: 0.85rem;
+            flex-shrink: 0;
+        }
+
+        .featured-project-info-item span {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .featured-project-impact-box {
+            border-left: 1px solid #e2e8f0;
+            padding-left: 14px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            flex-shrink: 0;
+            min-width: 95px;
+        }
+
+        .featured-project-impact-val {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            color: #1a2b49;
+            font-size: 0.95rem;
+            font-weight: 850;
+        }
+
+        .featured-project-impact-val i {
+            color: #38a169;
+            font-size: 0.95rem;
+        }
+
+        .featured-project-impact-lbl {
+            font-size: 0.68rem;
+            color: #718096;
+            font-weight: 500;
+            margin-top: 2px;
+            line-height: 1.1;
+            display: block;
         }
 
         .featured-carousel-dots {
@@ -2106,30 +2155,58 @@ $conn->close();
                     $featuredTrees = trim((string) ($featuredProject['efficiency_rate'] ?? ''));
                 ?>
                     <article class="featured-project-slide" data-featured-slide data-index="<?= (int) $featuredIndex; ?>">
-                        <img src="<?= htmlspecialchars($featuredImage); ?>" alt="<?= htmlspecialchars($featuredTitle); ?>">
+                        <div class="featured-project-img-panel">
+                            <img src="<?= htmlspecialchars($featuredImage); ?>" alt="<?= htmlspecialchars($featuredTitle); ?>">
+                            <div class="featured-project-system-badge">
+                                <i class="fas fa-bolt"></i>
+                                <span><?= htmlspecialchars($featuredSystem); ?></span>
+                            </div>
+                        </div>
 
-                        <div class="featured-project-panel">
-                            <span class="featured-project-system"><?= htmlspecialchars($featuredSystem); ?></span>
-                            <h3><?= htmlspecialchars($featuredTitle); ?></h3>
-
-                            <div class="featured-project-meta">
-                                <span><i class="fas fa-map-marker-alt"></i><?= htmlspecialchars($featuredLocation); ?></span>
-                                <span><i class="fas fa-briefcase"></i><?= htmlspecialchars($featuredService); ?></span>
-                                <span><i class="fas fa-solar-panel"></i><?= htmlspecialchars($featuredOverview); ?></span>
+                        <div class="featured-project-card-body">
+                            <div>
+                                <h3 class="featured-project-title"><?= htmlspecialchars($featuredTitle); ?></h3>
+                                <?php if ($featuredSubtitle !== ''): ?>
+                                    <div class="featured-project-subtitle"><?= htmlspecialchars($featuredSubtitle); ?></div>
+                                <?php endif; ?>
                             </div>
 
-                            <?php if ($featuredCo2 !== '' || $featuredTrees !== ''): ?>
-                                <div class="featured-project-impact">
-                                    <?php if ($featuredCo2 !== ''): ?>
-                                        <span><i class="fas fa-leaf"></i> <?= htmlspecialchars($featuredCo2); ?> CO2 saved</span>
+                            <div class="featured-project-card-split">
+                                <div class="featured-project-info-list">
+                                    <?php if ($featuredLocation !== ''): ?>
+                                        <div class="featured-project-info-item">
+                                            <i class="fas fa-map-marker-alt"></i>
+                                            <span><?= htmlspecialchars($featuredLocation); ?></span>
+                                        </div>
                                     <?php endif; ?>
-                                    <?php if ($featuredTrees !== ''): ?>
-                                        <span><i class="fas fa-tree"></i> <?= htmlspecialchars($featuredTrees); ?> trees eq.</span>
+                                    
+                                    <?php if ($featuredService !== ''): ?>
+                                        <div class="featured-project-info-item">
+                                            <i class="fas fa-home"></i>
+                                            <span><?= htmlspecialchars($featuredService); ?></span>
+                                        </div>
+                                    <?php endif; ?>
+
+                                    <?php if ($featuredOverview !== '' && $featuredOverview !== $featuredService): ?>
+                                        <div class="featured-project-info-item">
+                                            <i class="fas fa-th-large"></i>
+                                            <span><?= htmlspecialchars($featuredOverview); ?></span>
+                                        </div>
                                     <?php endif; ?>
                                 </div>
-                            <?php endif; ?>
 
-                            <a href="/projects?project=<?= (int) ($featuredProject['id'] ?? 0); ?>#projectShowcase" class="featured-project-btn">View More</a>
+                                <?php if ($featuredTrees !== '' || $featuredCo2 !== ''): ?>
+                                    <div class="featured-project-impact-box">
+                                        <div class="featured-project-impact-val">
+                                            <i class="fas fa-leaf"></i>
+                                            <strong><?= htmlspecialchars($featuredTrees !== '' ? $featuredTrees : $featuredCo2); ?></strong>
+                                        </div>
+                                        <span class="featured-project-impact-lbl">
+                                            <?= $featuredTrees !== '' ? 'trees eq. saved' : 'CO2 saved'; ?>
+                                        </span>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
                         </div>
                     </article>
                 <?php endforeach; ?>
