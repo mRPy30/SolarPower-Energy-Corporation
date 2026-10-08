@@ -558,6 +558,7 @@
             <li><a href="<?php echo htmlspecialchars(clean_url('projects.php')); ?>">PROJECTS</a></li>
             <li><a href="<?php echo htmlspecialchars(clean_url('loans.php')); ?>">SOLAR LOANS</a></li>
             <li><a href="<?php echo htmlspecialchars(clean_url('contact.php')); ?>">CONTACT</a></li>
+            <li><a href="<?php echo htmlspecialchars(clean_url('careers.php')); ?>">CAREERS</a></li>
             <li><a href="<?php echo htmlspecialchars(clean_url('privacy-policy.php')); ?>">PRIVACY POLICY</a></li>
             <li><a href="<?php echo htmlspecialchars(clean_url('terms-of-service.php')); ?>">TERMS OF SERVICE</a></li>
             <li><a href="<?php echo htmlspecialchars(clean_url('refund-policy.php')); ?>">REFUND POLICY</a></li>

@@ -1,0 +1,111 @@
+SOLARPOWER CAREERS — DEPLOYMENT
+Prepared: 8 October 2026 (Asia/Manila)
+
+What is included
+- Public /careers page with live published vacancies, job details, application form and success modal.
+- Existing staff dashboard: Career Management > Job postings / Applications.
+- Job drafts, publishing, deadlines, archiving, application statuses, private notes and archive/restore.
+- PDF, DOC and DOCX resumes, maximum 5 MB; protected staff-only downloads.
+- Existing Resend helper sends HR notifications and applicant acknowledgements.
+- Database notification records record pending/sending/sent/failed and support staff retry.
+- No sample jobs or applicant data are included.
+
+Deployment
+1. Back up the database and the four changed existing files:
+   .htaccess
+   includes/header.php
+   includes/footer.php
+   views/staff/dashboard.php
+
+2. Upload the package contents into the website root, keeping every folder path.
+   Do not upload only careers.php or dashboard.php: both depend on the new files.
+   The package contains no API keys, existing local configuration, resumes, or test fixtures.
+   If the live copies have newer changes, merge the Careers additions rather than overwriting them.
+
+3. Run this command from the website root on the server:
+   php database-02/migrate-careers.php
+
+   Alternative: import database-02/careers.sql into the same database used by config/dbconn.php.
+   The migration creates four tables if they do not exist and does not seed demo data:
+   career_jobs
+   career_applications
+   career_resume_chunks
+   career_email_deliveries
+
+   The local development database has already been migrated.
+   Resumes are stored in private database chunks (256 KB each) to work with a 1 MB MySQL packet limit.
+   They are not saved under public uploads/ and are included in database backups.
+   Do not call the migration PHP file from a browser; it is CLI-only.
+
+4. Reuse the existing Resend setup (includes/resend-mailer.php and config/resend.php).
+   Existing environment variables:
+   RESEND_API_KEY       Required, unless configured through existing config/resend.local.php.
+   RESEND_FROM_EMAIL    A sender on the project's verified Resend domain.
+   RESEND_REPLY_TO      Existing company reply address.
+   RESEND_TIMEOUT / RESEND_CONNECT_TIMEOUT   Optional existing settings.
+
+   New optional environment variable:
+   CAREERS_HR_EMAIL=solar@solarpower.com.ph
+   Supports comma-separated HR recipients. Default: solar@solarpower.com.ph.
+   Configure server environment variables using the hosting control panel/Apache/FPM setup;
+   this feature does not add a dotenv loader. Do not put secrets in JavaScript or commit them.
+   No changes are required to the project's current Resend key.
+
+5. PHP requirements: PHP 8.1+ with PDO MySQL, mysqli (existing DB helper), fileinfo,
+   mbstring, Phar/ZIP read support, and cURL. ZIP validation uses PharData; ZipArchive is not required.
+   upload_max_filesize must be at least 5M and post_max_size at least 8M.
+   The existing .htaccess currently allows larger uploads; the Careers endpoint still enforces 5 MB.
+   The database account needs CREATE rights for the migration, then normal SELECT/INSERT/UPDATE.
+
+6. Sign in to the existing staff dashboard. Open Career Management.
+   Create a job, select Published, and save.
+   /careers shows only published jobs whose deadline has not passed (Philippine time).
+   A blank deadline has no expiry. Draft or Archived jobs disappear from the public page.
+   Existing applicants remain available after a job is archived.
+
+7. Review applicants in Applications, open details to download the CV, update status, add internal
+   notes, or archive/restore. Archiving does not delete records.
+   Use Retry pending / failed emails in application details when needed.
+   Sent means accepted by Resend; verify inbox delivery in Resend or the recipient inbox.
+   Interrupted sends become retryable after ten minutes. A provider timeout can make delivery
+   uncertain, so retrying may duplicate an already accepted message.
+
+Files created
+careers.php
+assets/careers.css
+assets/careers.js
+assets/careers-admin.css
+assets/careers-admin.js
+includes/careers.php
+controllers/careers-apply.php
+controllers/careers-admin.php
+controllers/careers-resume.php
+views/staff/includes/career-management.php
+database-02/careers.sql
+database-02/migrate-careers.php
+
+Files modified
+.htaccess (Careers route works at domain root or in a subfolder)
+includes/header.php (Careers link and spacing to fit it)
+includes/footer.php (Careers link)
+views/staff/dashboard.php (sidebar link, section include, hash navigation)
+
+Verification completed locally
+- PHP and JavaScript syntax checks.
+- 37 integration checks: authentication/CSRF, draft/publish/archive, application persistence,
+  PDF/DOC/DOCX validation, oversize/spoofed upload rejection, private download, large resume
+  reconstruction, duplicate prevention, rate limit, status/notes/archive/restore, expired jobs,
+  inactive staff access, and notification failure/retry.
+- Separate real Resend run: HR and authorized test applicant notifications accepted by Resend.
+- Apache /careers URL returns 200; anonymous staff/resume routes return 401.
+- Test jobs, applicants, resumes, mail records, and temporary staff account were cleaned up.
+- Browser visual verification was blocked by the computer-use environment failing to start.
+  Check desktop/mobile layout, file picker, success modal and staff dialogs after upload.
+- The code is implemented locally; it has not been deployed to the live hosting account.
+
+Developer tests (not included in the deployment ZIP)
+python tests/careers_integration.py
+Uses disposable records in LOCAL MySQL and a mock email transport.
+The harness refuses non-local database connections.
+Real mail test only with an authorized recipient:
+python tests/careers_integration.py --live-email --applicant YOUR_AUTHORIZED_TEST_ADDRESS

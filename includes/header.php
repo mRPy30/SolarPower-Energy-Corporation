@@ -777,6 +777,14 @@ function isActive($page)
             max-height: 46px;
         }
     }
+    /* Keep the added Careers link within the existing desktop navigation. */
+    @media (min-width: 1025px) {
+        #mainHeader.sp-main-header #mobileNav ul { gap: clamp(10px, 1.2vw, 18px); }
+    }
+    @media (min-width: 1025px) and (max-width: 1199px) {
+        #mainHeader.sp-main-header .logo img.sp-header-logo { width: 190px; max-width: 190px; }
+        #mainHeader.sp-main-header #mobileNav a { font-size: 14px; }
+    }
 </style>
 
 <div class="header-top sp-header-top">
@@ -824,6 +832,7 @@ function isActive($page)
                     <li><a href="<?php echo htmlspecialchars(clean_url('product.php')); ?>" class="<?php echo isActive('product.php'); ?>">PRODUCTS</a></li>
                     <li><a href="<?php echo htmlspecialchars(clean_url('projects.php')); ?>" class="<?php echo isActive('projects.php'); ?>">PROJECTS</a></li>
                     <li><a href="<?php echo htmlspecialchars(clean_url('loans.php')); ?>" class="<?php echo isActive('loans.php'); ?>">SOLAR LOANS</a></li>
+                    <li><a href="<?php echo htmlspecialchars(clean_url('careers.php')); ?>" class="<?php echo isActive('careers.php'); ?>">CAREERS</a></li>
                     <li><a href="<?php echo htmlspecialchars(clean_url('contact.php')); ?>" class="<?php echo isActive('contact.php'); ?>">CONTACT</a></li>
                     <li class="nav-actions-item">
                         <span class="nav-icon-tooltip" data-tooltip="Track Order">

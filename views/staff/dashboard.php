@@ -2558,6 +2558,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 <span>Solar Estimates</span>
             </div>
 
+            <button type="button" class="menu-item career-nav-button" onclick="showPage('careers', 'Career Management')" data-tooltip="Career Management"><i class="fas fa-briefcase" aria-hidden="true"></i><span>Career Management</span></button>
             <div class="menu-item" onclick="showPage('loans', 'Loan Applications')" data-tooltip="Loan Applications">
                 <i class="fas fa-file-signature"></i>
                 <span>Loan Applications</span>
@@ -2683,6 +2684,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
 
 
 
+            <?php include __DIR__ . '/includes/career-management.php'; ?>
             <div id="dashboard" class="page-content active">
                 <div class="stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; margin-bottom: 25px;">
                     
@@ -10867,6 +10869,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 archive: 'Archive',
                 dashboard: 'Dashboard',
                 tracking: 'Tracking',
+                careers: 'Career Management',
                 quotation: 'Quotation'
             };
 
