@@ -33,24 +33,23 @@ $requestKey=bin2hex(random_bytes(32));
   <source src="<?= career_escape(asset_url('assets/img/drone-shot.mp4')) ?>" type="video/mp4">
  </video>
  <div class="careers-hero-overlay" aria-hidden="true"></div>
- <button type="button" class="careers-video-toggle" id="careersVideoToggle" aria-controls="careersHeroVideo" hidden>Pause background video</button>
  <div class="container careers-hero-grid">
-  <div><p class="careers-kicker">Careers at SolarPower</p><h1>Build a career.<br>Power a cleaner future.</h1><p>Bring your skills to a team helping Filipino homes and businesses make the switch to solar energy.</p><a class="btn careers-primary" href="#openings">Explore open positions</a></div>
+  <div class="careers-hero-copy"><p class="careers-kicker">Careers at SolarPower</p><h1>Build a career.<br>Power a cleaner future.</h1><p>Bring your skills to a team helping Filipino homes and businesses make the switch to solar energy.</p><a class="btn careers-primary" href="#openings">Explore open positions <span aria-hidden="true">&darr;</span></a></div>
   <aside class="careers-purpose"><span aria-hidden="true" class="careers-sun"></span><h2>Good work.<br>Real-world impact.</h2><p>From planning and customer support to installation, every role contributes to the energy systems our communities rely on.</p><p class="careers-purpose-sign">SolarPower Energy Corporation</p></aside>
  </div>
 </section>
 <section class="container careers-content" id="openings">
- <div class="careers-section-heading"><div><h2>Find your next opportunity</h2><p>Explore where your experience can make a difference.</p></div><span><?= count($jobs) ?> open <?= count($jobs)===1?'position':'positions' ?></span></div>
+ <div class="careers-section-heading"><div><h2>Find your next opportunity</h2><p>Explore where your experience can make a difference.</p></div><span class="careers-position-count"><strong><?= count($jobs) ?></strong> open <?= count($jobs)===1?'position':'positions' ?></span></div>
  <?php if ($unavailable): ?><div role="alert" class="alert alert-warning">We’re unable to load opportunities right now. Please check again shortly.</div><?php endif; ?>
  <?php if ($invalidJob && !$unavailable): ?><div role="alert" class="alert alert-info">This position is no longer available. Explore our current openings below.</div><?php endif; ?>
  <?php if (!$jobs && !$unavailable): ?><div class="careers-empty"><h3>No open positions right now</h3><p>Thank you for your interest in SolarPower. Check back here for future opportunities.</p></div><?php endif; ?>
  <?php if ($jobs): ?>
- <div class="careers-filter"><label for="careerSearch">Search openings</label><input id="careerSearch" type="search" class="form-control" placeholder="Job title or location"><p id="careerCount" role="status" class="small mb-0"></p></div>
+ <div class="careers-filter"><label for="careerSearch">Search openings</label><div class="careers-search-field"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i><input id="careerSearch" type="search" class="form-control" placeholder="Search by job title or location"></div><p id="careerCount" role="status" class="small mb-0"></p></div>
  <div class="careers-job-list">
  <?php foreach ($jobs as $job): ?>
   <article class="careers-job" data-search="<?= career_escape(mb_strtolower($job['title'].' '.$job['location'])) ?>">
-   <div><h3><a href="<?= career_escape(clean_url('careers.php').'?job='.$job['id'].'#job-detail') ?>"><?= career_escape($job['title']) ?></a></h3><p class="careers-job-meta"><?= career_escape($job['employment_type']) ?> <span aria-hidden="true">·</span> <?= career_escape($job['location']) ?></p><p><?= career_escape($job['summary']) ?></p></div>
-   <a class="btn careers-outline" href="<?= career_escape(clean_url('careers.php').'?job='.$job['id'].'#job-detail') ?>" aria-label="View and apply for <?= career_escape($job['title']) ?>">View &amp; apply</a>
+   <div class="careers-job-copy"><?php if (trim($job['department'] ?? '')!==''): ?><p class="careers-department"><?= career_escape($job['department']) ?></p><?php endif; ?><h3><a href="<?= career_escape(clean_url('careers.php').'?job='.$job['id'].'#job-detail') ?>"><?= career_escape($job['title']) ?></a></h3><p class="careers-job-meta"><span><i class="fa-regular fa-clock" aria-hidden="true"></i> <?= career_escape($job['employment_type']) ?></span><span><i class="fa-solid fa-location-dot" aria-hidden="true"></i> <?= career_escape($job['location']) ?></span></p><p><?= career_escape($job['summary']) ?></p></div>
+   <a class="btn careers-outline careers-job-link" href="<?= career_escape(clean_url('careers.php').'?job='.$job['id'].'#job-detail') ?>" aria-label="View and apply for <?= career_escape($job['title']) ?>"><span>View &amp; apply</span><span class="careers-job-arrow" aria-hidden="true">&rarr;</span></a>
   </article>
  <?php endforeach; ?>
  </div>
@@ -84,7 +83,7 @@ $requestKey=bin2hex(random_bytes(32));
     <label for="career-phone">Phone number</label><input class="form-control" id="career-phone" name="phone" type="tel" maxlength="32" autocomplete="tel" required>
     <label for="career-position">Position applied for</label><input class="form-control" id="career-position" value="<?= career_escape($selected['title']) ?>" readonly>
     <label for="career-message">Cover letter / message <span>(optional)</span></label><textarea class="form-control" id="career-message" name="message" rows="5" maxlength="12000"></textarea>
-    <label for="career-resume">Resume / CV</label><input class="form-control" id="career-resume" type="file" name="resume" accept=".pdf,.doc,.docx" aria-describedby="resume-help" required><p id="resume-help" class="small">PDF, DOC or DOCX. Maximum 5 MB. Available only to authorized staff.</p>
+    <label for="career-resume">Resume / CV</label><input class="form-control" id="career-resume" type="file" name="resume" accept=".pdf,.doc,.docx" aria-describedby="resume-help" required><p id="resume-help" class="small">PDF, DOC or DOCX. Maximum 50 MB. Available only to authorized staff.</p>
     <label class="careers-consent"><input type="checkbox" name="consent" value="1" required><span>I agree that SolarPower may process my information to review this application, as described in the <a href="<?= career_escape(clean_url('privacy-policy.php')) ?>" target="_blank" rel="noopener">Privacy Policy (opens in a new tab)</a>.</span></label>
     <div id="careerFormError" class="alert alert-danger" role="alert" tabindex="-1" hidden></div>
     <button type="submit" class="btn careers-primary w-100">Submit application</button><p class="small mt-3 mb-0" id="careerSubmitStatus" role="status"></p>

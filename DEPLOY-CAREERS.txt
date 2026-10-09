@@ -5,7 +5,7 @@ What is included
 - Public /careers page with live published vacancies, job details, application form and success modal.
 - Existing staff dashboard: Career Management > Job postings / Applications.
 - Job drafts, publishing, deadlines, archiving, application statuses, private notes and archive/restore.
-- PDF, DOC and DOCX resumes, maximum 5 MB; protected staff-only downloads.
+- PDF, DOC and DOCX resumes, maximum 50 MB; protected staff-only downloads.
 - Existing Resend helper sends HR notifications and applicant acknowledgements.
 - Database notification records record pending/sending/sent/failed and support staff retry.
 - No sample jobs or applicant data are included.
@@ -53,8 +53,8 @@ Deployment
 
 5. PHP requirements: PHP 8.1+ with PDO MySQL, mysqli (existing DB helper), fileinfo,
    mbstring, Phar/ZIP read support, and cURL. ZIP validation uses PharData; ZipArchive is not required.
-   upload_max_filesize must be at least 5M and post_max_size at least 8M.
-   The existing .htaccess currently allows larger uploads; the Careers endpoint still enforces 5 MB.
+   upload_max_filesize must be at least 50M and post_max_size at least 64M.
+   The existing .htaccess currently allows larger uploads; the Careers endpoint still enforces 50 MB.
    The database account needs CREATE rights for the migration, then normal SELECT/INSERT/UPDATE.
 
 6. Sign in to the existing staff dashboard. Open Career Management.

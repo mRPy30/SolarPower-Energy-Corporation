@@ -1,16 +1,9 @@
 (() => {
  'use strict';
  const video=document.getElementById('careersHeroVideo');
- const videoToggle=document.getElementById('careersVideoToggle');
- if(video && videoToggle) {
+ if(video) {
   const reducedMotion=window.matchMedia('(prefers-reduced-motion: reduce)');
-  const syncVideo=()=>{videoToggle.textContent=video.paused?'Play background video':'Pause background video';};
-  videoToggle.hidden=false;
-  video.addEventListener('play',syncVideo);
-  video.addEventListener('pause',syncVideo);
-  video.addEventListener('error',()=>{videoToggle.hidden=true;});
-  videoToggle.addEventListener('click',()=>{if(video.paused)video.play().catch(syncVideo);else video.pause();});
-  const respectMotion=()=>{if(reducedMotion.matches)video.pause();syncVideo();};
+  const respectMotion=()=>{if(reducedMotion.matches)video.pause();};
   reducedMotion.addEventListener('change',respectMotion);
   respectMotion();
  }
@@ -28,8 +21,8 @@
   const error=document.getElementById('careerFormError'), button=form.querySelector('[type=submit]'), status=document.getElementById('careerSubmitStatus');
   error.hidden=true;
   const file=form.elements.resume.files[0];
-  if(!file || !/\.(pdf|docx?)$/i.test(file.name) || file.size>5*1024*1024 || !file.size) {
-   error.textContent='Choose a PDF, DOC or DOCX resume up to 5 MB.';error.hidden=false;error.focus();return;
+  if(!file || !/\.(pdf|docx?)$/i.test(file.name) || file.size>50*1024*1024 || !file.size) {
+   error.textContent='Choose a PDF, DOC or DOCX resume up to 50 MB.';error.hidden=false;error.focus();return;
   }
   button.disabled=true;button.textContent='Submitting…';status.textContent='Please wait while we securely save your application.';
   try {

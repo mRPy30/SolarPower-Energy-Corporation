@@ -72,7 +72,7 @@ function solar_send_resend_email(string $to,string $subject,string $html,array $
             env["CAREERS_TEST_FAIL_FILE"]=str(fail_file)
         sock=socket.socket();sock.bind(("127.0.0.1",0));port=sock.getsockname()[1];sock.close()
         base="http://127.0.0.1:"+str(port)
-        command=[PHP,"-d","display_errors=0"]
+        command=[PHP,"-d","display_errors=0","-d","upload_max_filesize=50M","-d","post_max_size=64M"]
         if not args.live_email:command+=["-d","auto_prepend_file="+str(mock)]
         command+=["-S","127.0.0.1:"+str(port),"-t",str(ROOT)]
         with open(temp/"server.log","wb") as log:
@@ -116,7 +116,7 @@ function solar_send_resend_email(string $to,string $subject,string $html,array $
                 check(request(public,"/controllers/careers-apply.php",wrong,("cv.pdf",pdf,"application/pdf"))[0]==403,"public CSRF enforced")
                 check(request(public,"/controllers/careers-apply.php",fields,("cv.pdf",b"<?php echo 1; ?>","application/pdf"))[0]==422,"spoofed PDF rejected")
                 check(request(public,"/controllers/careers-apply.php",fields,("cv.exe",pdf,"application/pdf"))[0]==422,"disallowed extension rejected")
-                check(request(public,"/controllers/careers-apply.php",fields,("cv.pdf",pdf+b"x"*(5*1024*1024),"application/pdf"))[0]==422,"oversize resume rejected")
+                check(request(public,"/controllers/careers-apply.php",fields,("cv.pdf",pdf+b"x"*(50*1024*1024),"application/pdf"))[0]==422,"oversize resume rejected")
                 fail_file.touch()
             status,body,_=request(public,"/controllers/careers-apply.php",fields,("cv.pdf",pdf,"application/pdf"))
             check(status==200 and jsonbody(body)["success"],"application is accepted with confirmation")
@@ -155,8 +155,8 @@ function solar_send_resend_email(string $to,string $subject,string $html,array $
                 status,body,_=request(public,"/controllers/careers-apply.php",fields,("cv.docx",zip_bytes.getvalue(),"application/vnd.openxmlformats-officedocument.wordprocessingml.document"))
                 check(status==200,"DOCX accepted after archive content validation: "+body.decode()[:80])
                 fields["request_key"]=secrets.token_hex(32)
-                large=pdf+b" "* (2*1024*1024)
-                check(request(public,"/controllers/careers-apply.php",fields,("large.pdf",large,"application/pdf"))[0]==200,"2 MB resume works with 1 MB MySQL packet limit")
+                large=pdf+b" "* (50*1024*1024-len(pdf))
+                check(request(public,"/controllers/careers-apply.php",fields,("large.pdf",large,"application/pdf"))[0]==200,"50 MB resume works with 1 MB MySQL packet limit")
                 last=jsonbody(admin("applications",params="&search="+urllib.parse.quote(marker))[1])["applications"][0]
                 check(request(staff,"/controllers/careers-resume.php?id="+str(last["id"]))[1]==large,"chunked large resume reconstructs correctly")
             if not args.live_email:

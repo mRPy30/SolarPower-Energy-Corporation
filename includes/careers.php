@@ -51,10 +51,10 @@ function career_job_fields(array $data): array {
     return $job;
 }
 function career_resume(array $file): array {
-    if (($file['error'] ?? UPLOAD_ERR_NO_FILE)!==UPLOAD_ERR_OK || !is_uploaded_file($file['tmp_name'] ?? '')) throw new InvalidArgumentException('Please upload a resume (PDF, DOC or DOCX, up to 5 MB).');
+    if (($file['error'] ?? UPLOAD_ERR_NO_FILE)!==UPLOAD_ERR_OK || !is_uploaded_file($file['tmp_name'] ?? '')) throw new InvalidArgumentException('Please upload a resume (PDF, DOC or DOCX, up to 50 MB).');
     $path=$file['tmp_name'];
     $size=filesize($path);
-    if ($size<1 || $size>5*1024*1024) throw new InvalidArgumentException('Your resume must be between 1 byte and 5 MB.');
+    if ($size<1 || $size>50*1024*1024) throw new InvalidArgumentException('Your resume must be between 1 byte and 50 MB.');
     $name=basename(str_replace('\\','/',(string)$file['name']));
     $ext=strtolower(pathinfo($name,PATHINFO_EXTENSION));
     $mime=(new finfo(FILEINFO_MIME_TYPE))->file($path);
@@ -68,7 +68,7 @@ function career_resume(array $file): array {
             $zip=new PharData($path,0,null,Phar::ZIP);
             if (isset($zip['[Content_Types].xml'],$zip['word/document.xml']) && !isset($zip['word/vbaProject.bin'])) {
                 $total=0; $entries=0;
-                foreach (new RecursiveIteratorIterator($zip) as $entry) { $total+=$entry->getSize(); $entries++; if ($total>30*1024*1024 || $entries>1000) throw new RuntimeException('Archive too large.'); }
+                foreach (new RecursiveIteratorIterator($zip) as $entry) { $total+=$entry->getSize(); $entries++; if ($total>100*1024*1024 || $entries>1000) throw new RuntimeException('Archive too large.'); }
                 $types=$zip['[Content_Types].xml']->getContent();
                 $valid=strpos($types,'application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml')!==false && stripos($types,'macroEnabled')===false;
             }
