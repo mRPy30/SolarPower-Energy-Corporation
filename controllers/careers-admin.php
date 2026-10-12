@@ -22,7 +22,7 @@ try {
             career_json(['success'=>true,'applications'=>$stmt->fetchAll(),'total'=>(int)$count->fetchColumn(),'page'=>$page]);
         }
         if ($action==='application') {
-            $stmt=$db->prepare('SELECT id,job_id,position_title,full_name,email,phone,message,status,internal_notes,archived_at,resume_name,resume_size,created_at FROM career_applications WHERE id=?');
+            $stmt=$db->prepare('SELECT id,job_id,position_title,full_name,email,phone,message,status,internal_notes,archived_at,resume_name,resume_mime,resume_size,created_at FROM career_applications WHERE id=?');
             $stmt->execute([(int)($_GET['id'] ?? 0)]); $app=$stmt->fetch();
             if (!$app) career_json(['success'=>false,'message'=>'Application not found.'],404);
             $stmt=$db->prepare('SELECT audience,recipient,status,attempts,last_error FROM career_email_deliveries WHERE application_id=?'); $stmt->execute([$app['id']]);
@@ -46,6 +46,19 @@ try {
             $id=(int)$db->lastInsertId();
         }
         career_json(['success'=>true,'id'=>$id,'message'=>'Job saved.']);
+    }
+    if (in_array($action,['set_application_status','delete_application','restore_application'],true)) {
+        $id=(int)($_POST['id'] ?? 0);
+        $check=$db->prepare('SELECT id FROM career_applications WHERE id=?'); $check->execute([$id]);
+        if (!$check->fetchColumn()) career_json(['success'=>false,'message'=>'Application not found.'],404);
+        if ($action==='set_application_status') {
+            $status=career_text($_POST,'status',30);
+            if (!in_array($status,['New','Reviewing','Shortlisted','Interview','Hired','Rejected'],true)) throw new InvalidArgumentException('Invalid application status.');
+            $db->prepare('UPDATE career_applications SET status=?,updated_at=? WHERE id=?')->execute([$status,career_now(),$id]);
+        } else {
+            $db->prepare('UPDATE career_applications SET archived_at=?,updated_at=? WHERE id=?')->execute([$action==='delete_application'?career_now():null,career_now(),$id]);
+        }
+        career_json(['success'=>true,'message'=>'Application updated.']);
     }
     if ($action==='update_application') {
         $status=career_text($_POST,'status',30);

@@ -15,8 +15,8 @@ require_once __DIR__.'/../../../includes/careers.php';
  <section id="careerApplicationsPanel" hidden>
   <form id="careerApplicationFilters" class="career-admin-filters">
    <label>Search applicants / positions<input name="search" type="search" maxlength="160"></label>
-   <label>Status<select name="status"><option value="">All statuses</option><?php foreach (['New','Reviewing','Shortlisted','Interview','Hired','Rejected'] as $status): ?><option><?= $status ?></option><?php endforeach; ?></select></label>
-   <label>View<select name="archived"><option value="0">Active applications</option><option value="1">Archived applications</option></select></label>
+   <label>Status<select name="status"><option value="">All statuses</option><?php foreach (['New','Reviewing','Shortlisted','Interview','Hired','Rejected'] as $status): ?><option value="<?= $status ?>"><?= $status==='Interview'?'Interviewed':$status ?></option><?php endforeach; ?></select></label>
+   <label>View<select name="archived"><option value="0">Active applications</option><option value="1">Deleted / archived applications</option></select></label>
    <button type="submit">Filter</button>
   </form>
   <div id="careerApplicationsList" class="career-table-wrap"></div><div class="career-admin-toolbar"><button type="button" id="careerPrevious">Previous</button><span id="careerPagination"></span><button type="button" id="careerNext">Next</button></div>
@@ -70,9 +70,9 @@ require_once __DIR__.'/../../../includes/careers.php';
   <div id="careerApplicantDetails"></div>
   <form id="careerApplicationForm">
    <input type="hidden" name="id">
-   <label>Application status<select name="status"><?php foreach (['New','Reviewing','Shortlisted','Interview','Hired','Rejected'] as $status): ?><option><?= $status ?></option><?php endforeach; ?></select></label>
+   <label>Application status<select name="status"><?php foreach (['New','Reviewing','Shortlisted','Interview','Hired','Rejected'] as $status): ?><option value="<?= $status ?>"><?= $status==='Interview'?'Interviewed':$status ?></option><?php endforeach; ?></select></label>
    <label>Internal notes<textarea name="internal_notes" maxlength="20000" rows="5"></textarea></label>
-   <label class="career-checkbox"><input name="archived" type="checkbox" value="1"> Archive this application (uncheck to restore)</label>
+   <label class="career-checkbox"><input name="archived" type="checkbox" value="1"> Move to deleted applications (uncheck to restore)</label>
    <p class="career-form-error" role="alert"></p><button class="career-action-primary" type="submit">Save application</button>
   </form>
   <div class="career-email-panel"><h4>Email notifications</h4><div id="careerEmailStatus"></div><button type="button" id="careerRetryEmail">Retry pending / failed emails</button><p class="small">Sent means accepted by Resend, not confirmed inbox delivery. Interrupted sends can be retried after 10 minutes; a retry may duplicate an email if the provider accepted it before a timeout.</p></div>

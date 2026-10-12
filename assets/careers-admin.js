@@ -3,6 +3,8 @@
  const root=document.getElementById('careers'); if(!root) return;
  const $=id=>document.getElementById(id);
  const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const applicationStatuses=['New','Reviewing','Shortlisted','Interview','Hired','Rejected'];
+ const applicationStatusLabel=status=>status==='Interview'?'Interviewed':status;
  let jobs=[],page=1,total=0,active='jobs',loaded=false,applicationId=null;
  const message=text=>$('careerAdminMessage').textContent=text;
  async function api(action,data=null,params={}) {
@@ -31,7 +33,8 @@
  async function loadApplications() {
   const params=Object.fromEntries(new FormData($('careerApplicationFilters')));params.page=page;
   const data=await api('applications',null,params);total=data.total;
-  $('careerApplicationsList').innerHTML=data.applications.length?'<table><thead><tr><th>Applicant</th><th>Position</th><th>Contact</th><th>Submitted (PH)</th><th>Status</th><th>Review</th></tr></thead><tbody>'+data.applications.map(a=>'<tr><td>'+esc(a.full_name)+'</td><td>'+esc(a.position_title)+'</td><td>'+esc(a.email)+'<small>'+esc(a.phone)+'</small></td><td>'+esc(a.created_at)+'</td><td>'+esc(a.status)+'</td><td><button type="button" data-application="'+Number(a.id)+'" aria-label="Review '+esc(a.full_name)+'">Open</button></td></tr>').join('')+'</tbody></table>':'<p>No applications match these filters.</p>';
+  if(page>1 && !data.applications.length){page=Math.max(1,Math.ceil(total/30));return loadApplications();}
+  $('careerApplicationsList').innerHTML=data.applications.length?'<table><thead><tr><th>Applicant</th><th>Position</th><th>Contact</th><th>Submitted (PH)</th><th>Status</th><th>Actions</th></tr></thead><tbody>'+data.applications.map(a=>'<tr><td>'+esc(a.full_name)+'</td><td>'+esc(a.position_title)+'</td><td>'+esc(a.email)+'<small>'+esc(a.phone)+'</small></td><td>'+esc(a.created_at)+'</td><td><select class="career-quick-status" data-status-application="'+Number(a.id)+'" data-current-status="'+esc(a.status)+'" aria-label="Status for '+esc(a.full_name)+'">'+applicationStatuses.map(status=>'<option value="'+status+'"'+(status===a.status?' selected':'')+'>'+applicationStatusLabel(status)+'</option>').join('')+'</select></td><td><button type="button" data-application="'+Number(a.id)+'" aria-label="Review '+esc(a.full_name)+'">Open</button> <button type="button" class="career-delete-application" data-archive-application="'+Number(a.id)+'" data-restore="'+(a.archived_at?'1':'0')+'" aria-label="'+(a.archived_at?'Restore ':'Delete ')+esc(a.full_name)+'">'+(a.archived_at?'Restore':'Delete')+'</button></td></tr>').join('')+'</tbody></table>':'<p>No applications match these filters.</p>';
   $('careerPagination').textContent='Page '+page+' of '+Math.max(1,Math.ceil(total/30))+' · '+total+' applications';
   $('careerPrevious').disabled=page<=1;$('careerNext').disabled=page*30>=total;
  }
@@ -104,12 +107,31 @@
  };
  async function application(id,open=true) {
   const data=await api('application',null,{id});const a=data.application;applicationId=a.id;
-  $('careerApplicantDetails').innerHTML='<h4>'+esc(a.full_name)+'</h4><p><strong>'+esc(a.position_title)+'</strong></p><p>'+esc(a.email)+'<br>'+esc(a.phone)+'<br>Submitted '+esc(a.created_at)+' (Philippine time)</p><h4>Cover letter / message</h4><div class="career-applicant-message">'+esc(a.message||'No message provided.')+'</div><p><a href="'+esc(root.dataset.resume+'?id='+Number(a.id))+'">Download '+esc(a.resume_name)+'</a> ('+Math.ceil(a.resume_size/1024)+' KB)</p>';
+  $('careerApplicantDetails').innerHTML='<h4>'+esc(a.full_name)+'</h4><p><strong>'+esc(a.position_title)+'</strong></p><p>'+esc(a.email)+'<br>'+esc(a.phone)+'<br>Submitted '+esc(a.created_at)+' (Philippine time)</p><h4>Cover letter / message</h4><div class="career-applicant-message">'+esc(a.message||'No message provided.')+'</div>';
+  const resumeUrl=root.dataset.resume+'?id='+Number(a.id);
+  const pdf=a.resume_mime==='application/pdf';
+  $('careerApplicantDetails').insertAdjacentHTML('beforeend','<section class="career-resume-panel" aria-label="Resume preview"><div class="career-resume-toolbar"><div><h4>Resume / CV</h4><p>'+esc(a.resume_name)+' <span>('+Math.ceil(a.resume_size/1024)+' KB)</span></p></div><div class="career-resume-actions">'+(pdf?'<a class="career-resume-button" href="'+esc(resumeUrl+'&preview=1')+'" target="_blank" rel="noopener">Open in new tab</a>':'')+'<a class="career-resume-button career-resume-download" href="'+esc(resumeUrl)+'">Download resume</a></div></div>'+(pdf?'<object class="career-resume-preview" data="'+esc(resumeUrl+'&preview=1')+'" type="application/pdf" aria-label="Resume for '+esc(a.full_name)+'"><p>Your browser cannot display this PDF. Use Open in new tab or Download resume above.</p></object>':'<div class="career-resume-unavailable"><strong>Word document attached</strong><p>This file needs a Word-compatible app to display its original layout. Download the resume to view it.</p></div>')+'</section>');
   const form=$('careerApplicationForm');form.elements.id.value=a.id;form.elements.status.value=a.status;form.elements.internal_notes.value=a.internal_notes;form.elements.archived.checked=!!a.archived_at;form.querySelector('.career-form-error').textContent='';
   $('careerEmailStatus').innerHTML='<ul>'+data.emails.map(mail=>'<li>'+esc(mail.audience)+' · '+esc(mail.recipient)+' — <strong>'+esc(mail.status)+'</strong>'+ (mail.last_error?'<br>'+esc(mail.last_error):'')+'</li>').join('')+'</ul>';
   if(open)$('careerApplicationEditor').showModal();
  }
- $('careerApplicationsList').onclick=async e=>{const button=e.target.closest('[data-application]');if(button)try{await application(button.dataset.application);}catch(err){message(err.message);}};
+ $('careerApplicationsList').onchange=async e=>{
+  const select=e.target.closest('[data-status-application]');if(!select)return;
+  const previous=select.dataset.currentStatus;select.disabled=true;
+  try {const data=new FormData();data.set('id',select.dataset.statusApplication);data.set('status',select.value);await api('set_application_status',data);select.dataset.currentStatus=select.value;await loadApplications();message('Applicant status updated.');}
+  catch(err){select.value=select.dataset.currentStatus||previous;message(err.message);}
+  finally{select.disabled=false;}
+ };
+ $('careerApplicationsList').onclick=async e=>{
+  const archive=e.target.closest('[data-archive-application]');
+  if(archive){
+   archive.disabled=true;const restore=archive.dataset.restore==='1';
+   try {const data=new FormData();data.set('id',archive.dataset.archiveApplication);await api(restore?'restore_application':'delete_application',data);await loadApplications();message(restore?'Application restored.':'Moved to Deleted / archived applications. You can restore it from the View filter.');}
+   catch(err){message(err.message);}finally{archive.disabled=false;}
+   return;
+  }
+  const button=e.target.closest('[data-application]');if(button)try{await application(button.dataset.application);}catch(err){message(err.message);}
+ };
  $('careerApplicationForm').onsubmit=async e=>{
   e.preventDefault();const form=e.currentTarget,button=form.querySelector('[type=submit]');button.disabled=true;
   try{await api('update_application',new FormData(form));$('careerApplicationEditor').close();await loadApplications();message('Application updated.');}
@@ -126,4 +148,12 @@
  $('careerPrevious').onclick=()=>{if(page>1){page--;refresh();}};$('careerNext').onclick=()=>{if(page*30<total){page++;refresh();}};
  new MutationObserver(()=>{if(root.classList.contains('active')&&!loaded){loaded=true;refresh();}}).observe(root,{attributes:true,attributeFilter:['class']});
  if(root.classList.contains('active'))refresh();
+ const linkedApplication=new URLSearchParams(location.search).get('career_application');
+ if(linkedApplication && /^[1-9]\d*$/.test(linkedApplication)) {
+  switchTab('applications');
+  application(linkedApplication).catch(err=>message(err.message));
+ }
+ $('careerApplicationEditor').addEventListener('close',()=>{
+  $('careerApplicantDetails').querySelector('.career-resume-panel')?.remove();
+ });
 })();

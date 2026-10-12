@@ -98,8 +98,10 @@ function career_send_emails(PDO $db,int $applicationId): void {
         $claim->execute([career_now(),$delivery['id']]);
         if (!$claim->rowCount()) continue;
         $e=array_map('career_escape',$app);
+        $siteUrl=rtrim(getenv('CAREERS_SITE_URL') ?: 'https://solarpower.com.ph', '/');
+        $resumeUrl=career_escape($siteUrl.'/controllers/careers-view.php?id='.(int)$app['id']);
         $body=$delivery['audience']==='hr'
-            ? '<h2>New career application</h2><p><strong>'.$e['position_title'].'</strong></p><p>Applicant: '.$e['full_name'].'<br>Email: '.$e['email'].'<br>Phone: '.$e['phone'].'<br>Submitted: '.$e['created_at'].' (Philippine time)</p><h3>Message</h3><p>'.nl2br($e['message']).'</p><p>Resume: '.$e['resume_name'].' ('.number_format($app['resume_size']/1024).' KB)</p><p>Sign in to the SolarPower staff dashboard and open Career Management to securely download the resume. Application #'.$e['id'].'.</p>'
+            ? '<h2>New career application</h2><p><strong>'.$e['position_title'].'</strong></p><p>Applicant: '.$e['full_name'].'<br>Email: '.$e['email'].'<br>Phone: '.$e['phone'].'<br>Submitted: '.$e['created_at'].' (Philippine time)</p><h3>Message</h3><p>'.nl2br($e['message']).'</p><p>Resume: '.$e['resume_name'].' ('.number_format($app['resume_size']/1024).' KB)</p><p style="margin:24px 0"><a href="'.$resumeUrl.'" style="display:inline-block;background:#0a5c3d;color:#ffffff;text-decoration:none;padding:13px 24px;border-radius:7px;font-weight:bold">View resume</a></p><p>Staff sign-in is required to securely preview or download this resume. Application #'.$e['id'].'.</p>'
             : '<h2>Thank you for applying, '.$e['full_name'].'.</h2><p>We have successfully received your application for <strong>'.$e['position_title'].'</strong> at SolarPower Energy Corporation.</p><p>Our team will review your information. If your qualifications match our current requirements, we will contact you.</p><p>Application reference: #'.$e['id'].'</p>';
         $html='<div style="font-family:Arial,sans-serif;color:#333;line-height:1.7;max-width:640px;margin:auto"><div style="background:#0a5c3d;color:white;padding:24px;border-bottom:5px solid #ffc107">SolarPower Energy Corporation</div><div style="padding:24px">'.$body.'</div></div>';
         try {

@@ -87,3 +87,29 @@
  .career-qualification-row { padding:14px; gap:8px; }.career-job-preview { padding:20px; }
 }
 
+
+/* Private resume viewer inside the application dialog. */
+.career-admin #careerApplicationEditor { width:min(1100px,calc(100vw - 32px)); }
+.career-resume-panel { border:1px solid #dce5df; border-radius:12px; overflow:hidden; margin:24px 0; background:#f2f5f3; }
+.career-resume-toolbar { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:16px; background:#fff; padding:18px; border-bottom:1px solid #dce5df; }
+.career-resume-toolbar h4 { margin:0 0 6px; }
+.career-resume-toolbar p { margin:0; font-size:13px; overflow-wrap:anywhere; }
+.career-resume-toolbar > div { min-width:0; }
+.career-resume-toolbar p span { color:#66776b; }
+.career-resume-actions { display:flex; flex-wrap:wrap; gap:8px; }
+.career-admin .career-resume-button { display:inline-flex; align-items:center; justify-content:center; min-height:44px; padding:10px 16px; border:1px solid #bed0c4; border-radius:7px; background:white; color:#0a5c3d; text-decoration:none; font-size:14px; font-weight:600; }
+.career-admin .career-resume-download { background:#0a5c3d; border-color:#0a5c3d; color:white; }
+.career-resume-button:focus-visible { outline:3px solid #d9a900; outline-offset:3px; }
+.career-resume-preview { display:block; width:100%; height:65vh; min-height:360px; border:0; background:#e6ebe8; }
+.career-resume-unavailable { padding:28px; text-align:center; }
+.career-resume-unavailable p { margin:10px 0 0; }
+@media(max-width:767px) {
+ .career-resume-toolbar { padding:14px; }
+ .career-resume-actions { width:100%; }
+ .career-resume-actions a { flex:1; }
+ .career-resume-preview { height:60vh; }
+}
+
+.career-admin .career-quick-status { min-width:140px; margin:0; min-height:42px; color:#0a5c3d; background:#f2f7f4; font-weight:600; }
+.career-admin .career-delete-application { color:#a32c32; border-color:#e0bfc1; margin:4px 0; }
+.career-admin .career-delete-application[data-restore="1"] { color:#0a5c3d; border-color:#bed0c4; }

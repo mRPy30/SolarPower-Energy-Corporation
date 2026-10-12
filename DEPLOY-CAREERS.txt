@@ -46,6 +46,8 @@ Deployment
 
    New optional environment variable:
    CAREERS_HR_EMAIL=solar@solarpower.com.ph
+   CAREERS_SITE_URL=https://solarpower.com.ph
+   Optional trusted website base URL for the HR View resume button; include a subfolder if used.
    Supports comma-separated HR recipients. Default: solar@solarpower.com.ph.
    Configure server environment variables using the hosting control panel/Apache/FPM setup;
    this feature does not add a dotenv loader. Do not put secrets in JavaScript or commit them.

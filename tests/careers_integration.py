@@ -140,11 +140,31 @@ function solar_send_resend_email(string $to,string $subject,string $html,array $
             check(request(anon,"/controllers/careers-resume.php?id="+str(app_id))[0]==401,"anonymous resume download denied")
             status,download,headers=request(staff,"/controllers/careers-resume.php?id="+str(app_id))
             check(status==200 and download==pdf and "attachment" in headers.get("Content-Disposition",""),"authorized resume download matches uploaded bytes")
+            check(request(anon,"/controllers/careers-resume.php?id="+str(app_id)+"&preview=1")[0]==401,"anonymous resume preview denied")
+            status,preview,headers=request(staff,"/controllers/careers-resume.php?id="+str(app_id)+"&preview=1")
+            check(status==200 and preview==pdf and "inline" in headers.get("Content-Disposition",""),"authorized PDF preview matches uploaded bytes")
+            check(headers.get("X-Frame-Options")=="SAMEORIGIN","resume embedding restricted to same origin")
+            status,_,headers=request(anon,"/controllers/careers-view.php?id="+str(app_id))
+            check(status==302 and "/login" in headers.get("Location",""),"email resume link requires sign-in")
+            status,_,headers=request(staff,"/controllers/careers-view.php?id="+str(app_id))
+            check(status==302 and "career_application="+str(app_id)+"#careers" in headers.get("Location",""),"email resume link opens selected application")
+            if not args.live_email:
+                mails=[json.loads(line) for line in mail_log.read_text().splitlines()]
+                check(any("View resume</a>" in m["html"] and "/controllers/careers-view.php?id="+str(app_id) in m["html"] for m in mails),"HR notification includes View resume button")
             check(request(public,"/controllers/careers-apply.php",fields,("cv.pdf",pdf,"application/pdf"))[0]==200,"submission retry is idempotent")
             check(jsonbody(admin("applications",params="&search="+urllib.parse.quote(marker))[1])["total"]==1,"no duplicate application after retry")
             check(admin("update_application",{"id":app_id,"status":"Interview","internal_notes":"Internal test notes","archived":"1"})[0]==200,"staff changes status, notes and archives")
             check(jsonbody(admin("applications",params="&archived=1&search="+urllib.parse.quote(marker))[1])["total"]==1,"archived application retained")
             check(admin("update_application",{"id":app_id,"status":"Shortlisted","internal_notes":"Restored"})[0]==200,"application can be restored")
+            check(admin("set_application_status",{"id":app_id,"status":"Interview"})[0]==200,"quick Interviewed status saves")
+            current=jsonbody(admin("application",params="&id="+str(app_id))[1])["application"]
+            check(current["status"]=="Interview" and current["internal_notes"]=="Restored","quick status preserves internal notes")
+            check(admin("set_application_status",{"id":app_id,"status":"Invalid"})[0]==422,"quick status rejects invalid values")
+            check(admin("delete_application",{"id":app_id})[0]==200,"delete moves application to archived view")
+            current=jsonbody(admin("application",params="&id="+str(app_id))[1])["application"]
+            check(bool(current["archived_at"]) and current["status"]=="Interview","delete preserves interview status")
+            check(request(staff,"/controllers/careers-resume.php?id="+str(app_id))[1]==pdf,"deleted application retains resume")
+            check(admin("restore_application",{"id":app_id})[0]==200,"deleted application can be restored")
             if not args.live_email:
                 # Real DOCX ZIP structure with Word content type.
                 zip_bytes=io.BytesIO()

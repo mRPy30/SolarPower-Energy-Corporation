@@ -47,7 +47,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 }
             }
 
-            header("Location: /dashboard");
+            if (!empty($_SESSION['career_resume_return'])) {
+                require_once __DIR__.'/../includes/routes.php';
+                $applicationId=(int)$_SESSION['career_resume_return'];
+                unset($_SESSION['career_resume_return']);
+                header('Location: '.asset_url('controllers/careers-view.php').'?id='.$applicationId);
+            } else {
+                header("Location: /dashboard");
+            }
             exit;
         } else {
             $msg = "<div class='alert alert-danger'>Incorrect password.</div>";

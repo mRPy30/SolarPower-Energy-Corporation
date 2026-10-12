@@ -8,10 +8,12 @@ try {
     if (!$file) { http_response_code(404); exit('Resume not found.'); }
     header('Cache-Control: private, no-store');
     header('X-Content-Type-Options: nosniff');
-    header("Content-Security-Policy: sandbox; default-src 'none'");
+    header("Content-Security-Policy: default-src 'none'; frame-ancestors 'self'");
     header('Content-Type: '.$file['resume_mime']);
     header('Content-Length: '.$file['resume_size']);
-    header('Content-Disposition: attachment; filename="'.str_replace(['"', "\r", "\n"],'_', $file['resume_name']).'"');
+    $disposition=($_GET['preview'] ?? '')==='1' && $file['resume_mime']==='application/pdf' ? 'inline' : 'attachment';
+    header('X-Frame-Options: SAMEORIGIN');
+    header('Content-Disposition: '.$disposition.'; filename="'.str_replace(['"', "\r", "\n"],'_', $file['resume_name']).'"');
     $chunks=getPDO()->prepare('SELECT content FROM career_resume_chunks WHERE application_id=? ORDER BY chunk_index');
     $chunks->execute([(int)$_GET['id']]);
     while (($chunk=$chunks->fetchColumn()) !== false) echo $chunk;
