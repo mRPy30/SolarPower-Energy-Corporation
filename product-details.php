@@ -820,7 +820,7 @@ $conn->close();
                     </div>
 
                     <!-- Stock Status & Warranty -->
-                    <div style="display: none;">
+                    <div>
                         <?php
                         $stockQty = $product['stockQuantity'] ?? 0;
                         if ($stockQty > 10):
@@ -862,10 +862,10 @@ $conn->close();
 
                     <!-- Action Buttons -->
                     <div class="action-buttons">
-                        <button class="btn-custom btn-add-cart" onclick="addToCartFromDetails(<?= $product['id'] ?>)">
+                        <button <?= (int)$product['stockQuantity'] < 1 ? 'disabled aria-disabled="true"' : '' ?> class="btn-custom btn-add-cart" onclick="addToCartFromDetails(<?= $product['id'] ?>)">
                             Add to Cart
                         </button>
-                        <button class="btn-custom btn-buy-now" onclick="buyNowFromDetails()">
+                        <button <?= (int)$product['stockQuantity'] < 1 ? 'disabled aria-disabled="true"' : '' ?> class="btn-custom btn-buy-now" onclick="buyNowFromDetails()">
                             Buy Now
                         </button>
                     </div>

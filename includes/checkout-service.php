@@ -7,6 +7,9 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
+require_once __DIR__.'/inventory.php';
+require_once __DIR__.'/checkout-integrity.php';
+
 function checkout_clean_text($value): string
 {
     $text = trim((string) $value);
@@ -150,7 +153,7 @@ function checkout_assert_order_schema(mysqli $conn): void
 
 function checkout_delivery_rate_from_input(mysqli $conn, array $input): array
 {
-    checkout_ensure_delivery_rates_table($conn);
+    // Delivery schema is deployed separately; DDL would commit an active transaction.
 
     $rateId = (int) ($input['delivery_rate_id'] ?? $input['deliveryRateId'] ?? 0);
     if ($rateId <= 0) {
@@ -225,18 +228,14 @@ function checkout_normalize_cart_items(array $input): array
     $normalized = [];
 
     foreach (checkout_input_items($input) as $item) {
-        if (!is_array($item)) {
-            continue;
-        }
+        if (!is_array($item)) throw new RuntimeException('Invalid cart item.');
 
         $productId = (int) ($item['product_id'] ?? $item['id'] ?? 0);
         $brandId = isset($item['brand_id']) && $item['brand_id'] !== '' ? (int) $item['brand_id'] : null;
         $variantId = isset($item['variant_id']) && $item['variant_id'] !== '' ? (int) $item['variant_id'] : null;
-        $quantity = max(1, (int) ($item['quantity'] ?? 1));
+        $quantity = inventory_quantity($item['quantity'] ?? null);
 
-        if ($productId <= 0) {
-            continue;
-        }
+        if ($productId <= 0) throw new RuntimeException('Invalid product in cart.');
 
         $key = $productId . ':' . ($brandId ?: 'base') . ':' . ($variantId ?: 'base');
         if (!isset($normalized[$key])) {
@@ -248,7 +247,7 @@ function checkout_normalize_cart_items(array $input): array
             ];
         }
 
-        $normalized[$key]['quantity'] += $quantity;
+        $normalized[$key]['quantity'] = inventory_quantity($normalized[$key]['quantity'] + $quantity);
     }
 
     return array_values($normalized);
@@ -275,7 +274,7 @@ function checkout_ensure_variant_name_column(mysqli $conn): void
 
 function checkout_fetch_product(mysqli $conn, int $productId, ?int $brandId, ?int $variantId = null): array
 {
-    checkout_ensure_variant_name_column($conn);
+    // Schema is deployed explicitly; no DDL in checkout transactions.
 
     if ($variantId) {
         $stmt = $conn->prepare(
@@ -287,7 +286,7 @@ function checkout_fetch_product(mysqli $conn, int $productId, ?int $brandId, ?in
                 p.packageType,
                 p.stockQuantity,
                 COALESCE(p.moq, 1) AS moq,
-                COALESCE(pbv.price, p.price) AS price,
+                pbv.price AS price,
                 COALESCE(pbv.variant_image, p.imagePath) AS image_path,
                 pbv.id AS variant_id,
                 COALESCE(b.brand_name, sb.brandName, p.brandName) AS brandName
@@ -312,7 +311,7 @@ function checkout_fetch_product(mysqli $conn, int $productId, ?int $brandId, ?in
                 p.packageType,
                 p.stockQuantity,
                 COALESCE(p.moq, 1) AS moq,
-                COALESCE(pbv.price, p.price) AS price,
+                pbv.price AS price,
                 COALESCE(pbv.variant_image, p.imagePath) AS image_path,
                 pbv.id AS variant_id,
                 COALESCE(b.brand_name, sb.brandName, p.brandName) AS brandName
@@ -324,10 +323,13 @@ function checkout_fetch_product(mysqli $conn, int $productId, ?int $brandId, ?in
              LEFT JOIN supplier_brands sb
                 ON sb.id = pbv.brand_id
              WHERE p.id = ? AND p.status = 'Active'
-             LIMIT 1"
+             ORDER BY pbv.price ASC, pbv.id ASC LIMIT 1"
         );
         $stmt->bind_param('ii', $brandId, $productId);
     } else {
+        $pick=$conn->prepare('SELECT id FROM product_brand_variants WHERE product_id=? ORDER BY price,id LIMIT 1');
+        $pick->bind_param('i',$productId);$pick->execute();$variant=$pick->get_result()->fetch_assoc();
+        if ($variant) return checkout_fetch_product($conn,$productId,null,(int)$variant['id']);
         $stmt = $conn->prepare(
             "SELECT
                 p.id,
@@ -369,6 +371,7 @@ function checkout_validate_items(mysqli $conn, array $input): array
 
     $items = [];
     $subtotal = 0.00;
+    $requested=inventory_totals($cartItems);
 
     foreach ($cartItems as $cartItem) {
         $product = checkout_fetch_product($conn, $cartItem['product_id'], $cartItem['brand_id'], $cartItem['variant_id']);
@@ -382,7 +385,7 @@ function checkout_validate_items(mysqli $conn, array $input): array
         }
 
         $stockQuantity = (int) ($product['stockQuantity'] ?? 0);
-        if ($stockQuantity > 0 && $quantity > $stockQuantity) {
+        if ($stockQuantity < 1 || $requested[$cartItem['product_id']] > $stockQuantity) {
             throw new RuntimeException("Only {$stockQuantity} units are available for {$product['displayName']}.");
         }
 
@@ -391,7 +394,7 @@ function checkout_validate_items(mysqli $conn, array $input): array
         $productName = ($brandName !== '' && stripos($displayName, $brandName) === false)
             ? trim($brandName . ' ' . $displayName)
             : $displayName;
-        $unitPrice = round((float) ($product['price'] ?? 0), 2);
+        $unitPrice = inventory_price($product['price'] ?? null);
 
         if ($unitPrice <= 0) {
             throw new RuntimeException("The price for {$displayName} is not configured.");
@@ -403,7 +406,9 @@ function checkout_validate_items(mysqli $conn, array $input): array
         $items[] = [
             'product_id' => (int) $product['id'],
             'brand_id' => $cartItem['brand_id'],
-            'variant_id' => $cartItem['variant_id'],
+            'variant_id' => isset($product['variant_id']) ? (int)$product['variant_id'] : null,
+            'moq' => $moq,
+            'stockQuantity' => $stockQuantity,
             'product_name' => $productName ?: $displayName,
             'display_name' => $displayName,
             'brand_name' => $brandName,
@@ -670,7 +675,7 @@ function checkout_notification_items_from_cart(array $items): array
     $normalized = [];
 
     foreach ($items as $item) {
-        $quantity = max(1, (int) ($item['quantity'] ?? 1));
+        $quantity = inventory_quantity($item['quantity'] ?? null);
         $price = round((float) ($item['price'] ?? 0), 2);
         $productName = checkout_clean_text($item['product_name'] ?? $item['displayName'] ?? $item['name'] ?? 'Solar Product');
 
@@ -836,7 +841,7 @@ function checkout_send_order_notifications(array $order, array $customer, array 
 
 function checkout_create_order(mysqli $conn, array $customer, array $validated, array $deliveryRate, ?string $orderRef = null, string $paymentStatus = 'paid', string $orderStatus = 'confirmed'): array
 {
-    checkout_assert_order_schema($conn);
+    inventory_assert_schema($conn);
 
     $orderRef = $orderRef ?: checkout_generate_order_reference();
     $deliveryFee = $deliveryRate['price'];
@@ -848,6 +853,12 @@ function checkout_create_order(mysqli $conn, array $customer, array $validated, 
     $conn->begin_transaction();
 
     try {
+        $lock=$conn->prepare('SELECT order_id FROM maya_pending_checkouts WHERE order_reference=? FOR UPDATE');
+        $lock->bind_param('s',$orderRef);$lock->execute();$pendingRow=$lock->get_result()->fetch_assoc();
+        if (!$pendingRow) throw new RuntimeException('Missing checkout reservation.');
+        $existing=checkout_find_order_by_reference($conn,$orderRef);
+        if ($existing) { $conn->commit(); return ['id'=>(int)$existing['id'],'reference'=>$orderRef,'tracking_number'=>$existing['tracking_number'],'total'=>(float)$existing['total_amount'],'already_saved'=>true]; }
+        inventory_consume($conn,$orderRef);
         $orderId = checkout_insert_row(
             $conn,
             'orders',
@@ -910,6 +921,8 @@ function checkout_create_order(mysqli $conn, array $customer, array $validated, 
         $trackingStmt->execute();
         $trackingStmt->close();
 
+        $mark=$conn->prepare("UPDATE maya_pending_checkouts SET status='paid',order_id=?,paid_at=NOW() WHERE order_reference=?");
+        $mark->bind_param('is',$orderId,$orderRef);$mark->execute();
         $conn->commit();
 
         $orderPayload = [
@@ -960,7 +973,7 @@ function checkout_ensure_pending_maya_table(mysqli $conn): void
 
 function checkout_store_pending_maya_checkout(mysqli $conn, string $orderRef, ?string $checkoutId, string $checkoutUrl, string $successToken, array $customer, array $validated, array $deliveryRate): void
 {
-    checkout_ensure_pending_maya_table($conn);
+    // Explicit deployment migration owns this table.
 
     $payload = [
         'customer' => $customer,
@@ -985,15 +998,6 @@ function checkout_store_pending_maya_checkout(mysqli $conn, string $orderRef, ?s
             total_amount,
             status
         ) VALUES (?, ?, ?, ?, ?, ?, ?)
-        ON DUPLICATE KEY UPDATE
-            checkout_id = VALUES(checkout_id),
-            checkout_url = VALUES(checkout_url),
-            success_token = VALUES(success_token),
-            payload_json = VALUES(payload_json),
-            total_amount = VALUES(total_amount),
-            status = VALUES(status),
-            order_id = NULL,
-            paid_at = NULL
     ");
     $stmt->bind_param('sssssds', $orderRef, $checkoutId, $checkoutUrl, $successToken, $payloadJson, $totalAmount, $status);
     $stmt->execute();
@@ -1008,7 +1012,7 @@ function checkout_store_pending_maya_checkout(mysqli $conn, string $orderRef, ?s
 
 function checkout_load_pending_maya_checkout(mysqli $conn, string $orderRef): ?array
 {
-    checkout_ensure_pending_maya_table($conn);
+    // Explicit deployment migration owns this table.
 
     $stmt = $conn->prepare('SELECT * FROM maya_pending_checkouts WHERE order_reference = ? LIMIT 1');
     $stmt->bind_param('s', $orderRef);
@@ -1042,7 +1046,7 @@ function checkout_find_order_by_reference(mysqli $conn, string $orderRef): ?arra
 
 function checkout_mark_pending_maya_status(mysqli $conn, string $orderRef, string $status, ?int $orderId = null): void
 {
-    checkout_ensure_pending_maya_table($conn);
+    // Explicit deployment migration owns this table.
 
     if ($status === 'paid') {
         $stmt = $conn->prepare("UPDATE maya_pending_checkouts SET status = 'paid', order_id = ?, paid_at = NOW() WHERE order_reference = ?");
@@ -1064,6 +1068,9 @@ function checkout_finalize_paid_maya_order(mysqli $conn, string $orderRef, strin
         throw new RuntimeException('Missing order reference.');
     }
 
+    $pending = checkout_load_pending_maya_checkout($conn, $orderRef);
+    if (!$pending || empty($pending['success_token']) || !hash_equals($pending['success_token'],$successToken)) throw new RuntimeException('Invalid checkout confirmation.');
+    checkout_verify_maya_payment($pending);
     $existingOrder = checkout_find_order_by_reference($conn, $orderRef);
     if ($existingOrder) {
         return [
@@ -1099,7 +1106,7 @@ function checkout_finalize_paid_maya_order(mysqli $conn, string $orderRef, strin
         'confirmed'
     );
 
-    checkout_mark_pending_maya_status($conn, $orderRef, 'paid', (int) $order['id']);
+    // Pending state and inventory were finalized atomically with the order.
     unset($_SESSION['pending_maya_orders'][$orderRef]);
 
     return $order;
@@ -1201,23 +1208,38 @@ function checkout_create_maya_checkout(mysqli $conn, array $input): array
     $successToken = bin2hex(random_bytes(24));
     $grandTotal = round($validated['subtotal'] + $deliveryRate['price'], 2);
     $payload = checkout_build_maya_payload(0, $orderRef, $customer, $validated, $deliveryRate, $successToken);
-    $maya = checkout_call_maya($payload);
-
+    $gatewayConfig=checkout_maya_config();
+    if(empty($gatewayConfig['public_key']) || empty($gatewayConfig['secret_key'])) throw new RuntimeException('Payment service is not configured. Please contact support.');
+    inventory_assert_schema($conn);
+    checkout_confirm_quote($input,$validated,$deliveryRate);
+    unset($_SESSION['cart_price_changed']);
+    $conn->begin_transaction();
+    try {
+        // Lock all parent products, then re-read prices under the same locks.
+        foreach (inventory_totals($validated['items']) as $id=>$qty) {
+            $lock=$conn->prepare('SELECT id FROM product WHERE id=? FOR UPDATE');$lock->bind_param('i',$id);$lock->execute();$lock->get_result()->fetch_assoc();
+        }
+        $fresh=checkout_validate_items($conn,$input);
+        checkout_confirm_quote($input,$fresh,$deliveryRate);
+        $validated=$fresh;
+        inventory_allocate($conn,$orderRef,$validated['items']);
+        checkout_store_pending_maya_checkout($conn,$orderRef,null,'',$successToken,$customer,$validated,$deliveryRate);
+        $conn->commit();
+    } catch (Throwable $e) { $conn->rollback();throw $e; }
+    // An uncertain gateway response retains the hold for reconciliation, never auto-restocks.
+    try { $maya = checkout_call_maya($payload); }
+    catch(Throwable $e){throw new RuntimeException('Payment response is uncertain. Contact support with reference '.$orderRef.' before retrying.');}
     if (!$maya['ok']) {
-        $message = $maya['body']['message'] ?? $maya['body']['error']['message'] ?? $maya['body']['error'] ?? 'Maya Checkout creation failed.';
-
-        return [
-            'success' => false,
-            'error' => $message,
-            'message' => $message,
-            'mayaCode' => $maya['body']['code'] ?? $maya['body']['error']['code'] ?? null,
-            'code' => $maya['status'],
-        ];
+        if ($maya['status']>=400 && $maya['status']<500 && $maya['status']!==408 && $maya['status']!==429) {
+            $conn->begin_transaction();
+            try { inventory_release($conn,$orderRef);checkout_mark_pending_maya_status($conn,$orderRef,'failed');$conn->commit(); }
+            catch(Throwable $e){$conn->rollback();throw $e;}
+        }
+        throw new RuntimeException('Payment could not be started. Contact support with reference '.$orderRef.' before retrying.');
     }
-
-    $checkoutUrl = $maya['body']['redirectUrl'];
-    $checkoutId = $maya['body']['checkoutId'] ?? null;
-    checkout_store_pending_maya_checkout($conn, $orderRef, $checkoutId, $checkoutUrl, $successToken, $customer, $validated, $deliveryRate);
+    $checkoutUrl=$maya['body']['redirectUrl'];$checkoutId=$maya['body']['checkoutId'] ?? null;
+    $stmt=$conn->prepare('UPDATE maya_pending_checkouts SET checkout_id=?,checkout_url=? WHERE order_reference=?');
+    $stmt->bind_param('sss',$checkoutId,$checkoutUrl,$orderRef);$stmt->execute();
 
     return [
         'success' => true,

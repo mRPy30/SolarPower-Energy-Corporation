@@ -503,11 +503,12 @@ function get_all_products($conn)
     $products = [];
     $query = "SELECT
         p.*,
+        COALESCE(v.min_price,p.price) AS price,
         COALESCE(NULLIF(v.brand_names, ''), TRIM(p.brandName)) AS allBrandNames
     FROM product p
     LEFT JOIN (
         SELECT
-            pbv.product_id,
+            pbv.product_id, MIN(pbv.price) AS min_price,
             GROUP_CONCAT(DISTINCT COALESCE(NULLIF(TRIM(b.brand_name), ''), NULLIF(TRIM(sb.brandName), '')) ORDER BY pbv.price ASC, pbv.id ASC SEPARATOR ', ') AS brand_names
         FROM product_brand_variants pbv
         LEFT JOIN supplier_brands sb
@@ -726,6 +727,12 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
                 // Start transaction
                 $conn->begin_transaction();
                 try {
+                    require_once __DIR__.'/../../includes/inventory.php';
+                    $price=inventory_price($custom_price);
+                    if ($product_id>0) {
+                        inventory_allocate($conn,$ref,[['product_id'=>$product_id,'quantity'=>1]]);
+                        inventory_consume($conn,$ref);
+                    }
                     $payment_status = 'paid';
                     $order_status = 'confirmed';
 
@@ -1575,7 +1582,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
         
         $productName = $conn_post->real_escape_string($_POST['product-name'] ?? '');
         $warranty = $conn_post->real_escape_string($_POST['warranty'] ?? '');
-        $stockQuantity = isset($_POST['stock-quantity']) && $_POST['stock-quantity'] !== '' ? (int)$_POST['stock-quantity'] : 9999;
+        $stockQuantity = $_POST['stock-quantity'] ?? '';
         $moq = isset($_POST['moq']) && $_POST['moq'] !== '' ? max(1, (int)$_POST['moq']) : 1;
         if (strpos($categoryLower, 'panel') !== false && $moq < 5) {
             $moq = 5;
@@ -1648,6 +1655,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
             // Start Transaction to guarantee integrity
             $conn_post->begin_transaction();
             try {
+                require_once __DIR__.'/../../includes/inventory.php';
+                $stockQuantity=inventory_quantity($stockQuantity,true);
+                inventory_price($fallback_price);
+                if ($isSingleBrandSeries) { foreach($singleVariantPrices as $value) inventory_price($value); }
+                elseif ($isVariantCategory) { foreach($brand_ids as $bid) inventory_price($brand_prices[$bid]??null); }
+                else inventory_price($_POST['price']??null);
                 // Placeholder image path, will update once we get ID
                 $imagePath = 'path/to/uploaded/image.jpg';
 
@@ -4874,7 +4887,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                                             Stock Quantity
                                         </label>
                                         <input type="number" id="stock-quantity-input" name="stock-quantity"
-                                            placeholder="0" min="0" value="9999">
+                                            placeholder="Enter available stock" min="0" step="1" required value="0">
                                     </div>
                                 </div>
 
@@ -5011,7 +5024,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                                     </div>
                                     <div class="preview-price" id="preview-price">₱0.00</div>
                                     <div class="preview-stock" id="preview-stock" style="display: none;">
-                                        <i class="fas fa-box"></i> Stock: 9999 units
+                                        <i class="fas fa-box"></i> Stock: 0 units
                                     </div>
                                     <div class="preview-actions">
                                         <button type="button" class="preview-cart-btn">

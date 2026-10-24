@@ -1,165 +1,33 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
+if (session_status()===PHP_SESSION_NONE) session_start();
+header('Content-Type: application/json');header('Cache-Control: no-store');
+require_once __DIR__.'/../config/dbconn.php';
+require_once __DIR__.'/../includes/checkout-service.php';
+function cart_refresh(mysqli $conn,array $rows): array {
+    if (!$rows) return [];
+    $validated=checkout_validate_items($conn,['items'=>$rows]);
+    return array_map(static function($item){
+        return $item+['id'=>$item['product_id'],'displayName'=>$item['display_name'],'name'=>$item['product_name'],'brandName'=>$item['brand_name']];
+    },$validated['items']);
 }
-header('Content-Type: application/json');
-
-if (!isset($_SESSION['cart']) || !is_array($_SESSION['cart'])) {
-    $_SESSION['cart'] = [];
-}
-
-function cart_controller_rows(): array
-{
-    return array_values(array_filter($_SESSION['cart'] ?? [], 'is_array'));
-}
-
-function cart_controller_total_items(): int
-{
-    return count(cart_controller_rows());
-}
-
-function cart_controller_send(array $payload): void
-{
-    if (array_key_exists('cart', $payload)) {
-        $payload['cart'] = array_values(array_filter((array) $payload['cart'], 'is_array'));
-    } else {
-        $payload['cart'] = cart_controller_rows();
-    }
-
-    if (!array_key_exists('total_items', $payload)) {
-        $payload['total_items'] = count($payload['cart']);
-    }
-
-    echo json_encode($payload);
-}
-
-$action = $_GET['action'] ?? '';
-
-if ($action === 'sync') {
-    $input = json_decode(file_get_contents('php://input'), true);
-    $cart = $input['cart'] ?? null;
-    if (is_array($cart)) {
-        $_SESSION['cart'] = [];
-        foreach ($cart as $item) {
-            $_SESSION['cart'][] = [
-                'id' => intval($item['product_id'] ?? $item['id']),
-                'product_id' => intval($item['product_id'] ?? $item['id']),
-                'variant_id' => $item['variant_id'] ?? '',
-                'brand_id' => isset($item['brand_id']) ? intval($item['brand_id']) : null,
-                'displayName' => $item['displayName'] ?? $item['name'] ?? '',
-                'brandName' => $item['brandName'] ?? '',
-                'category' => $item['category'] ?? '',
-                'price' => floatval($item['price']),
-                'image_path' => $item['image_path'] ?? $item['imagePath'] ?? '',
-                'quantity' => intval($item['quantity'] ?? 1),
-                'moq' => intval($item['moq'] ?? 1)
-            ];
-        }
-        cart_controller_send(['success' => true]);
-    } else {
-        cart_controller_send(['success' => false, 'error' => 'Invalid cart data']);
-    }
-    exit;
-}
-
-if ($action === 'add') {
-    $_SESSION['cart'] = cart_controller_rows();
-    $input = json_decode(file_get_contents('php://input'), true);
-    $item = $input['item'] ?? null;
-    if ($item) {
-        $found = false;
-        foreach ($_SESSION['cart'] as &$cartItem) {
-            $incomingVariantId = (string)($item['variant_id'] ?? '');
-            $cartVariantId = (string)($cartItem['variant_id'] ?? '');
-            $sameVariant = $incomingVariantId !== '' && $incomingVariantId === $cartVariantId;
-            $sameBaseProduct = $incomingVariantId === '' && $cartItem['id'] == $item['id'] && $cartItem['brand_id'] == $item['brand_id'];
-            if ($sameVariant || $sameBaseProduct) {
-                $cartItem['quantity'] += intval($item['quantity'] ?? 1);
-                $found = true;
-                break;
-            }
-        }
-        if (!$found) {
-            $_SESSION['cart'][] = [
-                'id' => intval($item['id']),
-                'product_id' => intval($item['product_id'] ?? $item['id']),
-                'variant_id' => $item['variant_id'] ?? '',
-                'brand_id' => isset($item['brand_id']) ? intval($item['brand_id']) : null,
-                'displayName' => $item['displayName'] ?? '',
-                'brandName' => $item['brandName'] ?? '',
-                'category' => $item['category'] ?? '',
-                'price' => floatval($item['price']),
-                'image_path' => $item['image_path'] ?? '',
-                'quantity' => intval($item['quantity'] ?? 1),
-                'moq' => intval($item['moq'] ?? 1)
-            ];
-        }
-        cart_controller_send(['success' => true]);
-    } else {
-        cart_controller_send(['success' => false, 'error' => 'No item provided']);
-    }
-    exit;
-}
-
-if ($action === 'buynow') {
-    $input = json_decode(file_get_contents('php://input'), true);
-    $item = $input['item'] ?? null;
-    if ($item) {
-        $_SESSION['cart'] = [];
-        $_SESSION['cart'][] = [
-            'id' => intval($item['id']),
-            'product_id' => intval($item['product_id'] ?? $item['id']),
-            'variant_id' => $item['variant_id'] ?? '',
-            'brand_id' => isset($item['brand_id']) ? intval($item['brand_id']) : null,
-            'displayName' => $item['displayName'] ?? '',
-            'brandName' => $item['brandName'] ?? '',
-            'category' => $item['category'] ?? '',
-            'price' => floatval($item['price']),
-            'image_path' => $item['image_path'] ?? '',
-            'quantity' => intval($item['quantity'] ?? 1),
-            'moq' => intval($item['moq'] ?? 1)
-        ];
-        cart_controller_send(['success' => true]);
-    } else {
-        cart_controller_send(['success' => false, 'error' => 'No item provided']);
-    }
-    exit;
-}
-
-if ($action === 'get') {
-    cart_controller_send(['success' => true]);
-    exit;
-}
-
-if ($action === 'update') {
-    $_SESSION['cart'] = cart_controller_rows();
-    $input = json_decode(file_get_contents('php://input'), true);
-    $index = intval($input['index'] ?? -1);
-    $quantity = intval($input['quantity'] ?? 1);
-    if ($index >= 0 && isset($_SESSION['cart'][$index])) {
-        $_SESSION['cart'][$index]['quantity'] = $quantity;
-        cart_controller_send(['success' => true]);
-    } else {
-        cart_controller_send(['success' => false, 'error' => 'Invalid index']);
-    }
-    exit;
-}
-
-if ($action === 'remove') {
-    $_SESSION['cart'] = cart_controller_rows();
-    $input = json_decode(file_get_contents('php://input'), true);
-    $index = intval($input['index'] ?? -1);
-    if ($index >= 0 && isset($_SESSION['cart'][$index])) {
-        array_splice($_SESSION['cart'], $index, 1);
-        cart_controller_send(['success' => true]);
-    } else {
-        cart_controller_send(['success' => false, 'error' => 'Invalid index']);
-    }
-    exit;
-}
-
-if ($action === 'clear') {
-    $_SESSION['cart'] = [];
-    cart_controller_send(['success' => true]);
-    exit;
-}
+try {
+    $action=$_GET['action']??'get';
+    $input=$GLOBALS['cart_request_override']??checkout_json_input();
+    $old=array_values(array_filter($_SESSION['cart']??[],'is_array'));$cart=$old;
+    if ($action!=='get' && ($_SERVER['REQUEST_METHOD']??'')!=='POST') {http_response_code(405);throw new RuntimeException('POST required.');}
+    if ($action==='clear') $cart=[];
+    elseif ($action==='remove') { $index=filter_var($input['index']??null,FILTER_VALIDATE_INT);if($index===false || !isset($cart[$index]))throw new RuntimeException('Invalid cart item.');array_splice($cart,$index,1); }
+    elseif ($action==='update') { $index=filter_var($input['index']??null,FILTER_VALIDATE_INT);if($index===false || !isset($cart[$index]))throw new RuntimeException('Invalid cart item.');$cart[$index]['quantity']=inventory_quantity($input['quantity']??null); }
+    elseif ($action==='sync') {if(!isset($input['cart']) || !is_array($input['cart']))throw new RuntimeException('Invalid cart.');$cart=$input['cart'];}
+    elseif (in_array($action,['add','buynow'],true)) {if(!isset($input['item']) || !is_array($input['item']))throw new RuntimeException('Invalid item.');if($action==='buynow')$cart=[];$cart[]=$input['item'];}
+    elseif ($action!=='get') throw new RuntimeException('Unknown cart action.');
+    // Removing an unavailable line must remain possible even when another line is invalid.
+    if (in_array($action,['remove','clear'],true)) $_SESSION['cart']=$cart;
+    $fresh=cart_refresh($conn,$cart);
+    $changed=false;
+    if ($action==='get') foreach($fresh as $i=>$item) if(!isset($old[$i]['price']) || round((float)$old[$i]['price'],2)!==$item['price'])$changed=true;
+    if($changed)$_SESSION['cart_price_changed']=true;
+    $_SESSION['cart']=$fresh;
+    echo json_encode(['success'=>true,'status'=>'success','message'=>'Cart updated.','cart'=>$fresh,'total_items'=>count($fresh),'price_changed'=>!empty($_SESSION['cart_price_changed'])]);
+} catch(RuntimeException $e){http_response_code(409);echo json_encode(['success'=>false,'status'=>'error','message'=>$e->getMessage(),'error'=>$e->getMessage(),'cart'=>array_values($_SESSION['cart']??[])]);}
+catch(Throwable $e){http_response_code(503);echo json_encode(['success'=>false,'message'=>'Unable to verify cart stock and prices.']);}

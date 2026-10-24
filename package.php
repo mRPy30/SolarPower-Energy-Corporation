@@ -573,7 +573,7 @@ $conn->close();
                                     <div class="product-price">
                                         ₱<?= number_format($p['price'], 2) ?>
                                     </div>
-                                    <div class="preview-stock" style="display: none;">
+                                    <div class="preview-stock">
                                         <i class="fas fa-box"></i> Stock: <?= htmlspecialchars($p['stockQuantity']) ?> units
                                     </div>
                                 </div>

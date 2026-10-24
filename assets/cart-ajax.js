@@ -139,6 +139,17 @@
         return payload && (parseInt(payload.product_id, 10) > 0 || String(payload.variant_id || '').trim() !== '');
     }
 
+    async function refreshServerCart() {
+        try {
+            const response=await fetch(countEndpoint,{credentials:'same-origin',cache:'no-store'});
+            const data=await response.json();
+            if(!response.ok || !data.success){showToast(data.message || 'Unable to verify your cart.','error');return;}
+            saveCartSnapshot(data.cart);
+            if(data.price_changed)showToast('Prices were updated. Please review your cart before checkout.','error');
+        }catch(error){showToast('Unable to refresh stock and prices. Please retry.','error');}
+    }
+    document.addEventListener('show.bs.modal',function(event){if(event.target.id==='cartModal')refreshServerCart();});
+
     function saveCartSnapshot(cart) {
         const normalized = cartRows(cart).map(function (item) {
             return {

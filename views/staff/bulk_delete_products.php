@@ -56,7 +56,8 @@ $types = str_repeat('i', count($ids));
 $conn->begin_transaction();
 
 try {
-    $select = $conn->prepare("SELECT * FROM product WHERE id IN ($placeholders)");
+    require_once __DIR__.'/../../includes/inventory.php';
+    $select = $conn->prepare("SELECT * FROM product WHERE id IN ($placeholders) ORDER BY id FOR UPDATE");
     if (!$select) {
         throw new Exception('Unable to prepare product lookup: ' . $conn->error);
     }
@@ -64,6 +65,7 @@ try {
     $select->bind_param($types, ...$ids);
     $select->execute();
     $products = $select->get_result();
+    foreach($ids as $id) inventory_assert_deletable($conn,$id);
 
     $archive = $conn->prepare("INSERT INTO archived_products
         (original_id, displayName, brandName, price, category, stockQuantity, warranty, description, imagePath, postedByStaffId, deleted_by, deleted_at)

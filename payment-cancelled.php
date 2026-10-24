@@ -11,7 +11,7 @@ if ($orderRef !== 'Unknown') {
     require_once 'includes/checkout-service.php';
 
     try {
-        checkout_mark_pending_maya_status($conn, $orderRef, 'cancelled');
+        checkout_reconcile_failure($conn, $orderRef);
     } catch (Throwable $e) {
         // Cancelled payments must never create rows in orders/tracking.
     }

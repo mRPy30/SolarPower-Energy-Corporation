@@ -74,7 +74,19 @@ try {
     checkout_add_column_if_missing($conn, 'orders', 'tracking_number', 'VARCHAR(120) DEFAULT NULL');
 
     // Start transaction
+$orderRef=checkout_legacy_reference($conn,$_POST,'process-unionbank-payment.php',$orderRef);
+    inventory_assert_schema($conn);
+    $safe=checkout_legacy_totals($conn,$_POST,$items);
     $conn->begin_transaction();
+    foreach (inventory_totals($safe['validated']['items']) as $lockId=>$lockQty) {
+        $lock=$conn->prepare('SELECT id FROM product WHERE id=? FOR UPDATE');$lock->bind_param('i',$lockId);$lock->execute();$lock->get_result()->fetch_assoc();
+    }
+    $safe=checkout_legacy_totals($conn,$_POST,$items);
+    $items=array_map(static function($item){return $item+['id'=>$item['product_id'],'name'=>$item['product_name']];},$safe['validated']['items']);
+    $totalAmount=$safe['total'];
+    $amountToPay=0; // Receipt is unverified; staff records actual received funds.
+    inventory_allocate($conn,$orderRef,$items);
+
     
     try {
         // 1. Insert order
@@ -123,11 +135,8 @@ try {
         // 2. Insert order items
         $stmtItems = $conn->prepare("
             INSERT INTO order_items (
-                order_id,
-                product_name,
-                price,
-                quantity
-            ) VALUES (?, ?, ?, ?)
+                order_id, product_id, product_name, price, quantity, subtotal
+            ) VALUES (?, ?, ?, ?, ?, ?)
         ");
         
         foreach ($items as $item) {
@@ -135,7 +144,7 @@ try {
             $price = floatval($item['price'] ?? 0);
             $quantity = intval($item['quantity'] ?? 1);
             
-            $stmtItems->bind_param('isdi', $orderId, $productName, $price, $quantity);
+            $stmtItems->bind_param('iisdid', $orderId, $item['product_id'], $productName, $price, $quantity, $item['subtotal']);
             
             if (!$stmtItems->execute()) {
                 throw new Exception('Failed to add order item: ' . $stmtItems->error);
@@ -151,7 +160,9 @@ try {
         $trackingStmt->close();
         
         // Commit transaction
-        $conn->commit();
+        $snapshot=$conn->prepare('UPDATE orders SET items_subtotal=?,delivery_fee=?,delivery_location=? WHERE id=?');
+    $snapshot->bind_param('ddsi',$safe['validated']['subtotal'],$safe['delivery']['price'],$safe['delivery']['location_name'],$orderId);$snapshot->execute();
+    $conn->commit();
 
         $emailResult = checkout_send_order_notifications(
             [

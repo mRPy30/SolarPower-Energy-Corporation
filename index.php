@@ -399,6 +399,7 @@ $sql = "SELECT
     ) AS brandName,
     COALESCE(v.min_price, p.price) AS price,
     v.brand_id,
+    v.variant_id,
     p.stockQuantity,
     p.category,
     p.packageType,
@@ -1841,7 +1842,7 @@ $conn->close();
                                     <div class="product-price">
                                         ₱<?= number_format($p['price'], 2) ?>
                                     </div>
-                                    <div class="preview-stock" style="display: none;">
+                                    <div class="preview-stock">
                                         <i class="fas fa-box"></i> Stock: <?= htmlspecialchars($p['stockQuantity']) ?> units
                                     </div>
                                     <?php if (stripos((string)$p['category'], 'panel') !== false && intval($p['moq']) > 1): ?>
@@ -5583,6 +5584,11 @@ $conn->close();
         return document.getElementById('cartModal');
     }
 
+    document.addEventListener('solar:cart-updated', function(event) {
+        cart=event.detail.cart;
+        if(typeof updateCartBadge==='function')updateCartBadge();
+        if(document.getElementById('cartModalBody'))renderCartPopup();
+    });
     function showCartPopup() {
         const modal = createCartModal();
         renderCartPopup();

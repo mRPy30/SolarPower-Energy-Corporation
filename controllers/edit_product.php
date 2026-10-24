@@ -16,6 +16,9 @@ $category       = $_POST['category'];
 $stockQuantity  = intval($_POST['stockQuantity']);
 $description    = $_POST['description'];
 
+require_once __DIR__.'/../includes/inventory.php';
+try { $stockQuantity=inventory_quantity($_POST['stockQuantity']??null,true);$price=inventory_price($_POST['price']??null); }
+catch(RuntimeException $e){http_response_code(422);exit(htmlspecialchars($e->getMessage()));}
 $stmt = $conn->prepare("
     UPDATE product 
     SET displayName=?, brandName=?, price=?, category=?, stockQuantity=?, description=?

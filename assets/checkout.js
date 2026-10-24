@@ -133,11 +133,13 @@
             const data = await response.json();
 
             if (response.ok && data.success) {
+                if(data.price_changed) setError('Product prices were updated. Please review your cart before continuing.');
                 cart = normalizeCart(data.cart || []);
                 saveCart();
                 renderCart();
                 return;
             }
+            if(data.message) setError(data.message);
         } catch (error) {
             console.error('Session cart load error:', error);
         }
@@ -557,7 +559,7 @@
                         cart = normalizeCart(data.cart || []);
                         saveCart();
                         renderCart();
-                    }
+                    } else {setError(data.message || data.error || 'Unable to update cart.');}
                 });
             });
             actions.appendChild(remove);
@@ -587,7 +589,7 @@
                 cart = normalizeCart(data.cart || []);
                 saveCart();
                 renderCart();
-            }
+            } else {setError(data.message || data.error || 'Unable to update cart.');}
         });
     }
 
@@ -689,6 +691,20 @@
         if (totalItemsAmountEl) totalItemsAmountEl.value = subtotal();
         if (calculatedDeliveryFeeEl) calculatedDeliveryFeeEl.value = deliveryFee;
         if (selectedLocationNameEl) selectedLocationNameEl.value = selectedDeliveryLabel();
+
+        // Refresh from the server and require confirmation before accepting a changed total.
+        try {
+            const quoteResponse = await fetch(APP_BASE + 'controllers/checkout-quote.php', {
+                method:'POST', credentials:'same-origin', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)
+            });
+            const quote = await quoteResponse.json();
+            if (!quoteResponse.ok || !quote.success) throw new Error(quote.message || 'Unable to verify stock and prices.');
+            const oldTotal = Math.round((subtotal()+deliveryFee)*100);
+            const changed = quote.items.some((item,index) => !cart[index] || Math.round(item.price*100)!==Math.round(cart[index].price*100)) || oldTotal!==Math.round(quote.total*100);
+            cart=normalizeCart(quote.items); deliveryFee=quote.delivery_fee;saveCart();renderCart();
+            if (changed && !window.confirm('Prices or delivery charges have changed. Your updated total is PHP '+Number(quote.total).toLocaleString('en-PH',{minimumFractionDigits:2})+'. Continue with this amount?')) return;
+            payload.items=quote.items;payload.quote_token=quote.quote_token;
+        } catch(error) {setError(error.message);return;}
 
         // Start Maya checkout asynchronously.
         const button = mayaButton();

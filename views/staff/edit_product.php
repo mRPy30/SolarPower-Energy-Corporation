@@ -1,6 +1,9 @@
 <?php
 // edit_product.php - Update product details and manage images
 header('Content-Type: application/json');
+session_start();
+if(empty($_SESSION['user_id']) || !in_array($_SESSION['role']??'',['staff','admin'],true)){http_response_code(403);echo json_encode(['success'=>false,'message'=>'Staff sign-in required.']);exit;}
+require_once __DIR__.'/../../includes/inventory.php';
 
 // Include your database connection
 require_once '../../config/dbconn.php';
@@ -30,8 +33,7 @@ if (empty($brandName) && (stripos($category, 'Package') !== false || empty($cate
     $brandName = 'Package';
 }
 
-$stockQuantity = (isset($_POST['stockQuantity']) && $_POST['stockQuantity'] !== '') ? intval($_POST['stockQuantity']) : 9999;
-if ($stockQuantity <= 0) $stockQuantity = 9999; // Ensure it's always enabled
+$stockQuantity = $_POST['stockQuantity'] ?? '';
 
 $warranty = isset($_POST['warranty']) ? trim($_POST['warranty']) : '';
 $description = isset($_POST['description']) ? trim($_POST['description']) : '';
@@ -49,6 +51,9 @@ if (empty($displayName) || empty($brandName) || $price <= 0 || empty($category))
 }
 
 try {
+    $stockQuantity=inventory_quantity($stockQuantity,true);
+    $price=inventory_price($_POST['price']??null);
+    if (!in_array($status,['Active','Hidden'],true)) throw new RuntimeException('Invalid product status.');
     // Start transaction
     $conn->begin_transaction();
     
@@ -112,6 +117,9 @@ try {
         $brand_ids = isset($_POST['brand_ids']) ? $_POST['brand_ids'] : [];
         $brand_prices = isset($_POST['brand_price']) ? $_POST['brand_price'] : [];
         
+        foreach($brand_ids as $bid) inventory_price($brand_prices[$bid]??null);
+        $duplicate=$conn->query('SELECT brand_id FROM product_brand_variants WHERE product_id='.(int)$product_id.' GROUP BY brand_id HAVING COUNT(*)>1');
+        if($duplicate->num_rows) throw new RuntimeException('Multiple models share a brand. Use model-aware editing to preserve them.');
         // Fetch existing variants to preserve images
         $existing_variants = [];
         $evRes = $conn->query("SELECT brand_id, variant_image FROM product_brand_variants WHERE product_id = " . $product_id);
@@ -120,7 +128,9 @@ try {
         }
 
         // Delete all variants to cleanly recreate them
-        $conn->query("DELETE FROM product_brand_variants WHERE product_id = " . $product_id);
+        $selectedBrands=array_map('intval',$brand_ids);
+        if(!$selectedBrands) throw new RuntimeException('Select at least one variant brand.');
+        $conn->query('DELETE FROM product_brand_variants WHERE product_id='.(int)$product_id.' AND brand_id NOT IN ('.implode(',',$selectedBrands).')');
         
         $uploadDir = "../../uploads/products/$product_id/";
         if (!is_dir($uploadDir)) {
@@ -146,8 +156,9 @@ try {
                 }
             }
             
-            $vStmt = $conn->prepare("INSERT INTO product_brand_variants (product_id, brand_id, price, variant_image) VALUES (?, ?, ?, ?)");
-            $vStmt->bind_param("iids", $product_id, $b_id, $v_price, $uploaded_path);
+            $existing=$conn->query('SELECT id FROM product_brand_variants WHERE product_id='.(int)$product_id.' AND brand_id='.$b_id)->fetch_assoc();
+            if($existing){$vStmt=$conn->prepare('UPDATE product_brand_variants SET price=?,variant_image=? WHERE id=?');$vStmt->bind_param('dsi',$v_price,$uploaded_path,$existing['id']);}
+            else {$vStmt=$conn->prepare('INSERT INTO product_brand_variants(product_id,brand_id,price,variant_image) VALUES(?,?,?,?)');$vStmt->bind_param('iids',$product_id,$b_id,$v_price,$uploaded_path);}
             $vStmt->execute();
             $vStmt->close();
         }

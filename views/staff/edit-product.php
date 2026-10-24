@@ -79,7 +79,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     $catLower   = strtolower($category);
     $isVariant  = strpos($catLower, 'panel') !== false || strpos($catLower, 'battery') !== false || strpos($catLower, 'inverter') !== false;
     $packageType = trim($_POST['package-type'] ?? '') ?: NULL;
-    $stockQty   = isset($_POST['stock-quantity']) && $_POST['stock-quantity'] !== '' ? intval($_POST['stock-quantity']) : 9999;
+    $stockQty = $_POST['stock-quantity'] ?? '';
     $warranty   = trim($_POST['warranty'] ?? '');
     $status     = trim($_POST['status'] ?? 'Active');
     $description = $_POST['description'] ?? '';
@@ -113,13 +113,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     } else {
         $conn->begin_transaction();
         try {
+            require_once __DIR__.'/../../includes/inventory.php';
+            $stockQty=inventory_quantity($stockQty,true);
+            if (!in_array($status,['Active','Hidden'],true)) throw new RuntimeException('Invalid product status.');
+            if ($isVariant && $brand_ids) { foreach($brand_ids as $bid) inventory_price($brand_prices[$bid]??null); }
+            else inventory_price($_POST['price']??null);
             $upd = $conn->prepare("UPDATE product SET displayName=?, brandName=?, price=?, category=?, packageType=?, stockQuantity=?, warranty=?, description=?, status=?, moq=? WHERE id=?");
-            $upd->bind_param("ssdsissssii", $displayName, $fallbackBrand, $fallbackPrice, $category, $packageType, $stockQty, $warranty, $description, $status, $moq, $pid);
+            $upd->bind_param("ssdssisssii", $displayName, $fallbackBrand, $fallbackPrice, $category, $packageType, $stockQty, $warranty, $description, $status, $moq, $pid);
             $upd->execute();
             $upd->close();
 
             // ── Variants ────────────────────────────────────────────────
             if ($isVariant) {
+                $duplicate=$conn->prepare('SELECT brand_id FROM product_brand_variants WHERE product_id=? GROUP BY brand_id HAVING COUNT(*)>1');
+                $duplicate->bind_param('i',$pid);$duplicate->execute();
+                if ($duplicate->get_result()->num_rows) throw new RuntimeException('This product has multiple models for one brand. Use model-aware editing; this form cannot safely merge them.');
                 // Preserve existing images
                 $existImg = [];
                 $ev = $conn->prepare("SELECT brand_id, variant_image FROM product_brand_variants WHERE product_id = ?");
@@ -131,7 +139,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 }
                 $ev->close();
 
-                $conn->query("DELETE FROM product_brand_variants WHERE product_id = " . $pid);
+                $selectedBrands=array_map('intval',$brand_ids);
+                if (!$selectedBrands) throw new RuntimeException('Select at least one variant brand.');
+                $conn->query("DELETE FROM product_brand_variants WHERE product_id=".$pid." AND brand_id NOT IN (".implode(',',$selectedBrands).")");
 
                 $uploadDir = "../../uploads/products/$pid/";
                 if (!is_dir($uploadDir)) mkdir($uploadDir, 0777, true);
@@ -153,8 +163,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                         }
                     }
 
-                    $ins = $conn->prepare("INSERT INTO product_brand_variants (product_id, brand_id, price, variant_image) VALUES (?, ?, ?, ?)");
-                    $ins->bind_param("iids", $pid, $bid, $vPrice, $imgPath);
+                    $existing=$conn->query("SELECT id FROM product_brand_variants WHERE product_id=".$pid." AND brand_id=".$bid)->fetch_assoc();
+                    if ($existing) {
+                        $ins=$conn->prepare('UPDATE product_brand_variants SET price=?,variant_image=? WHERE id=?');
+                        $ins->bind_param('dsi',$vPrice,$imgPath,$existing['id']);
+                    } else {
+                        $ins=$conn->prepare('INSERT INTO product_brand_variants(product_id,brand_id,price,variant_image) VALUES(?,?,?,?)');
+                        $ins->bind_param('iids',$pid,$bid,$vPrice,$imgPath);
+                    }
                     $ins->execute();
                     $ins->close();
                 }
@@ -639,7 +655,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 <!-- Stock -->
                 <div class="form-group" style="display:none;">
                     <input type="number" id="stock-quantity-input" name="stock-quantity"
-                           value="<?= (int)($prod['stockQuantity'] ?? 9999) ?>">
+                           value="<?= (int)($prod['stockQuantity'] ?? 0) ?>">
                 </div>
 
             </div>

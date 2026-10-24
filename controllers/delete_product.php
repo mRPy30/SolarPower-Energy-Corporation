@@ -29,8 +29,10 @@ $conn->query("CREATE TABLE IF NOT EXISTS `archived_products` (
 $product_id = intval($_POST['product_id']);
 $deleted_by = $_SESSION['user_id'] ?? null;
 
+require_once __DIR__.'/../includes/inventory.php';
+$conn->begin_transaction();
 // Copy product data to archived_products before deleting
-$stmt = $conn->prepare("SELECT * FROM product WHERE id = ?");
+$stmt = $conn->prepare("SELECT * FROM product WHERE id = ? FOR UPDATE");
 $stmt->bind_param("i", $product_id);
 $stmt->execute();
 $result = $stmt->get_result();
@@ -38,6 +40,7 @@ $product = $result->fetch_assoc();
 $stmt->close();
 
 if ($product) {
+    try {inventory_assert_deletable($conn,$product_id);} catch(RuntimeException $e){$conn->rollback();$_SESSION['message']=$e->getMessage();header('Location: /dashboard#product');exit;}
     // Insert into archived_products
     $archive_stmt = $conn->prepare("INSERT INTO archived_products (original_id, displayName, brandName, price, category, stockQuantity, warranty, description, imagePath, postedByStaffId, deleted_by, deleted_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())");
     $archive_stmt->bind_param(
@@ -64,6 +67,7 @@ if ($product) {
     $del_stmt->close();
 }
 
+$conn->commit();
 $conn->close();
 
 header("Location: /dashboard#product");

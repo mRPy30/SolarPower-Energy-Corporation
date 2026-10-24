@@ -1,0 +1,6 @@
+Historical snapshot: solar_power_6_26_26.sql; NOT current production inventory
+id	displayName	price	stockQuantity	status
+241	750kw	5000.00	9999	Active
+242	580W LVTOPSUN 	25000000.00	9999	Active
+snapshot_product_count
+2

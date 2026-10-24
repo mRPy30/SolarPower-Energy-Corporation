@@ -11,7 +11,7 @@ $query = "SELECT
     p.id,
     p.displayName,
     COALESCE(NULLIF(v.brand_names, ''), TRIM(p.brandName)) AS brandName,
-    p.price,
+    COALESCE(v.min_price,p.price) AS price,
     p.stockQuantity,
     p.category,
     p.packageType,
@@ -19,7 +19,7 @@ $query = "SELECT
 FROM product p
 LEFT JOIN (
         SELECT
-        pbv.product_id,
+        pbv.product_id, MIN(pbv.price) AS min_price,
         GROUP_CONCAT(DISTINCT COALESCE(NULLIF(TRIM(b.brand_name), ''), NULLIF(TRIM(sb.brandName), '')) ORDER BY pbv.price ASC, pbv.id ASC SEPARATOR ', ') AS brand_names
     FROM product_brand_variants pbv
     LEFT JOIN supplier_brands sb

@@ -162,6 +162,14 @@ if ($orderStatus === 'delivered') {
 $conn->begin_transaction();
 
 try {
+    require_once __DIR__.'/../includes/inventory.php';
+    $lock=$conn->prepare('SELECT * FROM orders WHERE id=? FOR UPDATE');$lock->bind_param('i',$orderId);$lock->execute();$currentOrder=$lock->get_result()->fetch_assoc();
+    if (!$currentOrder) throw new RuntimeException('Order no longer exists.');
+    if ($currentOrder['order_status']==='cancelled' && $orderStatus!=='cancelled') throw new RuntimeException('Cancelled orders cannot be reopened. Create a new order after checking stock.');
+    if ($orderStatus==='cancelled') {
+        if(in_array($currentOrder['order_status'],['in_transit','out_for_delivery','delivered'],true)) throw new RuntimeException('Dispatched orders require a verified return before restocking.');
+        inventory_release($conn,$currentOrder['order_reference']);
+    }
     // Update order
     $updateStmt = $conn->prepare("
         UPDATE orders 

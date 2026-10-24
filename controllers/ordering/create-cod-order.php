@@ -1,19 +1,14 @@
 <?php
-session_start();
+if(session_status()===PHP_SESSION_NONE) session_start();
 header('Content-Type: application/json');
 require_once __DIR__ . '/../../includes/checkout-service.php';
 
 // Enable full error reporting for mysqli
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 
-// Database connection
-$servername = "localhost";
-$username   = "root";
-$password   = "";
-$dbname     = "solar_power";
-
+// Shared deployment database connection
 try {
-    $conn = new mysqli($servername, $username, $password, $dbname);
+    require_once __DIR__.'/../../config/dbconn.php';
 
     if ($conn->connect_error) {
         throw new Exception('Database connection failed: ' . $conn->connect_error);
@@ -35,7 +30,7 @@ try {
     // Extract data
     $totalAmount = floatval($data['totalAmount'] ?? ($data['amount'] ?? 0));
     $items = $data['items'] ?? [];
-    $paymentMethod = $data['paymentMethod'] ?? 'cod';
+    $paymentMethod = 'cod';
 
     // Extract customer data (handle both object and flat structure)
     if (isset($data['customer']) && is_array($data['customer'])) {
@@ -96,7 +91,18 @@ try {
     checkout_add_column_if_missing($conn, 'orders', 'tracking_number', 'VARCHAR(120) DEFAULT NULL');
 
     // Begin transaction
+$orderReference=checkout_legacy_reference($conn,$data,'create-cod-order.php',$orderReference);
+    inventory_assert_schema($conn);
+    $safe=checkout_legacy_totals($conn,$data,$items);
     $conn->begin_transaction();
+    foreach (inventory_totals($safe['validated']['items']) as $lockId=>$lockQty) {
+        $lock=$conn->prepare('SELECT id FROM product WHERE id=? FOR UPDATE');$lock->bind_param('i',$lockId);$lock->execute();$lock->get_result()->fetch_assoc();
+    }
+    $safe=checkout_legacy_totals($conn,$data,$items);
+    $items=array_map(static function($item){return $item+['id'=>$item['product_id'],'name'=>$item['product_name']];},$safe['validated']['items']);
+    $totalAmount=$safe['total'];
+    inventory_allocate($conn,$orderReference,$items);
+
 
     // Insert order
     $stmt = $conn->prepare("
@@ -163,6 +169,8 @@ try {
     $trackingStmt->close();
     
     // Commit transaction
+    $snapshot=$conn->prepare('UPDATE orders SET items_subtotal=?,delivery_fee=?,delivery_location=? WHERE id=?');
+    $snapshot->bind_param('ddsi',$safe['validated']['subtotal'],$safe['delivery']['price'],$safe['delivery']['location_name'],$orderId);$snapshot->execute();
     $conn->commit();
 
     $emailResult = checkout_send_order_notifications(
