@@ -35,10 +35,11 @@ $stmt->close();
 
 // ── Fetch first product image for live preview ───────────────────────────
 $firstImage = '';
-$imgQuery = $conn->prepare("SELECT image_path FROM product_images WHERE product_id = ? ORDER BY id ASC LIMIT 1");
+$imgQuery = $conn->prepare("SELECT image_path FROM product_images WHERE product_id = ? ORDER BY id ASC");
 $imgQuery->bind_param("i", $product_id);
 $imgQuery->execute();
-$imgRow = $imgQuery->get_result()->fetch_assoc();
+$galleryImages = $imgQuery->get_result()->fetch_all(MYSQLI_ASSOC);
+$imgRow = $galleryImages[0] ?? null;
 if ($imgRow) {
     $firstImage = $imgRow['image_path'];
 }
@@ -197,6 +198,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 }
             }
 
+            // Remove only image references belonging to this product. Keep files
+            // on disk because another product or historical record may use them.
+            $removedImages = $_POST['remove_images'] ?? [];
+            if (!is_array($removedImages)) throw new RuntimeException('Invalid image selection.');
+            foreach (array_unique($removedImages) as $imagePath) {
+                if (!is_string($imagePath)) throw new RuntimeException('Invalid image selection.');
+                $remove = $conn->prepare('DELETE FROM product_images WHERE product_id = ? AND image_path = ?');
+                $remove->bind_param('is', $pid, $imagePath);
+                $remove->execute();
+                $remove->close();
+                $remove = $conn->prepare('UPDATE product_brand_variants SET variant_image = NULL WHERE product_id = ? AND variant_image = ?');
+                $remove->bind_param('is', $pid, $imagePath);
+                $remove->execute();
+                $remove->close();
+                $remove = $conn->prepare("UPDATE product SET imagePath = '' WHERE id = ? AND imagePath = ?");
+                $remove->bind_param('is', $pid, $imagePath);
+                $remove->execute();
+                $remove->close();
+            }
             $conn->commit();
             // Redirect to dashboard product page on success (PRG)
             $_SESSION['edit_product_msg']      = "Product updated successfully!";
@@ -216,8 +236,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Edit Product – Solar Power Energy Corp.</title>
+    <link rel="icon" type="image/png" href="../../assets/img/icon.png">
 
     <!-- Same CDNs as dashboard -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -228,7 +249,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
     $base_dir = (stripos($_SERVER['SCRIPT_NAME'], '/SolarPower-Energy-Corporation/') !== false) ? $protocol . $host . '/SolarPower-Energy-Corporation/views/staff/' : $protocol . $host . '/views/staff/';
     ?>
-    <link rel="stylesheet" href="<?php echo $base_dir; ?>style.css">
+    <link rel="stylesheet" href="<?php echo $base_dir; ?>style.css?v=<?= filemtime(__DIR__ . '/style.css') ?>">
 
     <style>
         /* ── Page shell ───────────────────────────────────────────── */
@@ -549,17 +570,172 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 
         /* required star */
         .req { color: #ef4444; }
+
+        /* Match the dashboard Add Product layout while retaining edit fields. */
+        body { background: #f8fafc; }
+        .sidebar { flex-shrink: 0; }
+        .main-content { min-width: 0; }
+        .ep-wrapper { max-width: none; margin: 0; padding: 0; grid-template-columns: minmax(0, 2.7fr) minmax(280px, 1fr); gap: 30px; align-items: start; }
+        .edit-form-section { min-width: 0; padding: 30px; background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; }
+        .ep-card { padding: 0; border: 0; border-radius: 0; margin-bottom: 24px; }
+        .ep-card h2, .form-group label { text-transform: none; letter-spacing: 0; font-size: 13px; font-weight: 500; color: #1e293b; }
+        .ep-card h2 { margin-bottom: 12px; }
+        .ep-card h2 i, .form-group label i, .preview-header h3 i { color: #334155; }
+        .form-grid { gap: 20px; }
+        .form-group input, .form-group select { background: white; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; }
+        .preview-card { background: #f9fafb; padding: 24px; border-radius: 12px; }
+        .preview-header { padding: 0; border: 0; margin-bottom: 20px; text-align: center; }
+        .preview-header h3 { justify-content: center; font-weight: 500; }
+        .preview-price { font-size: 28px; }
+        .existing-images-note { font-size: 12px; color: #64748b; margin-bottom: 12px; }
+        .edit-back-link { font-size: 13px; color: #475569; text-decoration: none; }
+        .edit-product-id { font-size: 12px; color: #64748b; margin-left: 12px; }
+        .btn-save { background: #fbbf24; color: #78350f; box-shadow: none; }
+        .file-upload-box { background: #f9fafb; padding: 40px 20px; border-radius: 8px; }
+        .career-nav-button { width: 100%; border: 0; background: transparent; text-align: left; font: inherit; }
+        .edit-carousel-nav { position: absolute; top: 50%; transform: translateY(-50%); border: 0; border-radius: 50%; width: 34px; height: 34px; background: #0008; color: white; cursor: pointer; z-index: 2; }
+        .edit-carousel-prev { left: 10px; } .edit-carousel-next { right: 10px; }
+        .edit-carousel-count { position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%); background: #000b; color: white; border-radius: 20px; padding: 6px 12px; font-size: 12px; }
+        @media (max-width: 1100px) { .ep-wrapper { grid-template-columns: minmax(0, 1fr); } }
+        @media (max-width: 640px) { .edit-form-section { padding: 18px; } }
+        .edit-image-tile { display: flex; flex-direction: column; gap: 6px; width: 90px; }
+        .edit-image-remove { border: 1px solid #fecaca; border-radius: 6px; padding: 5px; background: #fff1f2; color: #b91c1c; cursor: pointer; font-size: 12px; }
+        .edit-image-remove:hover { background: #fee2e2; }
     </style>
+    <link rel="stylesheet" href="<?= $base_dir ?>mobile.css?v=<?= filemtime(__DIR__ . '/mobile.css') ?>">
+    <script defer src="<?= $base_dir ?>mobile.js?v=<?= filemtime(__DIR__ . '/mobile.js') ?>"></script>
 </head>
 <body>
 
-<!-- ── Top bar ─────────────────────────────────────────────────────────── -->
-<header class="ep-topbar">
-    <a href="/dashboard" class="back-btn"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
-    <h1><i class="fas fa-edit" style="color:#f59e0b;margin-right:6px;"></i>Edit Product</h1>
-    <span class="product-id-badge">ID #<?= $product_id ?></span>
-</header>
+<div class="container">
+        <aside class="sidebar">
+            <button class="sidebar-toggle" onclick="toggleSidebar()">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            <div class="logo">
+                <a href="dashboard.php">
+                    <img src="../../assets/img/solarpower_energy_corp.png" alt="Solar Power Logo" style="max-height: 50px; width: auto; object-fit: contain;">
+                </a>
+            </div>
 
+            <div class="menu-item" onclick="showPage('dashboard', 'Dashboard')" data-tooltip="Inquiries">
+                <i class="fas fa-chart-line"></i>
+                <span>Dashboard</span>
+            </div>
+
+            <div class="menu-label">CUSTOMER OPERATIONS</div>
+            <div class="menu-item" onclick="showPage('inquiries', 'Inquiries')" data-tooltip="Inquiries">
+                <i class="fas fa-envelope-open-text"></i>
+                <span>Inquiries</span>
+            </div>
+
+            <div class="menu-item" onclick="showPage('estimates', 'Solar Estimates')" data-tooltip="Solar Estimates">
+                <i class="fas fa-file-invoice-dollar"></i>
+                <span>Solar Estimates</span>
+            </div>
+
+            <button type="button" class="menu-item career-nav-button" onclick="showPage('careers', 'Career Management')" data-tooltip="Career Management"><i class="fas fa-briefcase" aria-hidden="true"></i><span>Career Management</span></button>
+            <div class="menu-item" onclick="showPage('loans', 'Loan Applications')" data-tooltip="Loan Applications">
+                <i class="fas fa-file-signature"></i>
+                <span>Loan Applications</span>
+            </div>
+
+            <div class="menu-item" onclick="showPage('subscribers', 'Potential Clients')" data-tooltip="Potential Clients">
+                <i class="fas fa-newspaper"></i>
+                <span>Potential Clients</span>
+            </div>
+
+            <div class="menu-item" onclick="showPage('clients', 'Clients')" data-tooltip="Clients">
+                <i class="fas fa-users"></i>
+                <span>Clients</span>
+            </div>
+
+            <div class="menu-item" onclick="showPage('calculator-settings', 'Calculator Settings')" data-tooltip="Calculator Settings">
+                <i class="fas fa-calculator"></i>
+                <span>Calculator Settings</span>
+            </div>
+
+            <div class="menu-item" onclick="showPage('calculator-analytics', 'Calculator Analytics')" data-tooltip="Calculator Analytics">
+                <i class="fas fa-chart-bar"></i>
+                <span>Calculator Analytics</span>
+            </div>
+
+            <div class="menu-label">PRODUCT MANAGEMENT</div>
+            <div class="menu-item" onclick="showPage('brands', 'Supplier/Brands')" data-tooltip="Supplier/Brands">
+                <i class="fas fa-trademark"></i>
+                <span>Supplier/Brands</span>
+            </div>
+            <div class="menu-item" onclick="showPage('categories', 'Categories')" data-tooltip="Categories">
+                <i class="fas fa-tags"></i>
+                <span>Categories</span>
+            </div>
+            <div class="menu-item active" onclick="showPage('product', 'Product')" data-tooltip="Product">
+                <i class="fas fa-box"></i>
+                <span>Product</span>
+            </div>
+
+            <div class="menu-item" onclick="showPage('promo-images', 'Promo Banners')" data-tooltip="Promo Banners">
+                <i class="fas fa-images"></i>
+                <span>Promo Banners</span>
+            </div>
+
+            <div class="menu-item" onclick="showPage('portfolio', 'Project Portfolio')" data-tooltip="Project Portfolio">
+                <i class="fas fa-solar-panel"></i>
+                <span>Project Portfolio</span>
+            </div>
+
+            <div class="menu-item" onclick="showPage('portfolio-videos', 'Solar Reels & Videos')" data-tooltip="Solar Reels & Videos">
+                <i class="fas fa-video"></i>
+                <span>Solar Reels & Videos</span>
+            </div>
+
+            <div class="menu-label">SALES & TRANSACTIONS</div>
+            <div class="menu-item" onclick="showPage('tracking', 'Tracking')" data-tooltip="Tracking">
+                <i class="fas fa-map-marker-alt"></i>
+                <span>Tracking</span>
+            </div>
+
+            <div class="menu-item" onclick="showPage('delivery-rates', 'Delivery Rates')" data-tooltip="Delivery Rates">
+                <i class="fas fa-truck"></i>
+                <span>Delivery Rates</span>
+            </div>
+
+            <div class="menu-item" onclick="showPage('orders', 'Revenue')" data-tooltip="Revenue">
+                <i class="fas fa-shopping-bag"></i>
+                <span>Revenue</span>
+            </div>
+
+            <div class="menu-item" onclick="showPage('quotation', 'Quotation')" data-tooltip="Quotation">
+                <i class="fas fa-file-invoice"></i>
+                <span>Quotation</span>
+            </div>
+
+            <div class="menu-label">ARCHIVE</div>
+            <div class="menu-item" onclick="showPage('archive', 'Archive')" data-tooltip="Archive">
+                <i class="fas fa-map-marker-alt"></i>
+                <span>Archived</span>
+            </div>
+
+            <div class="menu-label">ACCOUNT</div>
+            <!-- Add this in your sidebar menu, after the settings item -->
+            <div class="menu-item" onclick="showPage('settings', 'Settings')" data-tooltip="Settings">
+                <i class="fas fa-user-circle"></i>
+                <span>My Profile</span>
+            </div>
+            <div class="menu-item" onclick="showPage('staff_manage', 'User Management')" data-tooltip="User Management">
+                <i class="fas fa-users-cog"></i>
+                <span>User Management</span>
+            </div>
+        </aside>
+<main class="main-content">
+    <div class="header">
+        <div class="header-left">
+            <h1>Edit Product</h1>
+            <p class="section-subtitle">Update product details, images, and visibility.</p>
+            <a class="edit-back-link" href="dashboard.php?page=product"><i class="fas fa-arrow-left"></i> Back to Products</a>
+            <span class="edit-product-id">ID #<?= $product_id ?></span>
+        </div>
+    </div>
 <!-- ── Form ───────────────────────────────────────────────────────────── -->
 <form method="POST" enctype="multipart/form-data" id="editProductForm">
 <input type="hidden" name="action" value="edit_product">
@@ -572,11 +748,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     <?php endif; ?>
 
     <!-- ── LEFT COLUMN ───────────────────────────────────────── -->
-    <div>
+    <div class="form-section edit-form-section">
 
         <!-- Basic Info -->
         <div class="ep-card">
-            <h2><i class="fas fa-info-circle"></i> Product Details</h2>
+
             <div class="form-grid">
 
                 <div class="form-group">
@@ -613,7 +789,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                     </select>
                 </div>
 
-                <div class="form-group <?= !in_array($prod['category'], ['Panel','Battery','Inverter']) ? '' : 'full' ?>">
+                <div class="form-group">
                     <label><i class="fas fa-cube"></i> Product Name / Model <span class="req">*</span></label>
                     <input type="text" id="product-name-input" name="product-name"
                            value="<?= htmlspecialchars($prod['displayName']) ?>" required>
@@ -628,8 +804,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 <!-- Standard Price (non-variant categories) -->
                 <div class="form-group" id="standard-price-group">
                     <label><i class="fas fa-peso-sign"></i> Price (PHP) <span class="req">*</span></label>
-                    <input type="number" id="price-input" name="price" step="0.01"
-                           value="<?= htmlspecialchars($prod['price'] ?? '0') ?>">
+                    <div class="product-price-field"><span class="product-price-prefix" aria-hidden="true">₱</span><input type="number" id="price-input" name="price" step="0.01"
+                           value="<?= htmlspecialchars($prod['price'] ?? '0') ?>"></div>
                 </div>
 
                 <div class="form-group">
@@ -683,7 +859,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 
         <!-- Gallery images -->
         <div class="ep-card">
-            <h2><i class="fas fa-images"></i> Add / Update Product Images</h2>
+            <h2><i class="fas fa-images"></i> Product Images</h2><p class="existing-images-note">Remove images or upload new ones. Image removals apply when you save changes.</p>
             <div class="file-upload-box">
                 <input type="file" id="product-images" name="product-images[]" accept="image/*" multiple>
                 <div style="pointer-events:none;">
@@ -693,11 +869,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 </div>
             </div>
             <div class="image-preview-grid" id="imagePreviewGrid"></div>
+            <div id="removedImagesFields"></div>
         </div>
 
         <!-- Action buttons -->
         <div class="form-actions">
-            <a href="/dashboard" class="btn-cancel"><i class="fas fa-times"></i> Cancel</a>
+            <a href="dashboard.php?page=product" class="btn-cancel"><i class="fas fa-times"></i> Cancel</a>
             <button type="submit" class="btn-save" id="saveBtn">
                 <i class="fas fa-save"></i> Save Changes
             </button>
@@ -721,6 +898,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                     <span style="font-size: 12px; color: #94a3b8; font-weight: 500;">No Image Uploaded</span>
                 </div>
                 <img id="carousel-image" src="<?= !empty($firstImage) ? '../../' . htmlspecialchars($firstImage) : '' ?>" alt="Preview" style="display: <?= !empty($firstImage) ? 'block' : 'none' ?>; width: 100%; height: 100%; object-fit: cover; border-radius: 12px;">
+                <button type="button" class="edit-carousel-nav edit-carousel-prev" onclick="movePreview(-1)" aria-label="Previous image">&#8249;</button>
+                <button type="button" class="edit-carousel-nav edit-carousel-next" onclick="movePreview(1)" aria-label="Next image">&#8250;</button>
+                <span class="edit-carousel-count" id="edit-image-count" aria-live="polite"></span>
             </div>
 
             <div class="preview-info">
@@ -743,8 +923,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 
 </div><!-- end ep-wrapper -->
 </form>
+</main>
+</div>
 
 <script>
+function showPage(page) { window.location.href = 'dashboard.php?page=' + encodeURIComponent(page); }
+function toggleSidebar() { document.querySelector('.sidebar').classList.toggle('collapsed'); }
 // ── Bootstrapped PHP data ─────────────────────────────────────────────────
 const PRODUCT_ID   = <?= $product_id ?>;
 const INIT_PROD    = <?= json_encode($prod) ?>;
@@ -781,26 +965,69 @@ quill.on('text-change', () => {
     hiddenDesc.value = (raw === '<p><br></p>') ? '' : raw;
 });
 
-// ── Image preview (gallery) ──────────────────────────────────────────────
-document.getElementById('product-images').addEventListener('change', function() {
+let savedImages = <?= json_encode(array_values(array_unique(array_merge(array_column($galleryImages, 'image_path'), array_filter(array_column($existingVariants, 'image')), array_filter([$prod['imagePath'] ?? ''])))), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>.map(path => '../../' + path);
+let addedImages = [];
+let addedFiles = [];
+const removedImages = new Set();
+let previewIndex = 0;
+function renderPreviewImages() {
+    const images = [...savedImages, ...addedImages];
+    previewIndex = images.length ? (previewIndex + images.length) % images.length : 0;
+    const image = document.getElementById('carousel-image');
+    if (images.length) image.src = images[previewIndex];
+    image.style.display = images.length ? 'block' : 'none';
+    document.getElementById('carousel-placeholder-icon').style.display = images.length ? 'none' : 'flex';
+    document.getElementById('edit-image-count').textContent = `${images.length ? previewIndex + 1 : 0} / ${images.length}`;
+    document.querySelectorAll('.edit-carousel-nav').forEach(button => button.disabled = images.length < 2);
     const grid = document.getElementById('imagePreviewGrid');
-    grid.innerHTML = '';
-    Array.from(this.files).slice(0, 15).forEach(file => {
-        const img = document.createElement('img');
-        img.src = URL.createObjectURL(file);
-        img.onload = () => URL.revokeObjectURL(img.src);
-        grid.appendChild(img);
+    grid.replaceChildren();
+    images.forEach((src, index) => {
+        const image = document.createElement('img');
+        image.src = src;
+        image.alt = `Product image ${index + 1}`;
+        const tile = document.createElement('div');
+        tile.className = 'edit-image-tile';
+        const remove = document.createElement('button');
+        remove.type = 'button';
+        remove.className = 'edit-image-remove';
+        remove.textContent = 'Remove';
+        remove.setAttribute('aria-label', `Remove product image ${index + 1}`);
+        remove.addEventListener('click', () => {
+            if (index < savedImages.length) {
+                removedImages.add(savedImages[index].slice(6));
+                savedImages.splice(index, 1);
+                const fields = document.getElementById('removedImagesFields');
+                fields.replaceChildren();
+                removedImages.forEach(path => {
+                    const input = document.createElement('input');
+                    input.type = 'hidden'; input.name = 'remove_images[]'; input.value = path;
+                    fields.appendChild(input);
+                });
+            } else {
+                const addedIndex = index - savedImages.length;
+                URL.revokeObjectURL(addedImages[addedIndex]);
+                addedImages.splice(addedIndex, 1);
+                addedFiles.splice(addedIndex, 1);
+                const transfer = new DataTransfer();
+                addedFiles.forEach(file => transfer.items.add(file));
+                document.getElementById('product-images').files = transfer.files;
+            }
+            previewIndex = 0;
+            renderPreviewImages();
+        });
+        tile.append(image, remove);
+        grid.appendChild(tile);
     });
-
-    // Also update preview card image
-    if (this.files.length) {
-        const pi = document.getElementById('preview-img');
-        const ph = document.getElementById('preview-ph');
-        pi.src = URL.createObjectURL(this.files[0]);
-        pi.style.display = 'block';
-        ph.style.display = 'none';
-    }
+}
+function movePreview(step) { previewIndex += step; renderPreviewImages(); }
+document.getElementById('product-images').addEventListener('change', function() {
+    addedImages.forEach(url => URL.revokeObjectURL(url));
+    addedFiles = Array.from(this.files);
+    addedImages = addedFiles.map(file => URL.createObjectURL(file));
+    previewIndex = savedImages.length;
+    renderPreviewImages();
 });
+renderPreviewImages();
 
 // ── Live preview name / cat / price ─────────────────────────────────────
 function updatePreview() {
@@ -903,10 +1130,10 @@ function loadBrandChecklist(cat) {
                     </div>
                     <div>
                         <div class="brand-sub-label">Variant Price (PHP)<span style="color:red"> *</span></div>
-                        <input type="number" id="price-${bid}" name="brand_price[${bid}]"
+                        <div class="product-price-field"><span class="product-price-prefix" aria-hidden="true">₱</span><input type="number" id="price-${bid}" name="brand_price[${bid}]"
                                class="brand-price-input" step="0.01" placeholder="0.00"
                                value="${exPrice}"
-                               ${checked ? '' : 'disabled'}>
+                               ${checked ? '' : 'disabled'}></div>
                     </div>
                     <div>
                         <div class="brand-sub-label">Variant Image<span style="color:red"> *</span></div>

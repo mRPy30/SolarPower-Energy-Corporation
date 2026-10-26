@@ -150,16 +150,16 @@ function get_dashboard_analytics($conn)
 
     // TOTAL REVENUE
     $sql = "
-        SELECT IFNULL(SUM(total_amount), 0) AS revenue 
-        FROM orders 
+        SELECT IFNULL(SUM(total_amount), 0) AS revenue
+        FROM orders
         WHERE order_status IN ('installed', 'completed', 'approved', 'delivered', 'confirmed')
     ";
     $data['revenue'] = $conn->query($sql)->fetch_assoc()['revenue'];
 
     // MONTHLY SALES
     $sql = "
-        SELECT IFNULL(SUM(total_amount), 0) AS monthly_sales 
-        FROM orders 
+        SELECT IFNULL(SUM(total_amount), 0) AS monthly_sales
+        FROM orders
         WHERE MONTH(created_at) = MONTH(CURRENT_DATE())
         AND YEAR(created_at) = YEAR(CURRENT_DATE())
         AND order_status IN ('installed', 'completed', 'approved', 'delivered', 'confirmed')
@@ -188,9 +188,9 @@ function get_dashboard_analytics($conn)
 function get_sales_by_city($conn)
 {
     // This groups your orders by the address to see where most sales come from
-    $sql = "SELECT customer_address, COUNT(*) as total_orders, SUM(total_amount) as revenue 
-            FROM orders 
-            GROUP BY customer_address 
+    $sql = "SELECT customer_address, COUNT(*) as total_orders, SUM(total_amount) as revenue
+            FROM orders
+            GROUP BY customer_address
             ORDER BY revenue DESC LIMIT 5";
     $result = $conn->query($sql);
     return $result->fetch_all(MYSQLI_ASSOC);
@@ -216,8 +216,8 @@ function get_solar_metrics($conn)
 
     // SYSTEM INSTALLATIONS (installed orders)
     $metrics['installations'] = $conn->query("
-        SELECT COUNT(*) AS total 
-        FROM orders 
+        SELECT COUNT(*) AS total
+        FROM orders
         WHERE order_status = 'installed'
     ")->fetch_assoc()['total'];
 
@@ -234,8 +234,8 @@ function get_order_status($conn)
 
     foreach ($statuses as $status) {
         $stmt = $conn->prepare("
-            SELECT COUNT(*) AS total 
-            FROM orders 
+            SELECT COUNT(*) AS total
+            FROM orders
             WHERE order_status = ?
         ");
         $stmt->bind_param("s", $status);
@@ -250,7 +250,7 @@ function get_order_status($conn)
 function get_best_seller($conn)
 {
     $sql = "
-        SELECT 
+        SELECT
             oi.product_id,
             oi.product_name,
             SUM(oi.quantity) AS total_qty,
@@ -308,26 +308,26 @@ function get_sparkline_svg($data_points, $color = '#3b82f6', $gradient_id = 'gra
     $max = max($data_points) ?: 1;
     $min = min($data_points);
     $range = ($max - $min) ?: 1;
-    
+
     $width = 80;
     $height = 30;
-    
+
     $points = [];
     $fill_points = [];
     $fill_points[] = "0,$height";
-    
+
     foreach ($data_points as $i => $val) {
         $x = ($i / (count($data_points) - 1)) * $width;
         $y = $height - (($val - $min) / $range) * ($height - 6) - 3;
         $points[] = "$x,$y";
         $fill_points[] = "$x,$y";
     }
-    
+
     $fill_points[] = "$width,$height";
-    
+
     $points_str = implode(' ', $points);
     $fill_points_str = implode(' ', $fill_points);
-    
+
     return '
     <svg width="' . $width . '" height="' . $height . '" viewBox="0 0 ' . $width . ' ' . $height . '" style="overflow: visible;">
         <defs>
@@ -389,9 +389,9 @@ function get_recent_orders($conn)
 {
     $orders = [];
     // Updated to include all columns requested by your dashboard view
-    $query = "SELECT id, customer_name, total_amount, order_status, sales_channel 
-              FROM orders 
-              ORDER BY created_at DESC 
+    $query = "SELECT id, customer_name, total_amount, order_status, sales_channel
+              FROM orders
+              ORDER BY created_at DESC
               LIMIT 5";
 
     $result = $conn->query($query);
@@ -423,7 +423,7 @@ function get_most_sold_product($conn)
 function get_monthly_revenue_trend($conn) {
     $months_list = [];
     $revenues_map = [];
-    
+
     // Generate the last 6 months (including the current month)
     for ($i = 5; $i >= 0; $i--) {
         $m_time = strtotime("-$i month");
@@ -432,9 +432,9 @@ function get_monthly_revenue_trend($conn) {
         $months_list[$m_key] = $m_name;
         $revenues_map[$m_key] = 0.00;
     }
-    
+
     // Fetch last 6 months including current month
-    $query = "SELECT 
+    $query = "SELECT
                 DATE_FORMAT(created_at, '%Y-%m') AS month_key,
                 SUM(total_amount) AS monthly_revenue
               FROM orders
@@ -442,7 +442,7 @@ function get_monthly_revenue_trend($conn) {
                 AND created_at >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
               GROUP BY YEAR(created_at), MONTH(created_at)
               ORDER BY YEAR(created_at) ASC, MONTH(created_at) ASC";
-              
+
     $result = $conn->query($query);
     if ($result) {
         while ($row = $result->fetch_assoc()) {
@@ -452,10 +452,10 @@ function get_monthly_revenue_trend($conn) {
             }
         }
     }
-    
+
     $months = array_values($months_list);
     $revenues = array_values($revenues_map);
-    
+
     return ['months' => $months, 'revenues' => $revenues];
 }
 
@@ -750,8 +750,8 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
 
                     $conn->commit();
                     echo json_encode([
-                        'success' => true, 
-                        'message' => 'Manual order created successfully!', 
+                        'success' => true,
+                        'message' => 'Manual order created successfully!',
                         'order_id' => $order_id,
                         'amount' => $price
                     ]);
@@ -895,14 +895,14 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
 
             case 'fetch_clients':
                 // Querying unique clients from the orders table based on email
-                $query = "SELECT 
-                            customer_name, 
-                            customer_email, 
-                            customer_phone, 
-                            customer_address, 
-                            COUNT(id) as total_orders 
-                          FROM orders 
-                          GROUP BY customer_email 
+                $query = "SELECT
+                            customer_name,
+                            customer_email,
+                            customer_phone,
+                            customer_address,
+                            COUNT(id) as total_orders
+                          FROM orders
+                          GROUP BY customer_email
                           ORDER BY customer_name ASC";
 
                 $result = $conn->query($query);
@@ -1455,22 +1455,22 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
                     }
                 }
 
-                $stmt = $conn->prepare("UPDATE calculator_settings SET 
-                    solar_panel_wattage = ?, 
-                    kwh_rate = ?, 
-                    average_sun_hours = ?, 
-                    card1_title = ?, 
-                    card1_icon = ?, 
-                    card2_title = ?, 
-                    card2_icon = ?, 
-                    card3_title = ?, 
-                    card3_icon = ?, 
-                    card4_title = ?, 
-                    card4_icon = ? 
+                $stmt = $conn->prepare("UPDATE calculator_settings SET
+                    solar_panel_wattage = ?,
+                    kwh_rate = ?,
+                    average_sun_hours = ?,
+                    card1_title = ?,
+                    card1_icon = ?,
+                    card2_title = ?,
+                    card2_icon = ?,
+                    card3_title = ?,
+                    card3_icon = ?,
+                    card4_title = ?,
+                    card4_icon = ?
                     WHERE id = 1");
-                
+
                 if ($stmt) {
-                    $stmt->bind_param("iddssssssss", 
+                    $stmt->bind_param("iddssssssss",
                         $wattage, $rate, $sun_hours,
                         $card1_title, $card1_icon,
                         $card2_title, $card2_icon,
@@ -1491,27 +1491,27 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
             case 'bulk_update_status':
                 $productIds = $_POST['product_ids'] ?? '';
                 $status = $_POST['status'] ?? '';
-                
+
                 if (empty($productIds) || !in_array($status, ['Active', 'Hidden'])) {
                     echo json_encode(['success' => false, 'message' => 'Invalid parameters']);
                     break;
                 }
-                
+
                 $ids = explode(',', $productIds);
                 $ids = array_map('intval', $ids);
                 $ids = array_filter($ids, function($id) { return $id > 0; });
-                
+
                 if (empty($ids)) {
                     echo json_encode(['success' => false, 'message' => 'No valid products selected']);
                     break;
                 }
-                
+
                 $placeholders = implode(',', array_fill(0, count($ids), '?'));
                 $types = str_repeat('i', count($ids));
-                
+
                 $sql = "UPDATE product SET status = ? WHERE id IN ($placeholders)";
                 $stmt = $conn->prepare($sql);
-                
+
                 if ($stmt) {
                     $stmt->bind_param("s" . $types, $status, ...$ids);
                     if ($stmt->execute()) {
@@ -1579,7 +1579,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
         if (empty($packageType)) $packageType = NULL;
         $postedStatus = $_POST['status'] ?? 'Active';
         $status = in_array($postedStatus, ['Active', 'Hidden'], true) ? $postedStatus : 'Active';
-        
+
         $productName = $conn_post->real_escape_string($_POST['product-name'] ?? '');
         $warranty = $conn_post->real_escape_string($_POST['warranty'] ?? '');
         $stockQuantity = $_POST['stock-quantity'] ?? '';
@@ -1638,7 +1638,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
             } elseif ($isVariantCategory && !empty($brand_ids)) {
                 $first_brand_id = (int)$brand_ids[0];
                 $fallback_price = (float)($brand_prices[$first_brand_id] ?? 0);
-                
+
                 // Fetch first brand name from the real `brands` table
                 $bRes = $conn_post->query("SELECT brand_name FROM brands WHERE brand_id = $first_brand_id");
                 if ($bRes && $bRow = $bRes->fetch_assoc()) {
@@ -1669,7 +1669,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                     throw new Exception('Database prepare error: ' . $conn_post->error);
                 }
                 $stmt->bind_param("ssdssisssisi", $productName, $first_brand_name, $fallback_price, $category, $packageType, $stockQuantity, $warranty, $description, $imagePath, $user_id, $status, $moq);
-                
+
                 if (!$stmt->execute()) {
                     throw new Exception('Error executing insert query: ' . $stmt->error);
                 }
@@ -1765,7 +1765,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
 
                         if (move_uploaded_file($tmpName, $targetPath)) {
                             $relativePath = "uploads/products/$product_id/$newName";
-                            
+
                             $imgStmt = $conn_post->prepare("INSERT INTO product_images (product_id, image_path) VALUES (?, ?)");
                             if ($imgStmt) {
                                 $imgStmt->bind_param("is", $product_id, $relativePath);
@@ -1810,7 +1810,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <link rel="icon" type="image/png" href="../../assets/img/icon.png">
     <title>SolarPower - Staff</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
@@ -1819,7 +1819,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
     $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
     $base_dir = (stripos($_SERVER['SCRIPT_NAME'], '/SolarPower-Energy-Corporation/') !== false) ? $protocol . $host . '/SolarPower-Energy-Corporation/views/staff/' : $protocol . $host . '/views/staff/';
     ?>
-    <link rel="stylesheet" href="<?php echo $base_dir; ?>style.css">
+    <link rel="stylesheet" href="<?php echo $base_dir; ?>style.css?v=<?php echo filemtime(__DIR__ . '/style.css'); ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Cropper.js for profile image cropping -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css">
@@ -1890,7 +1890,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
             box-shadow: none !important;
             background: transparent !important;
         }
-        
+
         /* ======= MANUAL ORDER MODAL STYLES ======= */
         .manual-order-overlay {
             display: none;
@@ -2539,6 +2539,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
             }
         }
     </style>
+    <link rel="stylesheet" href="<?= $base_dir ?>mobile.css?v=<?= filemtime(__DIR__ . '/mobile.css') ?>">
+    <script defer src="<?= $base_dir ?>mobile.js?v=<?= filemtime(__DIR__ . '/mobile.js') ?>"></script>
 </head>
 
 <body>
@@ -2700,7 +2702,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
             <?php include __DIR__ . '/includes/career-management.php'; ?>
             <div id="dashboard" class="page-content active">
                 <div class="stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; margin-bottom: 25px;">
-                    
+
                     <!-- Card 1: Total Clients -->
                     <div class="stat-card" onclick="showPage('clients', 'Clients')" style="background: white; padding: 22px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.02); border: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; transition: all 0.3s ease; cursor: pointer; position: relative;" onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='0 8px 30px rgba(0,0,0,0.06)';" onmouseout="this.style.transform='none'; this.style.boxShadow='0 4px 20px rgba(0,0,0,0.02)';">
                         <div style="display: flex; flex-direction: column; justify-content: space-between; height: 100%;">
@@ -2722,7 +2724,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                             </div>
                         </div>
                         <div style="display: flex; flex-direction: column; align-items: flex-end; justify-content: center;">
-                            <?php 
+                            <?php
                             $clients_spark_data = [12, 14, 15, 18, 17, 21, 24];
                             echo get_sparkline_svg($clients_spark_data, '#3b82f6', 'spark-clients');
                             ?>
@@ -2750,7 +2752,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                             </div>
                         </div>
                         <div style="display: flex; flex-direction: column; align-items: flex-end; justify-content: center;">
-                            <?php 
+                            <?php
                             $orders_spark_data = [35, 42, 38, 45, 52, 49, 58];
                             echo get_sparkline_svg($orders_spark_data, '#db2777', 'spark-orders');
                             ?>
@@ -2781,7 +2783,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                             </div>
                         </div>
                         <div style="display: flex; flex-direction: column; align-items: flex-end; justify-content: center;">
-                            <?php 
+                            <?php
                             $revenue_spark_data = [80, 110, 95, 130, 150, 140, 185];
                             echo get_sparkline_svg($revenue_spark_data, '#16a34a', 'spark-revenue');
                             ?>
@@ -2809,7 +2811,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                             </div>
                         </div>
                         <div style="display: flex; flex-direction: column; align-items: flex-end; justify-content: center;">
-                            <?php 
+                            <?php
                             $inq_spark_data = [8, 6, 9, 5, 7, 4, 3];
                             echo get_sparkline_svg($inq_spark_data, '#ea580c', 'spark-inquiries');
                             ?>
@@ -2845,10 +2847,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 document.addEventListener("DOMContentLoaded", function() {
                     // 1. Monthly Revenue Trend Chart
                     const ctx = document.getElementById('revenueTrendChart').getContext('2d');
-                    
+
                     const months = <?php echo json_encode($revenue_trend['months']); ?>;
                     const revenues = <?php echo json_encode($revenue_trend['revenues']); ?>;
-                    
+
                     new Chart(ctx, {
                         type: 'line',
                         data: {
@@ -2901,7 +2903,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                         .then(response => response.json())
                         .then(data => {
                             const calcCtx = document.getElementById('calculatorUsageChart').getContext('2d');
-                            
+
                             const calcGradient = calcCtx.createLinearGradient(0, 0, 0, 300);
                             calcGradient.addColorStop(0, 'rgba(13, 92, 58, 0.15)');
                             calcGradient.addColorStop(1, 'rgba(13, 92, 58, 0.0)');
@@ -2995,7 +2997,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                                             <td style="padding: 12px; font-weight: bold;">#<?php echo $order['id']; ?></td>
                                             <td style="padding: 12px;">
                                                 <?php echo htmlspecialchars($order['customer_name']); ?>
-                                                <?php 
+                                                <?php
                                                 $channel = isset($order['sales_channel']) ? $order['sales_channel'] : 'Website';
                                                 if (strtolower($channel) !== 'website') {
                                                     $bg = '#3b82f6';
@@ -3032,8 +3034,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                         <?php if ($best_seller): ?>
                             <div style="padding: 20px; border: 2px dashed #f1f1f1; border-radius: 10px;">
                                 <div style="position: relative; width: 80px; height: 80px; margin: 0 auto 15px;">
-                                    <img src="<?php echo htmlspecialchars($best_seller_image); ?>" 
-                                         alt="Product thumbnail" 
+                                    <img src="<?php echo htmlspecialchars($best_seller_image); ?>"
+                                         alt="Product thumbnail"
                                          style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px; border: 1px solid #eee; box-shadow: 0 2px 4px rgba(0,0,0,0.1);"
                                          onerror="mgenProductError(this)">
                                     <div style="position: absolute; bottom: -8px; right: -8px; background: #fff9db; width: 32px; height: 32px; line-height: 32px; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: flex; align-items: center; justify-content: center;">
@@ -3357,21 +3359,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                         <span id="selectedCount">0</span> item(s) selected
                     </div>
 
-                    <div class="bulk-actions-right">
-                        <button class="btn-bulk-active" id="bulkActiveBtn">
-                            <i class="fas fa-eye"></i> Active Product
-                        </button>
-
-                        <button class="btn-bulk-hidden" id="bulkHiddenBtn">
-                            <i class="fas fa-eye-slash"></i> Hide Product
-                        </button>
-
+                    <div class="bulk-actions-right product-management-actions" role="group" aria-label="Manage selected products">
                         <button class="btn-bulk-edit" id="bulkEditBtn">
                             <i class="fas fa-edit"></i> Edit
                         </button>
 
                         <button class="btn-bulk-delete" id="bulkDeleteBtn">
-                            <i class="fas fa-trash"></i> Archived
+                            <i class="fas fa-trash"></i> Archive
                         </button>
 
                         <button class="btn-deselect" id="deselectAllBtn">
@@ -3465,7 +3459,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
 
                                     <div class="product-meta" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
                                         <span class="product-category">
-                                            <?php 
+                                            <?php
                                             if (stripos($product['category'], 'Package') !== false && !empty($product['packageType'])) {
                                                 echo htmlspecialchars($product['category'] . ' (' . $product['packageType'] . ')');
                                             } else {
@@ -3490,6 +3484,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                                     <a href="<?php echo htmlspecialchars($base_dir . 'edit-product.php?id=' . urlencode((string) $product['id'])); ?>" class="btn-card-edit" title="Edit Product">
                                         <i class="fas fa-edit"></i>
                                     </a>
+                                    <button type="button" class="btn-card-visibility <?php echo $product['status'] === 'Active' ? 'is-active' : 'is-hidden'; ?>" data-product-id="<?php echo (int)$product['id']; ?>" data-status="<?php echo $product['status'] === 'Active' ? 'Active' : 'Hidden'; ?>" onclick="BulkActions.toggleVisibility(this)">
+                                        <i class="fas <?php echo $product['status'] === 'Active' ? 'fa-eye-slash' : 'fa-eye'; ?>" aria-hidden="true"></i>
+                                        <span><?php echo $product['status'] === 'Active' ? 'Hide' : 'Show'; ?></span>
+                                    </button>
                                 </div>
                             </div>
                         <?php endforeach; ?>
@@ -3504,11 +3502,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
             <div id="productReviewModal" class="modal">
                 <div class="modal-content review-modal-content">
                     <span class="close" onclick="closeProductReviewModal()">&times;</span>
-                    
+
                     <div class="review-header">
                         <h2><i class="fas fa-eye"></i> Product Review</h2>
                     </div>
-                    
+
                     <div class="review-body">
                         <!-- Carousel Section -->
                         <div class="review-carousel-container">
@@ -3516,36 +3514,36 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                                 <button class="carousel-nav-btn prev-btn" id="reviewCarouselPrev"><i class="fas fa-chevron-left"></i></button>
                                 <img id="reviewCarouselImg" src="../../assets/img/product-placeholder.png" alt="Product Image">
                                 <button class="carousel-nav-btn next-btn" id="reviewCarouselNext"><i class="fas fa-chevron-right"></i></button>
-                                
+
                                 <span class="review-status-badge" id="reviewStatusBadge">Active</span>
                                 <span class="review-index-badge" id="reviewIndexBadge">1/1</span>
                             </div>
-                            
+
                             <!-- Thumbnail gallery -->
                             <div class="review-thumbnail-gallery" id="reviewThumbnailGallery">
                                 <!-- Thumbnails will be populated dynamically -->
                             </div>
                         </div>
-                        
+
                         <!-- Details Section -->
                         <div class="review-details">
                             <div class="review-sku-container">
                                 <span class="review-sku-label">Product ID:</span>
                                 <span class="review-sku-value" id="reviewSku">--</span>
                             </div>
-                            
+
                             <h1 class="review-title" id="reviewTitle">Product Title</h1>
-                            
+
                             <div class="review-brand-container">
                                 <i class="fas fa-trademark"></i>
                                 <span id="reviewBrand">Brand Name</span>
                             </div>
-                            
+
                             <div class="review-price-box">
                                 <div class="price-label">PRICE</div>
                                 <div class="price-value" id="reviewPrice">₱0.00</div>
                             </div>
-                            
+
                             <div class="review-meta-grid">
                                 <div class="meta-item" style="display: none;">
                                     <div class="meta-icon"><i class="fas fa-boxes"></i></div>
@@ -3569,7 +3567,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <div class="review-description-section">
                                 <h3>Description</h3>
                                 <div class="review-description-text" id="reviewDescription">
@@ -3581,7 +3579,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 </div>
             </div>
 
-            
+
             <!-- Delete Confirmation Modal -->
             <div id="deleteProductModal" class="modal">
                 <div class="modal-content">
@@ -4875,9 +4873,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                                             Price <span class="required">*</span>
                                         </label>
                                         <div class="input-wrapper">
-                                            <input type="number" id="price-input" name="price" placeholder="0.00"
-                                                step="0.01" required>
-                                            <span class="input-icon">PHP</span>
+                                            <div class="product-price-field"><span class="product-price-prefix" aria-hidden="true">₱</span><input type="number" id="price-input" name="price" placeholder="0.00"
+                                                step="0.01" required></div>
+
                                         </div>
                                     </div>
 
@@ -5257,7 +5255,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                     #quotationBuilderView .gap-8 { gap: 2rem; }
                     #quotationBuilderView .gap-4 { gap: 1rem; }
                     #quotationBuilderView .gap-2 { gap: 0.5rem; }
-                    
+
                     #quotationBuilderView .w-full { width: 100%; }
                     #quotationBuilderView .w-6 { width: 1.5rem; }
                     #quotationBuilderView .h-6 { height: 1.5rem; }
@@ -5268,17 +5266,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                         #quotationBuilderView .lg\:w-3\/5 { width: 60%; }
                         #quotationBuilderView .lg\:w-2\/5 { width: 40%; }
                     }
-                    
+
                     #quotationBuilderView .grid { display: grid; }
                     #quotationBuilderView .grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
                     @media (min-width: 768px) {
                         #quotationBuilderView .md\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
                     }
-                    
+
                     #quotationBuilderView .space-y-6 > * + * { margin-top: 1.5rem; }
                     #quotationBuilderView .space-y-2 > * + * { margin-top: 0.5rem; }
                     #quotationBuilderView .space-y-3 > * + * { margin-top: 0.75rem; }
-                    
+
                     #quotationBuilderView .m-0 { margin: 0; }
                     #quotationBuilderView .mt-1 { margin-top: 0.25rem; }
                     #quotationBuilderView .mt-2 { margin-top: 0.5rem; }
@@ -5291,7 +5289,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                     #quotationBuilderView .mb-10 { margin-bottom: 2.5rem; }
                     #quotationBuilderView .mr-1 { margin-right: 0.25rem; }
                     #quotationBuilderView .mr-2 { margin-right: 0.5rem; }
-                    
+
                     #quotationBuilderView .p-0 { padding: 0; }
                     #quotationBuilderView .p-2 { padding: 0.5rem; }
                     #quotationBuilderView .p-3 { padding: 0.75rem; }
@@ -5304,24 +5302,24 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                     #quotationBuilderView .py-1 { padding-top: 0.25rem; padding-bottom: 0.25rem; }
                     #quotationBuilderView .py-2 { padding-top: 0.5rem; padding-bottom: 0.5rem; }
                     #quotationBuilderView .py-3 { padding-top: 0.75rem; padding-bottom: 0.75rem; }
-                    
+
                     #quotationBuilderView .text-2xl { font-size: 1.5rem; line-height: 2rem; }
                     #quotationBuilderView .text-xl { font-size: 1.25rem; line-height: 1.75rem; }
                     #quotationBuilderView .text-lg { font-size: 1.125rem; line-height: 1.75rem; }
                     #quotationBuilderView .text-sm { font-size: 0.875rem; line-height: 1.25rem; }
                     #quotationBuilderView .text-xs { font-size: 0.75rem; line-height: 1rem; }
-                    
+
                     #quotationBuilderView .font-medium { font-weight: 500; }
                     #quotationBuilderView .font-semibold { font-weight: 600; }
                     #quotationBuilderView .font-bold { font-weight: 700; }
                     #quotationBuilderView .font-black { font-weight: 900; }
-                    
+
                     #quotationBuilderView .uppercase { text-transform: uppercase; }
                     #quotationBuilderView .tracking-tight { letter-spacing: -0.025em; }
                     #quotationBuilderView .tracking-wider { letter-spacing: 0.05em; }
                     #quotationBuilderView .text-center { text-align: center; }
                     #quotationBuilderView .text-right { text-align: right; }
-                    
+
                     #quotationBuilderView .bg-white { background-color: #ffffff; }
                     #quotationBuilderView .bg-slate-50 { background-color: #f8fafc; }
                     #quotationBuilderView .bg-slate-100 { background-color: #f1f5f9; }
@@ -5335,7 +5333,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                     #quotationBuilderView .bg-amber-100 { background-color: #fef3c7; }
                     #quotationBuilderView .bg-black\/60 { background-color: rgba(0, 0, 0, 0.6); }
                     #quotationBuilderView .bg-slate-800\/80 { background-color: rgba(30, 41, 59, 0.8); }
-                    
+
                     #quotationBuilderView .text-white { color: #ffffff; }
                     #quotationBuilderView .text-slate-400 { color: #94a3b8; }
                     #quotationBuilderView .text-slate-500 { color: #64748b; }
@@ -5350,38 +5348,38 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                     #quotationBuilderView .text-red-500 { color: #ef4444; }
                     #quotationBuilderView .text-blue-400 { color: #60a5fa; }
                     #quotationBuilderView .text-blue-600 { color: #2563eb; }
-                    
+
                     #quotationBuilderView .hover\:text-slate-900:hover { color: #0f172a; }
                     #quotationBuilderView .hover\:text-blue-700:hover { color: #1d4ed8; }
                     #quotationBuilderView .hover\:bg-amber-600:hover { background-color: #d97706; }
                     #quotationBuilderView .hover\:bg-slate-900:hover { background-color: #0f172a; }
                     #quotationBuilderView .hover\:bg-slate-50:hover { background-color: #f8fafc; }
-                    
+
                     #quotationBuilderView .border { border-width: 1px; border-style: solid; }
                     #quotationBuilderView .border-t { border-top-width: 1px; border-top-style: solid; }
                     #quotationBuilderView .border-b { border-bottom-width: 1px; border-bottom-style: solid; }
                     #quotationBuilderView .border-none { border-style: none; }
-                    
+
                     #quotationBuilderView .border-slate-100 { border-color: #f1f5f9; }
                     #quotationBuilderView .border-slate-200 { border-color: #e2e8f0; }
                     #quotationBuilderView .border-slate-300 { border-color: #cbd5e1; }
                     #quotationBuilderView .border-emerald-300 { border-color: #6ee7b7; }
-                    
+
                     #quotationBuilderView .rounded { border-radius: 0.25rem; }
                     #quotationBuilderView .rounded-lg { border-radius: 0.5rem; }
                     #quotationBuilderView .rounded-xl { border-radius: 0.75rem; }
                     #quotationBuilderView .rounded-full { border-radius: 9999px; }
-                    
+
                     #quotationBuilderView .shadow-sm { box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); }
                     #quotationBuilderView .shadow-lg { box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); }
-                    
+
                     #quotationBuilderView .transition-colors { transition-property: background-color, border-color, color, fill, stroke; transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); transition-duration: 150ms; }
                     #quotationBuilderView .transition-all { transition-property: all; transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); transition-duration: 150ms; }
-                    
+
                     #quotationBuilderView .outline-none { outline: 2px solid transparent; outline-offset: 2px; }
                     #quotationBuilderView input:focus, #quotationBuilderView select:focus, #quotationBuilderView textarea:focus { box-shadow: 0 0 0 2px #fbbf24; border-color: #fbbf24; }
                     #quotationBuilderView #qb_kw:focus { box-shadow: 0 0 0 2px #34d399; border-color: #34d399; }
-                    
+
                     #quotationBuilderView .sticky { position: sticky; }
                     #quotationBuilderView .top-0 { top: 0px; }
                     #quotationBuilderView .overflow-y-auto { overflow-y: auto; }
@@ -5389,22 +5387,22 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                     #quotationBuilderView .list-none { list-style-type: none; }
                     #quotationBuilderView .cursor-pointer { cursor: pointer; }
                     #quotationBuilderView .cursor-not-allowed { cursor: not-allowed; }
-                    
+
                     #quotationBuilderView .opacity-50 { opacity: 0.5; }
                     #quotationBuilderView .opacity-0 { opacity: 0; }
-                    
+
                     #quotationBuilderView .relative { position: relative; }
                     #quotationBuilderView .absolute { position: absolute; }
                     #quotationBuilderView .inset-0 { top: 0; right: 0; bottom: 0; left: 0; }
                     #quotationBuilderView .top-2 { top: 0.5rem; }
                     #quotationBuilderView .left-2 { left: 0.5rem; }
                     #quotationBuilderView .z-10 { z-index: 10; }
-                    
+
                     #quotationBuilderView .object-cover { object-fit: cover; }
                     #quotationBuilderView .backdrop-blur-sm { backdrop-filter: blur(4px); }
                     #quotationBuilderView .shrink-0 { flex-shrink: 0; }
                     #quotationBuilderView .leading-none { line-height: 1; }
-                    
+
                     @media (min-width: 768px) {
                         #quotationBuilderView .md\:col-span-2 { grid-column: span 2 / span 2; }
                         #quotationBuilderView .md\:flex-row { flex-direction: row; }
@@ -5508,11 +5506,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                         </button>
                         <h2 class="text-2xl font-bold text-slate-800 m-0">Quotation Builder</h2>
                     </div>
-                    
+
                     <div class="flex flex-col lg:flex-row gap-8">
                         <!-- LEFT: FORM (60%) -->
                         <div class="w-full lg:w-3/5 space-y-6 overflow-y-auto" style="max-height: calc(100vh - 150px); padding-right: 10px;">
-                            
+
                             <!-- Step 1: Client & Site Info -->
                             <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 box-border">
                                 <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center m-0"><span class="bg-emerald-100 text-emerald-700 w-6 h-6 flex items-center justify-center rounded-full text-sm mr-2">1</span> Client & Site Info</h3>
@@ -5532,11 +5530,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                                     <div class="md:col-span-2">
                                         <label class="block text-sm font-medium text-slate-700 mb-1">Installation Address</label>
                                         <input type="text" id="qb_address" class="w-full box-border border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-amber-400 outline-none transition-all" oninput="updatePreview(); if(this.value.length > 5) document.getElementById('qb_solar_trigger_btn').classList.remove('opacity-50', 'cursor-not-allowed'); else document.getElementById('qb_solar_trigger_btn').classList.add('opacity-50', 'cursor-not-allowed');">
-                                        
+
                                         <button type="button" id="qb_solar_trigger_btn" onclick="triggerSolarAnalysis()" class="mt-2 flex items-center text-sm font-medium text-blue-600 hover:text-blue-700 bg-blue-50 px-3 py-1.5 rounded-md border border-blue-200 transition-all opacity-50 cursor-not-allowed" style="cursor: pointer;">
                                             <i class="fas fa-satellite-dish mr-2"></i> Analyze Roof Potential via Google Solar
                                         </button>
-                                        
+
                                         <div id="qb_solar_analysis_container" class="hidden mt-4 border border-slate-200 rounded-xl overflow-hidden bg-white shadow-md flex flex-col">
                                             <!-- Map Container -->
                                             <div class="w-full bg-slate-100 relative" style="min-height: 350px;">
@@ -5545,19 +5543,19 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                                                     <span class="text-xs font-bold tracking-widest text-slate-200 uppercase">Connecting to Google Maps...</span>
                                                 </div>
                                                 <div id="qb_solar_map_canvas" class="w-full h-full absolute inset-0"></div>
-                                                
+
                                                 <!-- Map Floating UI -->
                                                 <div class="absolute top-3 left-3 text-slate-800 text-xs font-bold px-3 py-2 rounded-md shadow-sm flex items-center z-10 border border-slate-200" style="background-color: rgba(255, 255, 255, 0.95);">
                                                     <i class="fab fa-google text-blue-600 mr-2 text-sm"></i> <span>Satellite Roof View</span>
                                                 </div>
-                                                
+
                                                 <div class="hidden" id="qb_solar_heatmap_toggle_container" style="position: absolute; bottom: 12px; right: 12px; z-index: 999;">
                                                     <button type="button" onclick="toggleSolarHeatmap()" class="text-white text-xs font-bold px-4 py-2 rounded-lg shadow transition-all flex items-center" style="background-color: #f59e0b; cursor: pointer; border: none;">
                                                         <i class="fas fa-fire mr-2"></i> <span id="qb_heatmap_toggle_text">Show Solar Heatmap</span>
                                                     </button>
                                                 </div>
                                             </div>
-                                            
+
                                             <!-- Stats Container -->
                                             <div class="w-full bg-slate-50 border-t border-slate-200 p-4">
                                                 <div class="flex items-center justify-between mb-3 px-1">
@@ -5565,7 +5563,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                                                         <i class="fas fa-chart-pie mr-2 text-blue-400"></i> Site Solar Potential
                                                     </h4>
                                                 </div>
-                                                
+
                                                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
                                                     <!-- Stat Card 1 -->
                                                     <div class="bg-white rounded-lg border border-slate-200 p-3 shadow-sm flex items-center transition-all hover:shadow-md hover:border-amber-300">
@@ -5577,7 +5575,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                                                             <div id="solar_max_sunlight" class="text-sm font-bold text-slate-700 leading-normal">...</div>
                                                         </div>
                                                     </div>
-                                                    
+
                                                     <!-- Stat Card 2 -->
                                                     <div class="bg-white rounded-lg border border-slate-200 p-3 shadow-sm flex items-center transition-all hover:shadow-md hover:border-blue-300">
                                                         <div class="bg-blue-100 text-blue-600 rounded-full flex items-center justify-center shrink-0 mr-3 shadow-inner" style="width: 40px; height: 40px;">
@@ -5588,7 +5586,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                                                             <div id="solar_roof_area" class="text-sm font-bold text-slate-700 leading-normal">...</div>
                                                         </div>
                                                     </div>
-                                                    
+
                                                     <!-- Stat Card 3 -->
                                                     <div class="bg-white rounded-lg border border-emerald-200 p-3 shadow-sm flex items-center transition-all hover:shadow-md hover:border-emerald-400 relative overflow-hidden">
                                                         <div class="absolute right-0 top-0 bottom-0 bg-emerald-400" style="width: 4px;"></div>
@@ -5706,7 +5704,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                                 </div>
                             </div>
                         </div>
-                        
+
                         <!-- RIGHT: PREVIEW (40%) -->
                         <div class="w-full lg:w-2/5 box-border">
                             <div class="sticky top-0 bg-white p-6 rounded-xl shadow-lg border border-slate-200">
@@ -5883,7 +5881,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                     function hslToRgb(h, s, l) {
                         let r, g, b;
                         if (s === 0) {
-                            r = g = b = l; 
+                            r = g = b = l;
                         } else {
                             const hue2rgb = (p, q, t) => {
                                 if (t < 0) t += 1;
@@ -5991,7 +5989,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                                 );
                             } else {
                                 // Fallback to GeoTIFF extraction
-                                const bbox = imageFlux.getBoundingBox(); 
+                                const bbox = imageFlux.getBoundingBox();
                                 if (Math.abs(bbox[0]) > 180 || Math.abs(bbox[1]) > 90) {
                                     const sw = mercatorToLatLng(bbox[0], Math.min(bbox[1], bbox[3]));
                                     const ne = mercatorToLatLng(bbox[2], Math.max(bbox[1], bbox[3]));
@@ -6036,7 +6034,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                                 toggleText.textContent = "Loading Heatmap...";
                                 solarHeatmapOverlay = await renderSolarHeatmap(currentFluxUrl, currentMaskUrl, solarMap, currentSolarBounds);
                             }
-                            
+
                             if (solarHeatmapOverlay) {
                                 solarHeatmapOverlay.setMap(solarMap);
                                 heatmapVisible = true;
@@ -6052,7 +6050,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                     function triggerSolarAnalysis() {
                         const container = document.getElementById('qb_solar_analysis_container');
                         container.classList.remove('hidden');
-                        
+
                         const address = document.getElementById('qb_address').value;
                         if (!address || address.length < 5) return;
 
@@ -6078,10 +6076,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                         geocoder.geocode({ 'address': address }, function(results, status) {
                             document.getElementById('qb_solar_loading').style.opacity = '0';
                             setTimeout(() => { document.getElementById('qb_solar_loading').classList.add('hidden'); }, 300);
-                            
+
                             if (status === 'OK') {
                                 const location = results[0].geometry.location;
-                                
+
                                 if (!solarMap) {
                                     solarMap = new google.maps.Map(document.getElementById('qb_solar_map_canvas'), {
                                         zoom: 20,
@@ -6097,7 +6095,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                                     solarMap.setCenter(location);
                                     solarMarker.setPosition(location);
                                 }
-                                
+
                                 // Fetch data from Google Solar API
                                 const scriptTag = document.querySelector('script[src*="maps.googleapis.com"]');
                                 let apiKey = 'AIzaSyDx7Kl-QcYnjjQrIbVxQxPQOA-peYn2UoU';
@@ -6105,7 +6103,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                                     const match = scriptTag.src.match(/key=([^&]+)/);
                                     if (match) apiKey = match[1];
                                 }
-                                
+
                                 // Fetch building insights
                                 fetch(`https://solar.googleapis.com/v1/buildingInsights:findClosest?location.latitude=${location.lat()}&location.longitude=${location.lng()}&requiredQuality=LOW&key=${apiKey}`)
                                     .then(response => {
@@ -6119,19 +6117,19 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                                             currentSolarBounds = data.boundingBox;
                                             const potential = data.solarPotential;
                                             document.getElementById('solar_max_sunlight').textContent = Math.round(potential.maxSunshineHoursPerYear || 0) + ' hours/yr';
-                                            
+
                                             let roofArea = 'N/A';
                                             if (potential.wholeRoofStats && potential.wholeRoofStats.areaMeters2) {
                                                 roofArea = Math.round(potential.wholeRoofStats.areaMeters2) + ' m²';
                                             }
                                             document.getElementById('solar_roof_area').textContent = roofArea;
-                                            
+
                                             document.getElementById('solar_max_panels').textContent = (potential.maxArrayPanelsCount || 0) + ' panels';
-                                            
+
                                             // Update maxKw based on real data
                                             const estKw = ((potential.maxArrayPanelsCount || 0) * 0.4).toFixed(1); // Assuming 400W panels
                                             document.getElementById('prev_solar_score_row').classList.remove('hidden');
-                                            
+
                                             // Try to fetch Data Layers for Heatmap
                                             return fetch(`https://solar.googleapis.com/v1/dataLayers:get?location.latitude=${location.lat()}&location.longitude=${location.lng()}&radiusMeters=20&requiredQuality=LOW&key=${apiKey}`);
                                         } else {
@@ -6153,7 +6151,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                                             currentMaskUrl = dlData.maskUrl + (dlData.maskUrl.includes('?') ? '&' : '?') + `key=${apiKey}`;
                                             // Show Heatmap Toggle button
                                             document.getElementById('qb_solar_heatmap_toggle_container').classList.remove('hidden');
-                                            
+
                                             // Auto-render heatmap layers
                                             heatmapVisible = false;
                                             if (solarHeatmapOverlay) {
@@ -6165,10 +6163,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                                     })
                                     .catch(err => {
                                         console.error('Error fetching Solar API:', err);
-                                        
+
                                         const sunlightEl = document.getElementById('solar_max_sunlight');
                                         sunlightEl.classList.add('text-rose-500');
-                                        
+
                                         if (err && err.error && err.error.code === 404) {
                                             sunlightEl.textContent = 'Location not covered by Solar API';
                                         } else if (err && err.error && err.error.message) {
@@ -6181,7 +6179,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                                             sunlightEl.textContent = err.toString();
                                             sunlightEl.style.fontSize = '0.70rem';
                                         }
-                                        
+
                                         document.getElementById('solar_roof_area').textContent = 'Error';
                                         document.getElementById('solar_max_panels').textContent = 'Error';
                                     });
@@ -6197,20 +6195,20 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                     function initAutocomplete() {
                         const input = document.getElementById('qb_address');
                         if (!input) return;
-                        
+
                         if (typeof google === 'undefined' || typeof google.maps === 'undefined' || typeof google.maps.places === 'undefined') {
                             setTimeout(initAutocomplete, 500);
                             return;
                         }
-                        
+
                         const autocomplete = new google.maps.places.Autocomplete(input, {
                             types: ['geocode', 'address']
                         });
-                        
+
                         autocomplete.addListener('place_changed', function() {
                             const place = autocomplete.getPlace();
                             if (!place.geometry) return;
-                            
+
                             // Immediately run preview update and solar analysis on select
                             updatePreview();
                             triggerSolarAnalysis();
@@ -6219,7 +6217,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                         // Set up typing debounce
                         input.addEventListener('input', function() {
                             const val = this.value;
-                            
+
                             // Enable/disable trigger button UI state
                             const btn = document.getElementById('qb_solar_trigger_btn');
                             if (val.length > 5) {
@@ -6227,7 +6225,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                             } else {
                                 btn.classList.add('opacity-50', 'cursor-not-allowed');
                             }
-                            
+
                             // Debounce for 1.2s to automatically analyze typed address
                             clearTimeout(addressDebounceTimeout);
                             if (val.length > 10) {
@@ -6248,12 +6246,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                         const warningBox = document.getElementById('qb_kw_warning');
                         const kw = parseFloat(kwInput.value) || 0;
                         const maxKw = 15.0; // Based on mock 84 m2 roof
-                        
+
                         if (kw <= 0) {
                             warningBox.classList.add('hidden');
                             return;
                         }
-                        
+
                         warningBox.classList.remove('hidden');
                         if (kw <= maxKw) {
                             warningBox.className = 'mt-1 text-xs font-medium text-emerald-600';
@@ -6285,20 +6283,20 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                             updatePreview();
                             return;
                         }
-                        
+
                         const sysType = document.getElementById('qb_sysType').value;
                         let kw = Math.max(1.5, Math.ceil((bill / 12 / 120) * 10) / 10);
-                        
+
                         let perKwCost = 65000;
                         if (sysType === 'Hybrid') perKwCost = 95000;
                         if (sysType === 'Off-Grid') perKwCost = 45000;
                         if (sysType === 'Supply Only') perKwCost = 35000; // Raw product bundle pricing without labor markup
-                        
+
                         const baseCost = kw * perKwCost;
-                        
+
                         document.getElementById('qb_kw').value = kw;
                         document.getElementById('qb_baseCost').value = baseCost;
-                        
+
                         updatePreview();
                         validateCapacity();
                     }
@@ -6307,7 +6305,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                         const baseCost = parseFloat(document.getElementById('qb_baseCost').value) || 0;
                         const discount = parseFloat(document.getElementById('qb_discount').value) || 0;
                         const maxDiscount = baseCost * 0.10;
-                        
+
                         if (discount > maxDiscount && baseCost > 0) {
                             document.getElementById('qb_discountWarning').classList.remove('hidden');
                         } else {
@@ -6318,31 +6316,31 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                     function updatePreview() {
                         document.getElementById('prev_clientName').textContent = document.getElementById('qb_clientName').value || 'Client Name';
                         document.getElementById('prev_address').textContent = document.getElementById('qb_address').value || 'Installation Address';
-                        
+
                         const contact = document.getElementById('qb_contact').value;
                         const email = document.getElementById('qb_email').value;
                         document.getElementById('prev_contact').textContent = (contact || email) ? (contact + (email ? ' / ' + email : '')) : 'Contact / Email';
-                        
+
                         document.getElementById('prev_sysType').textContent = document.getElementById('qb_sysType').value;
                         document.getElementById('prev_kw').textContent = document.getElementById('qb_kw').value || '0.0';
                         document.getElementById('prev_phase').textContent = document.getElementById('qb_phase').value.split(' ')[0];
                         document.getElementById('prev_roof').textContent = document.getElementById('qb_roof').value;
-                        
+
                         document.getElementById('prev_panel').textContent = document.getElementById('qb_panel').value;
                         document.getElementById('prev_inverter').textContent = document.getElementById('qb_inverter').value;
                         document.getElementById('prev_battery').textContent = document.getElementById('qb_battery').value;
-                        
+
                         const baseCost = parseFloat(document.getElementById('qb_baseCost').value) || 0;
                         const discount = parseFloat(document.getElementById('qb_discount').value) || 0;
                         const total = Math.max(0, baseCost - discount);
-                        
+
                         const formatter = new Intl.NumberFormat('en-PH');
                         document.getElementById('prev_baseCost').textContent = formatter.format(baseCost);
                         document.getElementById('prev_discount').textContent = formatter.format(discount);
                         document.getElementById('prev_total').textContent = formatter.format(total);
-                        
+
                         document.getElementById('prev_paymentTerm').textContent = document.getElementById('qb_paymentTerm').value.split(' ')[0];
-                        
+
                         const sysType = document.getElementById('qb_sysType').value;
                         const scopeMain = document.getElementById('prev_scope_main');
                         if(sysType === 'Supply Only') {
@@ -6350,7 +6348,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                         } else {
                             scopeMain.textContent = '1. SUPPLY AND INSTALL OF SOLAR PANELS & ACCESORIES ONLY';
                         }
-                        
+
                         checkDiscount();
                     }
 
@@ -6362,12 +6360,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                         const sysType = document.getElementById('qb_sysType').value;
                         const kw = document.getElementById('qb_kw').value;
                         const remarks = document.getElementById('qb_remarks').value;
-                        
+
                         if(!clientName || !sysType || !kw) {
                             alert("Please fill in Client Name, System Type, and Recommended kW.");
                             return;
                         }
-                        
+
                         const formData = new FormData();
                         formData.append('action', 'create');
                         formData.append('clientName', clientName);
@@ -6376,23 +6374,23 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                         formData.append('location', address);
                         formData.append('systemType', sysType);
                         formData.append('kw', kw);
-                        formData.append('officer', '<?= addslashes($fullName) ?>'); 
+                        formData.append('officer', '<?= addslashes($fullName) ?>');
                         formData.append('status', 'ONGOING');
                         formData.append('remarks', remarks);
-                        
+
                         try {
                             const response = await fetch(STAFF_BASE_URL + 'quotation_api.php', {
                                 method: 'POST',
                                 body: formData
                             });
                             const result = await response.json();
-                            
+
                             if (result.success) {
                                 alert('Quotation saved and published successfully!');
                                 // Hide the builder and show the main quotation list again
                                 toggleQuotationBuilder(false);
                                 // Refresh the quotation list data
-                                QuotationModule.init(); 
+                                QuotationModule.init();
                                 toggleQuotationBuilder(false);
                             } else {
                                 alert('Failed to save quotation: ' + (result.error || 'Unknown error'));
@@ -6408,7 +6406,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                         let clientName = document.getElementById('qb_clientName').value.trim();
                         if (!clientName) clientName = 'SolarPower';
                         const filename = clientName + ' - Quotation.pdf';
-                        
+
                         const opt = {
                             margin:       0.2,
                             filename:     filename,
@@ -6416,7 +6414,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                             html2canvas:  { scale: 2, useCORS: true },
                             jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
                         };
-                        
+
                         // html2pdf().set(opt).from(element).save();
                         if (typeof html2pdf !== 'undefined') {
                             html2pdf().set(opt).from(element).save();
@@ -8009,16 +8007,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                                         <span>Upload</span>
                                     </div>
                                 </div>
-                                
+
                                 <!-- Hidden file input -->
-                                <input type="file" 
-                                    id="profile_picture_input" 
-                                    name="profile_picture" 
-                                    accept="image/jpeg, image/png, image/gif, image/webp" 
-                                    style="display: none;" 
+                                <input type="file"
+                                    id="profile_picture_input"
+                                    name="profile_picture"
+                                    accept="image/jpeg, image/png, image/gif, image/webp"
+                                    style="display: none;"
                                     onchange="previewProfilePic(this)">
                             </div>
-                            
+
                             <div class="staffModal-group">
                                 <label><i class="fas fa-user"></i> First Name</label>
                                 <input type="text" id="profileFirstName"
@@ -8127,7 +8125,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
             reader.onload = function(e) {
                 const cropperImage = document.getElementById('cropperImage');
                 cropperImage.src = e.target.result;
-                
+
                 // Show Cropper Modal
                 const overlay = document.getElementById('cropModalOverlay');
                 overlay.classList.add('open');
@@ -9368,13 +9366,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 productList.innerHTML = products.map(product => {
                     const displayPrice = Number(product.price).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                     const stockClass = product.stockQuantity <= 5 ? 'low-stock' : 'in-stock';
-                    const categoryText = (product.category.toLowerCase().includes('package') && product.packageType) 
-                        ? `${product.category} (${product.packageType})` 
+                    const categoryText = (product.category.toLowerCase().includes('package') && product.packageType)
+                        ? `${product.category} (${product.packageType})`
                         : product.category;
                     const statusText = product.status || 'Active';
                     const statusClass = statusText.toLowerCase() === 'hidden' ? 'status-hidden' : 'status-active';
-                    const statusStyle = statusText.toLowerCase() === 'hidden' 
-                        ? 'background-color: #f3f4f6; color: #374151;' 
+                    const statusStyle = statusText.toLowerCase() === 'hidden'
+                        ? 'background-color: #f3f4f6; color: #374151;'
                         : 'background-color: #d1fae5; color: #065f46;';
 
                     return `
@@ -9412,6 +9410,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                                      <a href="${STAFF_BASE_URL}edit-product.php?id=${encodeURIComponent(product.id)}" class="btn-card-edit" title="Edit Product">
                                          <i class="fas fa-edit"></i>
                                      </a>
+                                     <button type="button" class="btn-card-visibility ${product.status === 'Active' ? 'is-active' : 'is-hidden'}" data-product-id="${Number(product.id)}" data-status="${product.status === 'Active' ? 'Active' : 'Hidden'}" onclick="BulkActions.toggleVisibility(this)">
+                                         <i class="fas ${product.status === 'Active' ? 'fa-eye-slash' : 'fa-eye'}" aria-hidden="true"></i>
+                                         <span>${product.status === 'Active' ? 'Hide' : 'Show'}</span>
+                                     </button>
                                  </div>
                              </div>
                     `;
@@ -9661,40 +9663,40 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                         ${statusText}
                     </span>
                 </div>
-                
+
                 <div class="tracking-card-body">
                     <div class="tracking-timeline">
                         ${this.createTimeline(order)}
                     </div>
-                    
+
                     <div class="tracking-card-sidebar">
                         <div class="sidebar-section">
                             <h4>Customer Details</h4>
                             <p><i class="fas fa-envelope"></i> ${this.escapeHtml(order.customer_email)}</p>
                             <p><i class="fas fa-phone"></i> ${this.escapeHtml(order.customer_phone)}</p>
                         </div>
-                        
+
                         ${order.current_location ? `
                             <div class="sidebar-section">
                                 <h4>Current Location</h4>
                                 <p><i class="fas fa-map-marker-alt"></i> ${this.escapeHtml(order.current_location)}</p>
                             </div>
                         ` : ''}
-                        
+
                         ${order.estimated_delivery ? `
                             <div class="sidebar-section">
                                 <h4>Estimated Delivery</h4>
                                 <p><i class="fas fa-calendar-check"></i> ${new Date(order.estimated_delivery).toLocaleDateString()}</p>
                             </div>
                         ` : ''}
-                        
+
                         <div class="sidebar-section">
                             <h4>Total Amount</h4>
                             <p><strong>₱${parseFloat(order.total_amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}</strong></p>
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="tracking-card-actions">
                     <button class="btn-track-action btn-update-tracking" onclick="TrackingModule.openUpdateModal(${order.id})">
                         <i class="fas fa-edit"></i> Update Tracking
@@ -10219,7 +10221,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                         else if (salesChannel.toLowerCase() === 'phone call') { badgeColor = '#3b82f6'; label = 'Call'; }
                         else if (salesChannel.toLowerCase() === 'walk-in') { badgeColor = '#ea580c'; label = 'Walk-in'; }
                         else if (salesChannel.toLowerCase() === 'viber') { badgeColor = '#7360f2'; label = 'Viber'; }
-                        
+
                         channelBadge = `<span style="background:${badgeColor};color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;margin-left:5px;display:inline-block;vertical-align:middle;">${label}</span>`;
                     }
 
@@ -10549,11 +10551,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
         function mgenProductError(img) {
             const parent = img.parentElement;
             if (!parent) return;
-            
+
             img.style.display = 'none';
-            
+
             if (parent.querySelector('.mgen-prod-icon-placeholder')) return;
-            
+
             const placeholder = document.createElement('div');
             placeholder.className = 'mgen-prod-icon-placeholder';
             placeholder.style.width = '100%';
@@ -10565,11 +10567,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
             placeholder.style.border = '1px dashed #cbd5e1';
             placeholder.style.borderRadius = '8px';
             placeholder.style.color = '#94a3b8';
-            
+
             const icon = document.createElement('i');
             icon.className = 'fas fa-solar-panel';
             icon.style.fontSize = '24px';
-            
+
             placeholder.appendChild(icon);
             parent.appendChild(placeholder);
         }
@@ -10902,7 +10904,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
             if (productListContainer) {
                 productListContainer.addEventListener('click', function (e) {
                     // Don't open modal if clicking checkbox or its container
-                    if (e.target.type === 'checkbox' || e.target.closest('.product-select')) {
+                    if (e.target.type === 'checkbox' || e.target.closest('.product-select, .btn-card-visibility')) {
                         return;
                     }
                     const editBtn = e.target.closest('.btn-card-edit');
@@ -11068,18 +11070,18 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                     document.getElementById('reviewSku').textContent = product.id;
                     document.getElementById('reviewTitle').textContent = product.displayName;
                     document.getElementById('reviewBrand').textContent = product.brandName;
-                    
+
                     const priceFormatted = Number(product.price).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                     document.getElementById('reviewPrice').textContent = `₱${priceFormatted}`;
-                    
+
                     document.getElementById('reviewStock').textContent = `${product.stockQuantity} pcs`;
                     document.getElementById('reviewWarranty').textContent = product.warranty || 'No Warranty';
-                    
-                    const categoryText = (product.category.toLowerCase().includes('package') && product.packageType) 
-                        ? `${product.category} (${product.packageType})` 
+
+                    const categoryText = (product.category.toLowerCase().includes('package') && product.packageType)
+                        ? `${product.category} (${product.packageType})`
                         : product.category;
                     document.getElementById('reviewCategory').textContent = categoryText;
-                    
+
                     document.getElementById('reviewDescription').innerHTML = product.description || 'No description provided.';
 
                     // Status Badge styling
@@ -11115,7 +11117,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
             const imgElement = document.getElementById('reviewCarouselImg');
             const indexBadge = document.getElementById('reviewIndexBadge');
             const galleryContainer = document.getElementById('reviewThumbnailGallery');
-            
+
             // Clear gallery
             galleryContainer.innerHTML = '';
 
@@ -11159,7 +11161,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
         document.addEventListener('DOMContentLoaded', () => {
             const prevBtn = document.getElementById('reviewCarouselPrev');
             const nextBtn = document.getElementById('reviewCarouselNext');
-            
+
             if (prevBtn) {
                 prevBtn.addEventListener('click', function(e) {
                     e.stopPropagation();
@@ -11169,7 +11171,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                     }
                 });
             }
-            
+
             if (nextBtn) {
                 nextBtn.addEventListener('click', function(e) {
                     e.stopPropagation();
@@ -11213,7 +11215,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                     // Dynamic Package Type visibility
                     const editPackageTypeGroup = document.getElementById('edit-package-type-group');
                     const editPackageTypeSelect = document.getElementById('editPackageType');
-                    
+
                     function _applyEditPackageTypeVisibility(cat) {
                         if (editPackageTypeGroup && editPackageTypeSelect) {
                             if (cat.toLowerCase().includes('package')) {
@@ -11738,8 +11740,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 this.deselectAllBtn = document.getElementById('deselectAllBtn');
                 this.bulkEditBtn = document.getElementById('bulkEditBtn');
                 this.bulkDeleteBtn = document.getElementById('bulkDeleteBtn');
-                this.bulkActiveBtn = document.getElementById('bulkActiveBtn');
-                this.bulkHiddenBtn = document.getElementById('bulkHiddenBtn');
 
                 if (!this.initialized) {
                     const productListContainer = document.querySelector('.product-list');
@@ -11757,14 +11757,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
 
                     if (this.bulkEditBtn) {
                         this.bulkEditBtn.addEventListener('click', () => this.handleBulkEdit());
-                    }
-
-                    if (this.bulkActiveBtn) {
-                        this.bulkActiveBtn.addEventListener('click', () => this.handleBulkStatusChange('Active'));
-                    }
-
-                    if (this.bulkHiddenBtn) {
-                        this.bulkHiddenBtn.addEventListener('click', () => this.handleBulkStatusChange('Hidden'));
                     }
 
                     if (this.bulkDeleteBtn) {
@@ -11825,41 +11817,38 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 }
             },
 
-            async handleBulkStatusChange(status) {
-                const selectedCheckboxes = document.querySelectorAll('.product-checkbox-input:checked');
-                const selectedIds = Array.from(selectedCheckboxes).map(cb => cb.dataset.productId);
-
-                if (selectedIds.length === 0) return;
-
-                if (!confirm(`Are you sure you want to set status of ${selectedIds.length} selected product(s) to ${status}?`)) {
-                    return;
-                }
-
+            async toggleVisibility(button) {
+                if (button.disabled) return;
+                const status = button.dataset.status === 'Active' ? 'Hidden' : 'Active';
+                button.disabled = true;
+                button.setAttribute('aria-busy', 'true');
                 try {
                     const formData = new FormData();
                     formData.append('ajax', '1');
                     formData.append('action', 'bulk_update_status');
-                    formData.append('product_ids', selectedIds.join(','));
+                    formData.append('product_ids', button.dataset.productId);
                     formData.append('status', status);
-
-                    const res = await fetch(DASHBOARD_AJAX_URL, {
-                        method: 'POST',
-                        body: formData
-                    });
-                    const data = await res.json();
-
-                    if (data.success) {
-                        alert(data.message || `Successfully updated product status to ${status}.`);
-                        this.deselectAll();
-                        if (typeof ProductFormHandler !== 'undefined' && typeof ProductFormHandler.reloadProductList === 'function') {
-                            ProductFormHandler.reloadProductList();
-                        }
-                    } else {
-                        alert(data.message || 'Error updating product status.');
+                    const response = await fetch(DASHBOARD_AJAX_URL, { method: 'POST', body: formData });
+                    if (!response.ok) throw new Error('Unable to update visibility. Please try again.');
+                    const data = await response.json();
+                    if (!data.success) throw new Error(data.message || 'Unable to update visibility.');
+                    const active = status === 'Active';
+                    button.dataset.status = status;
+                    button.classList.toggle('is-active', active);
+                    button.classList.toggle('is-hidden', !active);
+                    button.querySelector('i').className = 'fas ' + (active ? 'fa-eye-slash' : 'fa-eye');
+                    button.querySelector('span').textContent = active ? 'Hide' : 'Show';
+                    const badge = button.closest('.product-card').querySelector('.status-badge');
+                    if (badge) {
+                        badge.textContent = status;
+                        badge.style.background = active ? '#d1fae5' : '#f1f5f9';
+                        badge.style.color = active ? '#065f46' : '#475569';
                     }
-                } catch (e) {
-                    console.error(e);
-                    alert('An error occurred during bulk status update.');
+                } catch (error) {
+                    alert(error.message || 'Unable to update visibility. Please try again.');
+                } finally {
+                    button.disabled = false;
+                    button.removeAttribute('aria-busy');
                 }
             },
 
@@ -12293,13 +12282,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
         async function fetchAndPopulateCategories() {
             const categorySelect = document.getElementById('category-select');
             const editCategorySelect = document.getElementById('editCategory');
-            
+
             if (!categorySelect && !editCategorySelect) return;
 
             try {
                 const response = await fetch(DASHBOARD_AJAX_URL + '?ajax=1&action=fetch_categories');
                 const data = await response.json();
-                
+
                 if (data.success && data.data && data.data.length > 0) {
                     if (categorySelect) {
                         const currentVal = categorySelect.value;
@@ -12312,7 +12301,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                         });
                         categorySelect.value = currentVal;
                     }
-                    
+
                     if (editCategorySelect) {
                         const currentVal = editCategorySelect.value;
                         editCategorySelect.innerHTML = '<option value="">Select a category</option>';
@@ -12528,7 +12517,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                                         </div>
                                         <div>
                                             <label style="font-size: 11px; color: #64748b; display: block; margin-bottom: 4px;">Variant Price (PHP) <span style="color:red;">*</span></label>
-                                            <input type="number" name="brand_price[${brand.brand_id}]" placeholder="0.00" step="0.01" class="brand-price-input" disabled style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; box-sizing: border-box;">
+                                            <div class="product-price-field"><span class="product-price-prefix" aria-hidden="true">₱</span><input type="number" name="brand_price[${brand.brand_id}]" placeholder="0.00" step="0.01" class="brand-price-input" disabled style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; box-sizing: border-box;"></div>
                                         </div>
                                         <div>
                                             <label style="font-size: 11px; color: #64748b; display: block; margin-bottom: 4px;">Variant Image <span style="color:red;">*</span></label>
@@ -13191,9 +13180,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                     const toggleClass = isVisible ? '' : 'hidden-state';
                     const toggleLabel = isVisible ? '<i class="fas fa-eye-slash"></i> Hide' : '<i class="fas fa-eye"></i> Show';
                     return `
-            <tr data-brand-id="${b.brand_id}" 
+            <tr data-brand-id="${b.brand_id}"
                 data-brand-name="${this.esc(b.brand_name)}"
-                data-category-id="${b.category_id}" 
+                data-category-id="${b.category_id}"
                 data-category-name="${this.esc(b.category_name)}"
                 data-logo-image="${this.esc(b.logo_image || '')}"
                 data-contact-person="${this.esc(b.contact_person || '')}"
@@ -13258,7 +13247,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 fd.append('contact_person', contact_person);
                 fd.append('phone', phone);
                 fd.append('location_country', location_country);
-                
+
                 if (logoInput && logoInput.files.length > 0) {
                     fd.append('logo_image', logoInput.files[0]);
                 }
@@ -13333,11 +13322,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 document.getElementById('bEditId').value = tr.dataset.brandId;
                 document.getElementById('bEditName').value = tr.dataset.brandName;
                 document.getElementById('bEditCategory').value = tr.dataset.categoryId;
-                
+
                 document.getElementById('bEditContact').value = tr.dataset.contactPerson || '';
                 document.getElementById('bEditPhone').value = tr.dataset.phone || '';
                 document.getElementById('bEditCountry').value = tr.dataset.locationCountry || '';
-                
+
                 const logoInput = document.getElementById('bEditLogo');
                 if (logoInput) logoInput.value = '';
 
@@ -13368,7 +13357,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 const brand_id = document.getElementById('bEditId').value;
                 const brand_name = document.getElementById('bEditName').value.trim();
                 const category_id = document.getElementById('bEditCategory').value;
-                
+
                 const contact_person = document.getElementById('bEditContact')?.value.trim();
                 const phone = document.getElementById('bEditPhone')?.value.trim();
                 const location_country = document.getElementById('bEditCountry')?.value.trim();
@@ -13817,7 +13806,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
             </div>
             <div class="manual-order-modal-body">
                 <form id="manualInquiryForm" onsubmit="submitManualInquiry(event)">
-                    
+
                     <div class="mo-form-group">
                         <label for="miClientName" style="display:block; font-size:13px; font-weight:600; margin-bottom:6px; color:#475569;">Client Name *</label>
                         <input type="text" id="miClientName" required placeholder="John Doe" style="width:100%; border:1px solid #cbd5e1; padding:0.5rem 0.75rem; border-radius:0.375rem; outline:none; font-size:14px;">
@@ -13836,7 +13825,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
 
                     <div class="mo-form-group relative" id="inquiryChannelDropdownContainer" style="position: relative;">
                         <label for="miChannel" style="display:block; font-size:13px; font-weight:600; margin-bottom:6px; color:#475569;">Inquiry Channel / Source *</label>
-                        
+
                         <!-- Hidden actual select for form logic -->
                         <select id="miChannel" required style="display: none;">
                             <option value="Website">Website</option>
@@ -13844,7 +13833,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                             <option value="Email">Email</option>
                             <option value="Phone Call">Phone Call</option>
                         </select>
-                        
+
                         <!-- Custom UI Trigger -->
                         <div id="miCustomTrigger" tabindex="0" onblur="setTimeout(function(){ document.getElementById('miCustomOptions').classList.add('hidden'); }, 200);" onclick="document.getElementById('miCustomOptions').classList.toggle('hidden');" style="border: 1px solid #cbd5e1; padding: 0.5rem 0.75rem; border-radius: 0.375rem; cursor: pointer; display: flex; align-items: center; justify-content: space-between; background-color: #fff; transition: border-color 0.2s; outline: none;">
                             <div id="miSelectedDisplay" style="display: flex; align-items: center; font-size: 0.875rem; color: #334155; pointer-events: none;">
@@ -13852,7 +13841,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                             </div>
                             <i class="fas fa-chevron-down text-slate-400" style="font-size: 0.75rem; pointer-events: none;"></i>
                         </div>
-                        
+
                         <!-- Custom UI Options -->
                         <div id="miCustomOptions" class="hidden" style="position: absolute; top: 100%; left: 0; right: 0; margin-top: 4px; background-color: #fff; border: 1px solid #e2e8f0; border-radius: 0.375rem; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); z-index: 9999; overflow: hidden;">
                             <div onclick="document.getElementById('miChannel').value='Website'; document.getElementById('miSelectedDisplay').innerHTML=this.innerHTML; document.getElementById('miCustomOptions').classList.add('hidden');" onmouseover="this.style.backgroundColor='#eff6ff'" onmouseout="this.style.backgroundColor='transparent'" style="padding: 0.6rem 0.75rem; cursor: pointer; display: flex; align-items: center; font-size: 0.875rem; color: #334155; border-bottom: 1px solid #f1f5f9; transition: background-color 0.2s;">
@@ -13878,7 +13867,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                     <!-- Optional Estimate Data -->
                     <div style="border: 1px dashed #cbd5e1; padding: 16px; border-radius: 8px; margin-bottom: 20px; background: #f8fafc;">
                         <h4 style="font-size: 13px; font-weight: 700; color: #475569; margin: 0 0 12px 0; text-transform: uppercase; letter-spacing: 0.5px;">Estimation Data (Optional)</h4>
-                        
+
                         <div class="mo-grid-2" style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
                             <div class="mo-form-group" style="margin-bottom:0;">
                                 <label for="miMonthlyBill" style="display:block; font-size:12px; font-weight:600; margin-bottom:4px; color:#64748b;">Monthly Bill (₱)</label>
@@ -13893,7 +13882,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                                 </select>
                             </div>
                         </div>
-                        
+
                         <div class="mo-form-group" style="margin-top:12px; margin-bottom:0;">
                             <label for="miRoofType" style="display:block; font-size:12px; font-weight:600; margin-bottom:4px; color:#64748b;">Roof Type</label>
                             <select id="miRoofType" style="width:100%; border:1px solid #cbd5e1; padding:0.4rem 0.6rem; border-radius:0.375rem; outline:none; font-size:13px; background:#fff;">
@@ -13925,7 +13914,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
             </div>
             <div class="manual-order-modal-body">
                 <form id="manualOrderForm" onsubmit="submitManualOrder(event)">
-                    
+
                     <!-- Contact details -->
                     <div class="mo-form-group">
                         <label for="moClientName">Client Name</label>
@@ -13945,11 +13934,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                                     if ($c_res) {
                                         while ($c = $c_res->fetch_assoc()) {
                                             if (empty($c['customer_email'])) continue;
-                                            echo '<option value="' . htmlspecialchars($c['customer_email']) . '" 
+                                            echo '<option value="' . htmlspecialchars($c['customer_email']) . '"
                                                 data-name="' . htmlspecialchars($c['customer_name']) . '"
                                                 data-phone="' . htmlspecialchars($c['customer_phone']) . '"
-                                                data-address="' . htmlspecialchars($c['customer_address']) . '">' . 
-                                                htmlspecialchars($c['customer_name']) . 
+                                                data-address="' . htmlspecialchars($c['customer_address']) . '">' .
+                                                htmlspecialchars($c['customer_name']) .
                                                 '</option>';
                                         }
                                         $c_res->close();
@@ -13988,7 +13977,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                     <div class="mo-grid-2">
                         <div class="mo-form-group relative" id="salesChannelDropdownContainer">
                             <label for="moSalesChannel">Sales Channel *</label>
-                            
+
                             <!-- Hidden actual select for form logic -->
                             <select id="moSalesChannel" required style="display: none;">
                                 <option value="Website">Website (Default)</option>
@@ -13998,7 +13987,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                                 <option value="Walk-in">Walk-in</option>
                                 <option value="Viber">Viber</option>
                             </select>
-                            
+
                             <!-- Custom UI Trigger -->
                             <div id="scCustomTrigger" tabindex="0" onblur="setTimeout(function(){ document.getElementById('scCustomOptions').classList.add('hidden'); }, 200);" onclick="document.getElementById('scCustomOptions').classList.toggle('hidden');" style="border: 1px solid #cbd5e1; padding: 0.5rem 0.75rem; border-radius: 0.375rem; cursor: pointer; display: flex; align-items: center; justify-content: space-between; background-color: #fff; transition: border-color 0.2s; outline: none;">
                                 <div id="scSelectedDisplay" style="display: flex; align-items: center; font-size: 0.875rem; color: #334155; pointer-events: none;">
@@ -14006,7 +13995,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                                 </div>
                                 <i class="fas fa-chevron-down text-slate-400" style="font-size: 0.75rem; pointer-events: none;"></i>
                             </div>
-                            
+
                             <!-- Custom UI Options -->
                             <div id="scCustomOptions" class="hidden" style="position: absolute; top: 100%; left: 0; right: 0; margin-top: 4px; background-color: #fff; border: 1px solid #e2e8f0; border-radius: 0.375rem; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); z-index: 9999; overflow: hidden;">
                                 <div onclick="document.getElementById('moSalesChannel').value='Website'; document.getElementById('scSelectedDisplay').innerHTML=this.innerHTML; document.getElementById('scCustomOptions').classList.add('hidden');" onmouseover="this.style.backgroundColor='#eff6ff'" onmouseout="this.style.backgroundColor='transparent'" style="padding: 0.6rem 0.75rem; cursor: pointer; display: flex; align-items: center; font-size: 0.875rem; color: #334155; border-bottom: 1px solid #f1f5f9; transition: background-color 0.2s;">
@@ -14040,8 +14029,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                                     $p_res = $db_conn->query($p_query);
                                     if ($p_res) {
                                         while ($prod = $p_res->fetch_assoc()) {
-                                            echo '<option value="' . $prod['id'] . '" data-price="' . $prod['price'] . '">' . 
-                                                htmlspecialchars($prod['displayName'] . ' (₱' . number_format($prod['price'], 2) . ')') . 
+                                            echo '<option value="' . $prod['id'] . '" data-price="' . $prod['price'] . '">' .
+                                                htmlspecialchars($prod['displayName'] . ' (₱' . number_format($prod['price'], 2) . ')') .
                                                 '</option>';
                                         }
                                         $p_res->close();
@@ -14116,14 +14105,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
         function onManualOrderEmailInput() {
             const emailInput = document.getElementById('moClientEmail');
             const val = emailInput.value.trim().toLowerCase();
-            
+
             const datalist = document.getElementById('existingClientsList');
             const options = datalist.options;
-            
+
             const nameInput = document.getElementById('moClientName');
             const phoneInput = document.getElementById('moClientPhone');
             const addressInput = document.getElementById('moClientAddress');
-            
+
             // Check if input matches an existing customer email
             for (let i = 0; i < options.length; i++) {
                 const opt = options[i];
@@ -14138,7 +14127,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
 
         async function submitManualOrder(event) {
             event.preventDefault();
-            
+
             const clientEmail = document.getElementById('moClientEmail').value.trim();
             const clientName = document.getElementById('moClientName').value.trim();
             const clientPhone = document.getElementById('moClientPhone').value.trim();
@@ -14177,7 +14166,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
 
                 if (result.success) {
                     closeManualOrderModal();
-                    
+
                     // Increment the KPI Total Orders Card in UI
                     const kpiOrders = document.getElementById('kpi-orders-value');
                     if (kpiOrders) {
@@ -14200,7 +14189,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                     if (typeof OrdersModule !== 'undefined' && typeof OrdersModule.loadOrders === 'function') {
                         OrdersModule.loadOrders();
                     }
-                    
+
                     // Display browser alert or toast
                     alert('Order created successfully!');
                     window.location.reload();
@@ -14238,13 +14227,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
 
         async function submitManualInquiry(event) {
             event.preventDefault();
-            
+
             const name = document.getElementById('miClientName').value.trim();
             const email = document.getElementById('miClientEmail').value.trim();
             const phone = document.getElementById('miClientPhone').value.trim();
             const channel = document.getElementById('miChannel').value;
             const message = document.getElementById('miMessage').value.trim();
-            
+
             const monthlyBill = document.getElementById('miMonthlyBill').value.trim();
             const propertyType = document.getElementById('miPropertyType').value;
             const roofType = document.getElementById('miRoofType').value;

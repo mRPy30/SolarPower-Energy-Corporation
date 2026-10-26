@@ -1485,6 +1485,36 @@ tbody tr:last-child td {
     transform: scale(1.1);
 }
 
+#product .product-actions-btn-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+.btn-card-visibility {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-width: 72px;
+    min-height: 36px;
+    padding: 6px 10px;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.btn-card-visibility.is-active { background: #fef3c7; color: #92400e; border-color: #fcd34d; }
+.btn-card-visibility.is-active:hover { background: #fde68a; }
+.btn-card-visibility.is-hidden { background: #047857; color: #fff; }
+.btn-card-visibility.is-hidden:hover { background: #065f46; }
+.btn-card-visibility:disabled { opacity: .6; cursor: wait; }
+.btn-card-visibility:focus-visible { outline: 2px solid #0f172a; outline-offset: 3px; }
+
 .product-card:hover {
     transform: translateY(-4px);
     box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
@@ -2777,7 +2807,7 @@ tbody tr:last-child td {
 }
 
 .btn-bulk-active {
-    background: #10b981;
+    background: #047857;
     color: white;
 }
 
@@ -2787,13 +2817,39 @@ tbody tr:last-child td {
 }
 
 .btn-bulk-hidden {
-    background: #0a5c3d;
-    color: white;
+    background: #fbbf24;
+    color: #422006;
 }
 
 .btn-bulk-hidden:hover {
-    background: #0d764e;
+    background: #f59e0b;
     transform: translateY(-1px);
+}
+
+#product .bulk-actions-bar {
+    flex-wrap: wrap;
+    gap: 16px 24px;
+}
+
+#product .bulk-actions-right {
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+#product .product-visibility-actions {
+    margin-right: auto;
+}
+
+#product .bulk-group-label {
+    color: #cbd5e1;
+    font-size: 12px;
+    font-weight: 600;
+    margin-right: 4px;
+}
+
+#product .bulk-actions-right button:focus-visible {
+    outline: 2px solid white;
+    outline-offset: 3px;
 }
 
 .btn-bulk-edit {
@@ -2905,6 +2961,31 @@ tbody tr:last-child td {
     grid-template-columns: 1fr 1fr;
     gap: 12px;
 }
+
+.product-price-field {
+    position: relative;
+    width: 100%;
+    min-width: 0;
+}
+
+.product-price-prefix {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #64748b;
+    font-size: 14px;
+    font-weight: 600;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.product-price-field input[type="number"] {
+    padding-left: 32px !important;
+    font-variant-numeric: tabular-nums;
+}
+
+.product-price-field:focus-within .product-price-prefix { color: #92400e; }
 
 .input-wrapper {
     position: relative;

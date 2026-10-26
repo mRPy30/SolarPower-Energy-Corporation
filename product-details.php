@@ -827,12 +827,12 @@ $conn->close();
                         ?>
                             <div class="stock-indicator in-stock">
                                 <i class="fas fa-check-circle"></i>
-                                <span>In Stock (<?= $stockQty ?> available)</span>
+                                <span>In Stock</span>
                             </div>
                         <?php elseif ($stockQty > 0): ?>
                             <div class="stock-indicator low-stock">
                                 <i class="fas fa-exclamation-triangle"></i>
-                                <span>Low Stock (Only <?= $stockQty ?> left)</span>
+                                <span>Low Stock</span>
                             </div>
                         <?php else: ?>
                             <div class="stock-indicator out-of-stock">
