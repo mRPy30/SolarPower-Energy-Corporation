@@ -13,6 +13,7 @@ ErrorDocument 404 /404.php
 <IfModule mod_rewrite.c>
 RewriteEngine On
 RewriteBase /
+RewriteRule ^sitemap-products\.xml$ sitemap-products.php [L]
 
 # Staff and auth clean routes
 RewriteRule ^dashboard/?$ views/staff/dashboard.php [L,QSA]
@@ -59,4 +60,13 @@ RewriteCond %{REQUEST_FILENAME} !-d
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{DOCUMENT_ROOT}/$1.php -f
 RewriteRule ^(.+?)/?$ $1.php [L,QSA]
+</IfModule>
+
+# Keep transaction and account pages out of search results; authentication stays unchanged.
+<IfModule mod_setenvif.c>
+SetEnvIf Request_URI "^/(views/(admin/|staff/|login|signup|forgot_password|verify_reset_code)|controllers/|dashboard|staff/|cart([/?]|$)|checkout([/?]|$)|track-order([/?]|$)|fetch-order-status([/?]|$)|process-payment([/?]|$))" solar_private
+SetEnvIf Request_URI "^/(cart|checkout|track-order|fetch-order-status|process-payment|login|register|signup|logout|forgot-password|verify-reset-code|newsletter)(\.php)?([/?]|$)" solar_private
+</IfModule>
+<IfModule mod_headers.c>
+Header always set X-Robots-Tag "noindex, nofollow" env=solar_private
 </IfModule>

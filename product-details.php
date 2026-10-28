@@ -1,5 +1,6 @@
 <?php
 session_start();
+require_once __DIR__ . '/includes/product-images.php';
 $isLoggedIn = isset($_SESSION['user_id']);
 
 // Get product ID or slug from URL
@@ -50,7 +51,9 @@ if (!$productId && isset($_GET['id'])) {
 }
 
 if (!$productId) {
-    header('Location: /');
+    http_response_code(404);
+    header('X-Robots-Tag: noindex');
+    require __DIR__ . '/404.php';
     exit;
 }
 
@@ -93,7 +96,9 @@ $result = $stmt->get_result();
 if ($result->num_rows > 0) {
     $product = $result->fetch_assoc();
 } else {
-    header('Location: /');
+    http_response_code(404);
+    header('X-Robots-Tag: noindex');
+    require __DIR__ . '/404.php';
     exit;
 }
 $stmt->close();
@@ -143,14 +148,17 @@ while ($row = $result->fetch_assoc()) {
 }
 $stmt->close();
 
-// If no images, use placeholder
-if (empty($productImages)) {
-    $productImages[] = 'assets/img/placeholder.png';
+// Keep the general gallery as fallback; resolve brand images to public URLs.
+$generalProductImage = product_image_url(...array_merge($productImages, [$product['imagePath'] ?? '']));
+$productImages = array_values(array_unique(array_map(fn($image) => product_image_url($image, $generalProductImage), $productImages)));
+if (!$productImages) $productImages = [$generalProductImage];
+foreach ($variants as &$imageVariant) {
+    $imageVariant['imagePath'] = product_image_url($imageVariant['imagePath'] ?? '', $generalProductImage);
 }
-
+unset($imageVariant);
 if (!empty($variants[0]['imagePath'])) {
     array_unshift($productImages, $variants[0]['imagePath']);
-    $productImages = array_values(array_unique(array_filter($productImages)));
+    $productImages = array_values(array_unique($productImages));
 }
 
 $initialProductTitle = !empty(trim((string)($variants[0]['variantName'] ?? '')))
@@ -195,7 +203,24 @@ $conn->close();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/png" href="assets/img/icon.png">
-    <title><?= htmlspecialchars($product['displayName']) ?> - Solar Power Energy</title>
+    <title><?= htmlspecialchars($initialProductTitle, ENT_QUOTES, 'UTF-8') ?> | SolarPower Philippines</title>
+    <?php
+    require_once __DIR__ . '/includes/seo.php';
+    $seoProductPath = '/product-details/' . rawurlencode(createSlug($product['displayName']));
+    $seoDescription = solar_seo_text((string)$product['description']);
+    if ($seoDescription === '') $seoDescription = $initialProductTitle . ' from SolarPower Energy Corporation. View specifications and pricing in the Philippines.';
+    solar_seo_meta($seoProductPath, $seoDescription, ['Home'=>'/', 'Products'=>'/product', $product['displayName']=>$seoProductPath]);
+    $seoProduct = ['@context'=>'https://schema.org','@type'=>'Product','name'=>$initialProductTitle,'description'=>$seoDescription,'url'=>'https://solarpower.com.ph'.$seoProductPath,'productID'=>(string)$product['id']];
+    $seoImages = [];
+    foreach ($productImages as $seoImage) {
+        if (str_contains($seoImage, 'placeholder')) continue;
+        if (preg_match('~^https://~i', $seoImage)) $seoImages[] = $seoImage;
+        elseif (!preg_match('~^[a-z]+:|^//~i', $seoImage)) $seoImages[] = 'https://solarpower.com.ph/' . ltrim($seoImage, '/');
+    }
+    if ($seoImages) $seoProduct['image'] = $seoImages;
+    if ($initialProductPrice > 0) $seoProduct['offers'] = ['@type'=>'Offer','url'=>'https://solarpower.com.ph'.$seoProductPath,'priceCurrency'=>'PHP','price'=>number_format($initialProductPrice, 2, '.', ''),'availability'=>(int)$product['stockQuantity'] > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock'];
+    solar_seo_json($seoProduct);
+    ?>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="assets/style.css">
@@ -770,7 +795,7 @@ $conn->close();
                                 <?php foreach ($variants as $index => $variant): ?>
                                     <?php 
                                     $v_id = $variant['variant_junction_id'] ?? $variant['id'];
-                                    $v_img = !empty($variant['imagePath']) ? $variant['imagePath'] : $product['imagePath'];
+                                    $v_img = $variant['imagePath'] ?: $generalProductImage;
                                     $variantLabel = !empty(trim((string)($variant['variantName'] ?? ''))) ? $variant['variantName'] : $variant['brandName'];
                                     ?>
                                         <div class="variant-option-chip">
@@ -1154,7 +1179,7 @@ $conn->close();
 
             <!-- Main image area with zoom container -->
             <div style="flex:1;display:flex;align-items:center;justify-content:center;background:#fff;padding:32px 24px;min-height:480px;position:relative;overflow:auto;">
-                <img id="modalImage" src="<?= htmlspecialchars($productImages[0]) ?>" style="max-width:100%;max-height:68vh;object-fit:contain;display:block;transform-origin:center;transition:transform 0.2s ease;">
+                <img alt="<?= htmlspecialchars($initialProductTitle, ENT_QUOTES, 'UTF-8') ?>" id="modalImage" src="<?= htmlspecialchars($productImages[0]) ?>" style="max-width:100%;max-height:68vh;object-fit:contain;display:block;transform-origin:center;transition:transform 0.2s ease;">
                 
                 <!-- Zoom Control Panel -->
                 <div class="zoom-controls" style="position:absolute;bottom:20px;left:50%;transform:translateX(-50%);background:rgba(255,255,255,0.92);backdrop-filter:blur(4px);border:1px solid #e0e0e0;border-radius:30px;padding:6px 16px;display:flex;gap:12px;align-items:center;box-shadow:0 4px 20px rgba(0,0,0,0.15);z-index:20;">
@@ -1189,7 +1214,7 @@ $conn->close();
     <script>
         // ── Product data passed from PHP ──
         const productData = <?= json_encode($product) ?>;
-        productData.image_path = '<?= htmlspecialchars($productImages[0] ?? $product['imagePath']) ?>';
+        productData.image_path = <?= json_encode($productImages[0], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
         <?php if ($is_eligible && count($variants) > 0): ?>
             productData.brand_id = <?= json_encode($variants[0]['brand_id']) ?>;
             productData.brandName = <?= json_encode($variants[0]['brandName']) ?>;
@@ -1199,6 +1224,16 @@ $conn->close();
         <?php endif; ?>
         const originalProductId = <?= intval($product['id']) ?>;
 
+        // Capture image errors, including thumbnails created after a brand switch.
+        document.addEventListener('error', function(event) {
+            const img = event.target;
+            if (!(img instanceof HTMLImageElement) || !(img.id === 'mainImage' || img.id === 'modalImage' || img.closest('#thumbnailGalleryWrapper, #modalGalleryWrapper'))) return;
+            const general = <?= json_encode($generalProductImage, JSON_HEX_TAG | JSON_HEX_AMP) ?>;
+            const placeholder = <?= json_encode(asset_url('assets/img/product-placeholder.png')) ?>;
+            const next = img.src === new URL(general, document.baseURI).href ? placeholder : general;
+            if (img.src !== new URL(placeholder, document.baseURI).href) img.src = next;
+        }, true);
+
         // ── Brand Variant Change Event Listener ──
         document.addEventListener('DOMContentLoaded', function() {
             const variantRadios = document.querySelectorAll('.variant-radio');
@@ -1207,7 +1242,7 @@ $conn->close();
                     if (this.checked) {
                         const selectedId = this.value;
                         const price = parseFloat(this.getAttribute('data-price')) || 0;
-                        const mainImage = this.getAttribute('data-image') || 'assets/img/placeholder.png';
+                        const mainImage = this.getAttribute('data-image') || <?= json_encode($generalProductImage) ?>;
                         const brandName = this.getAttribute('data-brand') || '';
                         const brandId = this.getAttribute('data-brand-id') || null;
                         const variantLabel = this.getAttribute('data-label') || productData.displayName || '';
@@ -1247,7 +1282,8 @@ $conn->close();
                         fetch(`get-gallery.php?product_id=${originalProductId}`)
                             .then(response => response.json())
                             .then(data => {
-                                if (data.success && data.images) {
+                                if (data.success && data.images && this.checked) {
+                                    data.images = [...new Set([mainImage, ...data.images])];
                                     const thumbWrapper = document.getElementById('thumbnailGalleryWrapper');
                                     const modalWrapper = document.getElementById('modalGalleryWrapper');
 

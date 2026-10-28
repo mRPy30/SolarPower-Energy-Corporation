@@ -55,7 +55,8 @@ $conn->close();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/png" href="assets/img/icon.png">
-<title>SolarPower Energy Corporation - Smart Energy for Smarter Homes</title>
+<title>Solar System Packages Philippines | SolarPower</title>
+<?php require_once __DIR__ . "/includes/seo.php"; solar_seo_meta('/package', 'Explore solar power system packages for homes and businesses in the Philippines. Compare available systems and request a solar quotation.', ["Home"=>"/", 'Solar System Packages Philippines'=>'/package']); ?>
     
     <!-- Bootstrap CSS -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
@@ -569,7 +570,7 @@ $conn->close();
                                 
                                 <div class="product-info">
                                     <div class="product-brand"><?= htmlspecialchars($p['brandName']) ?> Package</div>
-                                    <h3 class="product-name"><?= htmlspecialchars($p['displayName']) ?></h3>
+                                    <h3 class="product-name"><a href="/product-details/<?= createSlug($p['displayName']) ?>" style="color:inherit;text-decoration:none"><?= htmlspecialchars($p['displayName']) ?></a></h3>
                                     <div class="product-price">
                                         ₱<?= number_format($p['price'], 2) ?>
                                     </div>
@@ -988,7 +989,7 @@ $conn->close();
                 
                 html += `
                     <div class="cart-item-row d-flex align-items-center gap-3 mb-3 pb-3 border-bottom">
-                        <img src="${item.image_path}" 
+                        <img src="${item.image_path}" alt=""
                              style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px;"
                              onerror="this.src='assets/img/placeholder.png'">
                         <div class="flex-grow-1">
@@ -1168,7 +1169,7 @@ $conn->close();
                 
                 html += `
                     <div class="d-flex align-items-center gap-3 mb-3 border-bottom pb-3">
-                        <img src="${item.image_path}" 
+                        <img src="${item.image_path}" alt=""
                              style="width:60px; height:60px; object-fit:cover; border-radius:8px;"
                              onerror="this.src='assets/img/placeholder.png'">
                         <div class="flex-grow-1">

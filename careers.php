@@ -18,7 +18,10 @@ $requestKey=bin2hex(random_bytes(32));
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title><?= $selected ? career_escape($selected['title']).' | ' : '' ?>Careers | SolarPower Energy Corporation</title>
-<meta name="description" content="Build your career in solar energy. Explore current opportunities and apply to join SolarPower Energy Corporation.">
+<?php require_once __DIR__ . '/includes/seo.php'; ?>
+<meta name="description" content="<?= career_escape($selected ? solar_seo_text('Apply for '.$selected['title'].' at SolarPower Energy Corporation. '.$selected['location'].'. '.$selected['description']) : 'Build your career in solar energy. Explore current opportunities and apply to join SolarPower Energy Corporation.') ?>">
+<link rel="canonical" href="https://solarpower.com.ph/careers<?= $selected ? '?job='.(int)$selected['id'] : '' ?>">
+<?php if ($invalidJob || $unavailable): ?><meta name="robots" content="noindex"><?php endif; ?>
 <link rel="icon" href="<?= career_escape(asset_url('assets/img/icon.png')) ?>">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">

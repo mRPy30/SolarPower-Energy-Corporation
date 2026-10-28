@@ -2,7 +2,8 @@
 // get-gallery.php - Fetch sub-images or default image for a product
 header('Content-Type: application/json; charset=utf-8');
 
-require_once 'config/dbconn.php';
+require_once __DIR__ . '/config/dbconn.php';
+require_once __DIR__ . '/includes/product-images.php';
 
 $productId = isset($_GET['product_id']) ? intval($_GET['product_id']) : 0;
 $images = [];
@@ -73,6 +74,9 @@ if ($productId > 0) {
 } else {
     $images[] = 'assets/img/placeholder.png';
 }
+
+$galleryFallback = product_image_url(...$images);
+$images = array_values(array_unique(array_map(fn($image) => product_image_url($image, $galleryFallback), $images)));
 
 echo json_encode([
     'success' => true,

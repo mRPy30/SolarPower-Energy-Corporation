@@ -3,6 +3,10 @@ error_reporting(0);
 ini_set('display_errors', 0);
 
 header('Content-Type: application/json');
+require_once __DIR__ . '/../includes/contact-attachment.php';
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($_POST) && (int)($_SERVER['CONTENT_LENGTH'] ?? 0) > 0) {
+ http_response_code(413); echo json_encode(['success'=>false,'message'=>'Upload exceeds the server request limit. Maximum attachment size is 30 MB.']); exit;
+}
 include "../config/dbconn.php";
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -58,6 +62,15 @@ if (!$privacyConsent) {
     exit;
 }
 
+$attachment = null;
+$attachmentSaved = false;
+try {
+ if (isset($_FILES['attachment']) && ($_FILES['attachment']['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) {
+  $attachment = contact_attachment_save($_FILES['attachment']);
+  register_shutdown_function(function () use (&$attachmentSaved, $attachment) { if (!$attachmentSaved) @unlink($attachment['path']); });
+  $message .= "\n\nAttachment: " . $attachment['name'] . "\nhttps://solarpower.com.ph/controllers/contact_attachment.php?file=" . $attachment['token'];
+ }
+} catch (Throwable $e) { http_response_code(400); echo json_encode(['success'=>false,'message'=>$e->getMessage()]); exit; }
 /* Set Philippine Time */
 date_default_timezone_set('Asia/Manila');
 $now = date('Y-m-d H:i:s');
@@ -80,6 +93,7 @@ if (!$stmt->execute()) {
 }
 
 /* 2️⃣ SEND EMAIL NOTIFICATION VIA RESEND */
+$attachmentSaved = true;
 $emailResult = ['sent' => false, 'provider' => 'resend', 'message' => 'Email notification was not attempted.'];
 
 try {
@@ -128,7 +142,10 @@ try {
     </body>
     </html>";
     
-    $resendResult = solar_send_internal_lead_email($subject, $emailBody, [
+    if ($attachment) {
+ $emailBody .= '<p>Attachment: <a href="https://solarpower.com.ph/controllers/contact_attachment.php?file=' . $attachment['token'] . '">' . htmlspecialchars($attachment['name']) . '</a> (staff sign-in required)</p>';
+}
+$resendResult = solar_send_internal_lead_email($subject, $emailBody, [
         'reply_to' => $email
     ]);
     $emailResult = [

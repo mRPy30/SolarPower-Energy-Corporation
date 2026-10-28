@@ -8,7 +8,9 @@ if (!isset($_SESSION['user_id']) || empty($_SESSION['user_id'])) {
     exit();
 }
 
-include "../../config/dbconn.php";
+require_once __DIR__ . '/../../includes/product-images.php';
+mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+include __DIR__ . '/../../config/dbconn.php';
 
 // ── Validate product ID ──────────────────────────────────────────────────
 $product_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
@@ -52,7 +54,7 @@ $sv->bind_param("i", $product_id);
 $sv->execute();
 $resV = $sv->get_result();
 while ($row = $resV->fetch_assoc()) {
-    $existingVariants[(int)$row['brand_id']] = ['price' => $row['price'], 'image' => $row['variant_image']];
+    $existingVariants[(int)$row['brand_id']] = ['price' => $row['price'], 'image' => $row['variant_image'], 'imageUrl' => product_image_url($row['variant_image'], $firstImage, $prod['imagePath'] ?? '')];
 }
 $sv->close();
 
@@ -108,7 +110,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     }
     if (empty($fallbackBrand)) $fallbackBrand = 'Package';
 
-    if (empty($displayName) || empty($category) || $pid <= 0) {
+    if (empty($displayName) || empty($category) || $pid <= 0 || $pid !== $product_id) {
         $msg = 'Please fill in all required fields.';
         $msgType = 'error';
     } else {
@@ -144,24 +146,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 if (!$selectedBrands) throw new RuntimeException('Select at least one variant brand.');
                 $conn->query("DELETE FROM product_brand_variants WHERE product_id=".$pid." AND brand_id NOT IN (".implode(',',$selectedBrands).")");
 
-                $uploadDir = "../../uploads/products/$pid/";
-                if (!is_dir($uploadDir)) mkdir($uploadDir, 0777, true);
-                $allowed = ['jpg','jpeg','png','webp'];
-
                 foreach ($brand_ids as $bid) {
                     $bid = (int)$bid;
                     $vPrice = (float)($brand_prices[$bid] ?? 0);
                     $imgPath = $existImg[$bid] ?? NULL;
 
                     $fk = 'brand_image_' . $bid;
-                    if (isset($_FILES[$fk]) && $_FILES[$fk]['error'] === 0) {
-                        $ext = strtolower(pathinfo($_FILES[$fk]['name'], PATHINFO_EXTENSION));
-                        if (in_array($ext, $allowed)) {
-                            $fname = "variant_{$bid}_" . uniqid() . ".$ext";
-                            if (move_uploaded_file($_FILES[$fk]['tmp_name'], $uploadDir . $fname)) {
-                                $imgPath = "uploads/products/$pid/$fname";
-                            }
-                        }
+                    if (isset($_FILES[$fk]) && $_FILES[$fk]['error'] !== UPLOAD_ERR_NO_FILE) {
+                        $imgPath = save_brand_product_image($_FILES[$fk], $pid, $bid);
                     }
 
                     $existing=$conn->query("SELECT id FROM product_brand_variants WHERE product_id=".$pid." AND brand_id=".$bid)->fetch_assoc();
@@ -179,7 +171,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 
             // ── Gallery images ───────────────────────────────────────────
             if (isset($_FILES['product-images']) && !empty($_FILES['product-images']['name'][0])) {
-                $uploadDir = "../../uploads/products/$pid/";
+                $uploadDir = __DIR__ . "/../../uploads/products/$pid/";
                 if (!is_dir($uploadDir)) mkdir($uploadDir, 0777, true);
                 $allowed = ['jpg','jpeg','png','gif','webp'];
                 foreach ($_FILES['product-images']['name'] as $i => $fname) {
@@ -897,7 +889,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                     </div>
                     <span style="font-size: 12px; color: #94a3b8; font-weight: 500;">No Image Uploaded</span>
                 </div>
-                <img id="carousel-image" src="<?= !empty($firstImage) ? '../../' . htmlspecialchars($firstImage) : '' ?>" alt="Preview" style="display: <?= !empty($firstImage) ? 'block' : 'none' ?>; width: 100%; height: 100%; object-fit: cover; border-radius: 12px;">
+                <img id="carousel-image" src="<?= !empty($firstImage) ? htmlspecialchars(product_image_url($firstImage), ENT_QUOTES, 'UTF-8') : '' ?>" alt="Preview" style="display: <?= !empty($firstImage) ? 'block' : 'none' ?>; width: 100%; height: 100%; object-fit: cover; border-radius: 12px;">
                 <button type="button" class="edit-carousel-nav edit-carousel-prev" onclick="movePreview(-1)" aria-label="Previous image">&#8249;</button>
                 <button type="button" class="edit-carousel-nav edit-carousel-next" onclick="movePreview(1)" aria-label="Next image">&#8250;</button>
                 <span class="edit-carousel-count" id="edit-image-count" aria-live="polite"></span>
@@ -965,7 +957,10 @@ quill.on('text-change', () => {
     hiddenDesc.value = (raw === '<p><br></p>') ? '' : raw;
 });
 
-let savedImages = <?= json_encode(array_values(array_unique(array_merge(array_column($galleryImages, 'image_path'), array_filter(array_column($existingVariants, 'image')), array_filter([$prod['imagePath'] ?? ''])))), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>.map(path => '../../' + path);
+<?php $savedImagePaths = array_values(array_unique(array_merge(array_column($galleryImages, 'image_path'), array_filter(array_column($existingVariants, 'image')), array_filter([$prod['imagePath'] ?? ''])))); ?>
+let savedImages = <?= json_encode($savedImagePaths, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+const savedImageUrls = <?= json_encode(array_combine($savedImagePaths, array_map(fn($path) => product_image_url($path), $savedImagePaths)), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+
 let addedImages = [];
 let addedFiles = [];
 const removedImages = new Set();
@@ -974,7 +969,7 @@ function renderPreviewImages() {
     const images = [...savedImages, ...addedImages];
     previewIndex = images.length ? (previewIndex + images.length) % images.length : 0;
     const image = document.getElementById('carousel-image');
-    if (images.length) image.src = images[previewIndex];
+    if (images.length) image.src = savedImageUrls[images[previewIndex]] || images[previewIndex];
     image.style.display = images.length ? 'block' : 'none';
     document.getElementById('carousel-placeholder-icon').style.display = images.length ? 'none' : 'flex';
     document.getElementById('edit-image-count').textContent = `${images.length ? previewIndex + 1 : 0} / ${images.length}`;
@@ -983,7 +978,7 @@ function renderPreviewImages() {
     grid.replaceChildren();
     images.forEach((src, index) => {
         const image = document.createElement('img');
-        image.src = src;
+        image.src = savedImageUrls[src] || src;
         image.alt = `Product image ${index + 1}`;
         const tile = document.createElement('div');
         tile.className = 'edit-image-tile';
@@ -994,7 +989,7 @@ function renderPreviewImages() {
         remove.setAttribute('aria-label', `Remove product image ${index + 1}`);
         remove.addEventListener('click', () => {
             if (index < savedImages.length) {
-                removedImages.add(savedImages[index].slice(6));
+                removedImages.add(savedImages[index]);
                 savedImages.splice(index, 1);
                 const fields = document.getElementById('removedImagesFields');
                 fields.replaceChildren();
@@ -1119,7 +1114,7 @@ function loadBrandChecklist(cat) {
                 const row = document.createElement('div');
                 row.className = 'brand-variant-row';
 
-                const thumbSrc = (exV && exV.image) ? `../../${exV.image}` : '';
+                const thumbSrc = (exV && exV.image) ? exV.imageUrl : '';
                 const exPrice  = exV ? exV.price : '';
 
                 row.innerHTML = `

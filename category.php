@@ -181,6 +181,9 @@ $category_links = [
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/png" href="assets/img/icon.png">
     <title><?= htmlspecialchars($active_category['title']) ?> | SolarPower Energy</title>
+<?php require_once __DIR__ . '/includes/seo.php';
+solar_seo_meta('/category?category=' . rawurlencode($category_key), solar_seo_text($active_category['title'].' from SolarPower Energy Corporation. '.$active_category['subtitle']), ['Home'=>'/', 'Products'=>'/product', $active_category['title']=>'/category?category='.rawurlencode($category_key)]); ?>
+
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="assets/style.css">

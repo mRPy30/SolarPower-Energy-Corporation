@@ -268,3 +268,5 @@
         }
     }
 </script>
+
+<?php include_once __DIR__ . '/sol-p.php'; ?>

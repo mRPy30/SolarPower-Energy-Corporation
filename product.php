@@ -64,6 +64,7 @@ if (!function_exists('renderProductCardTitle')) {
 }
 /* ---------- 1.  DB connection ---------- */
 include "config/dbconn.php";
+require_once __DIR__ . '/includes/product-images.php';
 
 
 /* ---------- 2.  Fetch products (safe) ---------- */
@@ -86,7 +87,9 @@ $sql = "SELECT
     COALESCE(
         pi.image_path,
         p.imagePath
-    ) AS image_path
+    ) AS image_path,
+    selected_variant.variant_image AS selected_variant_image,
+    p.imagePath AS general_image_path
 FROM product p
 LEFT JOIN (
     SELECT
@@ -103,6 +106,7 @@ LEFT JOIN (
     GROUP BY pbv.product_id
 ) v
     ON p.id = v.product_id
+LEFT JOIN product_brand_variants selected_variant ON selected_variant.id = v.variant_id
 LEFT JOIN (
     SELECT pi1.product_id, pi1.image_path
     FROM product_images pi1
@@ -122,6 +126,8 @@ if ($stmt) {
     $stmt->execute();
     $result = $stmt->get_result();
     while ($row = $result->fetch_assoc()) {
+        $row['fallback_image_path'] = product_image_url($row['image_path'], $row['general_image_path']);
+        $row['image_path'] = product_image_url($row['selected_variant_image'], $row['image_path'], $row['general_image_path']);
         $products[] = $row;
     }
     $stmt->close();
@@ -172,7 +178,8 @@ $conn->close();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/png" href="assets/img/icon.png">
-    <title>Solar Power Energy - Smart Energy for Smarter Homes</title>
+    <title>Solar Panels, Inverters & Batteries Philippines | SolarPower</title>
+<?php require_once __DIR__ . "/includes/seo.php"; solar_seo_meta('/product', 'Explore solar panels, inverters, battery storage and accessories from SolarPower Energy Corporation. Compare available products and prices in the Philippines.', ["Home"=>"/", 'Solar Panels, Inverters & Batteries Philippines'=>'/product']); ?>
     <!-- Bootstrap CSS -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome -->
@@ -1005,14 +1012,14 @@ $conn->close();
                             <!-- Clickable Product Image and Info -->
                             <div onclick="location.href='<?= htmlspecialchars($productDetailUrl) ?>'" style="cursor: pointer;">
                                 <div class="product-image">
-                                    <img src="<?= htmlspecialchars($p['image_path'] ?? 'assets/img/placeholder.png') ?>"
+                                    <img src="<?= htmlspecialchars($p['image_path']) ?>" onerror="this.onerror=null;this.src=<?= htmlspecialchars(json_encode($p['fallback_image_path']), ENT_QUOTES, 'UTF-8') ?>"
                                         alt="<?= htmlspecialchars($p['displayName']) ?>">
                                     <div class="product-badge"> <i class="fas fa-tag"></i> <?= htmlspecialchars($p['category']) ?></div>
                                 </div>
 
                             <div class="product-info">
                                     <div class="product-brand product-brand-list"><?= renderProductBrandChips($p['brandName']) ?></div>
-                                    <h3 class="product-name"><?= renderProductCardTitle($p['brandName'], $p['displayName']) ?></h3>
+                                    <h3 class="product-name"><a href="<?= htmlspecialchars($productDetailUrl, ENT_QUOTES, 'UTF-8') ?>" style="color:inherit;text-decoration:none"><?= renderProductCardTitle($p['brandName'], $p['displayName']) ?></a></h3>
                                     <div class="product-price">
                                         ₱<?= number_format($p['price'], 2) ?>
                                     </div>
@@ -1758,7 +1765,7 @@ $conn->close();
 
             html += `
             <div class="cart-item-row d-flex align-items-center gap-3 mb-3 pb-3 border-bottom">
-                <img src="${item.image_path}" 
+                <img src="${item.image_path}" alt=""
                      style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px;"
                      onerror="this.src='assets/img/placeholder.png'">
                 <div class="flex-grow-1">
@@ -2102,7 +2109,7 @@ $conn->close();
 
             html += `
             <div class="d-flex align-items-center gap-3 mb-3 border-bottom pb-3">
-                <img src="${item.image_path}" 
+                <img src="${item.image_path}" alt=""
                      style="width:60px; height:60px; object-fit:cover; border-radius:8px;"
                      onerror="this.src='assets/img/placeholder.png'">
                 <div class="flex-grow-1">

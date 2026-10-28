@@ -1,5 +1,6 @@
 <?php
 http_response_code(404);
+header('X-Robots-Tag: noindex');
 require_once __DIR__ . '/includes/routes.php';
 
 $homeUrl = clean_url('index.php');

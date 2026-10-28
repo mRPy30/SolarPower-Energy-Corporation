@@ -8421,6 +8421,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
         })();
 
         function inqOpen(msg) {
+            const escapedMessage = document.createElement('div');
+            escapedMessage.textContent = msg.message || '';
+            const messageHtml = escapedMessage.innerHTML.replace(/https:\/\/solarpower\.com\.ph\/controllers\/contact_attachment\.php\?file=([a-f0-9]{48})/g,
+                '<a href="../../controllers/contact_attachment.php?file=$1" target="_blank" rel="noopener">Download attachment</a>').replace(/\n/g, '<br>');
             var sc = { new: 'background:#fff3cd;color:#856404', read: 'background:#d1ecf1;color:#0c5460', replied: 'background:#d4edda;color:#155724' }[msg.status] || 'background:#eee;color:#333';
             var dt = new Date(msg.created_at);
             var dtStr = dt.toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' }) + ' at ' + dt.toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' });
@@ -8436,7 +8440,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 + '<span class="inq-badge" style="margin-left:auto;' + sc + '">' + msg.status.charAt(0).toUpperCase() + msg.status.slice(1) + '</span></div>'
                 + '<div class="inq-modal-info"><span><i class="fas fa-envelope"></i>' + msg.email + '</span>' + phone + '</div>'
                 + '<div class="inq-modal-msg"><label><i class="fas fa-comment" style="margin-right:6px;"></i>Message</label>'
-                + '<p>' + msg.message.replace(/\n/g, '<br>') + '</p></div>'
+                + '<p>' + messageHtml + '</p></div>'
                 + '<div class="inq-modal-footer">' + readBtn + replyBtn + '</div>';
 
             document.getElementById('inqOverlay').style.display = 'flex';

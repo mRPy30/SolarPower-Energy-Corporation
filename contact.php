@@ -821,7 +821,18 @@ unset($_SESSION['estimate_flash']);
                 <div class="col-lg-7">
                     <div class="contact-form-wrapper">
                         <h3 class="mb-4">Send us a Message</h3>
-                        <form class="contact-form" id="contactForm" method="POST" action="/controllers/contact_submit.php" onsubmit="submitContactForm(event)">
+                        <style>
+                            #contactSubmitBtn:disabled {
+                                background: #d1d5db !important;
+                                border-color: #d1d5db !important;
+                                color: #4b5563 !important;
+                                cursor: not-allowed;
+                                opacity: 1;
+                                box-shadow: none;
+                                transform: none;
+                            }
+                        </style>
+                        <form class="contact-form" id="contactForm" method="POST" enctype="multipart/form-data" action="/controllers/contact_submit.php" onsubmit="submitContactForm(event)">
                             <div class="row">
                                 <div class="col-md-6 mb-3">
                                     <input type="text" class="form-control" id="contact_name" name="name"
@@ -846,6 +857,12 @@ unset($_SESSION['estimate_flash']);
                                         placeholder="Your Message *" required></textarea>
                                 </div>
 
+                                <div class="col-12 mb-4">
+                                    <label for="contact_attachment" class="form-label">Attachment (optional)</label>
+                                    <input type="file" class="form-control" id="contact_attachment" name="attachment" accept=".pdf,.jpg,.jpeg,.png,.webp" aria-describedby="contact_attachment_help">
+                                    <small id="contact_attachment_help" class="text-muted">PDF, JPG, PNG, or WebP. Maximum 30 MB.</small>
+                                </div>
+
                                 <div class="col-12 mb-3">
                                     <label class="contact-privacy-notice" for="contact_privacy_consent">
                                         <input type="checkbox" id="contact_privacy_consent" name="privacy_consent" value="1" required>
@@ -858,7 +875,7 @@ unset($_SESSION['estimate_flash']);
                                 </div>
 
                                 <div class="col-12">
-                                    <button type="submit" class="btn-submit" id="contactSubmitBtn">
+                                    <button type="submit" class="btn-submit" id="contactSubmitBtn" disabled>
                                         <span class="btn-text">Send Message</span>
                                         <span class="btn-spinner d-none">
                                             <i class="fas fa-spinner fa-spin"></i> Sending...
@@ -1318,6 +1335,31 @@ unset($_SESSION['estimate_flash']);
     // handled by submitContactForm() called via onsubmit on the form
 }
 
+function updateContactSubmitState() {
+    const form = document.getElementById('contactForm');
+    const button = document.getElementById('contactSubmitBtn');
+    if (!form || !button) return;
+    const complete = Array.from(form.querySelectorAll('[required]')).every(field => {
+        if (field.type === 'checkbox') return field.checked;
+        return field.value.trim() !== '' && field.validity.valid;
+    });
+    button.disabled = form.dataset.submitting === 'true' || !complete;
+}
+function setupContactSubmitState() {
+    const form = document.getElementById('contactForm');
+    if (!form) return;
+    form.addEventListener('input', updateContactSubmitState);
+    form.addEventListener('change', updateContactSubmitState);
+    form.addEventListener('reset', () => setTimeout(updateContactSubmitState, 0));
+    window.addEventListener('pageshow', updateContactSubmitState);
+    updateContactSubmitState();
+}
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupContactSubmitState);
+} else {
+    setupContactSubmitState();
+}
+
 async function submitContactForm(event) {
     event.preventDefault();
 
@@ -1333,6 +1375,12 @@ async function submitContactForm(event) {
         return;
     }
 
+    const attachment = document.getElementById('contact_attachment').files[0];
+    if (attachment && attachment.size > 30 * 1024 * 1024) {
+        showNotificationModal('error', 'Attachment must not exceed 30 MB.');
+        return;
+    }
+
     // Combine +63 prefix with phone digits
     const phoneInput = document.getElementById('contact_phone');
     const phoneFullInput = document.getElementById('contact_phone_full');
@@ -1344,7 +1392,8 @@ async function submitContactForm(event) {
     // Show loading state
     btnText.classList.add('d-none');
     btnSpinner.classList.remove('d-none');
-    submitBtn.disabled = true;
+    form.dataset.submitting = 'true';
+        submitBtn.disabled = true;
 
     try {
         const formData = new FormData(form);
@@ -1382,7 +1431,8 @@ async function submitContactForm(event) {
         // Restore button state
         btnText.classList.remove('d-none');
         btnSpinner.classList.add('d-none');
-        submitBtn.disabled = false;
+        form.dataset.submitting = 'false';
+        updateContactSubmitState();
     }
 }
 

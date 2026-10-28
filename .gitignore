@@ -8,3 +8,4 @@ config/*.local.php
 *.zip
 *.rar
 *.7z
+/uploads/contact-private/

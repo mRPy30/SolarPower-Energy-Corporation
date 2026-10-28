@@ -66,6 +66,10 @@
             border-radius: 15px; margin-top: 50px;
         }
     </style>
+<?php
+    require_once __DIR__ . '/includes/seo.php';
+    solar_seo_json(['@context'=>'https://schema.org','@type'=>'Service','name'=>'Solar energy installation and technical services','url'=>'https://solarpower.com.ph/services','areaServed'=>['@type'=>'Country','name'=>'Philippines'],'provider'=>['@type'=>'Organization','@id'=>'https://solarpower.com.ph/#organization','name'=>'SolarPower Energy Corporation']]);
+    ?>
 </head>
 <body>
 

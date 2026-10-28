@@ -10,3 +10,12 @@ Disallow: /views/staff/
 Disallow: /controllers/
 Disallow: /config/
 Disallow: /vendor/
+
+Sitemap: https://solarpower.com.ph/sitemap-products.xml
+
+# Crawl exclusions are not access controls.
+Disallow: /dashboard
+Disallow: /staff/
+Disallow: /scratch/
+Disallow: /tests/
+Disallow: /uploads/contact-private/

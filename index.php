@@ -342,6 +342,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 
 $isLoggedIn = isset($_SESSION['user_id']);
 include "config/dbconn.php";
+require_once __DIR__ . '/includes/product-images.php';
 
 /* ---------- Fetch Calculator Settings ---------- */
 $calc_settings = [
@@ -407,14 +408,17 @@ $sql = "SELECT
     COALESCE(
         pi.image_path,
         p.imagePath
-    ) AS image_path
+    ) AS image_path,
+    selected_variant.variant_image AS selected_variant_image,
+    p.imagePath AS general_image_path
 FROM product p
 LEFT JOIN (
     SELECT
         pbv.product_id,
         GROUP_CONCAT(DISTINCT COALESCE(NULLIF(TRIM(b.brand_name), ''), NULLIF(TRIM(sb.brandName), '')) ORDER BY pbv.price ASC, pbv.id ASC SEPARATOR ', ') AS brand_names,
         MIN(pbv.price) AS min_price,
-        CAST(SUBSTRING_INDEX(GROUP_CONCAT(pbv.brand_id ORDER BY pbv.price ASC, pbv.id ASC), ',', 1) AS UNSIGNED) AS brand_id
+        CAST(SUBSTRING_INDEX(GROUP_CONCAT(pbv.brand_id ORDER BY pbv.price ASC, pbv.id ASC), ',', 1) AS UNSIGNED) AS brand_id,
+        CAST(SUBSTRING_INDEX(GROUP_CONCAT(pbv.id ORDER BY pbv.price ASC, pbv.id ASC), ',', 1) AS UNSIGNED) AS variant_id
     FROM product_brand_variants pbv
     LEFT JOIN supplier_brands sb
         ON pbv.brand_id = sb.id
@@ -423,6 +427,7 @@ LEFT JOIN (
     GROUP BY pbv.product_id
 ) v
     ON p.id = v.product_id
+LEFT JOIN product_brand_variants selected_variant ON selected_variant.id = v.variant_id
 LEFT JOIN (
     SELECT pi1.product_id, pi1.image_path
     FROM product_images pi1
@@ -443,6 +448,8 @@ if ($stmt) {
     $result = $stmt->get_result();
     while ($row = $result->fetch_assoc()) {
         // Add ALL products to the same array
+        $row['fallback_image_path'] = product_image_url($row['image_path'], $row['general_image_path']);
+        $row['image_path'] = product_image_url($row['selected_variant_image'], $row['image_path'], $row['general_image_path']);
         $products[] = $row;
     }
     $stmt->close();
@@ -520,8 +527,6 @@ $conn->close();
     <!-- Geo Tags -->
     <meta name="geo.region" content="PH" />
     <meta name="geo.placename" content="Metro Manila, Philippines" />
-    <meta name="geo.position" content="14.5995;120.9842" />
-    <meta name="ICBM" content="14.5995, 120.9842" />
     
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
@@ -543,43 +548,59 @@ $conn->close();
     
     <!-- Schema.org Structured Data -->
     <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
     {
-      "@context": "https://schema.org",
-      "@type": "LocalBusiness",
+      "@type": [
+        "Organization",
+        "LocalBusiness"
+      ],
+      "@id": "https://solarpower.com.ph/#organization",
       "name": "SolarPower Energy Corporation",
-      "alternateName": ["SolarPower Energy", "SolarPower PH"],
+      "url": "https://solarpower.com.ph/",
+      "logo": "https://solarpower.com.ph/assets/img/solarpower_energy_corp.png",
       "image": "https://solarpower.com.ph/assets/img/solarpower_energy_corp.png",
-      "url": "https://solarpower.com.ph",
-      "telephone": "+63-995-394-7379",
-      "description": "SolarPower Energy Corporation is the Philippines' leading DOE-accredited solar panel provider offering hybrid and on-grid solar installations for residential and commercial properties.",
+      "telephone": "+639953947379",
+      "email": "solar@solarpower.com.ph",
       "address": {
         "@type": "PostalAddress",
-        "addressLocality": "Metro Manila",
-        "addressRegion": "NCR",
+        "streetAddress": "4/F PBB Corporate Center, 1906 Finance Drive, Madrigal Business Park 1, Ayala Alabang",
+        "addressLocality": "Muntinlupa City",
+        "postalCode": "1780",
         "addressCountry": "PH"
-      },
-      "geo": {
-        "@type": "GeoCoordinates",
-        "latitude": 14.5995,
-        "longitude": 120.9842
       },
       "openingHoursSpecification": {
         "@type": "OpeningHoursSpecification",
-        "dayOfWeek": ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"],
+        "dayOfWeek": [
+          "Monday",
+          "Tuesday",
+          "Wednesday",
+          "Thursday",
+          "Friday",
+          "Saturday"
+        ],
         "opens": "08:00",
         "closes": "17:00"
       },
-      "serviceType": ["Solar Panel Installation", "Hybrid Solar System", "On-grid Solar System", "Residential Solar", "Commercial Solar", "Solar Maintenance"],
       "areaServed": {
         "@type": "Country",
         "name": "Philippines"
+      }
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://solarpower.com.ph/#website",
+      "url": "https://solarpower.com.ph/",
+      "name": "SolarPower Energy Corporation",
+      "publisher": {
+        "@id": "https://solarpower.com.ph/#organization"
       },
-      "hasCredential": "DOE Accredited Solar Provider",
-      "sameAs": [
-        "https://www.facebook.com/solarpowerenergycorp"
-      ]
+      "inLanguage": "en-PH"
     }
-    </script>
+  ]
+}
+</script>
     
     <!-- CSS Libraries -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
@@ -1527,8 +1548,8 @@ $conn->close();
                     <p>Invest in solar today - enjoy decades of energy independence and savings.</p>
                     <div class="hero-cta d-flex flex-row gap-3">
                         <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#inspectionModal" style="background-color: #F2A900 !important; border-color: #F2A900 !important; color: #000000 !important; font-weight: bold;">GET A FREE QUOTE</button>
-                        <a href="/loans" class="btn btn-secondary text-decoration-none d-inline-flex align-items-center justify-content-center" style="border: 2px solid #FFFFFF !important; color: #FFFFFF !important; font-weight: bold; background: transparent !important;">
-                            EXPLORE FINANCING
+                        <a href="#contact-us" class="btn btn-secondary text-decoration-none d-inline-flex align-items-center justify-content-center" style="border: 2px solid #FFFFFF !important; color: #FFFFFF !important; font-weight: bold; background: transparent !important;">
+                            Contact us now!
                         </a>
                     </div>
                 </div>
@@ -1830,7 +1851,7 @@ $conn->close();
                             <!-- Clickable Product Image and Info -->
                             <div onclick="location.href='/product-details/<?= createSlug($p['displayName']) ?>'" style="cursor: pointer;">
                                 <div class="product-image">
-                                    <img src="<?= htmlspecialchars($p['image_path'] ?? 'assets/img/placeholder.png') ?>"
+                                    <img src="<?= htmlspecialchars($p['image_path']) ?>" onerror="this.onerror=null;this.src=<?= htmlspecialchars(json_encode($p['fallback_image_path']), ENT_QUOTES, 'UTF-8') ?>"
                                         alt="<?= htmlspecialchars($p['displayName']) ?>">
                                     <div class="product-badge"> <i class="fas fa-tag"></i>
                                         <?= htmlspecialchars($p['category']) ?></div>
@@ -4317,7 +4338,18 @@ $conn->close();
                 <div class="col-lg-7" data-aos="fade-left">
                     <div class="contact-form-wrapper">
                         <h3 class="mb-4">Send us a Message</h3>
-                        <form class="contact-form" id="contactForm" method="POST" action="/controllers/contact_submit.php" onsubmit="submitContactForm(event)">
+                        <style>
+                            #contactSubmitBtn:disabled {
+                                background: #d1d5db !important;
+                                border-color: #d1d5db !important;
+                                color: #4b5563 !important;
+                                cursor: not-allowed;
+                                opacity: 1;
+                                box-shadow: none;
+                                transform: none;
+                            }
+                        </style>
+                        <form class="contact-form" id="contactForm" method="POST" enctype="multipart/form-data" action="/controllers/contact_submit.php" onsubmit="submitContactForm(event)">
                             <div class="row">
                                 <div class="col-md-6 mb-3">
                                     <input type="text" class="form-control" id="contact_name" name="name"
@@ -4343,6 +4375,10 @@ $conn->close();
                                 <div class="col-12 mb-4">
                                     <textarea class="form-control" id="contact_message" name="message" rows="6"
                                         placeholder="Your Message *" required></textarea>
+<label for="contact_attachment" class="mt-3">Attachment (optional)</label>
+<input type="file" class="form-control" id="contact_attachment" name="attachment" accept=".pdf,.jpg,.jpeg,.png,.webp" aria-describedby="contact_attachment_help">
+<small id="contact_attachment_help">PDF, JPG, PNG, or WebP. Maximum 30 MB.</small>
+
                                 </div>
 
                                 <div class="col-12 mb-3">
@@ -4360,7 +4396,7 @@ $conn->close();
                                 </div>
 
                                 <div class="col-12">
-                                    <button type="submit" class="btn-submit" id="contactSubmitBtn">
+                                    <button type="submit" class="btn-submit" id="contactSubmitBtn" disabled>
                                         <span class="btn-text">Send Message</span>
                                         <span class="btn-spinner d-none">
                                             <i class="fas fa-spinner fa-spin"></i> Sending...
@@ -5629,7 +5665,7 @@ $conn->close();
 
             html += `
             <div class="cart-item-row d-flex align-items-center gap-3 mb-3 pb-3 border-bottom">
-                <img src="${item.image_path}" 
+                <img src="${item.image_path}" alt=""
                      style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px;"
                      onerror="this.src='assets/img/placeholder.png'">
                 <div class="flex-grow-1">
@@ -5989,7 +6025,7 @@ $conn->close();
 
             html += `
             <div class="d-flex align-items-center gap-3 mb-3 border-bottom pb-3">
-                <img src="${item.image_path}" 
+                <img src="${item.image_path}" alt=""
                      style="width:60px; height:60px; object-fit:cover; border-radius:8px;"
                      onerror="this.src='assets/img/placeholder.png'">
                 <div class="flex-grow-1">
@@ -7206,7 +7242,32 @@ $conn->close();
         // handled by submitContactForm() called via onsubmit on the form
     }
 
-    async function submitContactForm(event) {
+    function updateContactSubmitState() {
+    const form = document.getElementById('contactForm');
+    const button = document.getElementById('contactSubmitBtn');
+    if (!form || !button) return;
+    const complete = Array.from(form.querySelectorAll('[required]')).every(field => {
+        if (field.type === 'checkbox') return field.checked;
+        return field.value.trim() !== '' && field.validity.valid;
+    });
+    button.disabled = form.dataset.submitting === 'true' || !complete;
+}
+function setupContactSubmitState() {
+    const form = document.getElementById('contactForm');
+    if (!form) return;
+    form.addEventListener('input', updateContactSubmitState);
+    form.addEventListener('change', updateContactSubmitState);
+    form.addEventListener('reset', () => setTimeout(updateContactSubmitState, 0));
+    window.addEventListener('pageshow', updateContactSubmitState);
+    updateContactSubmitState();
+}
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupContactSubmitState);
+} else {
+    setupContactSubmitState();
+}
+
+async function submitContactForm(event) {
         event.preventDefault();
 
         const form = document.getElementById('contactForm');
@@ -7221,6 +7282,10 @@ $conn->close();
             return;
         }
 
+        const attachment = document.getElementById('contact_attachment').files[0];
+        if (attachment && attachment.size > 30 * 1024 * 1024) {
+            showNotificationModal('error', 'Attachment must not exceed 30 MB.'); return;
+        }
         // Combine +639 prefix with phone digits
         const phoneInput = document.getElementById('contact_phone');
         const phoneFullInput = document.getElementById('contact_phone_full');
@@ -7232,6 +7297,7 @@ $conn->close();
         // Show loading state
         btnText.classList.add('d-none');
         btnSpinner.classList.remove('d-none');
+        form.dataset.submitting = 'true';
         submitBtn.disabled = true;
 
         try {
@@ -7271,7 +7337,8 @@ $conn->close();
             // Restore button state
             btnText.classList.remove('d-none');
             btnSpinner.classList.add('d-none');
-            submitBtn.disabled = false;
+            form.dataset.submitting = 'false';
+        updateContactSubmitState();
         }
     }
 
