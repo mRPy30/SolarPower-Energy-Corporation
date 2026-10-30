@@ -12,7 +12,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeNavbar();
     initializeFilters();
     initializeSorting();
-    initializeCarousel();
+    if (typeof initializeCarousel === 'function') initializeCarousel();
     initializeSubscription();
     setupCalculator();
 });

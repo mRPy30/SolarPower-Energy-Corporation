@@ -4429,6 +4429,52 @@ $conn->close();
         </div>
     </section>
 
+    <!-- Shared subscription handler; existing footer form remains available. -->
+    <style>
+        #subscribePopup .modal-dialog{max-width:760px;margin:24px auto;padding:12px;min-height:calc(100% - 48px)}
+        #subscribePopup .modal-content{border:0;border-radius:18px;overflow:hidden;background:white;box-shadow:0 20px 70px #0004}
+        #subscribePopup .subscribe-promo-layout{display:grid;grid-template-columns:44% 56%}
+        #subscribePopup .subscribe-promo-art{background:#ffdc49;position:relative;overflow:hidden;min-height:0}
+        #subscribePopup .subscribe-promo-art img{position:absolute;inset:0;display:block;width:100%;height:100%;object-fit:cover;object-position:center}
+        #subscribePopup .subscribe-promo-copy{padding:48px 32px 28px;align-self:center;color:#163c2b}
+        #subscribePopup .subscribe-promo-kicker{font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
+        #subscribePopupTitle{font-size:28px;font-weight:700;line-height:1.2;color:#0d5c3a;margin:12px 0 16px}
+        #subscribePopup .subscribe-promo-close{position:absolute;right:12px;top:12px;background:#fff;border:1px solid #ddd;border-radius:50%;width:36px;height:36px;font-size:24px;line-height:1;color:#163c2b;z-index:1}
+        #subscribePopup .subscribe-promo-submit{background:#f2a900;color:#171717;border:0;border-radius:10px;min-height:46px;font-weight:700;width:100%}
+        @media(max-width:575px){
+            #subscribePopup .modal-dialog{width:auto;max-width:none;margin:12px; padding:0;min-height:calc(100% - 24px)}
+            #subscribePopup .modal-content{max-height:calc(100vh - 24px);max-height:calc(100dvh - 24px);overflow-y:auto}
+            #subscribePopup .subscribe-promo-layout{display:flex;flex-direction:column;min-width:0}
+            #subscribePopup .subscribe-promo-art{width:100%;height:190px;min-height:190px;max-height:none;aspect-ratio:auto;flex:none}
+            #subscribePopup .subscribe-promo-art img{width:100%;height:100%;object-fit:cover;object-position:center 40%}
+            #subscribePopup .subscribe-promo-copy{width:100%;box-sizing:border-box;padding:20px;min-width:0}
+            #subscribePopupTitle{margin:8px 0 12px;font-size:24px}
+            #subscribePopup .subscribe-promo-close{background:#fff;box-shadow:0 2px 8px #0002}
+        }
+    </style>
+    <div class="modal fade" id="subscribePopup" tabindex="-1" aria-labelledby="subscribePopupTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <button type="button" class="subscribe-promo-close" data-bs-dismiss="modal" aria-label="Close subscription popup">×</button>
+                <div class="subscribe-promo-layout">
+                    <div class="subscribe-promo-art"><img src="<?= htmlspecialchars(asset_url('assets/img/subscribe-solar-promo.png'), ENT_QUOTES, 'UTF-8') ?>" alt="SolarPower: Smart Energy for Smarter Homes. Get a free ocular visit." width="556" height="816"></div>
+                    <div class="subscribe-promo-copy">
+                        <div class="subscribe-promo-kicker">A brighter start with solar</div>
+                        <h2 id="subscribePopupTitle">Solar Tips &amp; Updates</h2>
+                        <p>Join the SolarPower community. Get solar tips, product news, and updates delivered to your inbox.</p>
+                        <form id="subscribePopupForm">
+                            <label for="subscribePopupEmail" class="form-label">Email address</label>
+                            <input id="subscribePopupEmail" type="email" name="email" class="form-control mb-3" autocomplete="email" placeholder="you@example.com" required maxlength="254">
+                            <button type="submit" class="subscribe-promo-submit">Subscribe now</button>
+                        </form>
+                        <div id="subscribePopupMessage" class="mt-3 d-none" role="status" aria-live="polite"></div>
+                        <button type="button" class="btn btn-link w-100 mt-2" style="color:#0D5C3A;" data-bs-dismiss="modal">Maybe later</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Contact Success Modal -->
     <div class="modal fade" id="contactSuccessModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
@@ -5221,206 +5267,14 @@ $conn->close();
     // 1. GLOBAL VARIABLES & INITIALIZATION
     // ============================================
     let cart = [];
-
-    document.addEventListener('DOMContentLoaded', function() {
-        console.log('🚀 Solar Power System Initialized');
-
-        // Initialize all modules
-        initializeCart();
-        initializeFilters();
-        initializeSort();
-        initializeCheckout();
-        initializeSubscription();
-        initializeContactForm();
-        initializeInspectionForm();
-        setupCalculator();
-
-        console.log('✅ All modules loaded successfully');
-    });
-
-    // ============================================
-    // 2. CART MANAGEMENT
-    // ============================================
-
-    function initializeCart() {
-        console.log('📦 Initializing cart system...');
-        loadCartFromMemory();
-        updateCartBadge();
-                                Deliveries by Region
-                            </div>
-
-                            <!-- Sector 1: Metro Manila -->
-                            <div class="dfm-sector">Metro Manila &amp; Adjacent Hubs</div>
-
-                            <div class="dfm-price-row">
-                                <span class="dfm-badge">1 – 5 km</span>
-                                <span class="dfm-price">₱2,000</span>
-                            </div>
-                            <div class="dfm-price-row">
-                                <span class="dfm-badge">6 – 10 km</span>
-                                <span class="dfm-price">₱2,500</span>
-                            </div>
-                            <div class="dfm-price-row">
-                                <span class="dfm-badge">11 – 20 km</span>
-                                <span class="dfm-price">₱4,000</span>
-                            </div>
-                            <div class="dfm-price-row">
-                                <span class="dfm-badge">21 – 30 km</span>
-                                <span class="dfm-price">₱6,000</span>
-                            </div>
-
-                            <!-- Sector 2: Provincial Luzon -->
-                            <div class="dfm-sector" style="margin-top:20px;">Provincial Luzon Operations</div>
-
-                            <div style="font-size:0.7rem;font-weight:700;color:#9CA3AF;text-transform:uppercase;letter-spacing:0.6px;padding:0 10px 4px;margin-bottom:2px;">South Luzon</div>
-                            <div class="dfm-province-row">
-                                <span class="dfm-province-name">Cavite</span>
-                                <span class="dfm-province-price">₱4,200</span>
-                            </div>
-                            <hr class="dfm-sub-divider">
-                            <div class="dfm-province-row">
-                                <span class="dfm-province-name">Laguna</span>
-                                <span class="dfm-province-price">₱6,000</span>
-                            </div>
-                            <hr class="dfm-sub-divider">
-                            <div class="dfm-province-row">
-                                <span class="dfm-province-name">Batangas</span>
-                                <span class="dfm-province-price">₱8,500</span>
-                            </div>
-                            <hr class="dfm-sub-divider">
-                            <div class="dfm-province-row">
-                                <span class="dfm-province-name">Rizal</span>
-                                <span class="dfm-province-price">₱7,000</span>
-                            </div>
-
-                            <div style="font-size:0.7rem;font-weight:700;color:#9CA3AF;text-transform:uppercase;letter-spacing:0.6px;padding:14px 10px 4px;margin-bottom:2px;">North Luzon</div>
-                            <div class="dfm-province-row">
-                                <span class="dfm-province-name">Bulacan</span>
-                                <span class="dfm-province-price">₱7,000</span>
-                            </div>
-                            <hr class="dfm-sub-divider">
-                            <div class="dfm-province-row">
-                                <span class="dfm-province-name">Pampanga</span>
-                                <span class="dfm-province-price">₱10,000</span>
-                            </div>
-                            <hr class="dfm-sub-divider">
-                            <div class="dfm-province-row">
-                                <span class="dfm-province-name">Tarlac</span>
-                                <span class="dfm-province-price">₱10,000</span>
-                            </div>
-
-                            <!-- Vismin Alert -->
-                            <div class="dfm-vismin-alert">
-                                <strong>🗺 Visayas &amp; Mindanao</strong>
-                                Shipping costs may vary due to cargo weight and distance. Please contact us for a custom cargo quote.
-                            </div>
-                        </div>
-
-                        <!-- ── DIVIDER ── -->
-                        <div class="dfm-divider"></div>
-
-                        <!-- ── RIGHT: INSTALLATION ── -->
-                        <div class="dfm-col">
-                            <div class="dfm-col-title">
-                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0D5C3A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
-                                Comprehensive Installation Rates
-                            </div>
-
-                            <!-- Card A: Grid-tie & Hybrid -->
-                            <div class="dfm-install-card primary">
-                                <div class="dfm-install-card-label">
-                                    <svg width="10" height="10" viewBox="0 0 10 10" fill="#F2A900"><circle cx="5" cy="5" r="5"/></svg>
-                                    &nbsp;Grid-tie &amp; Hybrid Systems
-                                </div>
-                                <div class="dfm-install-card-name">Complete Solar Package Install</div>
-                                <div class="dfm-install-fee">
-                                    <span class="dfm-install-fee-label">Installation Fee</span>
-                                    <span class="dfm-install-fee-value">₱2,000</span>
-                                </div>
-                            </div>
-
-                            <!-- Card B: Other Components -->
-                            <div class="dfm-install-card secondary">
-                                <div class="dfm-install-card-label">
-                                    <svg width="10" height="10" viewBox="0 0 10 10" fill="#D1D5DB"><circle cx="5" cy="5" r="5"/></svg>
-                                    &nbsp;Other Components &amp; Products
-                                </div>
-                                <div class="dfm-install-card-name">Individual Component Supply</div>
-                                <div class="dfm-install-fee">
-                                    <span class="dfm-install-fee-label">Installation</span>
-                                    <span class="dfm-install-fee-value free">FREE</span>
-                                </div>
-                            </div>
-
-                            <!-- What's Included Checklist -->
-                            <div class="dfm-checklist-title">What's Included in Installation</div>
-
-                            <div class="dfm-check-item">
-                                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="8" fill="#0D5C3A" fill-opacity="0.1"/><path d="M4.5 8l2.5 2.5 4.5-5" stroke="#0D5C3A" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                                Professional deployment by certified grid technicians
-                            </div>
-                            <div class="dfm-check-item">
-                                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="8" fill="#0D5C3A" fill-opacity="0.1"/><path d="M4.5 8l2.5 2.5 4.5-5" stroke="#0D5C3A" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                                System testing and utility net-metering optimization
-                            </div>
-                            <div class="dfm-check-item">
-                                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="8" fill="#0D5C3A" fill-opacity="0.1"/><path d="M4.5 8l2.5 2.5 4.5-5" stroke="#0D5C3A" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                                Basic administrative training on system operation
-                            </div>
-                            <div class="dfm-check-item">
-                                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="8" fill="#0D5C3A" fill-opacity="0.1"/><path d="M4.5 8l2.5 2.5 4.5-5" stroke="#0D5C3A" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                                1-year comprehensive installation warranty
-                            </div>
-                        </div>
-
-                    </div>
-                </div>
-
-                <!-- ── FOOTER ── -->
-                <div class="dfm-footer">
-                    <span class="dfm-footer-note">
-                        <svg width="12" height="12" viewBox="0 0 16 16" fill="none" style="margin-right:4px;vertical-align:middle;"><circle cx="8" cy="8" r="7" stroke="#9CA3AF" stroke-width="1.5"/><path d="M8 7v5M8 5.5v.5" stroke="#9CA3AF" stroke-width="1.5" stroke-linecap="round"/></svg>
-                        All prices are exclusive of VAT. Subject to change without prior notice.
-                    </span>
-                    <button class="dfm-footer-btn" data-bs-dismiss="modal">Got it, Close</button>
-                </div>
-
-            </div>
-        </div>
-    </div>
-
-
-
-
-
-    <!-- Bootstrap JS Bundle -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
-    <!-- AOS Animation -->
-    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
-    <script>
-        AOS.init({
-            duration: 1000,
-            once: true,
-            offset: 100
-        });
-    </script>
-
-</body>
-<script src="assets/script.js"></script>
-<script>
-    // ============================================
-    // SOLAR POWER E-COMMERCE - ORGANIZED JAVASCRIPT
-    // ============================================
-
-    // ============================================
-    // 1. GLOBAL VARIABLES & INITIALIZATION
-    // ============================================
-    let cart = [];
     let activeCatalogCategory = 'all';
     let catalogSearchQuery = '';
 
     document.addEventListener('DOMContentLoaded', function() {
         console.log('🚀 Solar Power System Initialized');
+
+        // Show the subscription offer before initializing other page modules.
+        initializeSubscription();
 
         // Initialize all modules
         initializeCart();
@@ -5428,7 +5282,6 @@ $conn->close();
         initializeSearchFilter();
         initializeSort();
         initializeCheckout();
-        initializeSubscription();
         initializeContactForm();
         initializeInspectionForm();
         setupCalculator();
@@ -7190,9 +7043,18 @@ $conn->close();
     }
 
     function initializeSubscription() {
-        const form = document.getElementById('subscribeForm');
-        const msgDiv = document.getElementById('subscribeMessage');
-        if (!form) return;
+        const popup = document.getElementById('subscribePopup');
+        if (!popup) return;
+        // Show once per page load; a previous dismissal must not suppress a new visit.
+        if (window.bootstrap?.Modal) {
+            bootstrap.Modal.getOrCreateInstance(popup).show();
+        }
+        popup.addEventListener('shown.bs.modal', () => document.getElementById('subscribePopupEmail').focus());
+        for (const [formId, messageId] of [['subscribeForm','subscribeMessage'], ['subscribePopupForm','subscribePopupMessage']]) {
+        const form = document.getElementById(formId);
+        const msgDiv = document.getElementById(messageId);
+        if (!form || form.dataset.subscriptionReady) continue;
+        form.dataset.subscriptionReady = 'true';
 
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -7200,7 +7062,7 @@ $conn->close();
             const submitBtn = form.querySelector('button[type="submit"]');
             const email = emailInput.value.trim();
 
-            if (!email) return;
+            if (!email || !form.reportValidity() || submitBtn.disabled) return;
 
             // Simple UI loading state
             submitBtn.disabled = true;
@@ -7236,6 +7098,7 @@ $conn->close();
                 }, 5000);
             }
         });
+        }
     }
 
     function initializeContactForm() {

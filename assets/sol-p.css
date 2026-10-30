@@ -1,22 +1,102 @@
-.solp-assistant{position:fixed;width:108px;height:144px;z-index:1051;pointer-events:none}
+.solp-assistant{position:fixed;width:114px;height:152px;z-index:1051;pointer-events:none}
 .solp-assistant[hidden],.solp-greeting[hidden]{display:none!important}
 .solp-button{display:block;width:100%;height:100%;padding:0;border:0;background:transparent;cursor:pointer;pointer-events:auto;touch-action:manipulation;border-radius:24px}
 .solp-button:focus-visible{outline:3px solid #e9ad00;outline-offset:3px}
-.solp-body,.solp-sprite{display:block;width:100%;height:100%}
-.solp-body{animation:solp-float 3.6s ease-in-out infinite;transform-origin:50% 90%}
-.solp-sprite{background:url('img/sol-p/sol-p-sprite.webp') 0 0/400% 100% no-repeat;animation:solp-blink 7s steps(1,end) infinite}
+.solp-body{display:block;width:100%;height:100%;animation:solp-float 3.6s ease-in-out infinite;transform-origin:50% 90%}
+
+/* Multi-Channel Dock - Middle right edge */
+.floating-chat-dock-container{top:50%;bottom:auto;right:12px;transform:translateY(-50%)}
+.floating-chat-dock{box-sizing:border-box;width:57px;padding:8px 6px;gap:8px}
+.floating-chat-tooltip{display:none!important}
+
+/* Articulated Mascot Rig */
+.solp-rig{position:relative;display:block;width:100%;height:100%}
+.solp-part{position:absolute;inset:0;background:url('img/sol-p/sol-p-sprite.webp') 0 0/400% 100% no-repeat}
+.solp-head{clip-path:polygon(0 0,100% 0,100% 52%,0 52%);transform-origin:50% 51%;animation:solp-head-idle 4.7s ease-in-out infinite}
+.solp-head::after{content:'';position:absolute;inset:0;background:url('img/sol-p/sol-p-sprite.webp') 0 0/400% 100% no-repeat;clip-path:polygon(24% 30%,76% 30%,76% 48%,24% 48%);animation:solp-face 8.3s steps(1,end) infinite;pointer-events:none}
+.solp-torso{clip-path:polygon(33% 52%,66% 52%,74% 76%,26% 76%);transform-origin:50% 75%;animation:solp-torso-idle 3.6s ease-in-out infinite}
+.solp-arm-left{clip-path:polygon(0 52%,33% 52%,26% 76%,0 80%);transform-origin:30% 55%;animation:solp-arm-idle 3.6s ease-in-out infinite}
+.solp-arm-right{clip-path:polygon(66% 52%,100% 52%,100% 80%,74% 76%);transform-origin:70% 55%;animation:solp-arm-idle 3.6s ease-in-out infinite reverse}
+.solp-leg-left{clip-path:polygon(0 76%,50% 76%,50% 100%,0 100%);transform-origin:40% 77%;animation:solp-step 3.6s ease-in-out infinite}
+.solp-leg-right{clip-path:polygon(50% 76%,100% 76%,100% 100%,50% 100%);transform-origin:60% 77%;animation:solp-step 3.6s ease-in-out infinite reverse}
+
+/* Idle Animations */
+@keyframes solp-float{0%,100%{transform:translateY(0) rotate(-1deg)}50%{transform:translateY(-6px) rotate(1deg)}}
+@keyframes solp-head-idle{0%,100%{transform:rotate(-2deg)}50%{transform:rotate(2deg) translateY(-1px)}}
+@keyframes solp-face{0%,34%,39%,73%,81%,100%{background-position:0 0}35%,38%{background-position:33.333333% 0}74%,80%{background-position:100% 0}}
+@keyframes solp-torso-idle{0%,100%{transform:rotate(-1deg)}50%{transform:rotate(1deg)}}
+@keyframes solp-arm-idle{0%,100%{transform:rotate(-3deg)}50%{transform:rotate(5deg)}}
+@keyframes solp-step{0%,100%{transform:rotate(-1deg)}50%{transform:rotate(2deg) translateY(-1px)}}
+
+/* Hover Cheer / Jump Animation */
 .solp-button.is-excited .solp-body{animation:solp-jump 950ms ease-in-out}
-.solp-button.is-excited .solp-sprite{animation:solp-celebrate 950ms steps(1,end);background-position:0 0}
-.solp-greeting{position:fixed;box-sizing:border-box;z-index:1052;width:280px;padding:17px 32px 16px 18px;border:1px solid #d5e6db;border-top:3px solid #ffc20a;border-radius:16px;background:#fff;color:#164d36;box-shadow:0 6px 22px #143b2526;font:14px/1.5 'Segoe UI',sans-serif;animation:solp-appear 180ms ease-out}
+.solp-button.is-excited .solp-arm-left{animation:solp-left-cheer 950ms ease-in-out}
+.solp-button.is-excited .solp-arm-right{animation:solp-right-cheer 950ms ease-in-out}
+.solp-button.is-excited .solp-head{animation:solp-head-idle 950ms ease-in-out}
+.solp-button.is-excited .solp-head::after{background-position:33.333333% 0;animation:none}
+@keyframes solp-jump{0%,100%{transform:translateY(0)}15%{transform:translateY(2px)}45%{transform:translateY(-27px) rotate(-4deg)}68%{transform:translateY(1px)}82%{transform:translateY(-7px)}}
+@keyframes solp-left-cheer{0%,100%{transform:rotate(0)}35%,70%{transform:rotate(170deg)}}
+@keyframes solp-right-cheer{0%,100%{transform:rotate(0)}35%,70%{transform:rotate(-170deg)}}
+
+/* Automatic Waving Animation */
+.solp-button.is-waving .solp-arm-right{animation:solp-hand-wave 2.2s ease-in-out}
+.solp-button.is-waving .solp-body{animation:solp-wave-body 2.2s ease-in-out}
+@keyframes solp-hand-wave{0%,100%{transform:rotate(0)}20%,45%,70%{transform:rotate(-140deg)}32%,57%,82%{transform:rotate(-110deg)}}
+@keyframes solp-wave-body{0%,100%{transform:rotate(0)}25%,75%{transform:rotate(-4deg)}50%{transform:rotate(4deg)}}
+
+/* Tablet Gadget-Assist Animation */
+.solp-tablet{position:absolute;left:28%;top:57%;width:44%;height:22%;box-sizing:border-box;border:3px solid #f4fff8;border-radius:5px;background:#074f36;box-shadow:0 2px 4px #003b3255;opacity:0;transform:translateY(14px) rotate(-8deg) scale(.85);z-index:2;pointer-events:none}
+.solp-tablet span{position:absolute;inset:3px;background:repeating-linear-gradient(90deg,transparent 0 23%,#a6d8ba 24% 26%,transparent 27% 49%),repeating-linear-gradient(0deg,#126447 0 30%,#a6d8ba 31% 34%)}
+.solp-button.is-assisting .solp-tablet{animation:solp-present 6.2s ease-in-out}
+.solp-button.is-assisting .solp-arm-left{z-index:3;animation:solp-hold-left 6.2s ease-in-out}
+.solp-button.is-assisting .solp-arm-right{z-index:3;animation:solp-hold-right 6.2s ease-in-out}
+@keyframes solp-present{0%,100%{opacity:0;transform:translateY(14px) rotate(-8deg)}12%,88%{opacity:1;transform:translateY(0) rotate(-8deg)}}
+@keyframes solp-hold-left{0%,100%{transform:rotate(0)}12%,88%{transform:rotate(-35deg)}}
+@keyframes solp-hold-right{0%,100%{transform:rotate(0)}12%,88%{transform:rotate(35deg)}}
+
+/* Greeting Bubble */
+.solp-greeting{position:fixed;box-sizing:border-box;z-index:1052;width:280px;padding:17px 32px 16px 18px;border:1px solid #d5e6db;border-top:3px solid #ffc20a;border-radius:16px;background:#fff;color:#164d36;box-shadow:0 6px 22px #143b2526;font:14px/1.5 'Segoe UI',sans-serif;transform-origin:bottom right;animation:solp-pop .3s ease-out}
 .solp-greeting p{margin:0;color:inherit;font:inherit}
 .solp-close{position:absolute;right:2px;top:2px;width:32px;height:32px;border:0;border-radius:50%;background:transparent;color:#164d36;font-size:22px;cursor:pointer}
 .solp-chat{margin-top:12px;padding:9px 12px;min-height:40px;border:0;border-radius:8px;background:#075b3c;color:white;font:600 13px 'Segoe UI',sans-serif;cursor:pointer}
 .solp-chat[hidden]{display:none}
-@keyframes solp-float{0%,100%{transform:translateY(0) rotate(-1deg)}50%{transform:translateY(-6px) rotate(1deg)}}
-@keyframes solp-blink{0%,43%,48%,100%{background-position:0 0}44%,47%{background-position:33.333333% 0}}
-@keyframes solp-jump{0%{transform:translateY(0) scale(1)}15%{transform:translateY(1px) scale(1.04,.96)}45%{transform:translateY(-18px) rotate(-4deg)}68%{transform:translateY(0) scale(1.06,.94)}82%{transform:translateY(-5px)}100%{transform:translateY(0)}}
-@keyframes solp-celebrate{0%,12%{background-position:0 0}13%,66%{background-position:66.666667% 0}67%,100%{background-position:100% 0}}
-@keyframes solp-appear{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
-@media(max-width:576px){.solp-assistant{width:84px;height:112px}.solp-greeting{font-size:13px;padding:14px 28px 14px 14px}}
-@media(max-height:450px){.solp-assistant{width:60px;height:80px}}
-@media(prefers-reduced-motion:reduce){.solp-body,.solp-sprite,.solp-button.is-excited .solp-body,.solp-button.is-excited .solp-sprite,.solp-greeting{animation:none!important;transition:none!important}}
+.solp-greeting.is-leaving{animation:solp-dismiss .22s ease-in forwards;pointer-events:none}
+@keyframes solp-pop{from{opacity:0;transform:translateY(8px) scale(.92)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes solp-dismiss{to{opacity:0;transform:translateY(5px) scale(.96)}}
+
+/* Responsive */
+@media(max-width:576px){
+  .floating-chat-dock-container{right:8px;transform:translateY(-50%)}
+  .floating-chat-dock{width:48px;padding:6px 3px;gap:6px}
+  .floating-chat-dock .chat-channel{width:40px;height:40px}
+  .solp-assistant{width:78px;height:104px}
+  .solp-greeting{font-size:13px;padding:14px 28px 14px 14px}
+}
+@media(max-height:450px){
+  .solp-assistant{width:54px;height:72px}
+}
+
+/* Reduced Motion */
+@media(prefers-reduced-motion:reduce){
+  .solp-body,.solp-part,.solp-head::after,.solp-button.is-excited .solp-body,.solp-button.is-excited .solp-part,.solp-button.is-excited .solp-head::after,.solp-button.is-waving .solp-body,.solp-button.is-waving .solp-part,.solp-button.is-assisting .solp-part,.solp-greeting{animation:none!important;transition:none!important}
+  .solp-button.is-assisting .solp-tablet{animation:none;opacity:1;transform:rotate(-8deg)}
+}
+/* Pointer capture allows the same grab interaction on touch, pen and mouse. */
+.solp-button{touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;cursor:grab}
+.solp-button.is-held{cursor:grabbing}
+.solp-assistant.is-returning{transition:left .42s cubic-bezier(.22,.8,.3,1),top .42s cubic-bezier(.22,.8,.3,1)}
+.solp-button.is-held .solp-body{animation:solp-dangle 1.2s ease-in-out infinite;transform-origin:50% 25%}
+.solp-button.is-held .solp-arm-left{animation:none;transform:rotate(170deg)}
+.solp-button.is-held .solp-arm-right{animation:none;transform:rotate(-170deg)}
+.solp-button.is-held .solp-head{animation:none;background-position:33.333333% 0}
+@keyframes solp-dangle{0%,100%{transform:rotate(-5deg)}50%{transform:rotate(5deg)}}
+@media(prefers-reduced-motion:reduce){.solp-assistant.is-returning{transition:none}.solp-button.is-held .solp-body{animation:none}}
+/* Complete poses avoid torn shoulder seams from rotating raster cutouts. */
+.solp-body{position:relative}
+.solp-whole-pose{display:none;position:absolute;inset:0;background:url('img/sol-p/sol-p-hello-cling.webp') 0 50%/200% 100% no-repeat}
+.solp-button.is-held .solp-rig,.solp-button.is-hello .solp-rig{visibility:hidden}
+.solp-button.is-held .solp-whole-pose,.solp-button.is-hello .solp-whole-pose{display:block}
+.solp-button.is-held .solp-whole-pose{background-position:100% 50%}
+.solp-button.is-hello .solp-body{animation:solp-hello 2.1s ease-in-out 2}
+@keyframes solp-hello{0%,100%{transform:rotate(0) translateY(0)}35%{transform:rotate(-4deg) translateY(-3px)}65%{transform:rotate(3deg) translateY(-2px)}}
+@media(prefers-reduced-motion:reduce){.solp-button.is-hello .solp-body{animation:none}}
