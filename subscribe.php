@@ -40,7 +40,7 @@ try {
     $checkStmt = $db->prepare("SELECT `id` FROM `subscribers` WHERE `email` = ?");
     $checkStmt->execute([$email]);
     if ($checkStmt->fetch()) {
-        echo json_encode(['success' => false, 'message' => 'This email is already subscribed.']);
+        echo json_encode(['success' => false, 'already_subscribed' => true, 'message' => 'This email is already subscribed. Thank you!']);
         exit;
     }
 

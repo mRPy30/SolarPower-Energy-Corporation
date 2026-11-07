@@ -4431,11 +4431,12 @@ $conn->close();
 
     <!-- Shared subscription handler; existing footer form remains available. -->
     <style>
-        #subscribePopup .modal-dialog{max-width:760px;margin:24px auto;padding:12px;min-height:calc(100% - 48px)}
+        #subscribePopup .modal-dialog{width:calc(100% - 32px);max-width:920px;margin:24px auto;padding:12px;min-height:calc(100% - 48px)}
         #subscribePopup .modal-content{border:0;border-radius:18px;overflow:hidden;background:white;box-shadow:0 20px 70px #0004}
         #subscribePopup .subscribe-promo-layout{display:grid;grid-template-columns:44% 56%}
         #subscribePopup .subscribe-promo-art{background:#ffdc49;position:relative;overflow:hidden;min-height:0}
-        #subscribePopup .subscribe-promo-art img{position:absolute;inset:0;display:block;width:100%;height:100%;object-fit:cover;object-position:center}
+        #subscribePopup .subscribe-promo-art picture{display:block}
+        #subscribePopup .subscribe-promo-art img{display:block;width:100%;height:auto;object-fit:contain;object-position:center}
         #subscribePopup .subscribe-promo-copy{padding:48px 32px 28px;align-self:center;color:#163c2b}
         #subscribePopup .subscribe-promo-kicker{font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
         #subscribePopupTitle{font-size:28px;font-weight:700;line-height:1.2;color:#0d5c3a;margin:12px 0 16px}
@@ -4446,7 +4447,7 @@ $conn->close();
             #subscribePopup .modal-content{max-height:calc(100vh - 24px);max-height:calc(100dvh - 24px);overflow-y:auto}
             #subscribePopup .subscribe-promo-layout{display:flex;flex-direction:column;min-width:0}
             #subscribePopup .subscribe-promo-art{width:100%;height:190px;min-height:190px;max-height:none;aspect-ratio:auto;flex:none}
-            #subscribePopup .subscribe-promo-art img{width:100%;height:100%;object-fit:cover;object-position:center 40%}
+            #subscribePopup .subscribe-promo-art img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 40%}
             #subscribePopup .subscribe-promo-copy{width:100%;box-sizing:border-box;padding:20px;min-width:0}
             #subscribePopupTitle{margin:8px 0 12px;font-size:24px}
             #subscribePopup .subscribe-promo-close{background:#fff;box-shadow:0 2px 8px #0002}
@@ -4457,7 +4458,10 @@ $conn->close();
             <div class="modal-content">
                 <button type="button" class="subscribe-promo-close" data-bs-dismiss="modal" aria-label="Close subscription popup">×</button>
                 <div class="subscribe-promo-layout">
-                    <div class="subscribe-promo-art"><img src="<?= htmlspecialchars(asset_url('assets/img/subscribe-solar-promo.png'), ENT_QUOTES, 'UTF-8') ?>" alt="SolarPower: Smart Energy for Smarter Homes. Get a free ocular visit." width="556" height="816"></div>
+                    <div class="subscribe-promo-art"><picture>
+                        <source media="(max-width: 575px)" srcset="<?= htmlspecialchars(asset_url('assets/img/subscribe-solar-promo-mobile.png'), ENT_QUOTES, 'UTF-8') ?>">
+                        <img src="<?= htmlspecialchars(asset_url('assets/img/subscribe-solar-promo.png'), ENT_QUOTES, 'UTF-8') ?>" alt="SolarPower: Smart Energy for Smarter Homes. Get a free ocular visit." width="556" height="816">
+                    </picture></div>
                     <div class="subscribe-promo-copy">
                         <div class="subscribe-promo-kicker">A brighter start with solar</div>
                         <h2 id="subscribePopupTitle">Solar Tips &amp; Updates</h2>
@@ -7045,8 +7049,11 @@ $conn->close();
     function initializeSubscription() {
         const popup = document.getElementById('subscribePopup');
         if (!popup) return;
-        // Show once per page load; a previous dismissal must not suppress a new visit.
-        if (window.bootstrap?.Modal) {
+        // Dismissal alone does not suppress future visits; confirmed subscribers do.
+        const subscribedKey = 'solarpower-subscription-confirmed';
+        let alreadySubscribed = false;
+        try { alreadySubscribed = localStorage.getItem(subscribedKey) === '1'; } catch (_) {}
+        if (!alreadySubscribed && window.bootstrap?.Modal) {
             bootstrap.Modal.getOrCreateInstance(popup).show();
         }
         popup.addEventListener('shown.bs.modal', () => document.getElementById('subscribePopupEmail').focus());
@@ -7064,6 +7071,7 @@ $conn->close();
 
             if (!email || !form.reportValidity() || submitBtn.disabled) return;
 
+            const originalButtonText = submitBtn.textContent;
             // Simple UI loading state
             submitBtn.disabled = true;
             submitBtn.textContent = '...';
@@ -7077,7 +7085,11 @@ $conn->close();
                 const result = await response.json();
 
                 msgDiv.classList.remove('d-none', 'text-danger', 'text-success');
-                if (result.success) {
+                if (response.ok && (result.success === true || result.already_subscribed === true)) {
+                    try { localStorage.setItem(subscribedKey, '1'); } catch (_) {}
+                    if (formId === 'subscribePopupForm' && window.bootstrap?.Modal) {
+                        setTimeout(() => bootstrap.Modal.getOrCreateInstance(popup).hide(), 1200);
+                    }
                     msgDiv.classList.add('text-success');
                     msgDiv.textContent = result.message || 'Subscribed successfully!';
                     form.reset();
@@ -7092,10 +7104,7 @@ $conn->close();
                 msgDiv.textContent = 'Network error. Please try again later.';
             } finally {
                 submitBtn.disabled = false;
-                submitBtn.textContent = 'SUBSCRIBE!';
-                setTimeout(() => {
-                    msgDiv.classList.add('d-none');
-                }, 5000);
+                submitBtn.textContent = originalButtonText;
             }
         });
         }
