@@ -4437,7 +4437,10 @@ $conn->close();
         #subscribePopup .subscribe-promo-art{background:#ffdc49;position:relative;overflow:hidden;min-height:0}
         #subscribePopup .subscribe-promo-art picture{display:block}
         #subscribePopup .subscribe-promo-art img{display:block;width:100%;height:auto;object-fit:contain;object-position:center}
-        #subscribePopup .subscribe-promo-copy{padding:48px 32px 28px;align-self:center;color:#163c2b}
+        #subscribePopup .subscribe-promo-copy{padding:56px 32px 32px;align-self:stretch;display:flex;flex-direction:column;justify-content:center;gap:0;color:#163c2b}
+        #subscribePopup .subscribe-promo-copy > p{margin:0 0 24px;line-height:1.65}
+        #subscribePopupForm .form-control{min-height:48px}
+        #subscribePopup .subscribe-promo-copy > .btn{margin-top:16px!important}
         #subscribePopup .subscribe-promo-kicker{font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
         #subscribePopupTitle{font-size:28px;font-weight:700;line-height:1.2;color:#0d5c3a;margin:12px 0 16px}
         #subscribePopup .subscribe-promo-close{position:absolute;right:12px;top:12px;background:#fff;border:1px solid #ddd;border-radius:50%;width:36px;height:36px;font-size:24px;line-height:1;color:#163c2b;z-index:1}
@@ -4448,7 +4451,7 @@ $conn->close();
             #subscribePopup .subscribe-promo-layout{display:flex;flex-direction:column;min-width:0}
             #subscribePopup .subscribe-promo-art{width:100%;height:190px;min-height:190px;max-height:none;aspect-ratio:auto;flex:none}
             #subscribePopup .subscribe-promo-art img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 40%}
-            #subscribePopup .subscribe-promo-copy{width:100%;box-sizing:border-box;padding:20px;min-width:0}
+            #subscribePopup .subscribe-promo-copy{width:100%;box-sizing:border-box;padding:20px;min-width:0;display:block}
             #subscribePopupTitle{margin:8px 0 12px;font-size:24px}
             #subscribePopup .subscribe-promo-close{background:#fff;box-shadow:0 2px 8px #0002}
         }
